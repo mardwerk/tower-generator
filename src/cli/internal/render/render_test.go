@@ -254,3 +254,31 @@ func TestEarlyCrosspathsDoNotRepeatSharedChanges(t *testing.T) {
 	}
 	t.Fatal("no 1-0-1 row")
 }
+
+// Additions apply before multipliers, so an addition under an earlier
+// multiplier raises the value by more than it says; the sentence names the
+// multiplier (seen on #27: "Raises damage from 6 to 18 (+4)").
+func TestScaledAdditionsNameTheMultiplier(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	candidate := stages.Result.Candidate
+	blueprint := *candidate.Blueprint
+	tier := &blueprint.Paths.Path3.Tiers.Tier4
+	tier.Changes = append([]mechanics.Change(nil), tier.Changes...)
+	for i, change := range tier.Changes {
+		if change.Kind == "stat" && change.Stat == "damage" {
+			tier.Changes[i].Operation, tier.Changes[i].Number = "multiply", 2
+		}
+	}
+	candidate.Blueprint = &blueprint
+	purchases := render.Purchases(candidate, stages.Result.Prepared.Request.MechanicsDefinition)
+	if purchases == nil {
+		t.Fatal("the edited blueprint is invalid")
+	}
+	effects := strings.Join(purchases[2].Purchases[4].Effects, " ")
+	if !strings.Contains(effects, "(+2, multiplied by the earlier ×2).") || strings.Contains(strings.Join(purchases[2].Purchases[3].Effects, " "), "multiplied by the earlier") {
+		t.Errorf("x-x-4 %v, x-x-5 %s", purchases[2].Purchases[3].Effects, effects)
+	}
+}

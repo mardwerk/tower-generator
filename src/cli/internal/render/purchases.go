@@ -283,6 +283,24 @@ func operations(changes []m.Change) string {
 	return strings.Join(parts, ", ")
 }
 
+// scaledBy explains additions that an earlier purchase's multiplier scales:
+// additions apply before multipliers, so +4 under an earlier ×3 raises the
+// value by 12.
+func scaledBy(changes []m.Change, difference float64) string {
+	sum := 0.0
+	for _, change := range changes {
+		if change.Operation != "add" {
+			return ""
+		}
+		sum += change.Number
+	}
+	factor := difference / sum
+	if sum == 0 || factor <= 0 || math.Abs(factor-1) < 1e-9 {
+		return ""
+	}
+	return ", multiplied by the earlier ×" + decimal(factor)
+}
+
 // numberChange writes a resolved number's change as a sentence.
 func numberChange(label, unitText string, before, after float64, lowerIsBetter bool, how string) string {
 	verb := "Raises"
@@ -337,7 +355,8 @@ func (sh *sheet) purchaseEffects(changes []m.Change, before, after m.Build) []st
 			if change.Stat == "projectiles" && next.Delivery != "projectile" {
 				label = "pulses per attack"
 			}
-			out = append(out, numberChange(label, statUnit(change.Stat), prior.Stats.Get(change.Stat), next.Stats.Get(change.Stat), change.Stat == "intervalSeconds", operations(group)))
+			was, now := prior.Stats.Get(change.Stat), next.Stats.Get(change.Stat)
+			out = append(out, numberChange(label, statUnit(change.Stat), was, now, change.Stat == "intervalSeconds", operations(group)+scaledBy(group, now-was)))
 		case "status":
 			effect := sh.effect(change.Effect)
 			was, had := prior.Status(change.Effect)
