@@ -14,7 +14,7 @@ const atlasCapture = "btd6-atlas capture 56.3, Steam build 24829026, repository 
 var defaultRulesSections = []string{
 	"Design rules and scale references for the BTD6-inspired default Profile. Editable starter rules, not Manga Mayhem rules, BTD6 canon or balance certification. The atlas references below show scale and progression shape; they are not kits to copy.",
 
-	"Purchase roles. The first and second purchase of each path are small readable foundations that stay useful as crosspaths, never a broad all-source damage buff. The third purchase creates a significant reason to commit: a new behavior, a substantial improvement of the existing attack or a narrower role. A substantial stat change qualifies, as the scale references show (Bionic Boomerang attacks four times as often, Deadly Precision nearly triples damage, Crossbow raises damage, pierce and range together); a small step, a targeting change alone or a change with no effect does not. The fourth and fifth develop, add or replace behavior, access, capacity or uptime as the path's role requires; they need not add a subsystem each time, but a small ordinary-damage step is not a capstone; a substantial improvement of one dimension may qualify when it gives a clear payoff for the price. A stat-led path is allowed when its third purchase and capstone give a substantial payoff.",
+	"Purchase roles. The first and second purchase of each path are small readable foundations that stay useful as crosspaths, never a broad all-source damage buff. The third purchase creates a significant reason to commit: a new behavior, a substantial improvement of the existing attack or a narrower role. A substantial stat change qualifies, as the scale references show (Bionic Boomerang attacks four times as often, Deadly Precision nearly triples damage, Crossbow raises damage, pierce and range together); a small step, a targeting change alone or a change with no effect does not. From the third purchase on, a purchase that raises damage also changes how the attack reaches or affects enemies: pierce, attack rate, projectiles, splash, a follow-up, a status, damage type, delivery or the Active Ability, as the scale references show; more range alone does not count. The fourth and fifth develop, add or replace behavior, access, capacity or uptime as the path's role requires; they need not add a subsystem each time, and a substantial improvement of one dimension other than damage may qualify when it gives a clear payoff for the price. A stat-led path is allowed when its third purchase and capstone give a substantial payoff.",
 
 	"Match rules. A stationary Unit attacks detected enemies in range along a clear delivery path; detection grants neither delivery nor damage access. Gold is match currency and Health the shared life pool, 150 at the start; Units have no Health. The basic enemy has one layer removed by 1 damage; tougher enemies need explicit rules, and no layer tree or leak simulation exists. Keep damage per hit a whole number in every build, as every reference below does: raise it by whole amounts, preferring +1 to a fraction such as +0.25. Code accepts fractions; this is the Profile's design choice, not a mechanic rule. A player may own one placed 5-x-x, x-5-x or x-x-5 per Unit type and path at a time; the caller enforces this from match state.",
 
@@ -50,8 +50,8 @@ var defaultRulesSections = []string{
 // defaultRulesText is the bundled rules document text.
 var defaultRulesText = strings.Join(defaultRulesSections, "\n\n")
 
-const defaultRulesID = "default-td-profile-v20"
-const defaultRulesLocation = "mardwerk-unit:default-td-profile:v20"
+const defaultRulesID = "default-td-profile-v21"
+const defaultRulesLocation = "mardwerk-unit:default-td-profile:v21"
 const defaultRulesNote = "Bundled starter preset. Edit or replace it in Inputs and rules before preparing a custom Request."
 const defaultProfileName = "BTD6-inspired (default)"
-const defaultAuthoringRevision = "2026-09-26-atlas-56.3-v20"
+const defaultAuthoringRevision = "2026-09-26-atlas-56.3-v21"
