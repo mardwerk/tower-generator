@@ -88,7 +88,7 @@ Exit codes: `0` the operation completed (findings may still fail), `1` failure. 
 | `GET /health` | – | `{status, version, key: {configured, source, hint}, provider}`, where source is `env`, `env-file`, `settings` or `none` |
 | `GET /provider`, `POST /provider` | –, `{provider, apiKey?, model?, imageModel?}` | provider state |
 | `GET /example`, `GET /definition` | – | the example request, the bundled Definition |
-| `POST /research` | `{name, choice?}` | Sources or `{kind: "choices", choices}` |
+| `POST /research` | `{name, choice?, previous?}` | Sources or `{kind: "choices", choices}`. With `previous` Sources of the same character, the new lookup extends them: a document retrieved again replaces its copy with the same ID, others stay, and identical documents are kept once |
 | `POST /character` | `{name, choice?, profileId?\|profile?}` | research and prepare in one call: prepared request or choices |
 | `POST /prepare` | `{request, profileId?\|profile?}` or `{sources, profileId?\|profile?}` | prepared request; documents are resolved, `text` or `url`, never `file` |
 | `POST /draft` | `{prepared, maxRepairAttempts?}` | draft |
@@ -99,7 +99,7 @@ Exit codes: `0` the operation completed (findings may still fail), `1` failure. 
 | `POST /view` | `{artifact}` | `{view, base?, stats?, purchases?, crosspaths?, revision?}`: usage summary, design evaluation, the `0-0-0` description, per-tier stat changes, purchase sentences by build code, every legal two-path build and, for a revision, its mechanics and wording changes |
 | `GET /profiles`, `POST /profiles/save`, `POST /profiles/delete` | –, `{profile}`, `{id}` | `{directory, profiles: [{profile, builtIn, progression}]}` |
 | `POST /profiles/apply` | `{request, profileId?\|profile?}` | the edited request under that Profile |
-| `GET /library`, `POST /library/configure` | –, `{directory}` | `{directory, entries}`; each entry has its record `path` relative to the folder |
+| `GET /library`, `POST /library/configure` | –, `{directory}` | `{directory, entries}`; each entry has its record `path` relative to the folder, and saved Sources their researched `query` |
 | `POST /library/migrate` | `{}` | `{records, assets, kept, state}`: records and asset files moved into work and character folders, and files left in place |
 | `POST /library/save`, `/load`, `/delete` | `{artifact}`, `{id}`, `{ids}` | entry, `{artifact}`, listing |
 | `POST /library/icons` | `{artifact}` | `{directory, icons, portrait?}`; each icon carries its image and Codex prompts |

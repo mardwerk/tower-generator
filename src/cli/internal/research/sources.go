@@ -5,6 +5,8 @@
 package research
 
 import (
+	"strings"
+
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
 	"github.com/mardwerk/unit-generator/src/cli/internal/unit"
 )
@@ -48,6 +50,34 @@ func (sources Sources) Request() unit.Request {
 		Documents:     documents,
 		Constraints:   []unit.Constraint{},
 	}
+}
+
+// Extend refreshes earlier Sources with a new lookup of the same character.
+// A document retrieved again replaces its earlier copy with the same ID,
+// earlier documents not found again stay, and a document whose origin and
+// text repeat a kept one is not added twice. Sources of a different
+// character are not merged: the fresh lookup is returned unchanged.
+func (sources Sources) Extend(fresh Sources) Sources {
+	same := func(a, b string) bool { return strings.EqualFold(strings.TrimSpace(a), strings.TrimSpace(b)) }
+	if !same(sources.Character.Name, fresh.Character.Name) || !same(sources.Character.Work, fresh.Character.Work) {
+		return fresh
+	}
+	out := fresh
+	out.Documents = append([]unit.Document{}, fresh.Documents...)
+	ids, contents := map[string]bool{}, map[string]bool{}
+	for _, document := range out.Documents {
+		ids[document.ID] = true
+		contents[document.Origin.Location+"\x00"+document.Text] = true
+	}
+	for _, document := range sources.Documents {
+		content := document.Origin.Location + "\x00" + document.Text
+		if ids[document.ID] || contents[content] {
+			continue
+		}
+		ids[document.ID], contents[content] = true, true
+		out.Documents = append(out.Documents, document)
+	}
+	return out
 }
 
 // Prepare applies a Profile to the sources and prepares the request.

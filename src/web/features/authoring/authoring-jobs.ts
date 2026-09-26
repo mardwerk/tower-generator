@@ -1,10 +1,50 @@
-import type { PreparedRequest, Sources } from '../../api/contract.js';
+import type { LibraryEntry, LibraryState, PreparedRequest, Sources } from '../../api/contract.js';
 import type { LabArtifact, LabStage, ProviderState } from '../../api/contract.js';
 import { LabApiError, type api } from '../../api/client.js';
 import { formatCost } from '../../api/usage.js';
 import { nextStage, requestOf, type Revision } from '../../api/artifacts.js';
 
-export type Choice = { id: number; name: string; description: string };
+/**
+ * A character to continue with: a researched page (id), saved Sources
+ * (sourcesId) or a new lookup that extends saved Sources (refresh).
+ */
+export type Choice = {
+  id: number;
+  name: string;
+  description: string;
+  sourcesId?: string;
+  refresh?: boolean;
+};
+export type Lookup = {
+  name: string;
+  choice?: number;
+  profileId?: string;
+  /** Use these saved Sources instead of researching. */
+  sourcesId?: string;
+  /** Research again and extend the matching saved Sources. */
+  refresh?: boolean;
+};
+
+const comparable = (text: string | undefined) => (text ?? '').trim().toLowerCase();
+
+/**
+ * Saved Sources for a name, newest first per character: those saved for the
+ * same query or character name.
+ */
+export function savedSourcesFor(entries: LibraryEntry[], name: string): LibraryEntry[] {
+  const wanted = comparable(name);
+  const newest = new Map<string, LibraryEntry>();
+  for (const entry of [...entries].sort((a, b) => b.savedAt.localeCompare(a.savedAt))) {
+    if (entry.kind !== 'sources') continue;
+    if (comparable(entry.query) !== wanted && comparable(entry.character.name) !== wanted) continue;
+    const identity = JSON.stringify([
+      comparable(entry.character.name),
+      comparable(entry.character.work),
+    ]);
+    if (!newest.has(identity)) newest.set(identity, entry);
+  }
+  return [...newest.values()];
+}
 export type RunningStep = LabStage | 'character' | null;
 export type AuthoringJob = {
   id: string;
@@ -73,7 +113,7 @@ export class AuthoringJobs {
     initial: Revision,
     options: {
       remaining: boolean;
-      lookup?: { name: string; choice?: number; profileId?: string };
+      lookup?: Lookup;
       before?: () => Promise<Revision>;
     },
   ): Promise<void> {
@@ -117,26 +157,82 @@ export class AuthoringJobs {
           }
         }
         step('character');
-        const { profileId, ...lookup } = options.lookup;
-        const found = await this.dependencies.api<Sources | { kind: 'choices'; choices: Choice[] }>(
-          'research',
-          lookup,
-          controller.signal,
-        );
-        controller.signal.throwIfAborted();
-        if (found.kind === 'choices') {
-          this.#update(id, {
-            state: 'waiting',
-            choices: found.choices,
-            status: 'Choose the character to continue.',
-          });
-          return;
+        const { profileId, sourcesId, refresh, ...lookup } = options.lookup;
+        // Saved Sources for this name are reused unless the user asks to find
+        // references again; then they are extended. Several characters ask.
+        let saved: LibraryEntry | undefined;
+        if (lookup.choice === undefined) {
+          const library = await this.dependencies.api<LibraryState>(
+            'library',
+            undefined,
+            controller.signal,
+          );
+          controller.signal.throwIfAborted();
+          const matches = sourcesId
+            ? library.entries.filter((entry) => entry.id === sourcesId)
+            : savedSourcesFor(library.entries, lookup.name);
+          if (matches.length > 1) {
+            this.#update(id, {
+              state: 'waiting',
+              choices: [
+                ...matches.map((entry, index) => ({
+                  id: -(index + 1),
+                  name: entry.character.work
+                    ? `${entry.character.name} (${entry.character.work})`
+                    : entry.character.name,
+                  description: `Saved references from ${entry.savedAt.slice(0, 10)}`,
+                  sourcesId: entry.id,
+                  ...(refresh ? { refresh } : {}),
+                })),
+                ...(refresh
+                  ? []
+                  : [
+                      {
+                        id: 0,
+                        name: 'Find references again',
+                        description: `Search online for ${lookup.name}`,
+                        refresh: true,
+                      },
+                    ]),
+              ],
+              status: 'Choose the character to continue.',
+            });
+            return;
+          }
+          saved = matches[0];
         }
-        // Keep the research reusable: the library stores Sources next to the units.
-        await this.dependencies
-          .api('library/save', { artifact: found }, controller.signal)
-          .catch(() => undefined);
-        controller.signal.throwIfAborted();
+        let found: Sources | undefined;
+        let previous: Sources | undefined;
+        if (saved) {
+          const loaded = await this.dependencies.api<{ artifact: Sources }>(
+            'library/load',
+            { id: saved.id },
+            controller.signal,
+          );
+          controller.signal.throwIfAborted();
+          if (refresh) previous = loaded.artifact;
+          else found = loaded.artifact;
+        }
+        if (!found) {
+          const researched = await this.dependencies.api<
+            Sources | { kind: 'choices'; choices: Choice[] }
+          >('research', { ...lookup, ...(previous ? { previous } : {}) }, controller.signal);
+          controller.signal.throwIfAborted();
+          if (researched.kind === 'choices') {
+            this.#update(id, {
+              state: 'waiting',
+              choices: researched.choices,
+              status: 'Choose the character to continue.',
+            });
+            return;
+          }
+          found = researched;
+          // Keep the research reusable: the library stores Sources next to the units.
+          await this.dependencies
+            .api('library/save', { artifact: found }, controller.signal)
+            .catch(() => undefined);
+          controller.signal.throwIfAborted();
+        }
         const result = await this.dependencies.api<PreparedRequest>(
           'prepare',
           { sources: found, ...(profileId ? { profileId } : {}) },
@@ -150,13 +246,18 @@ export class AuthoringJobs {
           artifact: result,
         };
         this.dependencies.revision(revision);
+        const references =
+          saved && !refresh
+            ? `Using saved references from ${saved.savedAt.slice(0, 10)}; Find references again searches online.`
+            : 'References found and saved.';
         if (!options.remaining) {
           this.#update(id, {
             state: 'finished',
-            status: 'References found and inputs prepared. Draft is ready.',
+            status: `${references} Inputs are prepared; Draft is ready.`,
           });
           return;
         }
+        this.#update(id, { status: references });
       }
       let completed: LabStage | null = null;
       do {

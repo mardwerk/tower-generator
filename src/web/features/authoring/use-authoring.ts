@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { InspectedInput, LabArtifact, LabRequest, LabStage } from '../../api/contract.js';
 import { api } from '../../api/client.js';
 import { inputBeforeStage } from './stage-input.js';
-import { AuthoringJobs, authoringError, type AuthoringJob } from './authoring-jobs.js';
+import { AuthoringJobs, authoringError, type AuthoringJob, type Choice } from './authoring-jobs.js';
 export { stageNames, type RunningStep, type AuthoringJob } from './authoring-jobs.js';
 import {
   candidateOf,
@@ -140,6 +140,7 @@ export function useAuthoring(onComplete: (artifact: LabArtifact) => Promise<unkn
     remaining = job?.remaining ?? true,
     fresh?: CreateDraft,
     foreground = true,
+    reuse: { sourcesId?: string; refresh?: boolean } = {},
   ) {
     const query = (fresh?.name ?? name).trim();
     if (!query) return;
@@ -160,7 +161,7 @@ export function useAuthoring(onComplete: (artifact: LabArtifact) => Promise<unkn
           character: { ...emptyRequest().character, name: query },
         };
     const revision =
-      !fresh && choice !== undefined && selected
+      !fresh && (choice !== undefined || reuse.sourcesId || reuse.refresh) && selected
         ? selected
         : insertRevision(request, null, foreground, fresh?.profile ?? undefined);
     const profile = revision.profile;
@@ -170,6 +171,8 @@ export function useAuthoring(onComplete: (artifact: LabArtifact) => Promise<unkn
         name: query,
         ...(choice === undefined ? {} : { choice }),
         ...(profile ? { profileId: profile.profile.id } : {}),
+        ...(reuse.sourcesId ? { sourcesId: reuse.sourcesId } : {}),
+        ...(reuse.refresh ? { refresh: true } : {}),
       },
     });
   }
@@ -487,7 +490,15 @@ export function useAuthoring(onComplete: (artifact: LabArtifact) => Promise<unkn
     generate,
     run,
     runStage,
-    findReferences: () => generate(undefined, false),
+    // Research again, extending the saved Sources for this character.
+    findReferences: () => generate(undefined, false, undefined, true, { refresh: true }),
+    choose: (choice: Choice) =>
+      choice.sourcesId || choice.refresh
+        ? generate(undefined, job?.remaining ?? true, undefined, true, {
+            ...(choice.sourcesId ? { sourcesId: choice.sourcesId } : {}),
+            ...(choice.refresh ? { refresh: true } : {}),
+          })
+        : generate(choice.id),
     revise,
     select,
     addArtifact,

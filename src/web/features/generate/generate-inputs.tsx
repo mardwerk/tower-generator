@@ -193,7 +193,7 @@ export function CharacterChoices({ session }: { session: AuthoringSession }) {
           key={choice.id}
           className="source-option h-auto flex-col items-start gap-0.5 px-3 py-2.5 text-left whitespace-normal"
           disabled={session.busy}
-          onClick={() => void session.generate(choice.id)}
+          onClick={() => void session.choose(choice)}
         >
           {choice.name}
           <small className="text-xs font-normal text-muted-foreground">{choice.description}</small>

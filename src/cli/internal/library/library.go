@@ -46,7 +46,10 @@ type Entry struct {
 	Character  unit.Character `json:"character"`
 	ArtifactID string         `json:"artifactId"`
 	Path       string         `json:"path"`
-	Portrait   *Portrait      `json:"portrait,omitempty"`
+	// Query is the name researched for Sources, so a later lookup of the
+	// same name can reuse them.
+	Query    string    `json:"query,omitempty"`
+	Portrait *Portrait `json:"portrait,omitempty"`
 }
 
 // State is the library folder and its entries, newest first.
@@ -208,7 +211,11 @@ func (l *Library) entry(root string, r record) Entry {
 	if err != nil {
 		path = filepath.Base(r.path)
 	}
-	return Entry{ID: r.id, SavedAt: r.savedAt, Kind: r.artifact.Kind, Character: r.artifact.Character(), ArtifactID: r.artifact.artifactID(r.id), Path: filepath.ToSlash(path)}
+	entry := Entry{ID: r.id, SavedAt: r.savedAt, Kind: r.artifact.Kind, Character: r.artifact.Character(), ArtifactID: r.artifact.artifactID(r.id), Path: filepath.ToSlash(path)}
+	if r.artifact.Sources != nil {
+		entry.Query = r.artifact.Sources.Query
+	}
+	return entry
 }
 
 func (l *Library) list() (State, error) {

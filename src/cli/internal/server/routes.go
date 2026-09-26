@@ -325,10 +325,24 @@ func (srv *Server) lookup(ctx context.Context, body *s.Object, allowed ...string
 }
 
 // research returns reusable Sources, or choices for an ambiguous name.
+// With previous Sources of the same character, the new lookup extends them
+// without repeating identical documents.
 func (srv *Server) research(ctx context.Context, body *s.Object) (any, error) {
-	sources, choices, err := srv.lookup(ctx, body)
+	var previous *research.Sources
+	if value, ok := body.Get("previous"); ok && value != nil {
+		parsed, err := research.ParseSources(value)
+		if err != nil {
+			return nil, err
+		}
+		previous = &parsed
+	}
+	sources, choices, err := srv.lookup(ctx, body, "previous")
 	if err != nil || choices != nil {
 		return choices, err
+	}
+	if previous != nil {
+		extended := previous.Extend(*sources)
+		return &extended, nil
 	}
 	return sources, nil
 }

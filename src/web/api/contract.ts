@@ -336,6 +336,8 @@ export interface LibraryEntry {
    * unitlab-<id>.json for a record saved before that layout.
    */
   path: string;
+  /** The name researched, for saved Sources. */
+  query?: string;
   portrait?: { url: string; caption: string; sourceUrl?: string };
 }
 

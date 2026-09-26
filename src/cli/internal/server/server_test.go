@@ -515,8 +515,19 @@ func TestResearchReturnsReusableSources(t *testing.T) {
 		t.Errorf("character %v", kind)
 	}
 	saved := h.post("library/save", map[string]any{"artifact": sources})
-	if kind, _ := saved.Get("kind"); kind != "sources" {
+	if kind, _ := saved.Get("kind"); kind != "sources" || at(saved, "query") != "Luffy" {
 		t.Errorf("saved %v", kind)
+	}
+	// Finding references again extends the saved Sources without repeating
+	// the document retrieved again.
+	previous := s.Clone(sources).(*s.Object)
+	documents, _ := previous.Get("documents")
+	extra := s.Clone(documents.([]any)[0]).(*s.Object).Set("id", "earlier-note").Set("text", "An earlier reference that the new lookup did not return.")
+	previous.Set("documents", append(append([]any{}, documents.([]any)...), extra))
+	extended := h.post("research", map[string]any{"name": "Luffy", "previous": previous})
+	merged, _ := extended.Get("documents")
+	if count := len(merged.([]any)); count != len(documents.([]any))+1 {
+		t.Errorf("extended Sources have %d documents", count)
 	}
 }
 

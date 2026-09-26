@@ -289,3 +289,34 @@ func TestSharedEntryFindsAFandomIdentityWithImagesAndText(t *testing.T) {
 		t.Fatalf("enriched %+v", enriched)
 	}
 }
+
+// Extending saved Sources keeps documents not found again, replaces one
+// retrieved again and never repeats an identical document; Sources of
+// another character are not merged.
+func TestExtendRefreshesWithoutDuplicates(t *testing.T) {
+	document := func(id, location, text string) unit.Document {
+		return unit.Document{ID: id, Kind: "source", Text: text, Origin: unit.Origin{Location: location, Access: "retrieved"}}
+	}
+	luffy := unit.Character{Name: "Monkey D. Luffy", Work: "One Piece", Scope: "Scope"}
+	saved := Sources{Character: luffy, Query: "Luffy", Documents: []unit.Document{
+		document("character-reference", "https://en.wikipedia.org/wiki/Monkey_D._Luffy", "Old extract."),
+		document("character-wiki:abilities", "https://onepiece.fandom.com/wiki/Monkey_D._Luffy/Abilities_and_Powers", "Gear Second."),
+		document("copy", "https://onepiece.fandom.com/wiki/Monkey_D._Luffy", "Same text."),
+	}}
+	fresh := Sources{Character: unit.Character{Name: "monkey d. luffy ", Work: "One Piece", Scope: "Scope"}, Query: "Monkey D. Luffy", Documents: []unit.Document{
+		document("character-reference", "https://en.wikipedia.org/wiki/Monkey_D._Luffy", "New extract."),
+		document("character-wiki", "https://onepiece.fandom.com/wiki/Monkey_D._Luffy", "Same text."),
+	}}
+	got := saved.Extend(fresh)
+	var ids []string
+	for _, d := range got.Documents {
+		ids = append(ids, d.ID)
+	}
+	if strings.Join(ids, ",") != "character-reference,character-wiki,character-wiki:abilities" || got.Documents[0].Text != "New extract." || got.Query != "Monkey D. Luffy" {
+		t.Errorf("extended to %v", ids)
+	}
+	other := Sources{Character: unit.Character{Name: "Nami", Work: "One Piece"}, Documents: fresh.Documents}
+	if merged := saved.Extend(other); len(merged.Documents) != 2 || merged.Character.Name != "Nami" {
+		t.Error("Sources of another character were merged")
+	}
+}
