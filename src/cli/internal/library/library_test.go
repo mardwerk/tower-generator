@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/mardwerk/unit-generator/src/cli/internal/fixture"
+	"github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
 	"github.com/mardwerk/unit-generator/src/cli/internal/unit"
 )
@@ -341,5 +342,53 @@ func TestProfilesAreValidatedAndNeverReplaceBundledOnes(t *testing.T) {
 	}
 	if _, err := profiles.Delete("quick-copy"); err == nil {
 		t.Error("deleted twice")
+	}
+}
+
+// The UnitLab Profile rules editor writes every typed design policy field
+// and places each save error beside its control by the field path that
+// begins the error's line.
+func TestEditedDesignPolicySavesAndErrorsNameTheField(t *testing.T) {
+	profiles, _ := OpenProfiles(filepath.Join(t.TempDir(), "profiles"))
+	edited := unit.DefaultProfile()
+	edited.ID, edited.Name, edited.Rules.ID = "rules-copy", "Rules copy", "profile:rules-copy"
+	yes, no, multiplier := true, false, 3.0
+	edited.MechanicsDefinition.Profile.DesignPolicy = &mechanics.DesignPolicy{
+		Version:                     "1",
+		DistinctPathSpecializations: true,
+		DistinctFirstUpgrades:       false,
+		DistinctCapstones:           false,
+		PreserveEarlyAttackIdentity: &no,
+		MaxManualAbilityPaths:       0,
+		ManualAbilityPath:           mechanics.NullableString{Present: true, Null: true},
+		MinTier5SpecialtyMultiplier: &multiplier,
+		RequireTier3BehaviorChange:  &yes,
+		RequireTier5BehaviorChange:  &yes,
+		Tier5Uniqueness:             "one-per-player-unit-type-and-path",
+	}
+	if _, err := profiles.Save(s.FromGoValue(edited)); err != nil {
+		t.Fatal(err)
+	}
+	got, err := profiles.Get("rules-copy")
+	if err != nil || s.Indent(got.MechanicsDefinition.Profile.DesignPolicy) != s.Indent(edited.MechanicsDefinition.Profile.DesignPolicy) {
+		t.Fatalf("read back %v: %s", err, s.Indent(got.MechanicsDefinition.Profile.DesignPolicy))
+	}
+	const prefix = "mechanicsDefinition.profile.designPolicy."
+	for field, value := range map[string]any{
+		"minTier5SpecialtyMultiplier": 0.5,
+		"maxManualAbilityPaths":       4,
+		"manualAbilityPath":           "path4",
+	} {
+		invalid := s.FromGoValue(edited).(*s.Object)
+		policy := invalid
+		for _, key := range []string{"mechanicsDefinition", "profile", "designPolicy"} {
+			next, _ := policy.Get(key)
+			policy = next.(*s.Object)
+		}
+		policy.Set(field, s.FromGoValue(value))
+		_, err := profiles.Save(invalid)
+		if err == nil || !strings.HasPrefix(err.Error(), prefix+field+": ") || strings.Contains(err.Error(), "\n") {
+			t.Errorf("%s: %v", field, err)
+		}
 	}
 }
