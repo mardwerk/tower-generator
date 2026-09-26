@@ -112,3 +112,74 @@ func TestReviewFindingsCiteCheckedFacts(t *testing.T) {
 		t.Errorf("an unknown field: %v", err)
 	}
 }
+
+// A correction cannot drop a finding whose citations hold. A live Luffy
+// review on #27 flagged a real Gatling capacity mismatch with correct facts
+// and misread an interval in another finding; the correction returned no
+// findings and the Result reported no issue.
+func TestReviewCorrectionKeepsCheckedFindings(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fact := func(build, field, value string) []any {
+		return []any{s.NewObject().Set("build", build).Set("field", field).Set("value", value)}
+	}
+	first := recordedOutput(t, "review")
+	findings, _ := first.Get("findings")
+	valid := findings.([]any)[0].(*s.Object)
+	valid.Set("facts", fact("2-0-0", "attack.pierce", "5"))
+	misread := s.Clone(valid).(*s.Object).Set("id", "model.interval").Set("facts", fact("2-0-0", "attack.pierce", "3"))
+	first.Set("findings", []any{valid, misread})
+	empty := s.Clone(first).(*s.Object).Set("summary", "No concrete issue.").Set("findings", []any{})
+
+	model := &fixture.Model{Outputs: []any{first, empty}}
+	result, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options())
+	if err != nil || len(model.Requests) != 2 {
+		t.Fatalf("%v after %d calls", err, len(model.Requests))
+	}
+	prompt := model.Requests[1].Prompt
+	for _, want := range []string{"Your previous review was: {", "model.interval cites 2-0-0 attack.pierce as 3, but it is 5.", "Code keeps model.fan-club-allies exactly as they are", "and only model.interval: each corrected under the same ID"} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("the correction lacks %q", want)
+		}
+	}
+	var ids []string
+	for _, f := range result.Findings {
+		if strings.HasPrefix(f.ID, "model.") {
+			ids = append(ids, f.ID)
+		}
+	}
+	if strings.Join(ids, ",") != "model.fan-club-allies" || result.ReviewSummary != "No concrete issue." {
+		t.Errorf("model findings %v", ids)
+	}
+
+	// A corrected finding replaces the flagged one; a rewrite of a kept
+	// finding and a new finding are ignored.
+	corrected := s.Clone(first).(*s.Object)
+	findings, _ = corrected.Get("findings")
+	findings.([]any)[0].(*s.Object).Set("message", "Rewritten.")
+	findings.([]any)[1].(*s.Object).Set("facts", fact("2-0-0", "attack.pierce", "5"))
+	extra := s.Clone(valid).(*s.Object).Set("id", "model.extra")
+	corrected.Set("findings", append(findings.([]any), extra))
+	model = &fixture.Model{Outputs: []any{first, corrected}}
+	result, err = unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ids = nil
+	for _, f := range result.Findings {
+		if strings.HasPrefix(f.ID, "model.") {
+			ids = append(ids, f.ID)
+			if f.ID == "model.fan-club-allies" && f.Message == "Rewritten." {
+				t.Error("the correction rewrote a kept finding")
+			}
+			if f.ID == "model.interval" && f.Facts[0].Value != "5" {
+				t.Errorf("the flagged finding was not replaced: %+v", f.Facts)
+			}
+		}
+	}
+	if strings.Join(ids, ",") != "model.fan-club-allies,model.interval" {
+		t.Errorf("model findings %v", ids)
+	}
+}

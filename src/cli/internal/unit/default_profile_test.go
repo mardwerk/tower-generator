@@ -112,6 +112,8 @@ func TestPromptsSeparatePrivateChecksFromOutput(t *testing.T) {
 			"sharp (Sharp: Darts, blades, spikes and arrows.) cannot damage Lead, Frozen; normal (Normal: Blunt blows and plain impacts.);",
 			"Code checks each milestone's improves and unlock in every legal build", "more projectiles do not count",
 			"Tier1 to Tier2 allow 1 to 3 primitive changes total; Tier3 to Tier5 allow up to 5.",
+			// A Gatling plan promised 3 distinct enemies and got 3 shots with pierce 3 (#27).
+			"each shot keeps its pierce, so a volley can hit up to projectiles × pierce enemies",
 		}},
 		"review": {review, []string{
 			"Check privately and report only concrete problems", "Findings are review data kept apart from the unit description",
