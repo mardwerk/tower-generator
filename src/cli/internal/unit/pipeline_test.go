@@ -233,7 +233,7 @@ func TestVersion2AuthorsWithStackingEffects(t *testing.T) {
 	}
 	plan := recordedOutput(t, "plan")
 	milestones := at(plan, "paths", "path1", "milestones").(*s.Object)
-	at(milestones, "tier3").(*s.Object).Set("improves", []any{"damage", "pierce"}).Set("unlock", "poison")
+	at(milestones, "tier3").(*s.Object).Set("improves", []any{"damage", "pierce"}).Set("unlock", "poison").Set("lowers", []any{})
 	at(milestones, "tier4").(*s.Object).Set("improves", []any{"pierce", "poison"})
 
 	mechanicsOutput := recordedOutput(t, "mechanics")

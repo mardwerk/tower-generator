@@ -18,7 +18,7 @@ type ModelRequest struct {
 }
 
 var (
-	milestoneSchema = UpgradeIntentSchema.Extend(s.F("change", s.String().Trim().Min(1).Max(800)), s.F("technique", techniqueName()))
+	milestoneSchema = UpgradeIntentSchema.Extend(s.F("change", s.String().Trim().Min(1).Max(800)), s.F("technique", techniqueName()), s.F("lowers", tradeoffList()))
 	purchaseBranch  = purchaseBranchOf(milestoneSchema)
 	// PurchasePlanSchema is the compact plan the model returns: one description
 	// and one checkable promise per purchase.
@@ -26,7 +26,7 @@ var (
 	// purchasePlanSchemaV2 accepts any well-formed promise ID, so a version 2
 	// Definition's status effects and detection traits survive expansion;
 	// DecodeDesignPlan then holds them to the Definition's vocabulary.
-	purchasePlanSchemaV2 = purchasePlanOf(purchaseBranchOf(upgradeIntentSchema(promiseID, promiseID).Extend(s.F("change", s.String().Trim().Min(1).Max(800)), s.F("technique", techniqueName()))))
+	purchasePlanSchemaV2 = purchasePlanOf(purchaseBranchOf(upgradeIntentSchema(promiseID, promiseID).Extend(s.F("change", s.String().Trim().Min(1).Max(800)), s.F("technique", techniqueName()), s.F("lowers", tradeoffList()))))
 	earlyIdentityUnlocks = map[string]bool{"none": true, "camo": true}
 )
 
@@ -159,7 +159,7 @@ func expandPurchasePlan(output any, schema s.Schema) (any, error) {
 		for _, tier := range m.TierKeys {
 			milestone := field(milestones, tier).(*s.Object)
 			texts.Set(tier, field(milestone, "change"))
-			pathIntents.Set(tier, s.NewObject().Set("improves", field(milestone, "improves")).Set("unlock", field(milestone, "unlock")).Set("technique", field(milestone, "technique")))
+			pathIntents.Set(tier, s.NewObject().Set("improves", field(milestone, "improves")).Set("unlock", field(milestone, "unlock")).Set("technique", field(milestone, "technique")).Set("lowers", field(milestone, "lowers")))
 		}
 		expanded.Set("milestones", texts)
 		var crosspaths []any
@@ -192,6 +192,9 @@ func MechanicsPlan(plan DesignPlan) *s.Object {
 				entry.Set("improves", s.FromGoValue(intent.Improves)).Set("unlock", intent.Unlock)
 				if intent.Technique != "" {
 					entry.Set("technique", intent.Technique)
+				}
+				if len(intent.Lowers) > 0 {
+					entry.Set("lowers", s.FromGoValue(intent.Lowers))
 				}
 			}
 			milestones.Set(m.TierKeys[tier-1], entry)

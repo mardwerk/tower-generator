@@ -405,6 +405,8 @@ type UpgradeIntent struct {
 	// Technique is the repertoire technique or base attack the purchase
 	// adapts; plans made before it existed have none.
 	Technique string `json:"technique,omitempty"`
+	// Lowers are promised tradeoffs: dimensions the purchase reduces.
+	Lowers []string `json:"lowers,omitempty"`
 }
 
 // PathIntents are the five promises of a path.

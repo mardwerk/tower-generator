@@ -338,3 +338,39 @@ func TestBrokenPromisesNameTheirFix(t *testing.T) {
 		t.Errorf("issues %v", issues)
 	}
 }
+
+// A tradeoff the plan states is typed in lowers and checked like a promise:
+// Spike-o-pult's slower throw must slow the attack in every legal build that
+// owns it (a Gear 4 run on #27 promised a slower, heavier attack in words and
+// never changed the interval).
+func TestTradeoffsAreCheckedLikePromises(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	blueprint, plan := *stages.Result.Candidate.Blueprint, *stages.Draft.Run.DesignPlan
+	if lowers := plan.UpgradeIntents.Path1.Tier3.Lowers; len(lowers) != 1 || lowers[0] != "attack-rate" {
+		t.Fatalf("the fixture's 3-x-x tradeoff was not retained: %v", lowers)
+	}
+	tier := &blueprint.Paths.Path1.Tiers.Tier3
+	var kept []m.Change
+	for _, change := range tier.Changes {
+		if change.Stat != "intervalSeconds" {
+			kept = append(kept, change)
+		}
+	}
+	tier.Changes = kept
+	issues := unit.PlanIntentIssues(blueprint, plan.UpgradeIntents, unit.DefaultAuthoringDefinition())
+	if len(issues) != 1 || issues[0].Path != "paths.path1.tiers.tier3.planIntent" || !strings.Contains(issues[0].Message, "the tradeoff lowered attack-rate") || !strings.Contains(issues[0].Message, "raises intervalSeconds") {
+		t.Errorf("issues %v", issues)
+	}
+	prepared, err := fixture.Prepare()
+	if err != nil {
+		t.Fatal(err)
+	}
+	contradictory := recordedOutput(t, "plan")
+	at(contradictory, "paths", "path2", "milestones", "tier1").(*s.Object).Set("lowers", []any{"attack-rate"})
+	if _, err := unit.DecodeDesignPlan(contradictory, &prepared.Request); err == nil || !strings.Contains(err.Error(), "cannot both raise and lower attack-rate") {
+		t.Errorf("a purchase raising and lowering attack-rate: %v", err)
+	}
+}

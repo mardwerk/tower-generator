@@ -32,6 +32,9 @@ var (
 		"none", "manual-boost", "follow-up", "active-follow-up", "camo", "distinct-volley", "splash",
 		"slow", "burn", "stun", "delivery-change", "damage-type-change", "targeting-change",
 	}
+	// Tradeoffs are the dimensions a milestone may promise to reduce, such as
+	// the attack rate of a slower, heavier attack.
+	Tradeoffs            = []string{"damage", "attack-rate", "range", "pierce", "projectiles", "splash"}
 	UpgradeIntentSchema  = upgradeIntentSchema(s.Enum(Improvements...), s.Enum(Unlocks...))
 	UpgradeIntentsSchema = upgradeIntentsSchema(UpgradeIntentSchema)
 
@@ -114,10 +117,16 @@ func planAuthoringFloor(plan *s.Object, add func(path []any, message string)) {
 // techniqueName is the repertoire technique or base attack a purchase adapts.
 func techniqueName() *s.StringSchema { return s.String().Trim().Min(1).Max(80) }
 
+// tradeoffList is the dimensions a milestone promises to reduce.
+func tradeoffList() *s.ArraySchema { return s.Array(s.Enum(Tradeoffs...)).Max(3) }
+
 // upgradeIntentSchema is a retained promise. Plans made before purchases
-// named their technique have none.
+// named their technique or tradeoffs have none.
 func upgradeIntentSchema(improvement, unlock s.Schema) *s.ObjectSchema {
-	return s.StrictObject(s.F("improves", s.Array(improvement).Max(4)), s.F("unlock", unlock), s.F("technique", s.Optional(techniqueName())))
+	return s.StrictObject(
+		s.F("improves", s.Array(improvement).Max(4)), s.F("unlock", unlock),
+		s.F("technique", s.Optional(techniqueName())), s.F("lowers", s.Optional(tradeoffList())),
+	)
 }
 
 func upgradeIntentsSchema(intent s.Schema) *s.ObjectSchema {

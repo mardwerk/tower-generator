@@ -2,6 +2,7 @@ package unit
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -148,6 +149,9 @@ func minimumEffects(intent UpgradeIntent, d m.Definition) int {
 			add(dimension)
 		}
 	}
+	for _, dimension := range intent.Lowers {
+		add(dimension)
+	}
 	total := 0
 	for _, n := range effects {
 		total += n
@@ -199,6 +203,11 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 			intent := intents.At(index + 1)
 			report := func(message string) {
 				issues = append(issues, m.Issue{Path: "upgradeIntents." + path + "." + tier, Message: message})
+			}
+			for _, dimension := range intent.Lowers {
+				if slices.Contains(intent.Improves, dimension) {
+					report(fmt.Sprintf("A purchase cannot both raise and lower %s. Keep the change the description states.", dimension))
+				}
 			}
 			needsBoost := intent.Unlock == "active-follow-up"
 			for _, d := range intent.Improves {
@@ -392,6 +401,15 @@ func promiseFix(dimension string) string {
 	return "Raise the status effect's magnitude or seconds in statuses."
 }
 
+// tradeoffFix names the change that keeps a promised tradeoff.
+func tradeoffFix(dimension string) string {
+	if dimension == "attack-rate" {
+		return "Add a statChanges entry that raises intervalSeconds, such as multiply 1.2, so the attack is slower."
+	}
+	stat := map[string]string{"damage": "damage", "range": "range", "pierce": "pierce", "projectiles": "projectiles", "splash": "splashRadius"}[dimension]
+	return "Add a statChanges entry that lowers " + stat + "."
+}
+
 // PlanIntentIssues reports retained plan promises a blueprint does not implement.
 func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition m.Definition) []m.Issue {
 	if intents == nil {
@@ -443,6 +461,18 @@ func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition
 				}
 				if !improved {
 					report("improved "+dimension, promiseFix(dimension))
+				}
+			}
+			for _, dimension := range intent.Lowers {
+				prior := measures(before, path, dimension)
+				lowered := false
+				for metric, value := range measures(entry.build, path, dimension) {
+					if value < prior[metric] {
+						lowered = true
+					}
+				}
+				if !lowered {
+					report("the tradeoff lowered "+dimension, tradeoffFix(dimension))
 				}
 			}
 			if !unlockedIntent(before, entry.build, intent.Unlock, index, tier, &blueprint, definition) {
