@@ -126,12 +126,20 @@ Tested without network access:
 - **Web app.** In Chromium against the Go server with a scripted model ([browser_test.go](src/cli/internal/server/browser_test.go), opt-in with `UNIT_BROWSER_PORT`).
 - **Relayed generations.** The Dart Monkey brief under this Default Profile, one revision of it, and the same brief under the previous Profile, through the Codex adapter with Claude subagents answering ([evaluation](docs/PROFILE-EVALUATION.md)).
 
-Not yet tested live from the development container:
+Tested live:
 
-- **OpenRouter** text and image generation with a real key and the models in [OPENROUTER.md](docs/OPENROUTER.md): request shape, usage and cost, error classification, PNG conversion.
-- **Codex** with a real `codex` CLI and login, including MCP-server disabling against a real `config.toml`.
-- **Character research** against live Wikipedia, Wikidata and Fandom; the rules are tested on fixtures only.
+- **OpenRouter text generation.** Four Monkey D. Luffy runs with `openai/gpt-6-luna` from [OPENROUTER.md](docs/OPENROUTER.md), from fresh Sources, each reporting its usage and cost ([evaluation](docs/PROFILE-EVALUATION.md#not-covered)).
+- **Codex text generation.** An owner-run Luffy generation through a logged-in `codex` CLI, recorded as `codex:gpt-6-luna:reasoning=medium` ([#27](https://github.com/mardwerk/unit-generator/pull/27#issuecomment-5849462990)).
+
+Not yet tested live:
+
+- **OpenRouter images and error paths.** Image generation and PNG conversion with a real key, and the classification of real provider errors.
+- **Codex MCP-server disabling** against a real `config.toml`.
+- **Character research** against live Wikipedia, Wikidata and Fandom beyond the Luffy Sources above; the rules are tested on fixtures only.
 - **Windows.** Codex process cleanup uses process groups on Unix only.
+
+Known quality limits:
+
 - **Unit quality.** An owner-run generation of Monkey D. Luffy showed repetitive paths ([#22](https://github.com/mardwerk/unit-generator/issues/22)). The trace found Fandom text cut off before the technique sections, a small evidence selection and no check against a form split between two paths; all three are changed and the Default Profile gained Knockback. Three of four live runs since gave each path its own behavior; the middle path's damage and unused Knockback remain weak ([evaluation](docs/PROFILE-EVALUATION.md#not-covered)). The relayed Dart Monkey comparison is one sample, not a quality measurement.
 
 ## Documentation
