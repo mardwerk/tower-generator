@@ -111,6 +111,7 @@ export interface DesignPolicy {
   version: '1';
   distinctPathSpecializations: boolean;
   distinctFirstUpgrades: boolean;
+  distinctEarlyBenefits?: boolean;
   distinctCapstones: boolean;
   preserveEarlyAttackIdentity?: boolean;
   /** 0 to 3. */

@@ -17,6 +17,7 @@ import {
   policyFields,
   policyKeys,
   policySummary,
+  policyValueText,
   readPolicy,
   setPolicyValue,
   writePolicy,
@@ -34,6 +35,7 @@ const defaultPolicy: DesignPolicy = {
   version: '1',
   distinctPathSpecializations: false,
   distinctFirstUpgrades: true,
+  distinctEarlyBenefits: true,
   distinctCapstones: true,
   preserveEarlyAttackIdentity: true,
   maxManualAbilityPaths: 1,
@@ -127,6 +129,7 @@ export const tests: Record<string, () => Promise<void>> = {
       [
         'distinctPathSpecializations',
         'distinctFirstUpgrades',
+        'distinctEarlyBenefits',
         'distinctCapstones',
         'preserveEarlyAttackIdentity',
         'requireTier3BehaviorChange',
@@ -179,6 +182,7 @@ export const tests: Record<string, () => Promise<void>> = {
       checked,
       [
         'distinctFirstUpgrades',
+        'distinctEarlyBenefits',
         'distinctCapstones',
         'preserveEarlyAttackIdentity',
         'requireTier3BehaviorChange',
@@ -198,6 +202,19 @@ export const tests: Record<string, () => Promise<void>> = {
       'server issue beside the multiplier',
     );
     equal(markup.includes('Middle path only'), true, 'Active Ability summary');
+    equal(markup.includes('Also set'), false, 'every Default field has a control');
+    const newer = renderToStaticMarkup(
+      createElement(DesignPolicyEditor, {
+        definition: text({ ...defaultPolicy, laterRule: true } as DesignPolicy),
+        issues: {},
+        onChange: () => undefined,
+      }),
+    );
+    equal(
+      newer.includes('Also set, and edited only in the Definition JSON: laterRule.'),
+      true,
+      'a field without a control',
+    );
   },
   async 'the editor explains a Definition it cannot edit'() {
     const render = (definition: string) =>
@@ -253,8 +270,9 @@ export const tests: Record<string, () => Promise<void>> = {
         [
           `${prefix}.minTier5SpecialtyMultiplier: Too small: expected number to be >1`,
           `${prefix}.manualAbilityPath: Invalid option: expected one of "path1"|"path2"|"path3"`,
+          `${prefix}.distinctEarlyBenefits: Invalid input: expected boolean, received string`,
           `${prefix}.version: Invalid input: expected "1"`,
-          `${prefix}: Unrecognized key: "distinctEarlyBenefits"`,
+          `${prefix}: Unrecognized key: "laterRule"`,
           'id: Too small',
         ].join('\n'),
       ),
@@ -262,10 +280,11 @@ export const tests: Record<string, () => Promise<void>> = {
         fields: {
           minTier5SpecialtyMultiplier: ['Too small: expected number to be >1'],
           manualAbilityPath: ['Invalid option: expected one of "path1"|"path2"|"path3"'],
+          distinctEarlyBenefits: ['Invalid input: expected boolean, received string'],
         },
         rest: [
           `${prefix}.version: Invalid input: expected "1"`,
-          `${prefix}: Unrecognized key: "distinctEarlyBenefits"`,
+          `${prefix}: Unrecognized key: "laterRule"`,
           'id: Too small',
         ],
       },
@@ -278,6 +297,7 @@ export const tests: Record<string, () => Promise<void>> = {
       [
         ['Distinct specializations', 'Off'],
         ['Distinct first purchases', 'On'],
+        ['Distinct early benefits', 'On'],
         ['Distinct capstones', 'On'],
         ['Early attack identity', 'On'],
         ['Behavior at the third purchase', 'Off'],
@@ -287,8 +307,8 @@ export const tests: Record<string, () => Promise<void>> = {
       ],
       'summary',
     );
-    const newer = { ...defaultPolicy, distinctEarlyBenefits: true } as DesignPolicy;
-    equal(policySummary(newer).at(-1), ['Other fields', 'distinctEarlyBenefits'], 'other fields');
+    const newer = { ...defaultPolicy, laterRule: true } as DesignPolicy;
+    equal(policySummary(newer).at(-1), ['Other fields', 'laterRule'], 'other fields');
   },
   async 'an edited policy saves through profiles/save, and its errors come back scoped'() {
     const api = scriptedProfiles();
@@ -350,5 +370,41 @@ export const tests: Record<string, () => Promise<void>> = {
       'No path',
       'saved Active Ability',
     );
+  },
+  async 'the early benefits toggle round-trips through profiles/save'() {
+    const api = scriptedProfiles();
+    const form = {
+      id: 'luffy-td',
+      name: 'Luffy rules',
+      task: 'Make a unit.',
+      rules: 'Rules text.',
+      definition: text(defaultPolicy),
+    };
+    const saveWith = async (value: boolean) => {
+      form.definition = writePolicy(
+        form.definition,
+        setPolicyValue(policyOf(form.definition), 'distinctEarlyBenefits', value),
+      );
+      const profile = editedProfile(form);
+      if (typeof profile === 'string') throw new Error(profile);
+      const state = await api.call('profiles/save', { profile });
+      const saved = state.profiles.at(-1)!.profile.mechanicsDefinition;
+      const markup = renderToStaticMarkup(
+        createElement(DesignPolicyEditor, {
+          definition: JSON.stringify(saved, null, 2),
+          issues: {},
+          onChange: () => undefined,
+        }),
+      );
+      const control = /<input[^>]*name="distinctEarlyBenefits"[^>]*>/.exec(markup)?.[0] ?? '';
+      return { policy: saved.profile.designPolicy!, checked: control.includes('checked') };
+    };
+    const off = await saveWith(false);
+    equal('distinctEarlyBenefits' in off.policy, false, 'switched off, the field is removed');
+    equal(off.checked, false, 'the saved Profile shows it off');
+    equal(policyValueText('distinctEarlyBenefits', off.policy), 'Off', 'summary off');
+    const on = await saveWith(true);
+    equal(on.policy.distinctEarlyBenefits, true, 'switched on, the field is saved as true');
+    equal(on.checked, true, 'the saved Profile shows it on');
   },
 };

@@ -65,6 +65,11 @@ export const policyFields: Record<PolicyKey, PolicyField> = {
     help: 'The resolved 1-0-0, 0-1-0 and 0-0-1 builds differ.',
     control: toggle(false),
   },
+  distinctEarlyBenefits: {
+    label: 'Distinct early benefits',
+    help: "Two paths' first two purchases together must differ in what they improve or unlock, whatever their order, names, prices or amounts; lowers do not count.",
+    control: toggle(true),
+  },
   distinctCapstones: {
     label: 'Distinct capstones',
     help: 'The pure 5-0-0, 0-5-0 and 0-0-5 builds differ, ignoring names and prices.',
