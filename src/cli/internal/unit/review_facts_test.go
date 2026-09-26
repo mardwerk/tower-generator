@@ -113,10 +113,11 @@ func TestReviewFindingsCiteCheckedFacts(t *testing.T) {
 	}
 }
 
-// A correction cannot drop a finding whose citations hold. A live Luffy
-// review on #27 flagged a real Gatling capacity mismatch with correct facts
-// and misread an interval in another finding; the correction returned no
-// findings and the Result reported no issue.
+// A correction cannot drop a finding whose citations hold, and the published
+// summary describes the published findings. A live Luffy review on #27
+// flagged a real Gatling capacity mismatch with correct facts and misread an
+// interval in another finding; the correction returned no findings and "No
+// concrete issue", and the Result reported a clean review.
 func TestReviewCorrectionKeepsCheckedFindings(t *testing.T) {
 	stages, err := fixture.Build()
 	if err != nil {
@@ -131,43 +132,42 @@ func TestReviewCorrectionKeepsCheckedFindings(t *testing.T) {
 	valid.Set("facts", fact("2-0-0", "attack.pierce", "5"))
 	misread := s.Clone(valid).(*s.Object).Set("id", "model.interval").Set("facts", fact("2-0-0", "attack.pierce", "3"))
 	first.Set("findings", []any{valid, misread})
-	empty := s.Clone(first).(*s.Object).Set("summary", "No concrete issue.").Set("findings", []any{})
 
-	model := &fixture.Model{Outputs: []any{first, empty}}
-	result, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options())
-	if err != nil || len(model.Requests) != 2 {
-		t.Fatalf("%v after %d calls", err, len(model.Requests))
-	}
-	prompt := model.Requests[1].Prompt
-	for _, want := range []string{"Your previous review was: {", "model.interval cites 2-0-0 attack.pierce as 3, but it is 5.", "Code keeps model.fan-club-allies exactly as they are", "and only model.interval: each corrected under the same ID"} {
-		if !strings.Contains(prompt, want) {
-			t.Errorf("the correction lacks %q", want)
+	var failure *unit.ModelError
+	clean := s.Clone(first).(*s.Object).Set("summary", "No concrete issue.").Set("findings", []any{})
+	changed := s.Clone(first).(*s.Object)
+	findings, _ = changed.Get("findings")
+	findings.([]any)[0].(*s.Object).Set("outcome", "pass")
+	changed.Set("findings", findings.([]any)[:1])
+	for name, correction := range map[string]*s.Object{"dropped": clean, "changed outcome": changed} {
+		model := &fixture.Model{Outputs: []any{first, correction}}
+		_, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options())
+		if !errors.As(err, &failure) || !strings.Contains(failure.Message, "dropped or changed findings whose citations held (model.fan-club-allies)") || len(model.Requests) != 2 {
+			t.Errorf("%s: %v after %d calls", name, err, len(model.Requests))
 		}
 	}
-	var ids []string
-	for _, f := range result.Findings {
-		if strings.HasPrefix(f.ID, "model.") {
-			ids = append(ids, f.ID)
-		}
-	}
-	if strings.Join(ids, ",") != "model.fan-club-allies" || result.ReviewSummary != "No concrete issue." {
-		t.Errorf("model findings %v", ids)
-	}
 
-	// A corrected finding replaces the flagged one; a rewrite of a kept
-	// finding and a new finding are ignored.
-	corrected := s.Clone(first).(*s.Object)
+	// A correction that returns the kept finding publishes its summary with
+	// it; the kept finding keeps its original text, the flagged one is
+	// replaced, and a new finding is checked like the others.
+	corrected := s.Clone(first).(*s.Object).Set("summary", "One unresolved scope limit.")
 	findings, _ = corrected.Get("findings")
 	findings.([]any)[0].(*s.Object).Set("message", "Rewritten.")
 	findings.([]any)[1].(*s.Object).Set("facts", fact("2-0-0", "attack.pierce", "5"))
 	extra := s.Clone(valid).(*s.Object).Set("id", "model.extra")
 	corrected.Set("findings", append(findings.([]any), extra))
-	model = &fixture.Model{Outputs: []any{first, corrected}}
-	result, err = unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options())
+	model := &fixture.Model{Outputs: []any{first, corrected}}
+	result, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options())
 	if err != nil {
 		t.Fatal(err)
 	}
-	ids = nil
+	prompt := model.Requests[1].Prompt
+	for _, want := range []string{"Your previous review was: {", "model.interval cites 2-0-0 attack.pierce as 3, but it is 5.", "a summary that describes exactly the findings you return", "Return model.fan-club-allies unchanged", "Return model.interval corrected under the same ID"} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("the correction lacks %q", want)
+		}
+	}
+	var ids []string
 	for _, f := range result.Findings {
 		if strings.HasPrefix(f.ID, "model.") {
 			ids = append(ids, f.ID)
@@ -179,7 +179,7 @@ func TestReviewCorrectionKeepsCheckedFindings(t *testing.T) {
 			}
 		}
 	}
-	if strings.Join(ids, ",") != "model.fan-club-allies,model.interval" {
-		t.Errorf("model findings %v", ids)
+	if strings.Join(ids, ",") != "model.fan-club-allies,model.interval,model.extra" || result.ReviewSummary != "One unresolved scope limit." {
+		t.Errorf("model findings %v, summary %q", ids, result.ReviewSummary)
 	}
 }

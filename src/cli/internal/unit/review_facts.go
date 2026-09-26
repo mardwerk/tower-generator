@@ -16,7 +16,8 @@ import (
 // legal build with its price and resolved attack. A review that cites a build
 // the Definition does not allow, or a resolved value that is wrong, is
 // corrected once and then rejected, so it cannot report findings about builds
-// such as 3-3-0. The correction keeps the findings whose citations held.
+// such as 3-3-0. The correction must return the findings whose citations
+// held, so its summary describes them.
 
 var buildCodePattern = regexp.MustCompile(`\b[0-9]-[0-9]-[0-9]\b`)
 
@@ -170,33 +171,47 @@ func (c reviewCitations) wrongFacts(finding Finding) []string {
 	return out
 }
 
-// keepCheckedFindings merges a correction into the review it corrects.
-// Findings whose citations held stay exactly as they were, so a correction
-// cannot drop them (reported on #27: a correction returned no findings and
-// lost a finding with valid facts). A flagged finding is replaced by the
-// correction's finding with the same ID, or dropped when the correction
-// omits it; the correction's other findings are ignored. The summary is the
-// correction's.
-func keepCheckedFindings(previous, corrected SemanticReview, problems []citationProblem) SemanticReview {
+// keepCheckedFindings merges a correction into the review it corrects. The
+// correction returns the whole review, so its summary describes the findings
+// it returns. Every finding whose citations held must come back under its ID
+// with the same outcome, and code restores its original text; a correction
+// that drops or changes one is rejected, because its summary was written
+// without it (reported on #27: a correction returned no findings and "No
+// concrete issue", losing a finding with valid facts). A flagged finding
+// comes back corrected under its ID or not at all.
+func keepCheckedFindings(previous, corrected SemanticReview, problems []citationProblem) (SemanticReview, error) {
 	flagged := map[string]bool{}
 	for _, p := range problems {
 		if p.finding != "" {
 			flagged[p.finding] = true
 		}
 	}
-	replacements := map[string]Finding{}
-	for _, f := range corrected.Findings {
-		replacements[f.ID] = f
-	}
-	out := SemanticReview{Summary: corrected.Summary, Findings: []Finding{}}
+	kept := map[string]Finding{}
 	for _, f := range previous.Findings {
 		if !flagged[f.ID] {
-			out.Findings = append(out.Findings, f)
-		} else if replacement, ok := replacements[f.ID]; ok {
-			out.Findings = append(out.Findings, replacement)
+			kept[f.ID] = f
 		}
 	}
-	return out
+	returned := map[string]Finding{}
+	out := SemanticReview{Summary: corrected.Summary, Findings: []Finding{}}
+	for _, f := range corrected.Findings {
+		returned[f.ID] = f
+		if original, ok := kept[f.ID]; ok {
+			f = original
+		}
+		out.Findings = append(out.Findings, f)
+	}
+	var lost []string
+	for _, f := range previous.Findings {
+		if _, ok := kept[f.ID]; ok && returned[f.ID].Outcome != f.Outcome {
+			lost = append(lost, f.ID)
+		}
+	}
+	if len(lost) > 0 {
+		message := "The model review's correction dropped or changed findings whose citations held (" + strings.Join(lost, ", ") + "), so its summary does not describe them. The draft is retained. Retry the review or choose another model."
+		return SemanticReview{}, &ModelError{Message: message, Failure: &Failure{Code: CodeOutputInvalid, Message: message, Stage: "review"}}
+	}
+	return out, nil
 }
 
 // rejectedCitations is the error for citations that are still wrong after
@@ -251,17 +266,14 @@ func correctionPrompt(previous SemanticReview, problems []citationProblem) strin
 	if len(wrong) > 0 {
 		text += "\nSome cited facts are wrong: " + strings.Join(wrong, " ") + " Read each value in legalBuilds."
 	}
+	text += "\nReturn the whole review again, with a summary that describes exactly the findings you return."
 	if len(kept) > 0 {
-		text += "\nCode keeps " + strings.Join(kept, ", ") + " exactly as they are, because their citations hold."
-	}
-	text += "\nReturn a summary for the whole review"
-	if len(kept) > 0 {
-		text += ", kept findings included"
+		text += " Return " + strings.Join(kept, ", ") + " unchanged: their citations hold, and a review that drops or changes one is rejected."
 	}
 	if len(flagged) > 0 {
-		text += ", and only " + strings.Join(flagged, ", ") + ": each corrected under the same ID, or omitted when the resolved facts contradict its claim. Code ignores any other finding"
+		text += " Return " + strings.Join(flagged, ", ") + " corrected under the same ID, or omit it when the resolved facts contradict its claim."
 	}
-	return text + "."
+	return text
 }
 
 // sameFact compares a cited value with the resolved one; numbers may differ

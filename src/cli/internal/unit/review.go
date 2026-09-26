@@ -219,14 +219,15 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 	if err == nil && definition != nil {
 		// A review that cites builds the Definition does not allow, or
 		// resolved values that are wrong, is corrected once, then rejected.
-		// Findings whose citations hold are kept as they are.
+		// Findings whose citations hold must come back unchanged.
 		citations := newReviewCitations(checked.Draft.Candidate.Blueprint, *definition)
 		if problems := citations.problems(review); len(problems) > 0 {
 			request.Prompt += correctionPrompt(review, problems)
 			var corrected SemanticReview
 			if corrected, err = reviewOnce(ctx, checked, model, request, &calls); err == nil {
-				review = keepCheckedFindings(review, corrected, problems)
-				err = rejectedCitations(citations.problems(review))
+				if review, err = keepCheckedFindings(review, corrected, problems); err == nil {
+					err = rejectedCitations(citations.problems(review))
+				}
 			}
 		}
 	}
