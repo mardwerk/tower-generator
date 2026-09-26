@@ -223,16 +223,27 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 			break
 		}
 		illegal := illegalBuildCodes(review, *definition)
-		if len(illegal) == 0 {
+		wrong := factIssues(review, checked.Draft.Candidate.Blueprint, *definition)
+		if len(illegal) == 0 && len(wrong) == 0 {
 			break
 		}
-		// A review that cites builds the Definition does not allow is
-		// corrected once, then rejected.
+		// A review that cites builds the Definition does not allow, or
+		// resolved values that are wrong, is corrected once, then rejected.
 		if attempt == 0 {
-			request.Prompt += "\n\nCorrect this review. It cites builds that are not legal under this Definition: " + strings.Join(illegal, ", ") + ". legalBuilds lists every legal build; judge only those, and read counts from their resolved facts."
+			correction := "\n\nCorrect this review."
+			if len(illegal) > 0 {
+				correction += " It cites builds that are not legal under this Definition: " + strings.Join(illegal, ", ") + ". legalBuilds lists every legal build; judge only those, and read counts from their resolved facts."
+			}
+			if len(wrong) > 0 {
+				correction += " Some cited facts are wrong: " + strings.Join(wrong, " ") + " Read each value in legalBuilds, and drop a finding whose claim the resolved facts contradict."
+			}
+			request.Prompt += correction
 			continue
 		}
-		message := "The model review cited builds that are not legal (" + strings.Join(illegal, ", ") + ") after one correction. The draft is retained. Retry the review or choose another model."
+		message := "The model review cited resolved facts that are wrong after one correction: " + strings.Join(wrong, " ") + " The draft is retained. Retry the review or choose another model."
+		if len(illegal) > 0 {
+			message = "The model review cited builds that are not legal (" + strings.Join(illegal, ", ") + ") after one correction. The draft is retained. Retry the review or choose another model."
+		}
 		err = &ModelError{Message: message, Failure: &Failure{Code: CodeOutputInvalid, Message: message, Stage: "review"}}
 		break
 	}

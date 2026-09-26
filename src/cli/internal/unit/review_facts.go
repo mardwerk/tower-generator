@@ -2,7 +2,9 @@ package unit
 
 import (
 	"fmt"
+	"math"
 	"regexp"
+	"strconv"
 	"strings"
 
 	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
@@ -101,4 +103,57 @@ func illegalBuildCodes(review SemanticReview, definition m.Definition) []string 
 		}
 	}
 	return out
+}
+
+// factIssues checks the resolved values that review findings cite against
+// legalBuilds, so a finding cannot rest on a misread number.
+func factIssues(review SemanticReview, blueprint *m.Blueprint, definition m.Definition) []string {
+	builds := map[string]*s.Object{}
+	for _, entry := range LegalBuildFacts(blueprint, definition) {
+		object := entry.(*s.Object)
+		code, _ := object.Get("code")
+		builds[code.(string)] = object
+	}
+	var out []string
+	for _, finding := range review.Findings {
+		for _, fact := range finding.Facts {
+			build, field := strings.TrimSpace(fact.Build), strings.TrimSpace(fact.Field)
+			entry, ok := builds[build]
+			if !ok {
+				out = append(out, fmt.Sprintf("%s cites build %s, which legalBuilds does not list.", finding.ID, build))
+				continue
+			}
+			var value any = entry
+			for _, key := range strings.Split(field, ".") {
+				object, ok := value.(*s.Object)
+				if !ok {
+					value = nil
+					break
+				}
+				value, _ = object.Get(key)
+			}
+			if value == nil {
+				out = append(out, fmt.Sprintf("%s cites %s %s, a field legalBuilds does not list for that build.", finding.ID, build, field))
+			} else if !sameFact(value, fact.Value) {
+				out = append(out, fmt.Sprintf("%s cites %s %s as %s, but it is %s.", finding.ID, build, field, strings.TrimSpace(fact.Value), s.Stringify(value)))
+			}
+		}
+	}
+	return out
+}
+
+// sameFact compares a cited value with the resolved one; numbers may differ
+// by rounding in the last listed digit.
+func sameFact(actual any, cited string) bool {
+	cited = strings.TrimSpace(cited)
+	switch value := actual.(type) {
+	case float64:
+		number, err := strconv.ParseFloat(cited, 64)
+		return err == nil && math.Abs(number-value) <= math.Max(1e-9, 1e-3*math.Abs(value))
+	case string:
+		return strings.EqualFold(cited, value)
+	case bool:
+		return strings.EqualFold(cited, strconv.FormatBool(value))
+	}
+	return cited == s.Stringify(actual)
 }

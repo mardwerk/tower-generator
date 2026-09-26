@@ -72,3 +72,42 @@ func TestReviewsCitingIllegalBuildsAreCorrectedOnce(t *testing.T) {
 		t.Errorf("a review citing 3-3-0 twice: %v after %d calls", err, len(model.Requests))
 	}
 }
+
+// A finding cites the resolved values it relies on and code checks them, so
+// a review cannot report that 2-x-x lacks a change it has (reported on #27).
+func TestReviewFindingsCiteCheckedFacts(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	citing := func(build, field, value string) *s.Object {
+		review := recordedOutput(t, "review")
+		findings, _ := review.Get("findings")
+		findings.([]any)[0].(*s.Object).Set("facts", []any{s.NewObject().Set("build", build).Set("field", field).Set("value", value)})
+		return review
+	}
+	model := &fixture.Model{Outputs: []any{citing("2-0-0", "attack.pierce", "5")}}
+	result, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options())
+	if err != nil || len(model.Requests) != 1 {
+		t.Fatalf("a correct citation: %v after %d calls", err, len(model.Requests))
+	}
+	last := result.Findings[len(result.Findings)-1]
+	if len(last.Facts) != 1 || last.Facts[0].Value != "5" {
+		t.Errorf("the result lost the cited facts: %+v", last)
+	}
+
+	model = &fixture.Model{Outputs: []any{citing("2-0-0", "attack.pierce", "3"), citing("2-0-0", "attack.pierce", "5")}}
+	if _, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options()); err != nil {
+		t.Fatalf("a corrected citation: %v", err)
+	}
+	if len(model.Requests) != 2 || !strings.Contains(model.Requests[1].Prompt, "cites 2-0-0 attack.pierce as 3, but it is 5.") {
+		t.Errorf("%d calls; the correction does not name the resolved value", len(model.Requests))
+	}
+
+	model = &fixture.Model{Outputs: []any{citing("2-0-0", "attack.width", "3"), citing("2-0-0", "attack.width", "3")}}
+	_, err = unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options())
+	var failure *unit.ModelError
+	if !errors.As(err, &failure) || !strings.Contains(failure.Message, "a field legalBuilds does not list for that build") {
+		t.Errorf("an unknown field: %v", err)
+	}
+}

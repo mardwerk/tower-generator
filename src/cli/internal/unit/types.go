@@ -102,6 +102,16 @@ type Finding struct {
 	Message  string   `json:"message"`
 	Evidence []string `json:"evidence"`
 	Action   *string  `json:"action"`
+	// Facts are the resolved values a model finding cites; code checked them.
+	Facts []FactCitation `json:"facts,omitempty"`
+}
+
+// FactCitation is one resolved value from the review's legalBuilds: a build
+// code, a field path such as attack.range, and the value as listed.
+type FactCitation struct {
+	Build string `json:"build"`
+	Field string `json:"field"`
+	Value string `json:"value"`
 }
 
 // BasicAttack is the candidate's readable basic attack.

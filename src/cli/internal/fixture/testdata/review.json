@@ -11,7 +11,8 @@
       "rule": "source-fidelity",
       "message": "The brief's Fan Club transforms up to 10 nearby Dart Monkeys; the Unit keeps only its own frenzy.",
       "evidence": ["dart-monkey-atlas-56-3"],
-      "action": "Decide whether an ally operator is worth a Definition extension."
+      "action": "Decide whether an ally operator is worth a Definition extension.",
+      "facts": []
     }
   ]
 }
