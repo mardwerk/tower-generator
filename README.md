@@ -106,6 +106,7 @@ The web client needs Node.js 22 or newer and pnpm only when you change it:
 ```sh
 pnpm install
 pnpm typecheck
+pnpm test         # client logic against a scripted API, like the Go fakes
 pnpm format:check
 pnpm build        # rewrites src/web/dist, which the binary embeds; commit it
 ```

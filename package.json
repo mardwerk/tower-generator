@@ -10,6 +10,7 @@
   "scripts": {
     "build": "node src/web/build.mjs",
     "typecheck": "tsc -p src/web/tsconfig.json",
+    "test": "node src/web/test.mjs",
     "format": "prettier --write \"src/web/**/*.{ts,tsx,mjs,html,css,json}\" \"*.json\" \"data/**/*.json\"",
     "format:check": "prettier --check \"src/web/**/*.{ts,tsx,mjs,html,css,json}\" \"*.json\" \"data/**/*.json\""
   },
