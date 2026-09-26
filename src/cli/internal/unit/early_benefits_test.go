@@ -257,6 +257,31 @@ func TestResolvedEarlyBenefitsAreCaughtAndRepaired(t *testing.T) {
 
 	// check runs the same rule on a draft whose mechanics match, beside the
 	// promise check and outside ValidateTyped.
+	failed := earlyMatchCheckFailures(t, true)
+	if len(failed) != 1 || failed[0].rule != "distinct-early-benefits "+want ||
+		!strings.Contains(failed[0].action, "while keeping the retained plan true") {
+		t.Errorf("check findings: %v", failed)
+	}
+}
+
+// Without a retained plan the check reports the plan-free cause and an
+// Action that names no plan (SOL-PR43-01).
+func TestEarlyBenefitsCheckWithoutPlan(t *testing.T) {
+	failed := earlyMatchCheckFailures(t, false)
+	want := "distinct-early-benefits paths.path2.tiers.tier2: " + resolvedEarlyFacts + " " + unit.EarlyBenefitsRule +
+		" Change what x-2-x or x-1-x improves or unlocks so the two paths' early benefits differ."
+	if len(failed) != 1 || failed[0].rule != want ||
+		failed[0].action != "Make the two paths' resolved early benefits distinct and compile again." {
+		t.Errorf("check findings: %v", failed)
+	}
+}
+
+type checkFailure struct{ rule, action string }
+
+// earlyMatchCheckFailures checks the recorded draft after giving path1 and
+// path2 the same two early benefits, with or without its retained plan.
+func earlyMatchCheckFailures(t *testing.T, withPlan bool) []checkFailure {
+	t.Helper()
 	stages, err := fixture.Build()
 	if err != nil {
 		t.Fatal(err)
@@ -276,6 +301,9 @@ func TestResolvedEarlyBenefitsAreCaughtAndRepaired(t *testing.T) {
 		t.Fatal(err)
 	}
 	draft.Candidate = candidate
+	if !withPlan {
+		draft.Run.DesignPlan = nil
+	}
 	evaluation, err := unit.EvaluateUnitDesign(blueprint, draft.Run.DesignPlan, *draft.Prepared.Request.MechanicsDefinition)
 	if err != nil {
 		t.Fatal(err)
@@ -285,15 +313,17 @@ func TestResolvedEarlyBenefitsAreCaughtAndRepaired(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var failed []string
+	var failed []checkFailure
 	for _, f := range checked.Findings {
 		if f.Outcome == "fail" {
-			failed = append(failed, f.Rule+" "+f.Subject+": "+f.Message)
+			action := ""
+			if f.Action != nil {
+				action = *f.Action
+			}
+			failed = append(failed, checkFailure{f.Rule + " " + f.Subject + ": " + f.Message, action})
 		}
 	}
-	if len(failed) != 1 || failed[0] != "distinct-early-benefits "+want {
-		t.Errorf("check findings: %v", failed)
-	}
+	return failed
 }
 
 // The prompt, the scoped issues and the retry requests share one rule
