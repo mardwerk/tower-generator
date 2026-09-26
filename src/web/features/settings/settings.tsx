@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { KeyRound } from 'lucide-react';
 import type { KeyState, ModelCatalog, ProviderState } from '../../api/contract.js';
 import type { GenerationLibrary } from '../library/library.js';
@@ -93,19 +93,26 @@ export function Settings({
   const [pending, setPending] = useState(true);
   const [directory, setDirectory] = useState(library.directory);
   const [folderMessage, setFolderMessage] = useState('');
+  const modelRequest = useRef(0);
   async function loadModels(name: ProviderState['provider'], reset: boolean) {
+    const request = ++modelRequest.current;
     setModelMessage('Loading models...');
     try {
       const catalog = await api<ModelCatalog>('models', { provider: name });
+      if (request !== modelRequest.current) return;
       setModels(catalog.models);
       setModelMessage(
         `${catalog.models.length} models from ${name === 'codex' ? 'Codex' : 'OpenRouter'}.`,
       );
       if (reset) {
-        setModel(catalog.defaultModel);
-        setReasoning(catalog.defaultReasoning || (name === 'codex' ? 'medium' : 'none'));
+        setModel((current) => current || catalog.defaultModel);
+        setReasoning(
+          (current) =>
+            current || catalog.defaultReasoning || (name === 'codex' ? 'medium' : 'none'),
+        );
       }
     } catch (error) {
+      if (request !== modelRequest.current) return;
       setModels([]);
       setModelMessage(error instanceof Error ? error.message : String(error));
     }
