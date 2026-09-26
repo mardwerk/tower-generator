@@ -76,6 +76,9 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		Set("feedback", nullableString(request.Feedback))
 	if request.MechanicsDefinition != nil {
 		context.Set("definition", s.FromGoValue(request.MechanicsDefinition))
+		if blueprint != nil {
+			context.Set("legalBuilds", LegalBuildFacts(blueprint, *request.MechanicsDefinition))
+		}
 	}
 	evidence := AuthorEvidence(request)
 	context.Set("documents", documents).
@@ -138,7 +141,7 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	if isV2(request) {
 		statuses = reviewStatusesV2
 	}
-	prompt := []string{reviewStyle, reviewScope, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, reviewPolicy, reviewFindings, s.Stringify(context)}
+	prompt := []string{reviewStyle, reviewScope, reviewGrounding, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, reviewPolicy, reviewFindings, s.Stringify(context)}
 	return ModelRequest{System: reviewSystem, Prompt: strings.Join(prompt, "\n\n"), Schema: s.JSONSchema(schema)}
 }
 
@@ -208,8 +211,57 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 		return Result{}, ErrNoBlueprint
 	}
 	startedAt := options.now()
-	response, err := model.Generate(ctx, BlueprintReviewRequest(checked))
-	usage := response.Usage
+	request := BlueprintReviewRequest(checked)
+	definition := checked.Draft.Prepared.Request.MechanicsDefinition
+	var calls []Attempt
+	var review SemanticReview
+	var usage *Usage
+	for attempt := 0; ; attempt++ {
+		review, err = reviewOnce(ctx, checked, model, request, &calls)
+		usage = totalUsage(calls)
+		if err != nil || definition == nil {
+			break
+		}
+		illegal := illegalBuildCodes(review, *definition)
+		if len(illegal) == 0 {
+			break
+		}
+		// A review that cites builds the Definition does not allow is
+		// corrected once, then rejected.
+		if attempt == 0 {
+			request.Prompt += "\n\nCorrect this review. It cites builds that are not legal under this Definition: " + strings.Join(illegal, ", ") + ". legalBuilds lists every legal build; judge only those, and read counts from their resolved facts."
+			continue
+		}
+		message := "The model review cited builds that are not legal (" + strings.Join(illegal, ", ") + ") after one correction. The draft is retained. Retry the review or choose another model."
+		err = &ModelError{Message: message, Failure: &Failure{Code: CodeOutputInvalid, Message: message, Stage: "review"}}
+		break
+	}
+	if err != nil {
+		var validation *s.Error
+		return Result{}, StageFailure(err, "review", usage, errors.As(err, &validation))
+	}
+	result := Result{
+		SchemaVersion: checked.SchemaVersion, Kind: "result", ID: options.id(),
+		Prepared: checked.Draft.Prepared, Candidate: checked.Draft.Candidate,
+		Findings:      append(append([]Finding{}, checked.Findings...), review.Findings...),
+		ReviewSummary: review.Summary,
+		Run: ResultRuns{
+			Draft:  checked.Draft.Run,
+			Review: Run{ID: options.id(), ModelID: model.ID(), StartedAt: startedAt, CompletedAt: options.now(), Usage: usage},
+		},
+	}
+	value := s.FromGoValue(result)
+	if err := s.ParseInto(Versioned(value, ResultSchema, ResultSchemaV2), value, &result); err != nil {
+		return Result{}, err
+	}
+	return result, nil
+}
+
+// reviewOnce makes one review call and checks its finding IDs and evidence
+// references. calls records the billed call.
+func reviewOnce(ctx context.Context, checked Checked, model Model, request ModelRequest, calls *[]Attempt) (SemanticReview, error) {
+	response, err := model.Generate(ctx, request)
+	*calls = append(*calls, withUsage(Attempt{Number: len(*calls) + 1, Purpose: "review", Issues: []string{}}, response.Usage))
 	var review SemanticReview
 	if err == nil {
 		err = s.ParseInto(SemanticReviewSchema, response.Output, &review)
@@ -239,25 +291,7 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 	if err == nil && ctx.Err() != nil {
 		err = ctx.Err()
 	}
-	if err != nil {
-		var validation *s.Error
-		return Result{}, StageFailure(err, "review", usage, errors.As(err, &validation))
-	}
-	result := Result{
-		SchemaVersion: checked.SchemaVersion, Kind: "result", ID: options.id(),
-		Prepared: checked.Draft.Prepared, Candidate: checked.Draft.Candidate,
-		Findings:      append(append([]Finding{}, checked.Findings...), review.Findings...),
-		ReviewSummary: review.Summary,
-		Run: ResultRuns{
-			Draft:  checked.Draft.Run,
-			Review: Run{ID: options.id(), ModelID: model.ID(), StartedAt: startedAt, CompletedAt: options.now(), Usage: usage},
-		},
-	}
-	value := s.FromGoValue(result)
-	if err := s.ParseInto(Versioned(value, ResultSchema, ResultSchemaV2), value, &result); err != nil {
-		return Result{}, err
-	}
-	return result, nil
+	return review, err
 }
 
 // Author prepares, drafts, checks and reviews one request.
