@@ -86,7 +86,8 @@ Exit codes: `0` the operation completed (findings may still fail), `1` failure. 
 | Method and path | Body | Response |
 | --- | --- | --- |
 | `GET /health` | – | `{status, version, key: {configured, source, hint}, provider}`, where source is `env`, `env-file`, `settings` or `none` |
-| `GET /provider`, `POST /provider` | –, `{provider, apiKey?, model?, imageModel?}` | provider state |
+| `GET /provider`, `POST /provider` | –, `{provider, apiKey?, model?, reasoning?, imageModel?}` | provider state with selected reasoning |
+| `POST /models` | `{provider}` | model catalog and .env defaults for the selected provider |
 | `GET /example`, `GET /definition` | – | the example request, the bundled Definition |
 | `POST /research` | `{name, choice?, previous?}` | Sources or `{kind: "choices", choices}`. With `previous` Sources of the same character, the new lookup extends them: a document retrieved again replaces its copy with the same ID, others stay, and identical documents are kept once |
 | `POST /character` | `{name, choice?, profileId?\|profile?}` | research and prepare in one call: prepared request or choices |

@@ -56,7 +56,7 @@ Options:
   --feedback TEXT          Requested changes for prepare, author or edit
   --provider NAME          openrouter (default) or codex
   --model NAME             Model for the selected provider
-  --reasoning LEVEL        low, medium or high; OpenRouter also accepts none
+  --reasoning LEVEL        OpenRouter: none, low, medium, high; Codex: minimal, low, medium, high, xhigh, max, ultra
   --timeout SECONDS        Per call (OpenRouter: 120, Codex: 600)
   --codex FILE             Codex executable (default: codex on PATH)
   --evidence-dir DIR       Keep exact model inputs and raw outputs there

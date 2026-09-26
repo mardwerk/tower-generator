@@ -215,14 +215,19 @@ func (in *invocation) model(input any) (unit.Model, error) {
 		}
 		model, err = provider.NewOpenRouter(provider.OpenRouterOptions{APIKey: key, Model: modelName, Reasoning: reasoning, Timeout: in.timeout})
 	case "codex":
-		if in.reasoning != "" && in.reasoning != "low" && in.reasoning != "medium" && in.reasoning != "high" {
-			return nil, errors.New("--reasoning must be one of: low, medium, high.")
-		}
 		executable := in.codex
 		if strings.ContainsAny(executable, `/\`) {
 			executable, _ = filepath.Abs(executable)
 		}
-		model, err = provider.NewCodex(provider.CodexOptions{Executable: executable, Model: in.options.model, Reasoning: in.reasoning, Timeout: in.timeout})
+		modelName := in.options.model
+		if modelName == "" {
+			modelName = in.env.Value("CODEX_MODEL")
+		}
+		reasoning := in.reasoning
+		if reasoning == "" {
+			reasoning = in.env.Value("CODEX_REASONING")
+		}
+		model, err = provider.NewCodex(provider.CodexOptions{Executable: executable, Model: modelName, Reasoning: reasoning, Timeout: in.timeout})
 	default:
 		return nil, errors.New("--provider must be openrouter or codex.")
 	}

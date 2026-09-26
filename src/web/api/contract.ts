@@ -422,10 +422,17 @@ export interface KeyState {
 export interface ProviderState {
   provider: 'openrouter' | 'codex';
   model: string;
+  reasoning: string;
   ready: boolean;
   images: { model: string; ready: boolean };
   key: KeyState;
   message: string;
+}
+
+export interface ModelCatalog {
+  models: { id: string; name: string; reasoning: string[] }[];
+  defaultModel: string;
+  defaultReasoning: string;
 }
 
 export interface IconGenerationResponse {
