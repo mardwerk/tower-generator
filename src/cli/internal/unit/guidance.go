@@ -38,6 +38,9 @@ func DesignGuidance(request *Request) []string {
 		capstones = "Pure 5-0-0, 0-5-0 and 0-0-5 builds must differ mechanically even after ignoring names and costs."
 	}
 	out = append(out, "Distinct purchases: "+first+" "+capstones+" Strengthen the purchased branch rather than granting the other branches. A high-tier generalist can still be classified basic_dps; classification is not a power or quality grade.")
+	if earlyBenefitsOn(*request.MechanicsDefinition) {
+		out = append(out, guideEarlyBenefits)
+	}
 	if policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity {
 		out = append(out, guideEarlyIdentity)
 	}

@@ -26,6 +26,7 @@ func DefaultAuthoringDefinition() mechanics.Definition {
 		Version:                     "1",
 		DistinctPathSpecializations: false,
 		DistinctFirstUpgrades:       true,
+		DistinctEarlyBenefits:       boolPtr(true),
 		DistinctCapstones:           true,
 		PreserveEarlyAttackIdentity: boolPtr(true),
 		MaxManualAbilityPaths:       1,

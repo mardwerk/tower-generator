@@ -125,10 +125,6 @@ func minimumEffects(intent UpgradeIntent, d m.Definition) int {
 			effects[key] = 1
 		}
 	}
-	improves := map[string]bool{}
-	for _, d := range intent.Improves {
-		improves[d] = true
-	}
 	if intent.Unlock != "none" {
 		add(intent.Unlock)
 	}
@@ -144,7 +140,6 @@ func minimumEffects(intent UpgradeIntent, d m.Definition) int {
 			add("damage")
 		case dimension == "active-attack-rate":
 			add("attack-rate")
-		case dimension == "follow-up" && (improves["damage"] || improves["active-damage"]):
 		default:
 			add(dimension)
 		}
@@ -194,12 +189,12 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 			}
 		}
 	}
-	// Under distinctFirstUpgrades two paths' first two purchases may not
-	// promise only the same dimension: four interval-only upgrades on two
-	// paths gave them no distinct early crosspath value (a Luffy Result on
-	// #27). Third purchases stay free, so a stat-led path keeps its route.
-	if policy := definition.Profile.DesignPolicy; policy != nil && policy.DistinctFirstUpgrades {
-		issues = append(issues, mirroredEarlyIssues(plan.UpgradeIntents)...)
+	// Under distinctEarlyBenefits two paths' first two purchases may not
+	// promise the same multiset of improvements and unlocks, in any order
+	// (#32): four interval-only upgrades on two paths gave them no distinct
+	// early crosspath value (a Luffy Result on #27). Third purchases stay free.
+	if earlyBenefitsOn(definition) {
+		issues = append(issues, earlyBenefitsIssues(plan.UpgradeIntents)...)
 	}
 	boostTier := definition.Rules.ManualBoostUnlockTier
 	boostKey := m.TierKeys[boostTier-1]
@@ -249,58 +244,6 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 	return issues
 }
 
-// earlyDimension is the one dimension a path's first two purchases promise
-// together, or "" when they promise more than one or unlock anything.
-func earlyDimension(intents *PathIntents) string {
-	dimensions := map[string]bool{}
-	for tier := 1; tier <= 2; tier++ {
-		intent := intents.At(tier)
-		if intent.Unlock != "" && intent.Unlock != "none" {
-			return ""
-		}
-		for _, dimension := range intent.Improves {
-			dimensions[dimension] = true
-		}
-	}
-	if len(dimensions) != 1 {
-		return ""
-	}
-	for dimension := range dimensions {
-		return dimension
-	}
-	return ""
-}
-
-// mirroredEarlyIssues reports a path whose first two purchases only improve
-// the dimension another path's first two purchases only improve.
-func mirroredEarlyIssues(intents *UpgradeIntents) []m.Issue {
-	var issues []m.Issue
-	owner := map[string]int{}
-	for index, path := range m.PathKeys {
-		dimension := earlyDimension(intents.At(index))
-		if dimension == "" {
-			continue
-		}
-		other, taken := owner[dimension]
-		if !taken {
-			owner[dimension] = index
-			continue
-		}
-		var others []string
-		for _, candidate := range []string{"damage", "pierce", "range", "attack-rate"} {
-			if candidate != dimension && len(others) < 3 {
-				others = append(others, candidate)
-			}
-		}
-		issues = append(issues, m.Issue{
-			Path: "upgradeIntents." + path + ".tier2",
-			Message: fmt.Sprintf("%s and %s only improve %s, as %s and %s do. Two paths' first two purchases must give distinct early crosspath value: give this path's first or second purchase another improvement from its own technique, such as %s, %s or %s, or personal detection, and keep %s alone on at most one path's first two purchases.",
-				BuildCode(index, 1), BuildCode(index, 2), dimension, BuildCode(other, 1), BuildCode(other, 2), others[0], others[1], others[2], dimension),
-		})
-	}
-	return issues
-}
-
 // ---- plan intent ----
 
 func measures(build m.Build, path string, dimension string) []float64 {
@@ -337,12 +280,14 @@ func measures(build m.Build, path string, dimension string) []float64 {
 	case "stun":
 		return []float64{st.StunSeconds}
 	case "follow-up":
+		// The follow-up's own fields, not its damage product: a damage raise
+		// is the damage dimension and does not also improve the follow-up.
 		if f := attack.FollowUp; f != nil {
 			inherit := 0.0
 			if f.InheritStatuses {
 				inherit = 1
 			}
-			return []float64{f.Count, f.DamageMultiplier * st.Damage, f.Radius, inherit}
+			return []float64{f.Count, f.DamageMultiplier, f.Radius, inherit}
 		}
 		return []float64{0, 0, 0, 0}
 	case "active-damage":
