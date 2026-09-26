@@ -19,4 +19,4 @@ Before any agent-initiated OpenRouter call, read [OPENROUTER.md](docs/OPENROUTER
 
 ## Completion
 
-Before committing, confirm that a changed operation documents its inputs and outcome, module boundaries remain clear, links resolve or are intentionally external, and `gofmt -l src`, `go vet ./...`, `go test ./...` and `git diff --check` pass. After changing the web client, also run `pnpm typecheck`, `pnpm format:check` and `pnpm build`, and commit `src/web/dist`.
+Before committing, confirm that a changed operation documents its inputs and outcome, module boundaries remain clear, links resolve or are intentionally external, and `gofmt -l src`, `go vet ./...`, `go test ./...` and `git diff --check` pass. After changing the web client, also run `pnpm typecheck`, `pnpm test`, `pnpm format:check` and `pnpm build`, and commit `src/web/dist`.

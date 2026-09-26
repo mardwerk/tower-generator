@@ -578,6 +578,47 @@ func TestResearchReturnsReusableSources(t *testing.T) {
 	}
 }
 
+// An ambiguous refresh sends previous Sources twice: the lookup answers
+// choices, and the chosen page then extends the saved Sources.
+func TestAmbiguousRefreshExtendsWithTheChosenPage(t *testing.T) {
+	transport := roundTrip(func(r *http.Request) *http.Response {
+		if r.URL.Host != "en.wikipedia.org" || r.URL.Query().Get("generator") == "images" {
+			return &http.Response{StatusCode: 404, Body: io.NopCloser(strings.NewReader("")), Header: http.Header{}}
+		}
+		pages := []any{
+			map[string]any{"pageid": 1, "title": "Monkey D. Luffy", "extract": "Luffy is a fictional character. His body stretches.", "index": 1, "pageprops": map[string]any{"wikibase-shortdesc": "Fictional character from One Piece"}},
+			map[string]any{"pageid": 2, "title": "Luffy Clone", "extract": "Luffy Clone is a fictional character.", "index": 2, "pageprops": map[string]any{"wikibase-shortdesc": "Fictional character from a parody"}},
+		}
+		raw, _ := json.Marshal(map[string]any{"query": map[string]any{"pages": pages}})
+		return &http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(raw)), Header: http.Header{"Content-Type": {"application/json"}}}
+	})
+	h := start(t, &scripted{}, func(config *Config) { config.Research = research.New(&http.Client{Transport: transport}) })
+	sources := h.post("research", map[string]any{"name": "Luffy", "choice": 1})
+	previous := s.Clone(sources).(*s.Object)
+	documents, _ := previous.Get("documents")
+	extra := s.Clone(documents.([]any)[0]).(*s.Object).Set("id", "earlier-note").Set("text", "An earlier reference that the new lookup did not return.")
+	previous.Set("documents", append(append([]any{}, documents.([]any)...), extra))
+	h.post("library/save", map[string]any{"artifact": previous})
+
+	choices := h.post("research", map[string]any{"name": "Luffy", "previous": previous})
+	if kind, _ := choices.Get("kind"); kind != "choices" {
+		t.Fatalf("first request %s", s.Stringify(choices))
+	}
+	extended := h.post("research", map[string]any{"name": "Luffy", "choice": 1, "previous": previous})
+	if at(extended, "character", "name") != "Monkey D. Luffy" {
+		t.Fatalf("second request %s", s.Stringify(extended))
+	}
+	merged, _ := extended.Get("documents")
+	if count := len(merged.([]any)); count != len(documents.([]any))+1 {
+		t.Errorf("extended Sources have %d documents, want %d", count, len(documents.([]any))+1)
+	}
+	saved := h.post("library/save", map[string]any{"artifact": extended})
+	loaded := h.post("library/load", map[string]any{"id": at(saved, "id")})
+	if got, _ := at(loaded, "artifact", "documents").([]any); len(got) != len(merged.([]any)) {
+		t.Errorf("saved Sources have %d documents", len(got))
+	}
+}
+
 type roundTrip func(*http.Request) *http.Response
 
 func (f roundTrip) RoundTrip(r *http.Request) (*http.Response, error) { return f(r), nil }

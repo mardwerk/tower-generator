@@ -25,6 +25,19 @@ export type Lookup = {
   refresh?: boolean;
 };
 
+/**
+ * The lookup a chosen character continues with. A page (positive ID) keeps
+ * the saved Sources and refresh it was offered for; saved Sources (negative)
+ * and Find references again (zero) carry only their Sources and intent.
+ */
+export function lookupFor(choice: Choice): Pick<Lookup, 'choice' | 'sourcesId' | 'refresh'> {
+  return {
+    ...(choice.id > 0 ? { choice: choice.id } : {}),
+    ...(choice.sourcesId ? { sourcesId: choice.sourcesId } : {}),
+    ...(choice.refresh ? { refresh: true } : {}),
+  };
+}
+
 const comparable = (text: string | undefined) => (text ?? '').trim().toLowerCase();
 
 /**
@@ -162,8 +175,9 @@ export class AuthoringJobs {
         const { profileId, sourcesId, refresh, ...lookup } = options.lookup;
         // Saved Sources for this name are reused unless the user asks to find
         // references again; then they are extended. Several characters ask.
+        // A page chosen during a refresh names the Sources it extends.
         let saved: LibraryEntry | undefined;
-        if (lookup.choice === undefined) {
+        if (lookup.choice === undefined || sourcesId) {
           const library = await this.dependencies.api<LibraryState>(
             'library',
             undefined,
@@ -221,9 +235,11 @@ export class AuthoringJobs {
           >('research', { ...lookup, ...(previous ? { previous } : {}) }, controller.signal);
           controller.signal.throwIfAborted();
           if (researched.kind === 'choices') {
+            // The chosen page still extends the saved Sources.
+            const extending = saved && previous ? { sourcesId: saved.id, refresh: true } : {};
             this.#update(id, {
               state: 'waiting',
-              choices: researched.choices,
+              choices: researched.choices.map((choice) => ({ ...choice, ...extending })),
               status: 'Choose the character to continue.',
             });
             return;

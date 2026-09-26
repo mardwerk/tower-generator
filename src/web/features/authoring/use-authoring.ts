@@ -2,7 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import type { InspectedInput, LabArtifact, LabRequest, LabStage } from '../../api/contract.js';
 import { api } from '../../api/client.js';
 import { inputBeforeStage } from './stage-input.js';
-import { AuthoringJobs, authoringError, type AuthoringJob, type Choice } from './authoring-jobs.js';
+import {
+  AuthoringJobs,
+  authoringError,
+  lookupFor,
+  type AuthoringJob,
+  type Choice,
+} from './authoring-jobs.js';
 export { stageNames, type RunningStep, type AuthoringJob } from './authoring-jobs.js';
 import {
   candidateOf,
@@ -493,13 +499,10 @@ export function useAuthoring(onComplete: (artifact: LabArtifact) => Promise<unkn
     runStage,
     // Research again, extending the saved Sources for this character.
     findReferences: () => generate(undefined, false, undefined, true, { refresh: true }),
-    choose: (choice: Choice) =>
-      choice.sourcesId || choice.refresh
-        ? generate(undefined, job?.remaining ?? true, undefined, true, {
-            ...(choice.sourcesId ? { sourcesId: choice.sourcesId } : {}),
-            ...(choice.refresh ? { refresh: true } : {}),
-          })
-        : generate(choice.id),
+    choose: (choice: Choice) => {
+      const { choice: page, ...reuse } = lookupFor(choice);
+      return generate(page, job?.remaining ?? true, undefined, true, reuse);
+    },
     revise,
     select,
     addArtifact,
