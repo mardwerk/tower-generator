@@ -50,6 +50,9 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 		// Live Luffy runs on #27: compression credited with range, and a
 		// Snakeman purchase whose text only said the punch hits harder.
 		"a mechanism credited with an effect the source ties to another",
+		// A TD adaptation of a cited effect needs no canon wording (a Luffy
+		// review on #27 failed Gear 3's bounded splash for lacking it).
+		"is a supported connection even when no source sentence names the mechanic", "not by canon wording",
 		"is a fail when the cited evidence explains the technique", "unresolved only when the evidence lacks the detail to judge the connection",
 		// Each purchased tier carries what the plan says about it and is
 		// judged on its own build code (reported on #27: compression credited
