@@ -135,6 +135,16 @@ func SpecialtyMetricsWith(build Build, specialization string, vocabulary *Vocabu
 	return out
 }
 
+// TimeAveraged is a damage rate averaged over one Active Ability cycle when
+// the Active is used whenever it is ready: the boosted rate for the duty
+// fraction of the cooldown and the ordinary rate for the rest. duty is the
+// "active duty fraction", min(1, duration / cooldown), so this is
+// (duration × peak + (cooldown - duration) × ordinary) / cooldown. With no
+// Active, duty and peak are zero and the result is the ordinary rate.
+func TimeAveraged(ordinary, peak, duty float64) float64 {
+	return peak*duty + ordinary*(1-duty)
+}
+
 func attackBehavior(attack Attack) []any {
 	distribution := attack.Distribution
 	if distribution == "" {

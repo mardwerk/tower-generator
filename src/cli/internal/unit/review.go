@@ -55,7 +55,9 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		context.Set("designPlan", s.FromGoValue(checked.Draft.Run.DesignPlan))
 	}
 	if checked.Draft.Run.DesignEvaluation != nil {
-		context.Set("purchaseEvidence", checked.Draft.Run.DesignEvaluation)
+		// The retained evidence plus the time-averaged Active rates and side
+		// purchase gains derived from it; the saved draft is unchanged.
+		context.Set("purchaseEvidence", ReviewPurchaseEvidence(checked.Draft.Run.DesignEvaluation))
 	}
 	comparisons := []any{}
 	if blueprint != nil {

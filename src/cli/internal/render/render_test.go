@@ -56,6 +56,31 @@ func TestMarkdownRendersEveryStage(t *testing.T) {
 	}
 }
 
+// Purchase evidence shows the Active's time-averaged rates next to its peak
+// and duty fraction, and compares each crosspath purchase per 100 Gold
+// with its main path's fifth purchase. Fan Club Frenzy lasts 15 of 50 s at
+// x-4-x and 20 of 50 s at x-5-x: 0.6 × 12.54 + 0.4 × 401.3 = 168.
+func TestDetailsShowTimeAveragedAndSidePurchaseEvidence(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	detailed, err := render.Markdown(s.FromGoValue(stages.Result), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		// A milestone is the path's own purchase: no comparison follows it.
+		"| 0-4-0 → 0-5-0 | 45,000 | active peak direct damage rate: 200.7 → 401.3; active peak group damage rate upper bound: 401.3 → 802.6; active duty fraction: 0.3 → 0.4; time-averaged direct damage rate: 68.97 → 168; time-averaged group damage rate upper bound: 137.9 → 336.1 |",
+		"| 0-5-0 → 1-5-0 | 140 | group damage rate upper bound: 25.08 → 37.62; active peak group damage rate upper bound: 802.6 → 1204; time-averaged group damage rate upper bound: 336.1 → 504.1. Per 100 Gold: this purchase adds direct +0, group +120; the path's x-5-x adds direct +0.2202, group +0.4403. |",
+		"| 0-5-0 → 0-5-1 | 90 | range: 32 → 40. Per 100 Gold: this purchase adds direct +0, group +0; the path's x-5-x adds direct +0.2202, group +0.4403. |",
+	} {
+		if !strings.Contains(detailed, want) {
+			t.Errorf("details lack %q", want)
+		}
+	}
+}
+
 func TestViewCarriesStatsForEveryTier(t *testing.T) {
 	stages, err := fixture.Build()
 	if err != nil {

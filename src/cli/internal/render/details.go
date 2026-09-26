@@ -143,7 +143,7 @@ func describePurchases(view View) []string {
 	if view.DesignEvaluation == nil {
 		return nil
 	}
-	evaluation := any(view.DesignEvaluation)
+	evaluation := any(unit.ReviewPurchaseEvidence(view.DesignEvaluation))
 	currency := "currency"
 	if definition := view.Prepared.Request.MechanicsDefinition; definition != nil {
 		currency = definition.Profile.Currency
@@ -152,7 +152,7 @@ func describePurchases(view View) []string {
 	lines := []string{
 		"## Purchase evidence",
 		"",
-		"Calculated from the resolved builds. Throughput assumes eligible targets continuously in reach; group values are capacity upper bounds. These comparisons do not prove balance, source fidelity or player preference.",
+		"Calculated from the resolved builds. Throughput assumes eligible targets continuously in reach; group values are capacity upper bounds. Time-averaged rates use the Active Ability whenever it is ready and equal the ordinary rate without one. Each crosspath purchase compares its time-averaged gain per 100 " + currency + " with its main path's own fifth purchase. These comparisons do not prove balance, source fidelity or player preference.",
 		"",
 	}
 	for _, path := range list(field(evaluation, "paths")) {
@@ -180,6 +180,12 @@ func describePurchases(view View) []string {
 				}
 				changed = Escape(changed)
 			}
+			if against := per100GoldText(field(purchase, unit.Per100GoldAgainstCapstone), currency); against != "" {
+				if !strings.HasSuffix(changed, ".") {
+					changed += "."
+				}
+				changed += " " + against
+			}
 			lines = append(lines, "| "+joined(field(purchase, "from"), "-")+" → "+joined(field(purchase, "to"), "-")+" | "+gold(field(purchase, "incrementalGold"))+" | "+changed+" |")
 		}
 		comparison := field(path, "capstoneComparison")
@@ -194,6 +200,26 @@ func describePurchases(view View) []string {
 		)
 	}
 	return lines
+}
+
+// per100GoldText states a side purchase's time-averaged gain per 100 of the
+// currency beside its main path's fifth purchase; empty without a comparison.
+func per100GoldText(against any, currency string) string {
+	if against == nil {
+		return ""
+	}
+	gains := func(side string) string {
+		return "direct " + signed(field(against, unit.TimeAveragedDirect, side)) + ", group " + signed(field(against, unit.TimeAveragedGroup, side))
+	}
+	return "Per 100 " + currency + ": this purchase adds " + gains("sidePurchase") + "; the path's " + Escape(text(field(against, "capstone"))) + " adds " + gains("capstone") + "."
+}
+
+// signed writes a measured change with its sign.
+func signed(value any) string {
+	if number, ok := value.(float64); ok && number >= 0 {
+		return "+" + measured(number)
+	}
+	return measured(value)
 }
 
 func describeUsage(view View) []string {
