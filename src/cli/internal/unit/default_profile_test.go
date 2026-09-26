@@ -104,6 +104,7 @@ func TestPromptsSeparatePrivateChecksFromOutput(t *testing.T) {
 			"Refer to purchases by build code", "The boost is the only activated ability this Definition expresses",
 			"List in unsupportedMechanics", "a substantial improvement of one dimension may qualify",
 			"No universal capstone multiplier applies", "Scale references from btd6-atlas capture 56.3",
+			"Darts, blades, spikes and arrows.",
 			"Code checks each milestone's improves and unlock in every legal build", "more projectiles do not count",
 			"Tier1 to Tier2 allow 1 to 3 primitive changes total; Tier3 to Tier5 allow up to 5.",
 		}},
