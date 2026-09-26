@@ -30,7 +30,7 @@ var defaultRulesSections = []string{
 
 	"Engine boundary. The Definition supports one automatic base attack with its delivery, damage type, targeting, detection and status effects, one manual boost of that attack on the middle path, distinct-target volleys and bounded follow-ups. Summons, independent or ground-targeted attacks, separate Actives, allied buffs, restoration, shields, armor-only damage, magazines, reloads, critical counters, rebounds, economy and Unit movement are unsupported: list them as unsupported mechanics. An ordinary damage stat never implements shield bypass, armor-only damage or restoration, and a name or sentence never grants missing behavior. The vocabulary names every status effect, damage type, targeting mode and detection trait; no other exists.",
 
-	"Private design checks, never printed in the unit: why a player buys each path, which weakness remains, why a capstone beats more fourth-purchase copies, whether cheap copies stack into loops, and a review for missing effects, illegal builds, unsupported character claims, lost purchased benefits, reductions presented as upgrades, extra activation buttons, control loops and crosspaths that fail after a transformation. Code measures ordinary-target throughput, group capacity, control, reach and active windows analytically; that is evidence for review, not balance.",
+	"Private design checks, never printed in the unit: why a player buys each path, which weakness remains, why a player buys the capstone rather than more fourth-purchase copies (concentration, reach, access or the single placement, not only raw throughput), whether cheap copies stack into loops, and a review for missing effects, illegal builds, unsupported character claims, lost purchased benefits, reductions presented as upgrades, extra activation buttons, control loops and crosspaths that fail after a transformation. Code measures ordinary-target throughput, group capacity, control, reach and active windows analytically; that is evidence for review, not balance.",
 
 	"Unit output. The rendered unit starts with the character name and 0-0-0, then each purchase by build code with its exact numbers in ordinary sentences, then the crosspath builds. Unsupported mechanics, reserved techniques and review findings are diagnostics outside the unit. It carries no strategy, balance verdicts, capability reports, rules recaps or review certificates. Names and wording use direct sentences and consistent terms; no filler, promotional wording, usage advice, em dashes or en dashes. Patch notes, when requested, separate changed mechanics from wording fixes.",
 
@@ -64,8 +64,8 @@ var defaultRulesSections = []string{
 // defaultRulesText is the bundled rules document text.
 var defaultRulesText = strings.Join(defaultRulesSections, "\n\n")
 
-const defaultRulesID = "default-td-profile-v15"
-const defaultRulesLocation = "mardwerk-unit:default-td-profile:v15"
+const defaultRulesID = "default-td-profile-v16"
+const defaultRulesLocation = "mardwerk-unit:default-td-profile:v16"
 const defaultRulesNote = "Bundled starter preset. Edit or replace it in Inputs and rules before preparing a custom Request."
 const defaultProfileName = "BTD6-inspired (default)"
-const defaultAuthoringRevision = "2026-09-26-atlas-56.3-v15"
+const defaultAuthoringRevision = "2026-09-26-atlas-56.3-v16"
