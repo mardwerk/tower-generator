@@ -128,14 +128,16 @@ Tested without network access:
 
 Tested live:
 
-- **OpenRouter text generation.** Four Monkey D. Luffy runs with `openai/gpt-6-luna` from [OPENROUTER.md](docs/OPENROUTER.md), from fresh Sources, each reporting its usage and cost ([evaluation](docs/PROFILE-EVALUATION.md#not-covered)).
+- **OpenRouter text generation.** Monkey D. Luffy runs with `openai/gpt-6-luna` from [OPENROUTER.md](docs/OPENROUTER.md), each reporting its usage and cost: four in the [evaluation](docs/PROFILE-EVALUATION.md#not-covered) and eight more on [#27](https://github.com/mardwerk/unit-generator/pull/27#issuecomment-5849136738) ([second set](https://github.com/mardwerk/unit-generator/pull/27#issuecomment-5849199164)).
 - **Codex text generation.** An owner-run Luffy generation through a logged-in `codex` CLI, recorded as `codex:gpt-6-luna:reasoning=medium` ([#27](https://github.com/mardwerk/unit-generator/pull/27#issuecomment-5849462990)).
+- **Character research, for one character.** Each OpenRouter set above started from a fresh `research "Monkey D. Luffy"`: the Wikipedia article through the MediaWiki API, identity matched through Wikidata, and the One Piece Fandom page and its Abilities and Powers subpage through the MediaWiki parse API. The name resolved without `--choice`.
+- **Rejected model output.** Live runs whose plan failed validation, or whose draft still failed the mechanics checks after repair, exited with an error, published no Unit, reported the failed attempt's cost and wrote failure evidence.
 
 Not yet tested live:
 
-- **OpenRouter images and error paths.** Image generation and PNG conversion with a real key, and the classification of real provider errors.
+- **OpenRouter images and provider errors.** Image generation and PNG conversion with a real key. No real provider error, such as a rate limit, a rejected key or a timeout, occurred in the live runs, so their classification is tested against the fake server only.
 - **Codex MCP-server disabling** against a real `config.toml`.
-- **Character research** against live Wikipedia, Wikidata and Fandom beyond the Luffy Sources above; the rules are tested on fixtures only.
+- **Research beyond that one case.** Other characters and wikis, ambiguous names, missing pages and network failures; these research rules are tested on fixtures only.
 - **Windows.** Codex process cleanup uses process groups on Unix only.
 
 Known quality limits:
