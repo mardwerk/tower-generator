@@ -27,14 +27,20 @@ func promiseMatches(adapted, promised string) bool {
 }
 
 // PlanEffectIssues reports an adapted effect that no purchase of its
-// technique promises. Plans without effects or techniques predate the fields
-// and are not checked.
+// technique promises. An entry named like the base attack is not checked: the
+// base attack at 0-0-0 already shows its effects, such as a distant punch as
+// range, and no purchase promises them (3 of 5 Luffy plans on #27 listed the
+// base attack as an entry and were sent back for it). Plans without effects
+// or techniques predate the fields and are not checked.
 func PlanEffectIssues(plan DesignPlan) []m.Issue {
 	if plan.UpgradeIntents == nil {
 		return nil
 	}
 	var issues []m.Issue
 	for index, entry := range plan.Repertoire {
+		if sameTechnique(entry.Name, plan.Base.Name) {
+			continue
+		}
 		var promised []string
 		adapted := false
 		for pathIndex := range m.PathKeys {
