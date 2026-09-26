@@ -329,4 +329,16 @@ func TestReviewsCitingMalformedCodesAreCorrected(t *testing.T) {
 	if len(model.Requests) != 2 || !strings.Contains(model.Requests[1].Prompt, "It cites builds that are not legal under this Definition: 1-x-5.") || !strings.Contains(model.Requests[1].Prompt, "Write a purchase as 3-x-x, x-4-x or x-x-5 and a build as 1-5-0.") {
 		t.Errorf("%d calls; the correction does not name 1-x-5", len(model.Requests))
 	}
+	// The subject and action are read too: a 7a review on #27 wrote "3-x-3"
+	// and "4-x-4", which are neither purchases nor builds.
+	both := recordedOutput(t, "review")
+	findings, _ := both.Get("findings")
+	findings.([]any)[0].(*s.Object).Set("subject", "3-x-3").Set("action", "Compare 4-x-4 as well.")
+	model = &fixture.Model{Outputs: []any{both, valid}}
+	if _, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options()); err != nil {
+		t.Fatalf("a corrected subject and action: %v", err)
+	}
+	if len(model.Requests) != 2 || !strings.Contains(model.Requests[1].Prompt, "It cites builds that are not legal under this Definition: 3-x-3, 4-x-4.") {
+		t.Errorf("%d calls; the correction does not name 3-x-3 and 4-x-4", len(model.Requests))
+	}
 }
