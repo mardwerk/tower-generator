@@ -42,7 +42,10 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 	for _, want := range []string{"A same-budget copy bound is context, not a verdict", "They are the drafting model's claims and can be wrong", "A name taken from the source", "not text the Unit must print",
 		// The reviewer checks the planned adaptation the unit shows, as a claim.
 		`"adaptation":"Replaces the dart with a heavier spiked ball that deals more damage, reaches farther and pierces far more enemies, at a slower throw."`,
-		"It is a claim, not proof"} {
+		"It is a claim, not proof",
+		// A path theme is judged across the path (reported on #27: a review
+		// failed "Higher damage per hit" at x-4-x, which develops the boost).
+		"judge them across its purchases together, not as a promise every purchase repeats"} {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("the review prompt lacks %q", want)
 		}
