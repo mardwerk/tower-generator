@@ -40,8 +40,9 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 	// proposals are claims to check, not facts, and the period decision is
 	// context, not text the Unit must print (reported on #27).
 	for _, want := range []string{"A same-budget copy bound is context, not a verdict", "They are the drafting model's claims and can be wrong", "A name taken from the source", "not text the Unit must print",
-		// The reviewer reads the adaptation line the rendered unit shows.
-		`"adaptation":"Adapts Spiked Ball: the attack becomes slower, heavier and longer-reaching and can hit up to 18 enemies per shot."`} {
+		// The reviewer checks the planned adaptation the unit shows, as a claim.
+		`"adaptation":"Replaces the dart with a heavier spiked ball that deals more damage, reaches farther and pierces far more enemies, at a slower throw."`,
+		"It is a claim, not proof"} {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("the review prompt lacks %q", want)
 		}

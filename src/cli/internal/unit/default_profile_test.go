@@ -108,6 +108,7 @@ func TestPromptsSeparatePrivateChecksFromOutput(t *testing.T) {
 			"Name every purchase by build code", "a substantial improvement of one dimension may qualify",
 			"A second Active at the fifth purchase", "12 early and 36 advanced crosspath builds",
 			"more shots per attack to projectiles, heavier hits to damage",
+			"The unit shows the change of every purchase whose technique is not the base attack",
 		}},
 		"mechanics": {mechanics, []string{
 			"Refer to purchases by build code", "The boost is the only activated ability this Definition expresses",
@@ -119,6 +120,7 @@ func TestPromptsSeparatePrivateChecksFromOutput(t *testing.T) {
 			"Tier1 to Tier2 allow 1 to 3 primitive changes total; Tier3 to Tier5 allow up to 5.",
 			// A Gatling plan promised 3 distinct enemies and got 3 shots with pierce 3 (#27).
 			"each shot keeps its pierce, so a volley can hit up to projectiles × pierce enemies",
+			"The unit shows each technique purchase's planned change beside its effects",
 		}},
 		"review": {review, []string{
 			"Check privately and report only concrete problems", "Findings are review data kept apart from the unit description",

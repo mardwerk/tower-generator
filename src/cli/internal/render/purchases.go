@@ -23,8 +23,9 @@ type Purchase struct {
 	Code string  `json:"code"`
 	Name string  `json:"name"`
 	Cost float64 `json:"cost"`
-	// Adaptation names the technique the purchase adapts and what its typed
-	// changes make of the attack; see unit.PurchaseAdaptation.
+	// Adaptation is the plan's description of how the purchase adapts its
+	// source technique, a claim the review checks; see
+	// unit.PurchaseAdaptation.
 	Adaptation string   `json:"adaptation,omitempty"`
 	Effects    []string `json:"effects"`
 }
@@ -539,7 +540,7 @@ func (sh *sheet) purchases() []PathPurchases {
 			upgrade := path.Tiers.At(tier)
 			entry.Purchases = append(entry.Purchases, Purchase{
 				Code: unit.BuildCode(index, tier), Name: upgrade.Name, Cost: upgrade.Cost,
-				Adaptation: unit.PurchaseAdaptation(sh.blueprint, sh.plan, sh.definition, index, tier),
+				Adaptation: unit.PurchaseAdaptation(sh.plan, index, tier),
 				Effects:    sh.purchaseEffects(upgrade.Changes, sh.resolve(before), sh.resolve(after)),
 			})
 		}

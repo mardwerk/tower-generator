@@ -125,9 +125,9 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		var tiers []any
 		for _, t := range p.Tiers {
 			entry := s.NewObject().Set("tier", float64(t.Tier)).Set("name", t.Name).Set("benefit", t.Benefit)
-			// The reviewer reads the adaptation line the rendered unit shows.
-			if request.MechanicsDefinition != nil && len(candidate.Paths) == len(m.PathKeys) && t.Tier >= 1 && t.Tier <= len(m.TierKeys) {
-				if adaptation := PurchaseAdaptation(blueprint, checked.Draft.Run.DesignPlan, *request.MechanicsDefinition, index, t.Tier); adaptation != "" {
+			// The reviewer checks the adaptation the rendered unit shows.
+			if len(candidate.Paths) == len(m.PathKeys) && t.Tier >= 1 && t.Tier <= len(m.TierKeys) {
+				if adaptation := PurchaseAdaptation(checked.Draft.Run.DesignPlan, index, t.Tier); adaptation != "" {
 					entry.Set("adaptation", adaptation)
 				}
 			}
