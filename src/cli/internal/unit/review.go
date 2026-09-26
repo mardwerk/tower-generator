@@ -89,6 +89,9 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		context.Set("definition", s.FromGoValue(request.MechanicsDefinition))
 		if blueprint != nil {
 			context.Set("legalBuilds", LegalBuildFacts(blueprint, *request.MechanicsDefinition))
+			if prices := ReferencePriceFacts(blueprint, *request.MechanicsDefinition); prices != nil {
+				context.Set("referencePrices", prices)
+			}
 		}
 	}
 	evidence := AuthorEvidence(request)
@@ -161,6 +164,46 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	}
 	prompt := []string{reviewStyle, reviewScope, reviewGrounding, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, fmt.Sprintf(reviewPolicy, per100(currency)), reviewFindings, s.Stringify(context)}
 	return ModelRequest{System: reviewSystem, Prompt: strings.Join(prompt, "\n\n"), Schema: s.JSONSchema(schema)}
+}
+
+// ReferencePriceFacts compares each path's five incremental prices with the
+// Definition's reference sequence (profile.referenceScale's
+// incrementalUpgradeCosts) and states each exact copy as a fact the review
+// can name, such as "Top path prices (1-x-x to 5-x-x) equal the reference
+// sequence". It is review context, not a gate or a finding. It returns nil
+// for a Definition without a reference scale.
+func ReferencePriceFacts(blueprint *m.Blueprint, definition m.Definition) *s.Object {
+	scale := definition.Profile.ReferenceScale
+	if blueprint == nil || scale == nil {
+		return nil
+	}
+	reference := scale.IncrementalUpgradeCosts
+	var sequence []string
+	for _, cost := range reference {
+		sequence = append(sequence, s.FormatNumber(cost))
+	}
+	stated := strings.Join(sequence[:len(sequence)-1], ", ") + " and " + sequence[len(sequence)-1]
+	if definition.Profile.Currency != "" {
+		stated += " " + definition.Profile.Currency
+	}
+	paths, facts := []any{}, []any{}
+	for index, key := range m.PathKeys {
+		path := blueprint.Paths.At(index)
+		prices := []any{}
+		equal := true
+		for tier := 1; tier <= len(m.TierKeys); tier++ {
+			cost := path.Tiers.At(tier).Cost
+			prices = append(prices, cost)
+			equal = equal && cost == reference[tier-1]
+		}
+		paths = append(paths, s.NewObject().Set("path", key).Set("prices", prices).Set("equalsReferenceSequence", equal))
+		if equal {
+			position := pathPosition(key)
+			facts = append(facts, fmt.Sprintf("%s path prices (%s to %s) equal the reference sequence %s exactly.",
+				strings.ToUpper(position[:1])+position[1:], BuildCode(index, 1), BuildCode(index, 5), stated))
+		}
+	}
+	return s.NewObject().Set("referenceSequence", s.FromGoValue(reference[:])).Set("paths", paths).Set("facts", facts)
 }
 
 // capstoneOrdering gives review a checked numerical comparison. The raw
