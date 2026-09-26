@@ -46,7 +46,10 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 		"It is a claim, not proof",
 		// A path theme is judged across the path (reported on #27: a review
 		// failed "Higher damage per hit" at x-4-x, which develops the boost).
-		"judge them across its purchases together, not as a promise every purchase repeats"} {
+		"judge them across its purchases together, not as a promise every purchase repeats",
+		// Live Luffy runs on #27: compression credited with range, and a
+		// Snakeman purchase whose text only said the punch hits harder.
+		"a mechanism credited with an effect the source ties to another", "Report as unresolved an adaptation that only restates stat changes"} {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("the review prompt lacks %q", want)
 		}
@@ -296,5 +299,33 @@ func TestRevisionReviewTreatsOnlyTheNewPlanAsCurrent(t *testing.T) {
 	}
 	if !strings.Contains(prompt, "a verdict about the plan must hold for the current designPlan text, and nothing an earlier version said is evidence about this one") {
 		t.Error("the review lacks the rule to judge the current plan")
+	}
+}
+
+// A code that is neither a legal build nor a purchase, such as 1-x-5 for
+// 1-5-0 (a live Luffy review on #27), is corrected like an illegal build.
+// Purchases such as x-4-x and legal builds such as 0-5-1 are not.
+func TestReviewsCitingMalformedCodesAreCorrected(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	citing := func(message string) *s.Object {
+		review := recordedOutput(t, "review")
+		findings, _ := review.Get("findings")
+		findings.([]any)[0].(*s.Object).Set("message", message)
+		return review
+	}
+	valid := citing("x-4-x and 3-x-x are fine, and 0-5-1 is a legal build.")
+	model := &fixture.Model{Outputs: []any{valid}}
+	if _, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options()); err != nil || len(model.Requests) != 1 {
+		t.Fatalf("purchase codes and legal builds: %v after %d calls", err, len(model.Requests))
+	}
+	model = &fixture.Model{Outputs: []any{citing("The side purchase 1-x-5 adds more than x-5-x."), valid}}
+	if _, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options()); err != nil {
+		t.Fatalf("a corrected code: %v", err)
+	}
+	if len(model.Requests) != 2 || !strings.Contains(model.Requests[1].Prompt, "It cites builds that are not legal under this Definition: 1-x-5.") || !strings.Contains(model.Requests[1].Prompt, "Write a purchase as 3-x-x, x-4-x or x-x-5 and a build as 1-5-0.") {
+		t.Errorf("%d calls; the correction does not name 1-x-5", len(model.Requests))
 	}
 }

@@ -19,7 +19,26 @@ import (
 // such as 3-3-0. The correction must return the findings whose citations
 // held unchanged in every field, so its summary describes them.
 
-var buildCodePattern = regexp.MustCompile(`\b[0-9]-[0-9]-[0-9]\b`)
+// buildCodePattern matches what a review writes as a build code: a
+// concrete build such as 3-2-0, a purchase such as x-4-x, or a malformed mix
+// such as 1-x-5.
+var buildCodePattern = regexp.MustCompile(`\b[0-9x]-[0-9x]-[0-9x]\b`)
+
+// purchaseCode reports a purchase written in build-code notation: one path
+// at a tier from 1 to 5, the others x, as in 3-x-x or x-x-5.
+func purchaseCode(code string) bool {
+	digits := 0
+	for _, part := range strings.Split(code, "-") {
+		switch {
+		case part == "x":
+		case part >= "1" && part <= string(rune('0'+len(m.TierKeys))):
+			digits++
+		default:
+			return false
+		}
+	}
+	return digits == 1
+}
 
 // attackFacts is one resolved attack as the review reads it.
 func attackFacts(attack m.Attack) *s.Object {
@@ -129,12 +148,14 @@ func (c reviewCitations) problems(review SemanticReview) []citationProblem {
 }
 
 // illegal lists the build codes the texts cite that the Definition does not
-// allow, in order of first mention.
+// allow, in order of first mention: concrete builds legalBuilds does not
+// list, and codes that are neither a build nor a purchase, such as 1-x-5
+// for 1-5-0 (reported on #27).
 func (c reviewCitations) illegal(texts ...string) []string {
 	var out []string
 	seen := map[string]bool{}
 	for _, code := range buildCodePattern.FindAllString(strings.Join(texts, "\n"), -1) {
-		if _, legal := c.builds[code]; !legal && !seen[code] {
+		if _, legal := c.builds[code]; !legal && !purchaseCode(code) && !seen[code] {
 			seen[code] = true
 			out = append(out, code)
 		}
@@ -254,7 +275,7 @@ func correctionPrompt(previous SemanticReview, problems []citationProblem) strin
 	}
 	text := "\n\nCorrect this review. Your previous review was: " + s.Stringify(s.FromGoValue(previous))
 	if len(illegal) > 0 {
-		text += "\nIt cites builds that are not legal under this Definition: " + strings.Join(illegal, ", ") + ". legalBuilds lists every legal build; judge only those, and read counts from their resolved facts."
+		text += "\nIt cites builds that are not legal under this Definition: " + strings.Join(illegal, ", ") + ". legalBuilds lists every legal build; judge only those, and read counts from their resolved facts. Write a purchase as 3-x-x, x-4-x or x-x-5 and a build as 1-5-0."
 	}
 	if len(wrong) > 0 {
 		text += "\nSome cited facts are wrong: " + strings.Join(wrong, " ") + " Read each value in legalBuilds."
