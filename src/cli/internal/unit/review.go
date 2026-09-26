@@ -3,6 +3,7 @@ package unit
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
@@ -50,14 +51,21 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		}
 		documents = append(documents, entry.Set("origin", s.FromGoValue(d.Origin)))
 	}
+	// The Definition profile's currency names the unit of the side-purchase
+	// comparison; without a Definition the text stays currency-neutral.
+	currency := ""
+	if request.MechanicsDefinition != nil {
+		currency = request.MechanicsDefinition.Profile.Currency
+	}
 	context := s.NewObject()
 	if checked.Draft.Run.DesignPlan != nil {
 		context.Set("designPlan", s.FromGoValue(checked.Draft.Run.DesignPlan))
 	}
 	if checked.Draft.Run.DesignEvaluation != nil {
 		// The retained evidence plus the time-averaged Active rates and side
-		// purchase gains derived from it; the saved draft is unchanged.
-		context.Set("purchaseEvidence", ReviewPurchaseEvidence(checked.Draft.Run.DesignEvaluation))
+		// purchase gains per 100 of the Definition's currency derived from
+		// it; the saved draft is unchanged.
+		context.Set("purchaseEvidence", ReviewPurchaseEvidence(checked.Draft.Run.DesignEvaluation, currency))
 	}
 	comparisons := []any{}
 	if blueprint != nil {
@@ -144,7 +152,7 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	if isV2(request) {
 		statuses = reviewStatusesV2
 	}
-	prompt := []string{reviewStyle, reviewScope, reviewGrounding, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, reviewPolicy, reviewFindings, s.Stringify(context)}
+	prompt := []string{reviewStyle, reviewScope, reviewGrounding, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, fmt.Sprintf(reviewPolicy, per100(currency)), reviewFindings, s.Stringify(context)}
 	return ModelRequest{System: reviewSystem, Prompt: strings.Join(prompt, "\n\n"), Schema: s.JSONSchema(schema)}
 }
 

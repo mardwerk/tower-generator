@@ -143,10 +143,13 @@ func describePurchases(view View) []string {
 	if view.DesignEvaluation == nil {
 		return nil
 	}
-	evaluation := any(unit.ReviewPurchaseEvidence(view.DesignEvaluation))
-	currency := "currency"
+	currency := ""
 	if definition := view.Prepared.Request.MechanicsDefinition; definition != nil {
 		currency = definition.Profile.Currency
+	}
+	evaluation := any(unit.ReviewPurchaseEvidence(view.DesignEvaluation, currency))
+	if currency == "" {
+		currency = "currency"
 	}
 	currency = Escape(currency)
 	lines := []string{
@@ -180,7 +183,7 @@ func describePurchases(view View) []string {
 				}
 				changed = Escape(changed)
 			}
-			if against := per100GoldText(field(purchase, unit.Per100GoldAgainstCapstone), currency); against != "" {
+			if against := per100CurrencyText(field(purchase, unit.Per100CurrencyAgainstCapstone), currency); against != "" {
 				if !strings.HasSuffix(changed, ".") {
 					changed += "."
 				}
@@ -202,9 +205,10 @@ func describePurchases(view View) []string {
 	return lines
 }
 
-// per100GoldText states a side purchase's time-averaged gain per 100 of the
-// currency beside its main path's fifth purchase; empty without a comparison.
-func per100GoldText(against any, currency string) string {
+// per100CurrencyText states a side purchase's time-averaged gain per 100 of
+// the Definition's currency beside its main path's fifth purchase; empty
+// without a comparison.
+func per100CurrencyText(against any, currency string) string {
 	if against == nil {
 		return ""
 	}

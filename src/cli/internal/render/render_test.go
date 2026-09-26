@@ -57,8 +57,9 @@ func TestMarkdownRendersEveryStage(t *testing.T) {
 }
 
 // Purchase evidence shows the Active's time-averaged rates next to its peak
-// and duty fraction, and compares each crosspath purchase per 100 Gold
-// with its main path's fifth purchase. Fan Club Frenzy lasts 15 of 50 s at
+// and duty fraction, and compares each crosspath purchase per 100 of the
+// Definition's currency, Gold in the fixture, with its main path's fifth
+// purchase. Fan Club Frenzy lasts 15 of 50 s at
 // x-4-x and 20 of 50 s at x-5-x: 0.6 × 12.54 + 0.4 × 401.3 = 168.
 func TestDetailsShowTimeAveragedAndSidePurchaseEvidence(t *testing.T) {
 	stages, err := fixture.Build()

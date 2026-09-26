@@ -73,7 +73,7 @@ func burstEvidence(t *testing.T) (retained, derived *s.Object) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return retained, unit.ReviewPurchaseEvidence(retained)
+	return retained, unit.ReviewPurchaseEvidence(retained, definition.Profile.Currency)
 }
 
 // purchase finds the milestone or crosspath comparison from one build to another.
@@ -138,7 +138,7 @@ func TestTimeAveragedActiveOutput(t *testing.T) {
 		t.Error("a purchase without an Active shows a time-averaged rate")
 	}
 	// The retained evidence is not changed, so check still compares it exactly.
-	if strings.Contains(s.Stringify(retained), "time-averaged") || strings.Contains(s.Stringify(retained), unit.Per100GoldAgainstCapstone) {
+	if strings.Contains(s.Stringify(retained), "time-averaged") || strings.Contains(s.Stringify(retained), unit.Per100CurrencyAgainstCapstone) {
 		t.Error("deriving the review evidence changed the retained evidence")
 	}
 }
@@ -160,7 +160,7 @@ func TestSidePurchasesAgainstCapstone(t *testing.T) {
 		// direct and +8 group. The middle path's x-1-x only adds range.
 		{0, "5-0-0", "5-1-0", "5-x-x", 0, 0.04, 0, 0.08},
 	} {
-		against := at(purchase(t, derived, test.path, "crosspaths", test.from, test.to), unit.Per100GoldAgainstCapstone)
+		against := at(purchase(t, derived, test.path, "crosspaths", test.from, test.to), unit.Per100CurrencyAgainstCapstone)
 		if at(against, "capstone") != test.code ||
 			!near(at(against, unit.TimeAveragedDirect, "sidePurchase"), test.side) || !near(at(against, unit.TimeAveragedDirect, "capstone"), test.capstone) ||
 			!near(at(against, unit.TimeAveragedGroup, "sidePurchase"), test.sideGroupGain) || !near(at(against, unit.TimeAveragedGroup, "capstone"), test.capstoneGroupPer) {
@@ -168,7 +168,7 @@ func TestSidePurchasesAgainstCapstone(t *testing.T) {
 		}
 	}
 	// Milestones are the path's own purchases and carry no comparison.
-	if at(purchase(t, derived, 1, "milestones", "0-4-0", "0-5-0"), unit.Per100GoldAgainstCapstone) != nil {
+	if at(purchase(t, derived, 1, "milestones", "0-4-0", "0-5-0"), unit.Per100CurrencyAgainstCapstone) != nil {
 		t.Error("a milestone carries a side-purchase comparison")
 	}
 }
@@ -185,16 +185,59 @@ func TestReviewContextCarriesDerivedPurchaseEvidence(t *testing.T) {
 		t.Fatal(err)
 	}
 	evidence := at(context, "purchaseEvidence")
-	if s.Canonical(evidence) != s.Canonical(unit.ReviewPurchaseEvidence(stages.Checked.Draft.Run.DesignEvaluation)) {
+	if s.Canonical(evidence) != s.Canonical(unit.ReviewPurchaseEvidence(stages.Checked.Draft.Run.DesignEvaluation, "Gold")) {
 		t.Error("the review context does not carry the derived purchase evidence")
 	}
 	text := s.Stringify(evidence)
-	for _, want := range []string{`"` + unit.TimeAveragedDirect + `"`, `"` + unit.TimeAveragedGroup + `"`, `"` + unit.Per100GoldAgainstCapstone + `"`, `"capstone":"x-5-x"`} {
+	for _, want := range []string{`"` + unit.TimeAveragedDirect + `"`, `"` + unit.TimeAveragedGroup + `"`, `"` + unit.Per100CurrencyAgainstCapstone + `"`, `"capstone":"x-5-x"`} {
 		if !strings.Contains(text, want) {
 			t.Errorf("the review's purchase evidence lacks %s", want)
 		}
 	}
-	if !strings.Contains(prompt, "per100GoldAgainstCapstone gives that side purchase's time-averaged gain per 100 Gold") {
+	if !strings.Contains(prompt, "per100CurrencyAgainstCapstone gives that side purchase's time-averaged gain per 100 Gold") {
 		t.Error("the review prompt does not explain the derived evidence")
+	}
+}
+
+// A Definition with another currency gets review guidance and derived
+// evidence in that currency. Only the retained price fields, whose saved
+// names are incrementalGold and totalGold, keep the word.
+func TestReviewContextUsesTheDefinitionCurrency(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	checked := stages.Checked
+	definition := *checked.Draft.Prepared.Request.MechanicsDefinition
+	definition.Profile.Currency = "Berries"
+	checked.Draft.Prepared.Request.MechanicsDefinition = &definition
+	request := unit.BlueprintReviewRequest(checked)
+	split := strings.LastIndex(request.Prompt, "\n\n")
+	instructions := request.System + "\n\n" + request.Prompt[:split]
+	if strings.Contains(instructions, "Gold") {
+		t.Error("the review instructions name Gold for a Definition in Berries")
+	}
+	if !strings.Contains(instructions, "per100CurrencyAgainstCapstone gives that side purchase's time-averaged gain per 100 Berries") {
+		t.Error("the review instructions do not name the Definition's currency")
+	}
+	context, err := s.Decode([]byte(request.Prompt[split+2:]))
+	if err != nil {
+		t.Fatal(err)
+	}
+	evidence := s.Stringify(at(context, "purchaseEvidence"))
+	if !strings.Contains(evidence, "gain per 100 Berries") {
+		t.Error("the derived limitation does not name the Definition's currency")
+	}
+	if strings.Contains(strings.NewReplacer(`"incrementalGold"`, "", `"totalGold"`, "").Replace(evidence), "Gold") {
+		t.Error("the review's purchase evidence names Gold for a Definition in Berries")
+	}
+}
+
+// Without a named currency the derived limitation stays neutral.
+func TestDerivedEvidenceWithoutACurrencyIsNeutral(t *testing.T) {
+	retained, _ := burstEvidence(t)
+	evidence := s.Stringify(unit.ReviewPurchaseEvidence(retained, ""))
+	if !strings.Contains(evidence, "gain per 100 of the Definition's currency") {
+		t.Error("the derived limitation is not currency-neutral without a currency")
 	}
 }
