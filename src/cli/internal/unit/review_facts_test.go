@@ -406,11 +406,12 @@ func TestReviewsCitingMalformedCodesAreCorrected(t *testing.T) {
 	if _, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options()); err != nil || len(model.Requests) != 1 {
 		t.Fatalf("purchase codes and legal builds: %v after %d calls", err, len(model.Requests))
 	}
-	model = &fixture.Model{Outputs: []any{citing("The side purchase 1-x-5 adds more than x-5-x."), valid}}
+	// A notation fix changes the codes and nothing else (SOL-34-04).
+	model = &fixture.Model{Outputs: []any{citing("The side purchase 1-x-5 adds more than x-5-x."), citing("The side purchase 1-5-0 adds more than x-5-x.")}}
 	if _, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options()); err != nil {
 		t.Fatalf("a corrected code: %v", err)
 	}
-	if len(model.Requests) != 2 || !strings.Contains(model.Requests[1].Prompt, "It cites builds that are not legal under this Definition: 1-x-5.") || !strings.Contains(model.Requests[1].Prompt, "Write a purchase as 3-x-x, x-4-x or x-x-5 and a build as 1-5-0.") {
+	if len(model.Requests) != 2 || !strings.Contains(model.Requests[1].Prompt, "1-x-5 is neither a purchase nor a build.") || !strings.Contains(model.Requests[1].Prompt, "write a purchase as 3-x-x, x-4-x or x-x-5 and a build as 1-5-0") {
 		t.Errorf("%d calls; the correction does not name 1-x-5", len(model.Requests))
 	}
 	// The subject and action are read too: a 7a review on #27 wrote "3-x-3"
@@ -418,11 +419,14 @@ func TestReviewsCitingMalformedCodesAreCorrected(t *testing.T) {
 	both := recordedOutput(t, "review")
 	findings, _ := both.Get("findings")
 	findings.([]any)[0].(*s.Object).Set("subject", "3-x-3").Set("action", "Compare 4-x-4 as well.")
-	model = &fixture.Model{Outputs: []any{both, valid}}
+	fixed := recordedOutput(t, "review")
+	findings, _ = fixed.Get("findings")
+	findings.([]any)[0].(*s.Object).Set("subject", "3-x-x").Set("action", "Compare x-4-x as well.")
+	model = &fixture.Model{Outputs: []any{both, fixed}}
 	if _, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options()); err != nil {
 		t.Fatalf("a corrected subject and action: %v", err)
 	}
-	if len(model.Requests) != 2 || !strings.Contains(model.Requests[1].Prompt, "It cites builds that are not legal under this Definition: 3-x-3, 4-x-4.") {
+	if len(model.Requests) != 2 || !strings.Contains(model.Requests[1].Prompt, "3-x-3 is neither a purchase nor a build; 4-x-4 is neither a purchase nor a build.") {
 		t.Errorf("%d calls; the correction does not name 3-x-3 and 4-x-4", len(model.Requests))
 	}
 }
@@ -448,7 +452,7 @@ func TestReviewsNameTheSubjectsPurchase(t *testing.T) {
 		t.Fatalf("a comparison that names its subject: %v after %d calls", err, len(model.Requests))
 	}
 	swapped := finding("x-4-x and x-5-x", "4-x-x costs 7,200 Gold and 5-x-x adds little over it.")
-	model = &fixture.Model{Outputs: []any{swapped, comparing}}
+	model = &fixture.Model{Outputs: []any{swapped, finding("x-4-x and x-5-x", "x-4-x costs 7,200 Gold and x-5-x adds little over it.")}}
 	if _, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options()); err != nil {
 		t.Fatalf("a corrected finding: %v", err)
 	}

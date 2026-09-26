@@ -42,6 +42,9 @@ type ModelError struct {
 	Cause   error
 	// Evidence is kept when a draft stage fails after model calls.
 	Evidence *FailureEvidence
+	// Checked is the checked draft of a failed review in Author, kept so
+	// the review can run again.
+	Checked *Checked
 }
 
 func (e *ModelError) Error() string { return e.Message }

@@ -373,11 +373,16 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 	definition := checked.Draft.Prepared.Request.MechanicsDefinition
 	var calls []Attempt
 	review, err := reviewOnce(ctx, checked, model, request, &calls)
+	var citations reviewCitations
+	if definition != nil {
+		citations = newReviewCitations(checked.Draft.Candidate.Blueprint, *definition)
+	}
 	if err == nil && definition != nil {
 		// A review that cites builds the Definition does not allow, or
 		// resolved values that are wrong, is corrected once, then rejected.
-		// Findings whose citations hold must come back unchanged in every field.
-		citations := newReviewCitations(checked.Draft.Candidate.Blueprint, *definition)
+		// Findings whose citations hold must come back unchanged in every field,
+		// and one whose only fault is notation with only its flagged codes
+		// replaced (keepCheckedFindings).
 		if problems := citations.problems(review); len(problems) > 0 {
 			request.Prompt += correctionPrompt(review, problems)
 			var corrected SemanticReview
@@ -386,6 +391,15 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 					err = rejectedCitations(citations.problems(review))
 				}
 			}
+		}
+	}
+	// Publish guard: whatever the correction did, no numeric build the
+	// Definition does not allow reaches a Result, not even in a finding ID.
+	if err == nil && definition != nil {
+		published := append(append([]Finding{}, checked.Findings...), review.Findings...)
+		if codes := citations.impossibleBuilds(review.Summary, published); len(codes) > 0 {
+			message := "The model review named builds this Definition does not allow (" + strings.Join(codes, ", ") + ") in the findings it would publish. The draft is retained. Retry the review or choose another model."
+			err = &ModelError{Message: message, Failure: &Failure{Code: CodeOutputInvalid, Message: message, Stage: "review"}}
 		}
 	}
 	usage := totalUsage(calls)
@@ -461,7 +475,12 @@ func Author(ctx context.Context, request any, model Model, options Options) (Res
 	if err != nil {
 		return Result{}, err
 	}
-	return ReviewDraft(ctx, checked, model, options)
+	result, err := ReviewDraft(ctx, checked, model, options)
+	var failed *ModelError
+	if errors.As(err, &failed) {
+		failed.Checked = &checked
+	}
+	return result, err
 }
 
 // reviewRevision is what a review needs to know about a revision: the unit
