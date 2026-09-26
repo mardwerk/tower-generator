@@ -85,13 +85,6 @@ func groupDamage(attack Attack, vocabulary *Vocabulary) float64 {
 	return direct + secondary
 }
 
-// SpecialtyMetrics are capacity heuristics for a pure build, in insertion
-// order, for version 1 builds. Version 2 builds need their vocabulary:
-// see SpecialtyMetricsWith.
-func SpecialtyMetrics(build Build, specialization string) *s.Object {
-	return SpecialtyMetricsWith(build, specialization, nil)
-}
-
 // SpecialtyMetricsWith measures a build with its Definition's vocabulary.
 // Control counts every movement, disable and damage-taken effect of the
 // vocabulary, zero when the attack does not apply it.
@@ -117,7 +110,7 @@ func SpecialtyMetricsWith(build Build, specialization string, vocabulary *Vocabu
 			break
 		}
 		for _, effect := range vocabulary.StatusEffects {
-			if effect.Kind != KindMoveSpeed && effect.Kind != KindDisable && effect.Kind != KindDamageTaken {
+			if effect.Kind != KindMoveSpeed && effect.Kind != KindDisable && effect.Kind != KindDamageTaken && effect.Kind != KindKnockback {
 				continue
 			}
 			coverage := 0.0
@@ -140,6 +133,16 @@ func SpecialtyMetricsWith(build Build, specialization string, vocabulary *Vocabu
 		out.Set("active duty fraction", math.Min(1, a.DurationSeconds/a.CooldownSeconds))
 	}
 	return out
+}
+
+// TimeAveraged is a damage rate averaged over one Active Ability cycle when
+// the Active is used whenever it is ready: the boosted rate for the duty
+// fraction of the cooldown and the ordinary rate for the rest. duty is the
+// "active duty fraction", min(1, duration / cooldown), so this is
+// (duration × peak + (cooldown - duration) × ordinary) / cooldown. With no
+// Active, duty and peak are zero and the result is the ordinary rate.
+func TimeAveraged(ordinary, peak, duty float64) float64 {
+	return peak*duty + ordinary*(1-duty)
 }
 
 func attackBehavior(attack Attack) []any {
@@ -165,20 +168,34 @@ func attackBehavior(attack Attack) []any {
 	return out
 }
 
+// volleyDistribution is an attack's distribution, same-primary when unset.
+func volleyDistribution(attack Attack) string {
+	if attack.Distribution == "" {
+		return "same-primary"
+	}
+	return attack.Distribution
+}
+
 // HasBehaviorTransition reports a new attack shape or capability.
 func HasBehaviorTransition(before, after Build) bool {
 	a, b := before.BaseAttack, after.BaseAttack
-	dist := func(x Attack) string {
-		if x.Distribution == "" {
-			return "same-primary"
-		}
-		return x.Distribution
-	}
-	if a.Delivery != b.Delivery || a.Targeting != b.Targeting || dist(a) != dist(b) {
+	// A targeting priority is the player's choice, not a behavior, and
+	// distinct targets change nothing while the attack fires one projectile.
+	if a.Delivery != b.Delivery || (volleyDistribution(a) != volleyDistribution(b) && b.Stats.Projectiles > 1) {
 		return true
 	}
 	if a.FollowUp == nil && b.FollowUp != nil {
 		return true
+	}
+	// New access is a behavior too: a damage type that hurts other enemies,
+	// or a newly detected trait.
+	if a.DamageType != b.DamageType {
+		return true
+	}
+	for _, trait := range b.DetectionTraits() {
+		if !a.DetectsTrait(trait) {
+			return true
+		}
 	}
 	if a.Stats.Projectiles == 1 && b.Stats.Projectiles > 1 {
 		return true
@@ -260,7 +277,7 @@ func DesignPolicyIssues(blueprint *Blueprint, definition Definition) []Issue {
 			required *bool
 		}{{3, policy.RequireTier3BehaviorChange}, {5, policy.RequireTier5BehaviorChange}} {
 			if req.required != nil && *req.required && !HasBehaviorTransition(pureBuild(blueprint, index, req.tier-1), pureBuild(blueprint, index, req.tier)) {
-				issues = append(issues, Issue{fmt.Sprintf("%s.tiers.tier%d", prefix, req.tier), fmt.Sprintf("Tier %d must introduce a supported attack behavior, such as a new delivery, distinct-target volley, status, splash or bounded follow-up. Increasing existing numbers or changing a name alone is insufficient.", req.tier)})
+				issues = append(issues, Issue{fmt.Sprintf("%s.tiers.tier%d", prefix, req.tier), fmt.Sprintf("Tier %d must introduce a supported attack behavior or access, such as a new delivery, a distinct-target volley of more than one projectile, more than one projectile, status, splash, bounded follow-up, damage type or detected trait. Increasing existing numbers, changing targeting or a name, or a change with no effect is insufficient.", req.tier)})
 			}
 		}
 		for _, check := range []struct {
@@ -274,7 +291,7 @@ func DesignPolicyIssues(blueprint *Blueprint, definition Definition) []Issue {
 			}
 			signature := policyBehavior(check.build)
 			if previous, ok := check.seen[signature]; ok {
-				issues = append(issues, Issue{fmt.Sprintf("%s.tiers.tier%d", prefix, check.tier), fmt.Sprintf("Resolved tier %d behavior duplicates %s; names and prices do not make a distinct upgrade.", check.tier, previous)})
+				issues = append(issues, Issue{fmt.Sprintf("%s.tiers.tier%d", prefix, check.tier), fmt.Sprintf("Resolved tier %d behavior duplicates %s; names and prices do not make a distinct upgrade. Change what this purchase improves, or by how much, so the resolved attack differs.", check.tier, previous)})
 			} else {
 				check.seen[signature] = path
 			}
@@ -354,10 +371,6 @@ func DesignPolicyIssues(blueprint *Blueprint, definition Definition) []Issue {
 
 func finite(x float64) bool { return !math.IsNaN(x) && !math.IsInf(x, 0) }
 
-// PurchaseMetrics are analytic capacities of a version 1 build, not
-// measured combat output. Version 2 builds use PurchaseMetricsWith.
-func PurchaseMetrics(build Build) *s.Object { return PurchaseMetricsWith(build, nil) }
-
 // PurchaseMetricsWith measures a build with its Definition's vocabulary.
 func PurchaseMetricsWith(build Build, vocabulary *Vocabulary) *s.Object {
 	out := s.NewObject()
@@ -377,12 +390,6 @@ func PurchaseMetricsWith(build Build, vocabulary *Vocabulary) *s.Object {
 		}
 	}
 	return out
-}
-
-// CompareCapstonePurchases compares each path's tier 4 and tier 5
-// purchases of a version 1 blueprint; see CompareCapstonePurchasesWith.
-func CompareCapstonePurchases(blueprint *Blueprint) []any {
-	return CompareCapstonePurchasesWith(blueprint, nil)
 }
 
 // CompareCapstonePurchasesWith compares capstones with a vocabulary.

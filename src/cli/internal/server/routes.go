@@ -40,6 +40,13 @@ func (srv *Server) gets() map[string]func() (any, error) {
 
 func (srv *Server) posts() map[string]post {
 	return map[string]post{
+		"models": {run: func(ctx context.Context, body *s.Object) (any, error) {
+			if err := only(body, "provider"); err != nil {
+				return nil, err
+			}
+			name, _ := get(body, "provider").(string)
+			return srv.connection.models(ctx, name)
+		}},
 		"provider": {run: func(_ context.Context, body *s.Object) (any, error) {
 			if srv.busy() {
 				return nil, fail(409, "BUSY", "Wait for the current model stage to finish.")
@@ -122,8 +129,21 @@ func (srv *Server) posts() map[string]post {
 				return nil, err
 			}
 			out := s.NewObject().Set("view", s.FromGoValue(view))
-			if stats := render.Stats(view.Candidate, view.Prepared.Request.MechanicsDefinition); stats != nil {
+			definition := view.Prepared.Request.MechanicsDefinition
+			if stats := render.Stats(view.Candidate, definition); stats != nil {
 				out.Set("stats", s.FromGoValue(stats))
+			}
+			if base := render.Base(view.Candidate, definition); base != nil {
+				out.Set("base", s.FromGoValue(base))
+			}
+			if purchases := render.Purchases(view.Candidate, definition, view.Plan); purchases != nil {
+				out.Set("purchases", s.FromGoValue(purchases))
+			}
+			if crosspaths := render.ResolveCrosspaths(view.Candidate, definition); crosspaths != nil {
+				out.Set("crosspaths", s.FromGoValue(crosspaths))
+			}
+			if revision := render.Revision(view); revision != nil {
+				out.Set("revision", s.FromGoValue(revision))
 			}
 			return out, nil
 		}},
@@ -176,6 +196,12 @@ func (srv *Server) posts() map[string]post {
 				return nil, errors.New("ids: expected an array of library IDs")
 			}
 			return srv.config.Library.Delete(ids)
+		}},
+		"library/migrate": {run: func(_ context.Context, body *s.Object) (any, error) {
+			if err := only(body); err != nil {
+				return nil, err
+			}
+			return srv.config.Library.Migrate()
 		}},
 		"library/configure": {run: func(_ context.Context, body *s.Object) (any, error) {
 			if srv.busy() {
@@ -306,10 +332,24 @@ func (srv *Server) lookup(ctx context.Context, body *s.Object, allowed ...string
 }
 
 // research returns reusable Sources, or choices for an ambiguous name.
+// With previous Sources of the same character, the new lookup extends them
+// without repeating identical documents.
 func (srv *Server) research(ctx context.Context, body *s.Object) (any, error) {
-	sources, choices, err := srv.lookup(ctx, body)
+	var previous *research.Sources
+	if value, ok := body.Get("previous"); ok && value != nil {
+		parsed, err := research.ParseSources(value)
+		if err != nil {
+			return nil, err
+		}
+		previous = &parsed
+	}
+	sources, choices, err := srv.lookup(ctx, body, "previous")
 	if err != nil || choices != nil {
 		return choices, err
+	}
+	if previous != nil {
+		extended := previous.Extend(*sources)
+		return &extended, nil
 	}
 	return sources, nil
 }

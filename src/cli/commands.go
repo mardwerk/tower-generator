@@ -81,6 +81,14 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 		}
 	}
 	artifact, err := in.execute(ctx)
+	var failed *unit.ModelError
+	if errors.As(err, &failed) && failed.Evidence != nil {
+		if in.output == "" {
+			fmt.Fprintln(stderr, "Add -o FILE to keep the rejected plan and outputs of a failed run.")
+		} else if path := failurePath(in.output); writeNew(path, s.Indent(s.FromGoValue(failed.Evidence))+"\n") == nil {
+			fmt.Fprintf(stderr, "Wrote the failure evidence to %s\n", path)
+		}
+	}
 	if in.evidence != nil {
 		if err == nil {
 			err = in.evidence.Finish(artifact)
@@ -104,6 +112,12 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	}
 	fmt.Fprintf(stderr, "Wrote %s\n", in.output)
 	return nil
+}
+
+// failurePath names the failure evidence of a run whose output would have
+// been path: dart.json keeps it in dart.failure.json.
+func failurePath(path string) string {
+	return strings.TrimSuffix(path, filepath.Ext(path)) + ".failure.json"
 }
 
 // writeNew publishes a complete file without replacing an existing one.
@@ -201,14 +215,19 @@ func (in *invocation) model(input any) (unit.Model, error) {
 		}
 		model, err = provider.NewOpenRouter(provider.OpenRouterOptions{APIKey: key, Model: modelName, Reasoning: reasoning, Timeout: in.timeout})
 	case "codex":
-		if in.reasoning != "" && in.reasoning != "low" && in.reasoning != "medium" && in.reasoning != "high" {
-			return nil, errors.New("--reasoning must be one of: low, medium, high.")
-		}
 		executable := in.codex
 		if strings.ContainsAny(executable, `/\`) {
 			executable, _ = filepath.Abs(executable)
 		}
-		model, err = provider.NewCodex(provider.CodexOptions{Executable: executable, Model: in.options.model, Reasoning: in.reasoning, Timeout: in.timeout})
+		modelName := in.options.model
+		if modelName == "" {
+			modelName = in.env.Value("CODEX_MODEL")
+		}
+		reasoning := in.reasoning
+		if reasoning == "" {
+			reasoning = in.env.Value("CODEX_REASONING")
+		}
+		model, err = provider.NewCodex(provider.CodexOptions{Executable: executable, Model: modelName, Reasoning: reasoning, Timeout: in.timeout})
 	default:
 		return nil, errors.New("--provider must be openrouter or codex.")
 	}
@@ -502,8 +521,10 @@ func (in *invocation) manageLibrary() (any, error) {
 		return lib.Load(in.extra[0])
 	case action == "delete" && len(in.extra) > 0:
 		return lib.Delete(in.extra)
+	case action == "migrate" && len(in.extra) == 0:
+		return lib.Migrate()
 	}
-	return nil, errors.New("Use library list, library save FILE, library load ID or library delete ID...")
+	return nil, errors.New("Use library list, library save FILE, library load ID, library delete ID... or library migrate")
 }
 
 // serve runs the web app until interrupted.

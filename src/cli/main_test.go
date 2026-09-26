@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mardwerk/unit-generator/src/cli/internal/parity"
+	"github.com/mardwerk/unit-generator/src/cli/internal/fixture"
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
 	"github.com/mardwerk/unit-generator/src/cli/internal/server"
 )
@@ -32,23 +32,17 @@ func scratch(t *testing.T) string {
 	return dir
 }
 
-// recordedFiles writes a recorded planned draft and its reviewed Result.
+// recordedFiles writes the scripted fixture's draft and its reviewed Result.
 func recordedFiles(t *testing.T, dir string) (string, string) {
 	t.Helper()
-	entries, _ := parity.Entries("reviewDraft")
-	for _, entry := range entries {
-		result, ok := parity.Output(entry)
-		draft := parity.Get(parity.Arg(entry, 0), "draft")
-		if !ok || parity.Get(draft, "candidate", "blueprint") == nil {
-			continue
-		}
-		draftFile, resultFile := filepath.Join(dir, "draft.json"), filepath.Join(dir, "result.json")
-		_ = os.WriteFile(draftFile, []byte(s.Stringify(draft)), 0o600)
-		_ = os.WriteFile(resultFile, []byte(s.Stringify(result)), 0o600)
-		return draftFile, resultFile
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
 	}
-	t.Fatal("no recorded review")
-	return "", ""
+	draftFile, resultFile := filepath.Join(dir, "draft.json"), filepath.Join(dir, "result.json")
+	_ = os.WriteFile(draftFile, []byte(s.Stringify(s.FromGoValue(stages.Draft))), 0o600)
+	_ = os.WriteFile(resultFile, []byte(s.Stringify(s.FromGoValue(stages.Result))), 0o600)
+	return draftFile, resultFile
 }
 
 func TestOfflineCommandsIgnoreModelSettings(t *testing.T) {
@@ -90,11 +84,11 @@ func TestStagesSerializeReloadAndRender(t *testing.T) {
 		t.Fatalf("inspect %v", err)
 	}
 	rendered, _, err := cli(t, "render", result)
-	if err != nil || !strings.HasPrefix(rendered, "# ") || !strings.Contains(rendered, "Structural checks and model review complete") {
+	if err != nil || !strings.HasPrefix(rendered, "# ") || !strings.Contains(rendered, "## 0-0-0: ") || strings.Contains(rendered, "Structural checks") {
 		t.Fatalf("render %v", err)
 	}
 	detailed, _, err := cli(t, "render", result, "--details")
-	if err != nil || !strings.Contains(detailed, "Deterministic checks:") || !strings.Contains(detailed, "## Evidence") {
+	if err != nil || !strings.Contains(detailed, "Deterministic checks:") || !strings.Contains(detailed, "## Evidence") || !strings.Contains(detailed, "Structural checks and model review complete") {
 		t.Fatalf("details %v", err)
 	}
 	build, _, err := cli(t, "build", result, "--tiers", "5,2,0")
@@ -110,9 +104,16 @@ func TestStagesSerializeReloadAndRender(t *testing.T) {
 	}
 	var entry map[string]any
 	_ = json.Unmarshal([]byte(saved), &entry)
+	if path, _ := entry["path"].(string); !strings.HasSuffix(path, ".result."+entry["id"].(string)[:12]+".json") || strings.Count(path, "/") != 2 {
+		t.Errorf("saved to %q, not a work and character folder", path)
+	}
 	listing, _, _ := cli(t, "library")
 	if !strings.Contains(listing, entry["id"].(string)) {
 		t.Error("the saved Result is not listed")
+	}
+	migrated, _, err := cli(t, "library", "migrate")
+	if err != nil || !strings.Contains(migrated, `"records": []`) {
+		t.Errorf("migrate %v: %s", err, migrated)
 	}
 	if _, _, err := cli(t, "library", "delete", entry["id"].(string)); err != nil {
 		t.Error(err)
@@ -153,6 +154,49 @@ func TestFailuresLeaveOutputAloneAndNeverOverwrite(t *testing.T) {
 		if _, _, err := cli(t, args...); err == nil {
 			t.Errorf("%v was accepted", args)
 		}
+	}
+}
+
+// A draft that fails validation writes its rejected outputs beside the
+// requested output, so the failure can be read without paying again.
+func TestFailedDraftsKeepTheirEvidence(t *testing.T) {
+	dir := scratch(t)
+	request := filepath.Join("..", "..", "data", "reference", "dart-monkey.request.json")
+	prepared := filepath.Join(dir, "prepared.json")
+	if _, _, err := cli(t, "prepare", request, "--profile", "default", "-o", prepared); err != nil {
+		t.Fatal(err)
+	}
+	plan, err := fixture.JSON("plan")
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan.(*s.Object).Set("repertoire", []any{})
+	answer := filepath.Join(dir, "answer.json")
+	if err := os.WriteFile(answer, []byte(s.Stringify(plan)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	// A stand-in codex answers every call with the same invalid plan.
+	codex := filepath.Join(dir, "codex")
+	script := "#!/bin/sh\nout=\"\"\nwhile [ $# -gt 0 ]; do\n  if [ \"$1\" = --output-last-message ]; then out=\"$2\"; shift; fi\n  shift\ndone\ncat >/dev/null\ncp " + answer + " \"$out\"\n"
+	if err := os.WriteFile(codex, []byte(script), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	output := filepath.Join(dir, "dart.json")
+	_, stderr, err := cli(t, "draft", prepared, "--provider", "codex", "--codex", codex, "--timeout", "20", "-o", output)
+	if err == nil || !strings.Contains(err.Error(), "could not be validated") {
+		t.Fatalf("draft: %v\n%s", err, stderr)
+	}
+	saved, readErr := os.ReadFile(filepath.Join(dir, "dart.failure.json"))
+	if readErr != nil || !strings.Contains(stderr, "Wrote the failure evidence to") {
+		t.Fatalf("no failure evidence: %v\n%s", readErr, stderr)
+	}
+	value, _ := s.Decode(saved)
+	attempts, _ := value.(*s.Object).Get("attempts")
+	if list, _ := attempts.([]any); len(list) != 2 {
+		t.Errorf("evidence %s", saved)
+	}
+	if _, err := os.Stat(output); err == nil {
+		t.Error("a failed draft wrote its output")
 	}
 }
 

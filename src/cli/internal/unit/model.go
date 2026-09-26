@@ -40,6 +40,8 @@ type ModelError struct {
 	Usage   *Usage
 	Failure *Failure
 	Cause   error
+	// Evidence is kept when a draft stage fails after model calls.
+	Evidence *FailureEvidence
 }
 
 func (e *ModelError) Error() string { return e.Message }

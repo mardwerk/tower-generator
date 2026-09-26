@@ -9,7 +9,8 @@ import (
 	"testing"
 )
 
-// transport answers requests from a handler instead of the network.
+// transport answers requests from a handler instead of the network, one
+// request at a time.
 type transport struct {
 	mu      sync.Mutex
 	handle  func(*http.Request) *http.Response
@@ -17,13 +18,18 @@ type transport struct {
 }
 
 func (t *transport) RoundTrip(request *http.Request) (*http.Response, error) {
-	t.mu.Lock()
-	t.queries = append(t.queries, request)
-	t.mu.Unlock()
 	if err := request.Context().Err(); err != nil {
+		t.mu.Lock()
+		t.queries = append(t.queries, request)
+		t.mu.Unlock()
 		return nil, err
 	}
+	// Research fetches pages concurrently. Handlers are serialized so a
+	// test's handler can record requests without its own lock.
+	t.mu.Lock()
+	t.queries = append(t.queries, request)
 	response := t.handle(request)
+	t.mu.Unlock()
 	if response == nil {
 		return nil, io.ErrUnexpectedEOF
 	}

@@ -125,8 +125,8 @@ export function App() {
   async function save() {
     if (!session.artifact) return;
     await session.load(async () => {
-      await library.save(session.artifact!);
-      session.setStatus('Saved to your local library.');
+      const entry = await library.save(session.artifact!);
+      session.setStatus(`Saved to ${library.directory}/${entry.path}.`);
     });
   }
   return (
@@ -280,6 +280,23 @@ export function App() {
           }
         >
           {session.error && <Alert id="error">{session.error}</Alert>}
+          {session.failureEvidence && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mb-3"
+              title="The rejected plan and outputs with their issues, to diagnose this failure without generating again"
+              onClick={() =>
+                download(
+                  `${session.job?.name ?? 'unit'}.failure.json`,
+                  `${JSON.stringify(session.failureEvidence, null, 2)}\n`,
+                  'application/json',
+                )
+              }
+            >
+              Download failure evidence
+            </Button>
+          )}
           <CharacterChoices session={session} />
           {view === 'unit' && (
             <>

@@ -5,7 +5,6 @@ import { styleNonce } from './nonce.js';
 import { cn } from './utils.js';
 
 export const Select = SelectPrimitive.Root;
-export const SelectGroup = SelectPrimitive.Group;
 export const SelectValue = SelectPrimitive.Value;
 
 export function SelectTrigger({
@@ -63,15 +62,6 @@ export function SelectContent({
   );
 }
 
-export function SelectLabel({ className, ...props }: ComponentProps<typeof SelectPrimitive.Label>) {
-  return (
-    <SelectPrimitive.Label
-      className={cn('px-2 py-1.5 text-xs text-muted-foreground', className)}
-      {...props}
-    />
-  );
-}
-
 export function SelectItem({
   className,
   children,
@@ -97,14 +87,5 @@ export function SelectItem({
         </SelectPrimitive.ItemIndicator>
       </span>
     </SelectPrimitive.Item>
-  );
-}
-
-export function SelectSeparator({
-  className,
-  ...props
-}: ComponentProps<typeof SelectPrimitive.Separator>) {
-  return (
-    <SelectPrimitive.Separator className={cn('-mx-1 my-1 h-px bg-border', className)} {...props} />
   );
 }

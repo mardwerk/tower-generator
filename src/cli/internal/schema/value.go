@@ -164,9 +164,6 @@ func decodeToken(decoder *json.Decoder, token json.Token) (any, error) {
 // FromGo converts a Go value into ordered values (see FromGoValue).
 func FromGo(value any) (any, error) { return FromGoValue(value), nil }
 
-// MustFromGo is FromGoValue.
-func MustFromGo(value any) any { return FromGoValue(value) }
-
 // ToGo decodes ordered values into a Go value through JSON.
 func ToGo(value any, target any) error {
 	return json.Unmarshal([]byte(Stringify(value)), target)

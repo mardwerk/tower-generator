@@ -14,8 +14,13 @@ const (
 	KindDamageOverTime = "damageOverTime" // deals its magnitude in damage per second
 	KindDisable        = "disable"        // stops the enemy acting; no magnitude
 	KindDamageTaken    = "damageTaken"    // raises damage taken by its magnitude
+	KindKnockback      = "knockback"      // pushes the enemy back along its path at its magnitude times its own speed
 	KindCustom         = "custom"         // described only; the host implements it
 )
+
+// KnockbackUnit is the unit of a knockback magnitude: the enemy moves back
+// along its path at that multiple of its own speed for the duration.
+const KnockbackUnit = "times enemy speed"
 
 // Stacking refresh modes: what a new application does to existing stacks.
 const (
@@ -26,7 +31,7 @@ const (
 
 var (
 	// EffectKinds lists the status-effect kinds in documentation order.
-	EffectKinds = []string{KindMoveSpeed, KindDamageOverTime, KindDisable, KindDamageTaken, KindCustom}
+	EffectKinds = []string{KindMoveSpeed, KindDamageOverTime, KindDisable, KindDamageTaken, KindKnockback, KindCustom}
 	// RefreshModes lists the stacking refresh modes.
 	RefreshModes = []string{RefreshReset, RefreshExtend, RefreshIndependent}
 	// StatusFields are the resolvable numbers of an applied status effect.
@@ -329,6 +334,9 @@ func VocabularyIssues(v Vocabulary) []Issue {
 			}
 			if effect.Kind == KindDamageOverTime && m.Unit != "damage/s" {
 				add(path+".magnitude.unit", "Damage over time is measured in damage/s.")
+			}
+			if effect.Kind == KindKnockback && m.Unit != KnockbackUnit {
+				add(path+".magnitude.unit", "Knockback is measured in "+KnockbackUnit+".")
 			}
 			if effect.Kind == KindMoveSpeed && m.Unit == "percent" && m.Max > 100 {
 				add(path+".magnitude.max", "A movement slow cannot exceed 100 percent.")

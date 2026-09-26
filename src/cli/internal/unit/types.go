@@ -102,6 +102,16 @@ type Finding struct {
 	Message  string   `json:"message"`
 	Evidence []string `json:"evidence"`
 	Action   *string  `json:"action"`
+	// Facts are the resolved values a model finding cites; code checked them.
+	Facts []FactCitation `json:"facts,omitempty"`
+}
+
+// FactCitation is one resolved value from the review's legalBuilds: a build
+// code, a field path such as attack.range, and the value as listed.
+type FactCitation struct {
+	Build string `json:"build"`
+	Field string `json:"field"`
+	Value string `json:"value"`
 }
 
 // BasicAttack is the candidate's readable basic attack.
@@ -237,6 +247,19 @@ type Attempt struct {
 	Purpose string   `json:"purpose"`
 	Issues  []string `json:"issues"`
 	Usage   *Usage   `json:"usage,omitempty"`
+	// Output is a rejected model output. Only failure evidence keeps it; a
+	// published draft drops it.
+	Output any `json:"output,omitempty"`
+}
+
+// FailureEvidence is what a failed draft keeps for diagnosis: every attempt
+// with its issues and rejected output, the plan once one was accepted and the
+// source passages the model was given, so a failure can be read without
+// paying for the attempts again.
+type FailureEvidence struct {
+	Plan           *DesignPlan    `json:"plan,omitempty"`
+	Attempts       []Attempt      `json:"attempts"`
+	SourcePassages []EvidenceSpan `json:"sourcePassages"`
 }
 
 // Run records one model stage.
@@ -328,6 +351,18 @@ type PlanRepertoire struct {
 	Name       string   `json:"name"`
 	SourceIDs  []string `json:"sourceIds"`
 	Limitation string   `json:"limitation"`
+	// Effects are what the cited passages describe the technique doing, each
+	// adapted or omitted; plans made before the field have none.
+	Effects []PlanEffect `json:"effects,omitempty"`
+}
+
+// PlanEffect is one source-described effect of a technique: adapted as the
+// promises in AdaptedAs, or omitted when AdaptedAs is empty. Reason says how
+// or why.
+type PlanEffect struct {
+	Effect    string   `json:"effect"`
+	AdaptedAs []string `json:"adaptedAs"`
+	Reason    string   `json:"reason"`
 }
 
 // PlanBase is the planned base attack.
@@ -389,6 +424,11 @@ type PlanOmission struct {
 type UpgradeIntent struct {
 	Improves []string `json:"improves"`
 	Unlock   string   `json:"unlock"`
+	// Technique is the repertoire technique or base attack the purchase
+	// adapts; plans made before it existed have none.
+	Technique string `json:"technique,omitempty"`
+	// Lowers are promised tradeoffs: dimensions the purchase reduces.
+	Lowers []string `json:"lowers,omitempty"`
 }
 
 // PathIntents are the five promises of a path.

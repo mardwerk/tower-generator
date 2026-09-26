@@ -2,6 +2,7 @@ package unit
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -148,6 +149,9 @@ func minimumEffects(intent UpgradeIntent, d m.Definition) int {
 			add(dimension)
 		}
 	}
+	for _, dimension := range intent.Lowers {
+		add(dimension)
+	}
 	total := 0
 	for _, n := range effects {
 		total += n
@@ -155,12 +159,48 @@ func minimumEffects(intent UpgradeIntent, d m.Definition) int {
 	return total
 }
 
-// PlanFeasibilityIssues rejects contradictions in a plan's explicit promises.
+// addsBehavior reports a third-purchase promise that adds behavior or access
+// rather than larger numbers: an unlock other than a targeting change, or
+// more projectiles. The mechanics check confirms it in the resolved builds.
+func addsBehavior(intent UpgradeIntent) bool {
+	if intent.Unlock != "none" && intent.Unlock != "targeting-change" {
+		return true
+	}
+	for _, dimension := range intent.Improves {
+		if dimension == "projectiles" {
+			return true
+		}
+	}
+	return false
+}
+
+// PlanFeasibilityIssues rejects promises that the mechanics could not keep:
+// an active promise without the same path's boost, a capability unlocked twice
+// and promises beyond the change budget. It judges no payoff; the review does,
+// from the resolved purchase evidence. Plans are checked when they are
+// authored; saved drafts keep the promises they were made with.
 func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 	if plan.UpgradeIntents == nil {
 		return nil
 	}
 	var issues []m.Issue
+	if policy := definition.Profile.DesignPolicy; policy != nil && policy.RequireTier3BehaviorChange != nil && *policy.RequireTier3BehaviorChange {
+		for pathIndex, path := range m.PathKeys {
+			if !addsBehavior(*plan.UpgradeIntents.At(pathIndex).At(3)) {
+				issues = append(issues, m.Issue{
+					Path:    "upgradeIntents." + path + ".tier3",
+					Message: fmt.Sprintf("%s must add a supported behavior or access, not only larger numbers: promise an unlock other than targeting-change, such as a new delivery, distinct-volley with more than one projectile, splash, a status effect, follow-up, damage-type-change or a detection trait, or promise projectiles while the path fires one projectile.", BuildCode(pathIndex, 3)),
+				})
+			}
+		}
+	}
+	// Under distinctFirstUpgrades two paths' first two purchases may not
+	// promise only the same dimension: four interval-only upgrades on two
+	// paths gave them no distinct early crosspath value (a Luffy Result on
+	// #27). Third purchases stay free, so a stat-led path keeps its route.
+	if policy := definition.Profile.DesignPolicy; policy != nil && policy.DistinctFirstUpgrades {
+		issues = append(issues, mirroredEarlyIssues(plan.UpgradeIntents)...)
+	}
 	boostTier := definition.Rules.ManualBoostUnlockTier
 	boostKey := m.TierKeys[boostTier-1]
 	for pathIndex, path := range m.PathKeys {
@@ -170,6 +210,11 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 			intent := intents.At(index + 1)
 			report := func(message string) {
 				issues = append(issues, m.Issue{Path: "upgradeIntents." + path + "." + tier, Message: message})
+			}
+			for _, dimension := range intent.Lowers {
+				if slices.Contains(intent.Improves, dimension) {
+					report(fmt.Sprintf("A purchase cannot both raise and lower %s. Keep the change the description states.", dimension))
+				}
 			}
 			needsBoost := intent.Unlock == "active-follow-up"
 			for _, d := range intent.Improves {
@@ -200,6 +245,58 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 				report(fmt.Sprintf("These promises require at least %d primitive effects, exceeding the Definition's %d-effect budget. %s; overlapping improvements and unlocks are counted once. Reduce the promised dimensions or move a purchase to another tier.", minimum, limit, pairs))
 			}
 		}
+	}
+	return issues
+}
+
+// earlyDimension is the one dimension a path's first two purchases promise
+// together, or "" when they promise more than one or unlock anything.
+func earlyDimension(intents *PathIntents) string {
+	dimensions := map[string]bool{}
+	for tier := 1; tier <= 2; tier++ {
+		intent := intents.At(tier)
+		if intent.Unlock != "" && intent.Unlock != "none" {
+			return ""
+		}
+		for _, dimension := range intent.Improves {
+			dimensions[dimension] = true
+		}
+	}
+	if len(dimensions) != 1 {
+		return ""
+	}
+	for dimension := range dimensions {
+		return dimension
+	}
+	return ""
+}
+
+// mirroredEarlyIssues reports a path whose first two purchases only improve
+// the dimension another path's first two purchases only improve.
+func mirroredEarlyIssues(intents *UpgradeIntents) []m.Issue {
+	var issues []m.Issue
+	owner := map[string]int{}
+	for index, path := range m.PathKeys {
+		dimension := earlyDimension(intents.At(index))
+		if dimension == "" {
+			continue
+		}
+		other, taken := owner[dimension]
+		if !taken {
+			owner[dimension] = index
+			continue
+		}
+		var others []string
+		for _, candidate := range []string{"damage", "pierce", "range", "attack-rate"} {
+			if candidate != dimension && len(others) < 3 {
+				others = append(others, candidate)
+			}
+		}
+		issues = append(issues, m.Issue{
+			Path: "upgradeIntents." + path + ".tier2",
+			Message: fmt.Sprintf("%s and %s only improve %s, as %s and %s do. Two paths' first two purchases must give distinct early crosspath value: give this path's first or second purchase another improvement from its own technique, such as %s, %s or %s, or personal detection, and keep %s alone on at most one path's first two purchases.",
+				BuildCode(index, 1), BuildCode(index, 2), dimension, BuildCode(other, 1), BuildCode(other, 2), others[0], others[1], others[2], dimension),
+		})
 	}
 	return issues
 }
@@ -315,7 +412,8 @@ func unlockedIntent(before, after m.Build, intent string, pathIndex, tier int, b
 	case "camo":
 		return !a.Camo && b.Camo
 	case "distinct-volley":
-		return a.Distribution != "distinct-targets" && b.Distribution == "distinct-targets"
+		// Distinct targets change nothing for a single projectile.
+		return a.Distribution != "distinct-targets" && b.Distribution == "distinct-targets" && b.Stats.Projectiles > 1
 	case "splash":
 		return a.Stats.SplashRadius == 0 && b.Stats.SplashRadius > 0
 	case "slow":
@@ -334,10 +432,84 @@ func unlockedIntent(before, after m.Build, intent string, pathIndex, tier int, b
 	return false
 }
 
+// promiseFix names the change that keeps a promise. A promise without the
+// active prefix is permanent: the boost's own multipliers apply only while the
+// Active Ability runs and do not keep it.
+func promiseFix(dimension string) string {
+	switch dimension {
+	case "damage":
+		return "Add a statChanges entry that raises damage; the boost's damageMultiplier is active-damage and does not count."
+	case "attack-rate":
+		return "Add a statChanges entry that lowers intervalSeconds, such as multiply 0.8; the boost's intervalMultiplier is active-attack-rate and does not count."
+	case "range":
+		return "Add a statChanges entry that raises range; the boost's rangeBonus does not count."
+	case "pierce", "projectiles", "splash":
+		stat := map[string]string{"pierce": "pierce", "projectiles": "projectiles", "splash": "splashRadius"}[dimension]
+		return "Add a statChanges entry that raises " + stat + "."
+	case "follow-up":
+		return "Add or strengthen followUp: count, damageMultiplier, radius or status inheritance."
+	case "active-damage":
+		return "Raise the boost's damageMultiplier in boostChanges, or damage while the boost is owned."
+	case "active-attack-rate":
+		return "Lower the boost's intervalMultiplier in boostChanges, or the interval while the boost is owned."
+	case "active-duration":
+		return "Raise the boost's durationSeconds in boostChanges."
+	case "active-frequency":
+		return "Lower the boost's cooldownSeconds in boostChanges."
+	}
+	return "Raise the status effect's magnitude or seconds in statuses."
+}
+
+// tradeoffFix names the change that keeps a promised tradeoff.
+func tradeoffFix(dimension string) string {
+	if dimension == "attack-rate" {
+		return "Add a statChanges entry that raises intervalSeconds, such as multiply 1.2, so the attack is slower."
+	}
+	stat := map[string]string{"damage": "damage", "range": "range", "pierce": "pierce", "projectiles": "projectiles", "splash": "splashRadius"}[dimension]
+	return "Add a statChanges entry that lowers " + stat + "."
+}
+
+// baseEffectFix names the base attack change that lets a first or second
+// purchase improve an effect instead of adding it.
+func baseEffectFix(dimension string) string {
+	switch dimension {
+	case "splash":
+		return "Give the base attack a splashRadius, with pierce of at least 2, so this purchase raises it."
+	case "follow-up":
+		return "Give the base attack a followUp so this purchase strengthens it."
+	}
+	return "Give the base attack " + dimension + " so this purchase raises its strength or duration."
+}
+
 // PlanIntentIssues reports retained plan promises a blueprint does not implement.
 func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition m.Definition) []m.Issue {
 	if intents == nil {
 		return nil
+	}
+	var order []string
+	found := map[string]m.Issue{}
+	// Under the early-identity policy a first or second purchase cannot add
+	// splash, a follow-up or a status, so its promise to improve one holds
+	// only if the base attack has it (reported on #27: a plan improved splash
+	// at 1-x-x, and the repair moved splash to 3-x-x without pierce).
+	if policy := definition.Profile.DesignPolicy; policy != nil && policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity {
+		base := m.ResolveUnchecked(&blueprint, m.Selection{})
+		for index, path := range m.PathKeys {
+			for tier := 1; tier <= 2; tier++ {
+				for _, dimension := range intents.At(index).At(tier).Improves {
+					addsPattern := dimension == "splash" || dimension == "follow-up" || !corePromises[dimension]
+					if !addsPattern || slices.ContainsFunc(measures(base, path, dimension), func(v float64) bool { return v > 0 }) {
+						continue
+					}
+					id := path + "." + m.TierKeys[tier-1] + ".improved " + dimension
+					order = append(order, id)
+					found[id] = m.Issue{
+						Path:    fmt.Sprintf("paths.%s.tiers.%s.planIntent", path, m.TierKeys[tier-1]),
+						Message: fmt.Sprintf("The retained plan promises improved %s at %s, but the base attack has none, and under the early-identity policy a first or second purchase cannot add it. %s", dimension, BuildCode(index, tier), baseEffectFix(dimension)),
+					}
+				}
+			}
+		}
 	}
 	type pair struct {
 		selection m.Selection
@@ -347,12 +519,11 @@ func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition
 	for _, sel := range m.AllLegalBuilds(definition) {
 		build := m.ResolveUnchecked(&blueprint, sel)
 		if len(m.ResolvedIssues(build, definition, "build", nil)) > 0 {
-			return nil
+			builds = nil
+			break
 		}
 		builds = append(builds, pair{sel, build})
 	}
-	var order []string
-	found := map[string]m.Issue{}
 	for _, entry := range builds {
 		for index, path := range m.PathKeys {
 			tier := entry.selection[index]
@@ -365,13 +536,13 @@ func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition
 			previous[index] = tier - 1
 			before := m.ResolveUnchecked(&blueprint, previous)
 			label := fmt.Sprintf("%d-%d-%d", entry.selection[0], entry.selection[1], entry.selection[2])
-			report := func(promise string) {
+			report := func(promise, fix string) {
 				id := path + "." + key + "." + promise
 				if _, ok := found[id]; !ok {
 					order = append(order, id)
 					found[id] = m.Issue{
 						Path:    fmt.Sprintf("paths.%s.tiers.%s.planIntent", path, key),
-						Message: fmt.Sprintf("The retained plan promises %s, but this purchase does not implement it in legal build %s. Implement the promised dimension; an unrelated benefit does not satisfy it.", promise, label),
+						Message: fmt.Sprintf("The retained plan promises %s, but this purchase does not implement it in legal build %s. %s Keep the purchase's other promised changes; an unrelated benefit does not satisfy it.", promise, label, fix),
 					}
 				}
 			}
@@ -384,11 +555,23 @@ func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition
 					}
 				}
 				if !improved {
-					report("improved " + dimension)
+					report("improved "+dimension, promiseFix(dimension))
+				}
+			}
+			for _, dimension := range intent.Lowers {
+				prior := measures(before, path, dimension)
+				lowered := false
+				for metric, value := range measures(entry.build, path, dimension) {
+					if value < prior[metric] {
+						lowered = true
+					}
+				}
+				if !lowered {
+					report("the tradeoff lowered "+dimension, tradeoffFix(dimension))
 				}
 			}
 			if !unlockedIntent(before, entry.build, intent.Unlock, index, tier, &blueprint, definition) {
-				report("unlock " + intent.Unlock)
+				report("unlock "+intent.Unlock, "Add the capability at exactly this purchase.")
 			}
 		}
 	}

@@ -45,9 +45,6 @@ func pureSelection(index, tier int) m.Selection {
 	return sel
 }
 
-// AttackDescription describes a resolved version 1 attack for players.
-func AttackDescription(attack m.Attack) string { return attackDescription(attack, nil) }
-
 // attackDescription describes an attack; version 2 statuses take their
 // names and units from the vocabulary.
 func attackDescription(attack m.Attack, vocabulary *m.Vocabulary) string {
@@ -138,9 +135,6 @@ func statusText(status m.StatusApplication, vocabulary *m.Vocabulary) string {
 	}
 	return text
 }
-
-// FollowUpDescription describes a bounded follow-up of a version 1 attack.
-func FollowUpDescription(effect m.FollowUp) string { return followUpDescription(effect, false) }
 
 func followUpDescription(effect m.FollowUp, v2 bool) string {
 	inherit := "No inherited burn, slow or stun."
@@ -313,14 +307,11 @@ func UnitSummary(attack m.Attack, definition m.Definition) string {
 	return fmt.Sprintf("%s %s attacker. %s", targets, shape, strings.Join(limits, " "))
 }
 
-// PathSummary describes what a pure tier 5 build of a version 1 unit changes.
-func PathSummary(base m.Attack, build m.ResolvedBuild) string { return pathSummary(base, build, nil) }
-
 // statusSummary names a version 2 path's status gains and losses: control
 // kinds read as enemy control, damage over time and other kinds by name.
 func statusSummary(base, after m.Attack, vocabulary *m.Vocabulary) (gains, losses []string) {
 	control := func(kind string) bool {
-		return kind == m.KindMoveSpeed || kind == m.KindDisable
+		return kind == m.KindMoveSpeed || kind == m.KindDisable || kind == m.KindKnockback
 	}
 	var gainedControl, lostControl bool
 	seen := map[string]bool{}

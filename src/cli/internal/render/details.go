@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
+	"github.com/mardwerk/unit-generator/src/cli/internal/unit"
 )
 
 // Detailed renders the full reading view: purchases, usage, abilities,
@@ -34,9 +35,17 @@ func describeUnit(view View) []string {
 		"",
 		"Input: `" + prepared.InputHash + "`. " + result,
 		"",
-		Escape(candidate.Role),
-		"",
 	}
+	if definition := prepared.Request.MechanicsDefinition; definition != nil {
+		rules := []string{}
+		for _, document := range prepared.Request.Documents {
+			if document.Kind == "rules" && !strings.HasPrefix(document.ID, "mechanics:") {
+				rules = append(rules, document.ID)
+			}
+		}
+		lines = append(lines, Escape(fmt.Sprintf("Definition %s, %s, revision %s. Rules: %s.", definition.Label, definition.ID, definition.Revision, strings.Join(rules, ", "))), "")
+	}
+	lines = append(lines, Escape(candidate.Role), "")
 	if candidate.Blueprint != nil && candidate.Blueprint.ReferencePattern != nil {
 		pattern := candidate.Blueprint.ReferencePattern
 		lines = append(lines,
@@ -52,15 +61,15 @@ func describeUnit(view View) []string {
 		"Limits: "+Escape(attack.Limitations), "",
 		"## Upgrade paths", "",
 	)
-	for _, path := range candidate.Paths {
+	for index, path := range candidate.Paths {
 		lines = append(lines,
 			"### "+Escape(path.Name), "",
 			Escape(path.Theme), "",
-			"| Tier | Upgrade | Effect | Status |",
+			"| Build | Upgrade | Effect | Status |",
 			"| --- | --- | --- | --- |",
 		)
 		for _, tier := range path.Tiers {
-			lines = append(lines, fmt.Sprintf("| %d | %s | %s | %s |", tier.Tier, Escape(tier.Name), Escape(tier.Benefit), tier.Status))
+			lines = append(lines, fmt.Sprintf("| %s | %s | %s | %s |", purchaseLabel(len(candidate.Paths), index, tier.Tier), Escape(tier.Name), Escape(tier.Benefit), tier.Status))
 		}
 		lines = append(lines, "")
 	}
@@ -120,32 +129,39 @@ func measured(value any) string {
 	return Escape(s.FormatNumber(toPrecision(number, 4)))
 }
 
+// gold writes a price exactly, as the unit sheet does: rounding 24615 to
+// four significant digits would misstate a total.
+func gold(value any) string {
+	number, ok := value.(float64)
+	if !ok {
+		return "unavailable"
+	}
+	return Escape(price(number))
+}
+
 func describePurchases(view View) []string {
 	if view.DesignEvaluation == nil {
 		return nil
 	}
-	evaluation := any(view.DesignEvaluation)
-	currency := "currency"
+	currency := ""
 	if definition := view.Prepared.Request.MechanicsDefinition; definition != nil {
 		currency = definition.Profile.Currency
+	}
+	evaluation := any(unit.ReviewPurchaseEvidence(view.DesignEvaluation, currency))
+	if currency == "" {
+		currency = "currency"
 	}
 	currency = Escape(currency)
 	lines := []string{
 		"## Purchase evidence",
 		"",
-		"Calculated from the resolved builds. Throughput assumes eligible targets continuously in reach; group values are capacity upper bounds. These comparisons do not prove balance, source fidelity or player preference.",
+		"Calculated from the resolved builds. Throughput assumes eligible targets continuously in reach; group values are capacity upper bounds. Time-averaged rates use the Active Ability whenever it is ready and equal the ordinary rate without one. Each crosspath purchase states its absolute time-averaged gain and price beside those of its main path's own fifth purchase. These comparisons do not prove balance, source fidelity or player preference.",
 		"",
 	}
 	for _, path := range list(field(evaluation, "paths")) {
+		// The plan's purchase reasons, weaknesses and capstone notes are
+		// private design checks; the JSON artifact keeps them for review.
 		lines = append(lines, "### "+Escape(text(field(path, "name"))), "")
-		if claim := field(path, "purchaseClaim"); claim != nil {
-			lines = append(lines,
-				"Purchase intention: "+Escape(text(field(claim, "buyFor"))),
-				"Retained weakness: "+Escape(text(field(claim, "weakness"))),
-				"Capstone intention: "+Escape(text(field(claim, "capstoneValue"))),
-				"",
-			)
-		}
 		lines = append(lines, "| Purchase | Added "+currency+" | Changed capacities |", "| --- | --- | --- |")
 		purchases := append(append([]any{}, list(field(path, "milestones"))...), list(field(path, "crosspaths"))...)
 		for _, purchase := range purchases {
@@ -167,7 +183,13 @@ func describePurchases(view View) []string {
 				}
 				changed = Escape(changed)
 			}
-			lines = append(lines, "| "+joined(field(purchase, "from"), "-")+" → "+joined(field(purchase, "to"), "-")+" | "+measured(field(purchase, "incrementalGold"))+" | "+changed+" |")
+			if against := againstCapstoneText(field(purchase, unit.AgainstCapstone), currency); against != "" {
+				if !strings.HasSuffix(changed, ".") {
+					changed += "."
+				}
+				changed += " " + against
+			}
+			lines = append(lines, "| "+joined(field(purchase, "from"), "-")+" → "+joined(field(purchase, "to"), "-")+" | "+gold(field(purchase, "incrementalGold"))+" | "+changed+" |")
 		}
 		comparison := field(path, "capstoneComparison")
 		copies := "an undefined number of"
@@ -176,11 +198,33 @@ func describePurchases(view View) []string {
 		}
 		lines = append(lines,
 			"",
-			"T5 total: "+measured(field(comparison, "tier5", "totalGold"))+" "+currency+". The same budget buys "+copies+" pure T4 copies. Extra copies need extra placement space and target access. Range and active uptime do not add across copies.",
+			"T5 total: "+gold(field(comparison, "tier5", "totalGold"))+" "+currency+". The same budget buys "+copies+" pure T4 copies. Extra copies need extra placement space and target access. Range and active uptime do not add across copies.",
 			"",
 		)
 	}
 	return lines
+}
+
+// againstCapstoneText states a side purchase's absolute time-averaged gain
+// and price beside those of its main path's fifth purchase, such as "Side
+// 1-x-x adds direct +1.05, group +2.1 for 140 Gold; the path's x-5-x adds
+// direct +12.64, group +25.28 for 45,000 Gold."; empty without a comparison.
+func againstCapstoneText(against any, currency string) string {
+	if against == nil {
+		return ""
+	}
+	adds := func(side string) string {
+		return Escape(text(field(against, side, "code"))) + " adds direct " + signed(field(against, unit.TimeAveragedDirect, side)) + ", group " + signed(field(against, unit.TimeAveragedGroup, side)) + " for " + gold(field(against, side, "price")) + " " + currency
+	}
+	return "Side " + adds("sidePurchase") + "; the path's " + adds("capstone") + "."
+}
+
+// signed writes a measured change with its sign.
+func signed(value any) string {
+	if number, ok := value.(float64); ok && number >= 0 {
+		return "+" + measured(number)
+	}
+	return measured(value)
 }
 
 func describeUsage(view View) []string {
@@ -260,7 +304,7 @@ func describeMechanics(view View) []string {
 }
 
 func describeReview(view View) []string {
-	lines := []string{"", "## Review", ""}
+	lines := []string{"", "## Review", "", reviewStatus(view), ""}
 	if view.ReviewSummary != nil && *view.ReviewSummary != "" {
 		lines = append(lines, Escape(*view.ReviewSummary), "")
 	}
@@ -321,4 +365,13 @@ func describeEvidence(view View) []string {
 		lines = append(lines, "- "+Escape(source.DocumentID)+": "+Escape(strings.Join(source.Claims, "; "))+" Limits: "+Escape(source.Limitations))
 	}
 	return lines
+}
+
+// purchaseLabel names a purchase by build code when the unit has the three
+// paths build codes describe, and by tier number otherwise.
+func purchaseLabel(paths, index, tier int) string {
+	if paths != 3 || tier < 1 || tier > 9 {
+		return itoa(tier)
+	}
+	return unit.BuildCode(index, tier)
 }

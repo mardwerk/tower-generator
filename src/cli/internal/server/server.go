@@ -268,6 +268,9 @@ func writeError(w http.ResponseWriter, err error) {
 		if model.Usage != nil {
 			body.Set("usage", s.FromGoValue(model.Usage))
 		}
+		if model.Evidence != nil {
+			body.Set("evidence", s.FromGoValue(model.Evidence))
+		}
 		_ = writeJSON(w, 502, s.NewObject().Set("error", body))
 		return
 	}

@@ -2,12 +2,10 @@ package mechanics
 
 import (
 	"math"
-	"slices"
 	"sort"
 	"strings"
 	"testing"
 
-	"github.com/mardwerk/unit-generator/src/cli/internal/parity"
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
 )
 
@@ -119,34 +117,49 @@ func upgradeBlueprint(value any) any {
 	return blueprint
 }
 
+// v1Variants are version 1 blueprints with every status and extension, and
+// invalid ones, so translation is compared on passes and failures alike.
+func v1Variants() []*Blueprint {
+	burn := starter()
+	burn.Paths.Path1.Tiers.Tier3.Changes = []Change{stat("damage", "set", 20), stat("burnDamagePerSecond", "set", 3), stat("burnSeconds", "set", 2)}
+	stun := starter()
+	stun.Paths.Path3.Tiers.Tier3.Changes = []Change{stat("stunSeconds", "add", 0.5), stat("damage", "add", 1)}
+	stun.Paths.Path3.Tiers.Tier4.Changes = []Change{stat("stunSeconds", "multiply", 2), stat("pierce", "add", 1)}
+	stun.Paths.Path3.Tiers.Tier5.Changes = []Change{stat("range", "add", 20), stat("stunSeconds", "add", 1)}
+	volley := starter()
+	volley.Paths.Path2.Tiers.Tier3.Changes = []Change{stat("projectiles", "add", 2), {Kind: "distribution", Target: "base", Text: "distinct-targets"}}
+	control := starter()
+	control.BaseAttack.Stats.SlowPercent, control.BaseAttack.Stats.SlowSeconds = 20, 1
+	control.Paths.Path3.Tiers.Tier3.Changes = []Change{stat("slowPercent", "add", 20), stat("slowSeconds", "add", 1)}
+	invalidSlow := starter()
+	invalidSlow.Paths.Path3.Tiers.Tier3.Changes = []Change{stat("slowPercent", "set", 30)}
+	invalidCount := starter()
+	invalidCount.Paths.Path2.Tiers.Tier3.Changes = []Change{stat("projectiles", "multiply", 1.5)}
+	return []*Blueprint{starter(), burn, stun, volley, control, invalidSlow, invalidCount}
+}
+
 // A version 1 blueprint and its version 2 translation must pass or fail
 // validation together and measure the same in every legal build.
 func TestVersion2ReproducesVersion1(t *testing.T) {
-	entries, err := parity.Entries("validateBlueprint")
-	if err != nil {
-		t.Fatal(err)
+	legacy := extended()
+	upgraded := UpgradeDefinition(legacy)
+	if _, issues := s.Parse(DefinitionV2Schema, s.FromGoValue(upgraded)); len(issues) > 0 {
+		t.Fatalf("upgraded Definition is invalid: %v", issues)
 	}
-	checked := 0
-	for _, entry := range entries {
-		input, definitionValue := parity.Restore(parity.Arg(entry, 0)), parity.Arg(entry, 1)
-		var legacy Definition
-		if err := s.ParseInto(MechanicsDefinitionSchema, definitionValue, &legacy); err != nil {
-			continue
-		}
-		upgraded := UpgradeDefinition(legacy)
-		if _, issues := s.Parse(DefinitionV2Schema, s.FromGoValue(upgraded)); len(issues) > 0 {
-			t.Fatalf("upgraded Definition is invalid: %v", issues)
-		}
-		v1Issues := ValidateBlueprint(input, definitionValue)
+	valid := 0
+	for index, variant := range v1Variants() {
+		input := s.FromGoValue(variant)
+		v1Issues := ValidateBlueprint(input, s.FromGoValue(legacy))
 		v2Input := upgradeBlueprint(input)
 		v2Issues := ValidateBlueprint(v2Input, s.FromGoValue(upgraded))
 		if (len(v1Issues) == 0) != (len(v2Issues) == 0) {
-			t.Errorf("version 1 issues %v, version 2 issues %v", v1Issues, v2Issues)
+			t.Errorf("variant %d: version 1 issues %v, version 2 issues %v", index, v1Issues, v2Issues)
 			continue
 		}
 		if len(v1Issues) > 0 {
 			continue
 		}
+		valid++
 		var v1, v2 Blueprint
 		if err := s.ToGo(input, &v1); err != nil {
 			t.Fatal(err)
@@ -160,75 +173,22 @@ func TestVersion2ReproducesVersion1(t *testing.T) {
 		vocabulary := upgraded.Terms()
 		for _, selection := range AllLegalBuilds(legacy) {
 			a, b := ResolveUnchecked(&v1, selection), ResolveUnchecked(&v2, selection)
-			if got, want := s.Stringify(PurchaseMetricsWith(b, &vocabulary)), s.Stringify(PurchaseMetrics(a)); got != want {
-				t.Fatalf("%v metrics: version 2 %s, version 1 %s", selection, got, want)
+			if got, want := s.Stringify(PurchaseMetricsWith(b, &vocabulary)), s.Stringify(PurchaseMetricsWith(a, nil)); got != want {
+				t.Fatalf("variant %d %v metrics: version 2 %s, version 1 %s", index, selection, got, want)
 			}
 			// Version 2 sorts statuses by ID; version 1 lists slow, burn, stun.
 			want := a.BaseAttack.AppliedStatuses()
 			sort.Slice(want, func(i, j int) bool { return want[i].Effect < want[j].Effect })
 			if s.Stringify(s.FromGoValue(want)) != s.Stringify(s.FromGoValue(b.BaseAttack.AppliedStatuses())) {
-				t.Fatalf("%v statuses differ", selection)
+				t.Fatalf("variant %d %v statuses differ", index, selection)
 			}
 		}
-		if got, want := s.Stringify(CompareCapstonePurchasesWith(&v2, &vocabulary)), s.Stringify(CompareCapstonePurchases(&v1)); got != want {
-			t.Fatalf("capstones: version 2 %s, version 1 %s", got, want)
-		}
-		checked++
-	}
-	if checked < 20 {
-		t.Fatalf("only %d valid blueprints compared", checked)
-	}
-}
-
-// AssessTargetEffects agrees with every recorded AssessTarget call, under
-// the version 1 Definition and its version 2 translation.
-func TestAssessTargetEffectsReproducesVersion1(t *testing.T) {
-	entries, err := parity.Entries("assessTarget")
-	if err != nil {
-		t.Fatal(err)
-	}
-	checked := 0
-	for _, entry := range entries {
-		var attack Attack
-		if err := s.ToGo(parity.Arg(entry, 0), &attack); err != nil {
-			t.Fatal(err)
-		}
-		target := parity.Arg(entry, 1).(*s.Object)
-		camo, _ := target.Get("camo")
-		obstructed, _ := target.Get("obstructed")
-		props, _ := target.Get("properties")
-		var properties []string
-		for _, p := range props.([]any) {
-			properties = append(properties, p.(string))
-		}
-		var legacy Definition
-		if err := s.ParseInto(MechanicsDefinitionSchema, parity.Arg(entry, 2), &legacy); err != nil {
-			continue
-		}
-		var hidden []string
-		if camo == true {
-			hidden = []string{"camo"}
-		}
-		checked++
-		want := AssessTarget(attack, camo == true, obstructed == true, properties, legacy)
-		var v2 Attack
-		if err := s.ToGo(upgradeAttack(parity.Arg(entry, 0)), &v2); err != nil {
-			t.Fatal(err)
-		}
-		for _, version := range []struct {
-			attack     Attack
-			definition Definition
-		}{{attack, legacy}, {v2, UpgradeDefinition(legacy)}} {
-			got := AssessTargetEffects(version.attack, hidden, obstructed == true, properties, version.definition)
-			applies := func(effect string) bool { return slices.Contains(got.Statuses, effect) }
-			if got.Detected != want.Detected || got.Reachable != want.Reachable || got.CanDamage != want.CanDamage ||
-				applies("slow") != want.CanSlow || applies("stun") != want.CanStun {
-				t.Errorf("version %s: got %+v, want %+v", version.definition.Version, got, want)
-			}
+		if got, want := s.Stringify(CompareCapstonePurchasesWith(&v2, &vocabulary)), s.Stringify(CompareCapstonePurchasesWith(&v1, nil)); got != want {
+			t.Fatalf("variant %d capstones: version 2 %s, version 1 %s", index, got, want)
 		}
 	}
-	if checked < 10 {
-		t.Fatalf("only %d recorded targets compared", checked)
+	if valid < 5 {
+		t.Fatalf("only %d valid variants compared", valid)
 	}
 }
 
@@ -268,6 +228,8 @@ func TestVocabularyIssues(t *testing.T) {
 		StatusEffect{ID: "freeze", Name: "Freeze", Kind: KindDisable, Magnitude: &Magnitude{Unit: "percent", Max: 10}, MaxSeconds: 1, Stacking: Stacking{MaxStacks: 1, Refresh: RefreshReset}, Immune: []string{"ghost"}},
 		StatusEffect{ID: "poison", Name: "Poison", Aliases: []string{"burn"}, Kind: KindDamageOverTime, Magnitude: &Magnitude{Unit: "hp", Max: 10}, MaxSeconds: 1, Stacking: Stacking{MaxStacks: 1, Refresh: RefreshReset}},
 		StatusEffect{ID: "splash", Name: "Splash", Kind: KindCustom, MaxSeconds: 1, Stacking: Stacking{MaxStacks: 1, Refresh: RefreshReset}},
+		StatusEffect{ID: "shove", Name: "Shove", Kind: KindKnockback, Magnitude: &Magnitude{Unit: "percent", Max: 5}, MaxSeconds: 1, Stacking: Stacking{MaxStacks: 1, Refresh: RefreshReset}},
+		StatusEffect{ID: "push", Name: "Push", Kind: KindKnockback, MaxSeconds: 1, Stacking: Stacking{MaxStacks: 1, Refresh: RefreshReset}},
 	)
 	var messages []string
 	for _, issue := range VocabularyIssues(broken) {
@@ -281,6 +243,8 @@ func TestVocabularyIssues(t *testing.T) {
 		"statusEffects.5.aliases.0: burn already names the effect burn",
 		"statusEffects.5.magnitude.unit: Damage over time is measured in damage/s",
 		"statusEffects.6.id: splash is reserved by the Engine",
+		"statusEffects.7.magnitude.unit: Knockback is measured in times enemy speed",
+		"statusEffects.8.magnitude: A knockback effect needs a magnitude",
 	} {
 		if !strings.Contains(joined, "vocabulary."+want) {
 			t.Errorf("missing %q in\n%s", want, joined)

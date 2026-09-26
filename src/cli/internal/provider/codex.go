@@ -47,6 +47,11 @@ var _ Observable = (*Codex)(nil)
 
 // NewCodex validates the settings.
 func NewCodex(o CodexOptions) (*Codex, error) {
+	switch o.Reasoning {
+	case "", "minimal", "low", "medium", "high", "xhigh", "max", "ultra":
+	default:
+		return nil, codexFailure(&unit.Failure{Code: unit.CodeFailed, Message: "Codex reasoning level is not supported."})
+	}
 	if o.Executable == "" {
 		o.Executable = "codex"
 	}

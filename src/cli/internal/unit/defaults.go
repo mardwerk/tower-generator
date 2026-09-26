@@ -8,15 +8,20 @@ func strPtr(v string) *string     { return &v }
 func floatPtr(v float64) *float64 { return &v }
 
 // DefaultAuthoringDefinition is the bundled Definition used for new units:
-// the base scale with attack extensions, a two-tier early budget, the
+// the base scale with attack extensions, a two-tier early budget, five
+// changes per later purchase, the
 // BTD6-inspired design policy and a version 2 vocabulary. The vocabulary
 // names the base scale's slow, burn, stun, damage types, targeting and Camo
-// detection, so it behaves exactly as the version 1 starter.
+// detection, so it behaves exactly as the version 1 starter. Its scale and
+// the rules document's references come from btd6-atlas capture 56.3.
 func DefaultAuthoringDefinition() mechanics.Definition {
 	d := mechanics.DefaultDefinition()
+	d.Label = "BTD6-inspired Gold and Health starter, btd6-atlas 56.3 scale"
 	extensions := []string{"distinct-volley", "volley-follow-up"}
 	d.Rules.AttackExtensions = &extensions
 	d.Profile.EarlyTierThrough = intPtr(2)
+	// Real upgrades such as Crossbow Master change five properties.
+	d.Profile.MaxChangesPerTier = 5
 	d.Profile.DesignPolicy = &mechanics.DesignPolicy{
 		Version:                     "1",
 		DistinctPathSpecializations: false,
@@ -30,6 +35,15 @@ func DefaultAuthoringDefinition() mechanics.Definition {
 	d = mechanics.UpgradeDefinition(d)
 	d.Revision = defaultAuthoringRevision
 	describeVocabulary(d.Vocabulary)
+	// Knockback follows the atlas KnockbackModel of Juggernaut and Super
+	// Monkey's Knockback; see the rules document's scale references.
+	d.Vocabulary.StatusEffects = append(d.Vocabulary.StatusEffects, mechanics.StatusEffect{
+		ID: "knockback", Name: "Knockback", Aliases: []string{"push back", "launch"}, Kind: mechanics.KindKnockback,
+		Description: "Pushes the enemy back along the track at the magnitude times its own speed for the duration. The strongest knockback applies; a new one refreshes the duration.",
+		Magnitude:   &mechanics.Magnitude{Unit: mechanics.KnockbackUnit, Min: 0, Max: 5}, MaxSeconds: 1,
+		Stacking: mechanics.Stacking{MaxStacks: 1, Refresh: mechanics.RefreshReset},
+		Immune:   []string{"blimp", "boss"},
+	})
 	return d
 }
 
@@ -40,7 +54,7 @@ func describeVocabulary(v *mechanics.Vocabulary) {
 		term.Name, term.Description = defaultEnemyProperties[term.ID][0], defaultEnemyProperties[term.ID][1]
 	}
 	for i := range v.DamageTypes {
-		v.DamageTypes[i].Name = defaultDamageTypes[v.DamageTypes[i].ID]
+		v.DamageTypes[i].Name, v.DamageTypes[i].Description = defaultDamageTypes[v.DamageTypes[i].ID][0], defaultDamageTypes[v.DamageTypes[i].ID][1]
 	}
 	for i := range v.Targeting {
 		term := &v.Targeting[i]
@@ -60,11 +74,17 @@ var defaultEnemyProperties = map[string][2]string{
 	"purple": {"Purple", "Resists energy damage."},
 	"black":  {"Black", "Resists explosive damage."},
 	"zebra":  {"Zebra", "Resists explosive damage."},
-	"blimp":  {"Blimp", "Large armored carrier; ignores slow and stun."},
-	"boss":   {"Boss", "Boss enemy; ignores slow and stun."},
+	"blimp":  {"Blimp", "Large armored carrier; ignores slow, stun and knockback."},
+	"boss":   {"Boss", "Boss enemy; ignores slow, stun and knockback."},
 }
 
-var defaultDamageTypes = map[string]string{"sharp": "Sharp", "normal": "Normal", "explosive": "Explosive", "energy": "Energy"}
+// defaultDamageTypes name each damage type and the attacks it suits.
+var defaultDamageTypes = map[string][2]string{
+	"sharp":     {"Sharp", "Darts, blades, spikes and arrows."},
+	"normal":    {"Normal", "Blunt blows and plain impacts."},
+	"explosive": {"Explosive", "Blasts and bombs."},
+	"energy":    {"Energy", "Beams and energy attacks."},
+}
 
 var defaultTargeting = map[string][2]string{
 	"first":  {"First", "The enemy furthest along the track."},

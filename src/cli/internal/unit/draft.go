@@ -121,7 +121,13 @@ func planDesign(ctx context.Context, prepared Prepared, model Model, repairs int
 				if compact && len(path) >= 3 && path[0] == "upgradeIntents" {
 					path = append([]any{"paths", path[1], "milestones", path[2]}, path[3:]...)
 				}
-				issues = append(issues, s.Issue{Path: path}.PathString()+": "+issue.Message)
+				message := issue.Message
+				// Quoting the rejected text lets the correction find it
+				// without counting array positions.
+				if value, ok := valueAt(response.Output, issue.Path).(string); ok {
+					message += ". Current value: " + s.Stringify(s.SliceUTF16(value, 0, 160))
+				}
+				issues = append(issues, s.Issue{Path: path}.PathString()+": "+message)
 			}
 		}
 		billed := response.Usage
@@ -129,17 +135,57 @@ func planDesign(ctx context.Context, prepared Prepared, model Model, repairs int
 		if errors.As(err, &modelErr) && modelErr.Usage != nil {
 			billed = modelErr.Usage
 		}
-		*attempts = append(*attempts, withUsage(Attempt{Number: len(*attempts) + 1, Purpose: "plan", Issues: issues}, billed))
+		rejected := withUsage(Attempt{Number: len(*attempts) + 1, Purpose: "plan", Issues: issues}, billed)
+		if validation != nil {
+			rejected.Output = response.Output
+		}
+		*attempts = append(*attempts, rejected)
 		if validation == nil {
 			failure := StageFailure(err, "draft", totalUsage(*attempts), false)
-			return DesignPlan{}, &ModelError{Message: failure.Message, Usage: totalUsage(*attempts), Failure: failure.Failure, Cause: failure}
+			return DesignPlan{}, &ModelError{Message: failure.Message, Usage: totalUsage(*attempts), Failure: failure.Failure, Cause: failure, Evidence: failureEvidence(&prepared.Request, nil, *attempts)}
 		}
-		correction = "\n\nCorrect this invalid design plan while retaining supported character identity: " +
+		// A Luffy retry on #27 returned only the one repertoire entry an
+		// issue named, and the shortened plan failed.
+		correction = "\n\nCorrect this invalid design plan while retaining supported character identity. Return the complete plan with every field and entry, changing only what the issues require: " +
 			s.Stringify(s.NewObject().Set("issues", stringList(issues)).Set("previous", response.Output))
 	}
 	last := (*attempts)[len(*attempts)-1]
 	message := "The character design plan could not be validated. " + failureSummary(last.Issues)
-	return DesignPlan{}, &ModelError{Message: message, Usage: totalUsage(*attempts), Failure: &Failure{Code: CodeOutputInvalid, Stage: "draft", Message: message}}
+	return DesignPlan{}, &ModelError{Message: message, Usage: totalUsage(*attempts), Failure: &Failure{Code: CodeOutputInvalid, Stage: "draft", Message: message}, Evidence: failureEvidence(&prepared.Request, nil, *attempts)}
+}
+
+// failureEvidence copies the attempts of a failed draft with the accepted
+// plan, if any, and the source passages the model was given.
+func failureEvidence(request *Request, plan *DesignPlan, attempts []Attempt) *FailureEvidence {
+	evidence := &FailureEvidence{Attempts: append([]Attempt{}, attempts...), SourcePassages: AuthorEvidence(request)}
+	if plan != nil {
+		retained := *plan
+		evidence.Plan = &retained
+	}
+	return evidence
+}
+
+// valueAt follows a validation issue path through decoded model output.
+func valueAt(value any, path []any) any {
+	for _, key := range path {
+		switch k := key.(type) {
+		case string:
+			object, ok := value.(*s.Object)
+			if !ok {
+				return nil
+			}
+			value, _ = object.Get(k)
+		case int:
+			list, ok := value.([]any)
+			if !ok || k < 0 || k >= len(list) {
+				return nil
+			}
+			value = list[k]
+		default:
+			return nil
+		}
+	}
+	return value
 }
 
 func stringList(values []string) []any {
@@ -196,7 +242,7 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 		}
 		attempts = append(attempts, withUsage(Attempt{Number: len(attempts) + 1, Purpose: purpose, Issues: []string{}}, failedUsage))
 		failure := StageFailure(err, "draft", totalUsage(attempts), invalid)
-		return &ModelError{Message: failure.Message, Usage: totalUsage(attempts), Failure: failure.Failure, Cause: failure}
+		return &ModelError{Message: failure.Message, Usage: totalUsage(attempts), Failure: failure.Failure, Cause: failure, Evidence: failureEvidence(request, &plan, attempts)}
 	}
 	for attempt := 0; attempt <= repairs; attempt++ {
 		if err := cancelled(ctx, attempts); err != nil {
@@ -293,9 +339,16 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 			}
 			draft = &d
 		}
-		attempts = append(attempts, withUsage(Attempt{Number: len(attempts) + 1, Purpose: purpose, Issues: issues}, usage))
+		attempt := withUsage(Attempt{Number: len(attempts) + 1, Purpose: purpose, Issues: issues}, usage)
+		if len(issues) > 0 {
+			attempt.Output = authored
+		}
+		attempts = append(attempts, attempt)
 		if draft != nil && len(issues) == 0 {
 			all := append([]Attempt(nil), attempts...)
+			for i := range all {
+				all[i].Output = nil
+			}
 			draft.Run.Attempts = &all
 			draft.Run.Usage = totalUsage(attempts)
 			return *draft, nil
@@ -308,7 +361,7 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 		}
 	}
 	message := fmt.Sprintf("The draft still failed mechanics checks after %d attempts. %s No invalid Unit was published.", designAttempts, failureSummary(issues))
-	return Draft{}, &ModelError{Message: message, Usage: totalUsage(attempts), Failure: &Failure{Code: CodeOutputInvalid, Stage: "draft", Message: message}}
+	return Draft{}, &ModelError{Message: message, Usage: totalUsage(attempts), Failure: &Failure{Code: CodeOutputInvalid, Stage: "draft", Message: message}, Evidence: failureEvidence(request, &plan, attempts)}
 }
 
 func blueprintRequest(prepared Prepared, previous any, issues []string, plan DesignPlan) (ModelRequest, error) {
@@ -343,30 +396,34 @@ func blueprintRequest(prepared Prepared, previous any, issues []string, plan Des
 		Set("sourceScope", s.NewObject().
 			Set("selectedPassages", float64(len(evidence))).
 			Set("availablePassages", float64(len(EvidenceSpans(request)))).
-			Set("note", draftLine344)).
+			Set("note", draftSourceScope)).
 		Set("previous", previousValue(request)).
 		Set("previousFindings", previousFindings(request)).
 		Set("feedback", nullableString(request.Feedback))
-	budget, form, example := draftLine359, draftLine360, draftLine366
+	budget, form, example := draftBudget, draftStatusForm, draftExample
 	if isV2(request) {
 		budget, form, example = draftStatusBudgetV2, draftStatusFormV2, draftExampleV2
 	}
-	prompt := []string{draftLine354, draftLine355, draftLine356, draftLine357, draftLine358, budget, form, draftLine361, draftLine362, CountArithmeticGuidance}
+	budget = fmt.Sprintf(budget, budgetSentence(request))
+	prompt := []string{draftPlan, draftPromises, draftStyle, draftOwnership, draftShape, draftTruth, budget, form, draftArithmetic, draftExtensions, CountArithmeticGuidance}
+	if d := request.MechanicsDefinition; d != nil {
+		prompt = append(prompt, BuildShape(*d))
+	}
 	prompt = append(prompt, VocabularyGuidance(request)...)
 	prompt = append(prompt, DesignGuidance(request)...)
-	prompt = append(prompt, draftLine365, example, draftLine367, s.Stringify(context))
+	prompt = append(prompt, draftBoost, example, draftUnsupported, s.Stringify(context))
 	if previous != nil {
 		shown := issues
 		if len(shown) > 20 {
 			shown = shown[:20]
 		}
-		prompt = append(prompt, draftLine372, s.Stringify(s.NewObject().Set("issues", stringList(shown)).Set("previous", previous)))
+		prompt = append(prompt, draftRetry, s.Stringify(s.NewObject().Set("issues", stringList(shown)).Set("previous", previous)))
 	}
 	schema, err := ModelOutputJSONSchema(request)
 	if err != nil {
 		return ModelRequest{}, err
 	}
-	return ModelRequest{System: draftLine352, Prompt: strings.Join(prompt, "\n\n"), Schema: schema}, nil
+	return ModelRequest{System: draftSystem, Prompt: strings.Join(prompt, "\n\n"), Schema: schema}, nil
 }
 
 // ParsePrepared validates a prepared request value.

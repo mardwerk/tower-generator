@@ -18,12 +18,12 @@ go build -o mardwerk-unit ./src/cli
 | `draft PREPARED` | → draft | 2–6 |
 | `check DRAFT` | → checked artifact with deterministic findings | none |
 | `review CHECKED` | → Result with a model review | 1 |
-| `render ARTIFACT` | → Markdown unit sheet; `--details` adds purchases, usage, evidence and findings | none |
+| `render ARTIFACT` | → Markdown unit sheet: `0-0-0`, each purchase by build code, every crosspath build and, for a revision, patch notes; `--details` renders the diagnostics instead: provenance, review status, findings (including unsupported mechanics), purchase evidence, usage and evidence | none |
 | `build ARTIFACT --tiers 5,2,0` | → resolved stats and costs for one purchased build | none |
 | `inspect FILE` | → kind, validity and character of a saved file | none |
 | `definition` | → the bundled mechanics Definition | none |
 | `profiles` | → the bundled and saved Profiles | none |
-| `library [list]`, `library save FILE`, `library load ID`, `library delete ID...` | the local library | none |
+| `library [list]`, `library save FILE`, `library load ID`, `library delete ID...`, `library migrate` | the local library, arranged as `WORK/CHARACTER/CHARACTER.STAGE.ID.json` ([LAB.md](LAB.md#library)); `migrate` moves records saved before that layout | none |
 | `serve` | the local web app ([LAB.md](LAB.md)) | per request |
 
 Drafting makes a planning call and a mechanics call, each allowed one repair by default (`--repairs 0|1|2`).
@@ -33,18 +33,18 @@ Drafting makes a planning call and a mechanics call, each allowed one repair by 
 | Option | Applies to | Meaning |
 | --- | --- | --- |
 | `-o, --output FILE` | all but `serve` | Write a new file; an existing file is never replaced |
-| `--profile ID` | `prepare`, `generate`, `author` | The Profile to prepare under (default: the bundled `default`) |
+| `--profile ID` | `prepare`, `generate`, `author` | The Profile to prepare under. Sources default to the bundled `default`; a request file is prepared as written unless this is given |
 | `--profiles DIR` | `prepare`, `generate`, `author`, `profiles`, `serve` | Saved Profiles (default `data/profiles`) |
 | `--library DIR` | `library`, `serve` | Library folder (default `data/runs/library`) |
 | `--provider openrouter\|codex` | model commands, `serve` | OpenRouter (default) or an existing Codex login |
-| `--model NAME`, `--reasoning LEVEL`, `--timeout SECONDS` | model commands | Model, reasoning (`low`, `medium`, `high`, plus `none` for OpenRouter) and per-call timeout (OpenRouter 120 s, Codex 600 s) |
+| `--model NAME`, `--reasoning LEVEL`, `--timeout SECONDS` | model commands | Model, reasoning (OpenRouter: `none`, `low`, `medium`, `high`; Codex: `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `ultra`) and per-call timeout (OpenRouter 120 s, Codex 600 s) |
 | `--codex FILE` | model commands | Codex executable |
 | `--choice ID` | `research`, `generate` | Pick a character when the name is ambiguous |
 | `--previous FILE`, `--feedback TEXT` | `prepare`, `author` (request files); `--feedback` also `edit` | Revise an earlier Result |
 | `--repairs 0\|1\|2` | `draft`, `generate`, `author`, `edit` | Repair budget per model stage |
 | `--evidence-dir DIR` | `draft`, `generate`, `author`, `edit`, `review` | Keep exact model inputs and raw outputs |
 | `--tiers A,B,C` | `build` | Purchased tiers, each 0–5 |
-| `--details` | `render` | Expanded report |
+| `--details` | `render` | Diagnostics report instead of the unit sheet |
 | `--port PORT` | `serve` | Port (default 4317) |
 
 ## Examples
@@ -64,7 +64,7 @@ mardwerk-unit check data/runs/draft.json -o data/runs/checked.json
 
 ## Request files
 
-A request file has `schemaVersion: "1"` (or `"2"` when it carries a version 2 [mechanics Definition](MECHANICS.md#profile-defined-vocabulary-version-2)), a `task`, the character (`name`, `work`, `scope`) and a list of documents. Each document has an `id`, a `kind` (`source`, `rules` or `decisions`) and exactly one of `text`, `file` or `url`; `sourceUrl` attributes pasted text. File paths resolve relative to the request file. `constraints` lists confirmed decisions by ID. Examples are in [data/reference](../data/reference); [dart-monkey.source-file.request.json](../data/reference/dart-monkey.source-file.request.json) is a template for your own text.
+A request file has `schemaVersion: "1"` (or `"2"` when it carries a version 2 [mechanics Definition](MECHANICS.md#profile-defined-vocabulary-version-2)), a `task`, the character (`name`, `work`, `scope`) and a list of documents. Each document has an `id`, a `kind` (`source`, `rules` or `decisions`) and exactly one of `text`, `file` or `url`; `sourceUrl` attributes pasted text. File paths resolve relative to the request file. `constraints` lists confirmed decisions by ID. The example in [data/reference](../data/reference), [dart-monkey.request.json](../data/reference/dart-monkey.request.json), is a brief written from the pinned btd6-atlas capture; to use your own text, give a document `file` next to the request file.
 
 A request needs a mechanics Definition to be drafted. Prepare a request file with `--profile` (for example `--profile default`): the Profile replaces its task, progression, Definition and rules document and keeps its character, sources, decisions and revision context. `prepare` prints a note when the result has no Definition.
 
@@ -74,4 +74,6 @@ Without `-o`, stdout carries the complete JSON artifact (Markdown for `render`) 
 
 Model inputs and raw outputs are recorded only with `--evidence-dir`: each run gets a new folder with the input, a manifest (the binary's build and SHA-256), every request, raw answer, output and outcome.
 
-Configuration: existing environment variables win over `.env` in the working directory; command-line options win over both. `.env` is read from the working directory only, as UTF-8 or UTF-16 with a byte-order mark; a line it cannot read is an error that names the line. `serve` prints the model and the OpenRouter key it uses, the key masked, and the `.env` file or variable it came from. `UNIT_DATA_DIR` moves `data/`, and `UNIT_RUNS_DIR` moves `data/runs/`. Credentials never enter artifacts. Agents must follow [OPENROUTER.md](OPENROUTER.md).
+A `draft`, `generate` or `author` run that fails validation after its repairs writes its failure evidence beside `-o`: `-o dart.json` keeps the rejected plans and outputs, their issues, any accepted plan and the source passages the model was given in `dart.failure.json`, and the failed run writes nothing to `dart.json`. Without `-o` the CLI says so; `--evidence-dir` keeps every request and answer as well.
+
+Configuration: existing environment variables win over `.env` in the working directory; command-line options win over both. `CODEX_MODEL` and `CODEX_REASONING` set Codex defaults for the CLI and web app; `OPENROUTER_MODEL` and `OPENROUTER_REASONING` do the same for OpenRouter. `.env` is read from the working directory only, as UTF-8 or UTF-16 with a byte-order mark; a line it cannot read is an error that names the line. `serve` prints the model and the OpenRouter key it uses, the key masked, and the `.env` file or variable it came from. `UNIT_DATA_DIR` moves `data/`, and `UNIT_RUNS_DIR` moves `data/runs/`. Credentials never enter artifacts. Agents must follow [OPENROUTER.md](OPENROUTER.md).

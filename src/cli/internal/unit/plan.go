@@ -3,6 +3,7 @@ package unit
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
@@ -17,18 +18,43 @@ type ModelRequest struct {
 }
 
 var (
-	milestoneSchema = UpgradeIntentSchema.Extend(s.F("change", s.String().Trim().Min(1).Max(800)))
-	purchaseBranch  = planBranch.Omit("crosspaths", "referenceExample").Extend(s.F("milestones", s.StrictObject(
-		s.F("tier1", milestoneSchema), s.F("tier2", milestoneSchema), s.F("tier3", milestoneSchema), s.F("tier4", milestoneSchema), s.F("tier5", milestoneSchema),
-	)))
+	milestoneSchema = UpgradeIntentSchema.Extend(s.F("change", s.String().Trim().Min(1).Max(800)), s.F("technique", techniqueName()), s.F("lowers", tradeoffList()))
+	purchaseBranch  = purchaseBranchOf(milestoneSchema)
 	// PurchasePlanSchema is the compact plan the model returns: one description
 	// and one checkable promise per purchase.
-	PurchasePlanSchema = DesignPlanSchema.Omit("upgradeIntents").Extend(
-		s.F("contract", s.Literal("purchase-plan-v1")),
-		s.F("paths", s.StrictObject(s.F("path1", purchaseBranch), s.F("path2", purchaseBranch), s.F("path3", purchaseBranch))),
-	)
+	PurchasePlanSchema = purchasePlanOf(purchaseBranch)
+	// purchasePlanSchemaV2 accepts any well-formed promise ID, so a version 2
+	// Definition's status effects and detection traits survive expansion;
+	// DecodeDesignPlan then holds them to the Definition's vocabulary.
+	purchasePlanSchemaV2 = purchasePlanOf(purchaseBranchOf(upgradeIntentSchema(promiseID, promiseID).Extend(s.F("change", s.String().Trim().Min(1).Max(800)), s.F("technique", techniqueName()), s.F("lowers", tradeoffList()))))
 	earlyIdentityUnlocks = map[string]bool{"none": true, "camo": true}
 )
+
+func purchaseBranchOf(milestone s.Schema) *s.ObjectSchema {
+	return planBranch.Omit("crosspaths", "referenceExample").Extend(s.F("milestones", s.StrictObject(
+		s.F("tier1", milestone), s.F("tier2", milestone), s.F("tier3", milestone), s.F("tier4", milestone), s.F("tier5", milestone),
+	)))
+}
+
+func purchasePlanOf(branch s.Schema) *s.ObjectSchema {
+	return DesignPlanSchema.Omit("upgradeIntents").Extend(
+		s.F("contract", s.Literal("purchase-plan-v1")),
+		s.F("repertoire", authoredRepertoire),
+		s.F("paths", s.StrictObject(s.F("path1", branch), s.F("path2", branch), s.F("path3", branch))),
+	)
+}
+
+// effectPromises are the promise IDs an effect may be adapted as: every
+// improvement and unlock of the Definition except none.
+func effectPromises(definition *m.Definition) []string {
+	var out []string
+	for _, id := range append(append([]string{}, ImprovementsFor(definition)...), UnlocksFor(definition)...) {
+		if id != "none" && !slices.Contains(out, id) {
+			out = append(out, id)
+		}
+	}
+	return out
+}
 
 // PurchasePlanOutputSchema narrows the compact plan to what the Definition supports.
 func PurchasePlanOutputSchema(request *Request) *s.ObjectSchema {
@@ -65,21 +91,31 @@ func PurchasePlanOutputSchema(request *Request) *s.ObjectSchema {
 					unlocks = append(unlocks, unlock)
 				}
 			}
+			// Under the early-identity policy a first or second purchase keeps a
+			// single-projectile attack single, so it cannot promise projectiles.
+			earlyIdentity := tier <= 2 && policy != nil && policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity
 			var improvements []string
 			for _, dimension := range ImprovementsFor(definition) {
+				if earlyIdentity && dimension == "projectiles" {
+					continue
+				}
 				if (!strings.HasPrefix(dimension, "active-") || active) && (dimension != "follow-up" || rules.HasExtension("volley-follow-up")) {
 					improvements = append(improvements, dimension)
 				}
 			}
-			return milestoneSchema.Extend(s.F("improves", s.Array(s.Enum(improvements...)).Max(4)), s.F("unlock", s.Enum(unlocks...)))
+			return milestoneSchema.Extend(s.F("improves", improvesList(s.Enum(improvements...))), s.F("unlock", s.Enum(unlocks...)))
 		}
 		return purchaseBranch.Extend(s.F("milestones", s.StrictObject(
 			s.F("tier1", atTier(1)), s.F("tier2", atTier(2)), s.F("tier3", atTier(3)), s.F("tier4", atTier(4)), s.F("tier5", atTier(5)),
 		)))
 	}
-	return PurchasePlanSchema.Extend(s.F("paths", s.StrictObject(
-		s.F("path1", pathSchema("path1")), s.F("path2", pathSchema("path2")), s.F("path3", pathSchema("path3")),
-	)))
+	effect := planEffect.Extend(s.F("adaptedAs", s.Array(s.Enum(effectPromises(definition)...)).Max(4)))
+	return PurchasePlanSchema.Extend(
+		s.F("repertoire", repertoireOf(s.Array(effect).Min(1).Max(6))),
+		s.F("paths", s.StrictObject(
+			s.F("path1", pathSchema("path1")), s.F("path2", pathSchema("path2")), s.F("path3", pathSchema("path3")),
+		)),
+	)
 }
 
 func earlyPurchases(branch *s.Object) string {
@@ -89,17 +125,23 @@ func earlyPurchases(branch *s.Object) string {
 	if s.UTF16Len(summary) <= 800 {
 		return summary
 	}
-	return "Proposed contributions are the secondary path T1 and T2 milestones. Consult resolved purchase evidence for their actual effects."
+	return "Proposed contributions are the side path's first and second purchases. Consult resolved purchase evidence for their actual effects."
 }
 
-// ExpandPurchasePlan turns a compact plan into the retained plan shape.
-// Other values pass through unchanged.
-func ExpandPurchasePlan(output any) (any, error) {
+// ExpandPurchasePlanFor expands a compact plan written under a Definition.
+func ExpandPurchasePlanFor(output any, definition *m.Definition) (any, error) {
+	if definition != nil && definition.IsV2() {
+		return expandPurchasePlan(output, purchasePlanSchemaV2)
+	}
+	return expandPurchasePlan(output, PurchasePlanSchema)
+}
+
+func expandPurchasePlan(output any, schema s.Schema) (any, error) {
 	obj, ok := output.(*s.Object)
 	if !ok || !obj.Has("contract") || obj.Has("upgradeIntents") {
 		return output, nil
 	}
-	wireValue, issues := s.Parse(PurchasePlanSchema, output)
+	wireValue, issues := s.Parse(schema, output)
 	if len(issues) > 0 {
 		return nil, &s.Error{Issues: issues}
 	}
@@ -128,7 +170,7 @@ func ExpandPurchasePlan(output any) (any, error) {
 		for _, tier := range m.TierKeys {
 			milestone := field(milestones, tier).(*s.Object)
 			texts.Set(tier, field(milestone, "change"))
-			pathIntents.Set(tier, s.NewObject().Set("improves", field(milestone, "improves")).Set("unlock", field(milestone, "unlock")))
+			pathIntents.Set(tier, s.NewObject().Set("improves", field(milestone, "improves")).Set("unlock", field(milestone, "unlock")).Set("technique", field(milestone, "technique")).Set("lowers", field(milestone, "lowers")))
 		}
 		expanded.Set("milestones", texts)
 		var crosspaths []any
@@ -138,7 +180,7 @@ func ExpandPurchasePlan(output any) (any, error) {
 			}
 		}
 		expanded.Set("crosspaths", crosspaths)
-		expanded.Set("referenceExample", "BTD6 progression and tradeoffs inform this proposal; the supplied Definition alone authorizes mechanics.")
+		expanded.Set("referenceExample", "The Profile's scale references inform this proposal; the supplied Definition alone authorizes mechanics.")
 		paths.Set(path, expanded)
 		intents.Set(path, pathIntents)
 	}
@@ -159,6 +201,12 @@ func MechanicsPlan(plan DesignPlan) *s.Object {
 			if plan.UpgradeIntents != nil {
 				intent := plan.UpgradeIntents.At(index).At(tier)
 				entry.Set("improves", s.FromGoValue(intent.Improves)).Set("unlock", intent.Unlock)
+				if intent.Technique != "" {
+					entry.Set("technique", intent.Technique)
+				}
+				if len(intent.Lowers) > 0 {
+					entry.Set("lowers", s.FromGoValue(intent.Lowers))
+				}
 			}
 			milestones.Set(m.TierKeys[tier-1], entry)
 		}
@@ -191,13 +239,6 @@ func constrainCitations(value any, ids []any) {
 				constrainCitations(child, ids)
 			}
 		}
-	}
-}
-
-// omitMissing adds key only when value is not a missing (undefined) value.
-func setDefined(o *s.Object, key string, value any) {
-	if value != nil {
-		o.Set(key, value)
 	}
 }
 
@@ -255,7 +296,6 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 			origins = append(origins, s.NewObject().Set("id", d.ID).Set("origin", s.FromGoValue(d.Origin)))
 		}
 	}
-	examples, _ := s.Decode([]byte(workedExamplesJSON))
 	context := s.NewObject().
 		Set("character", s.FromGoValue(request.Character)).
 		Set("task", request.Task).
@@ -273,14 +313,21 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 			Set("note", "Selection is bounded. Do not claim exhaustive repertoire coverage.")).
 		Set("previous", previousValue(request)).
 		Set("previousFindings", previousFindings(request)).
-		Set("feedback", nullableString(request.Feedback)).
-		Set("workedExamples", examples)
+		Set("feedback", nullableString(request.Feedback))
 	parts := []string{
 		fmt.Sprintf("Requested character: %s. The context below supplies %d selected evidence passages for this character. Read those passages before choosing powers; selection is bounded and does not establish complete source coverage.", s.Stringify(request.Character.Name), len(evidence)),
 	}
-	guidance := planGuidance
+	guidance := append([]string{}, planGuidance...)
+	// Build legality, crosspath counts and the Active slot come from the
+	// Definition, not from text written for the Default Profile.
+	activation, shape := "A player-activated ability exists only where the Definition allows one.", "Code resolves every legal crosspath build; do not output a crosspath tree."
+	if d := request.MechanicsDefinition; d != nil {
+		activation, shape = ActivationShape(*d), BuildShape(*d)
+	}
+	for i, line := range guidance {
+		guidance[i] = strings.NewReplacer("{{activation}}", activation, "{{buildShape}}", shape).Replace(line)
+	}
 	if isV2(request) {
-		guidance = append([]string{}, planGuidance...)
 		for i, line := range guidance {
 			guidance[i] = strings.Replace(line, "slow and burn each need two primitive changes", "a status effect with a magnitude needs two primitive changes", 1)
 		}
@@ -288,8 +335,23 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 		last := guidance[len(guidance)-1]
 		guidance = append(append(guidance[:len(guidance)-1], VocabularyGuidance(request)...), last)
 	}
-	parts = append(parts, guidance[:len(guidance)-1]...)
-	parts = append(parts, progressionReference, guidance[len(guidance)-1], s.Stringify(context))
+	if d := request.MechanicsDefinition; d != nil && d.Profile.DesignPolicy != nil {
+		// Policy requirements go before the closing guidance line.
+		gates := []string{planPathGates}
+		if policy := d.Profile.DesignPolicy; policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity {
+			gates = append(gates, planEarlyIdentity)
+		}
+		if d.Profile.DesignPolicy.DistinctFirstUpgrades {
+			gates = append(gates, planDistinctEarly)
+		}
+		if policy := d.Profile.DesignPolicy; policy.RequireTier3BehaviorChange != nil && *policy.RequireTier3BehaviorChange {
+			gates = append(gates, planTier3Behavior)
+		}
+		last := guidance[len(guidance)-1]
+		guidance = append(append(append([]string{}, guidance[:len(guidance)-1]...), gates...), last)
+	}
+	parts = append(parts, guidance...)
+	parts = append(parts, s.Stringify(context))
 	return ModelRequest{System: planSystem, Prompt: strings.Join(parts, "\n\n"), Schema: schema}, nil
 }
 
@@ -331,7 +393,7 @@ func isDetection(d *m.Definition, id string) bool {
 // DecodeDesignPlan validates a plan's joins and structural choices.
 // Source interpretation remains a review obligation.
 func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
-	expanded, err := ExpandPurchasePlan(output)
+	expanded, err := ExpandPurchasePlanFor(output, request.MechanicsDefinition)
 	if err != nil {
 		return DesignPlan{}, err
 	}
@@ -418,7 +480,10 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 				if d := request.MechanicsDefinition; d != nil && d.IsV2() {
 					detection = "personal detection"
 				}
-				issue("T1 and T2 must preserve the existing attack identity. New statuses, attack patterns, delivery, targeting and damage-type access must wait until T3; " + detection + " and improvements to existing effects remain allowed.")
+				issue(BuildCode(pathIndex, number) + " must preserve the existing attack identity: the first and second purchase of a path add no new status, attack pattern, delivery, targeting or damage-type access before the third; " + detection + " and improvements to existing effects remain allowed.")
+			}
+			if number <= 2 && policy != nil && policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity && slices.Contains(intent.Improves, "projectiles") {
+				issue(BuildCode(pathIndex, number) + " cannot promise projectiles: the first and second purchase keep a single-projectile attack single, so the mechanics could not keep that promise. Promise projectiles from the third purchase on; an attack that already fires several projectiles may still add more without promising it.")
 			}
 			if intent.Unlock == "manual-boost" && number != boostTier {
 				issue(fmt.Sprintf("Manual boost unlocks are supported only at tier %d.", boostTier))
@@ -438,7 +503,11 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 		issues = append(issues, s.Issue{Code: "custom", Path: []any{"upgradeIntents"}, Message: fmt.Sprintf("The plan requires active boosts on %d paths; the Definition permits at most %d.", len(activePaths), policy.MaxManualAbilityPaths)})
 	}
 	if request.MechanicsDefinition != nil {
-		for _, issue := range PlanFeasibilityIssues(plan, *request.MechanicsDefinition) {
+		feasibility := append(PlanFeasibilityIssues(plan, *request.MechanicsDefinition), PlanEffectIssues(plan)...)
+		if policy != nil {
+			feasibility = append(feasibility, PlanTechniqueIssues(plan, *request.MechanicsDefinition)...)
+		}
+		for _, issue := range feasibility {
 			var path []any
 			for _, p := range strings.Split(issue.Path, ".") {
 				path = append(path, p)

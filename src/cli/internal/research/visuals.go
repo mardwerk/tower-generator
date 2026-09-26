@@ -3,6 +3,7 @@ package research
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/url"
 	"regexp"
 	"sort"
@@ -18,6 +19,10 @@ import (
 )
 
 const wikidataAPI = "https://www.wikidata.org/w/api.php"
+
+// fandomTextLimit caps the text kept from one Fandom page, in UTF-16 code
+// units.
+const fandomTextLimit = 24_000
 
 type visualLookup struct {
 	name, articleTitle, work, wikidataID string
@@ -53,6 +58,8 @@ var (
 	galleryPage    = regexp.MustCompile(`(?i)^/Gallery$`)
 	fandomSite     = regexp.MustCompile(`^([a-z0-9-]+)\.fandom\.com$`)
 	combatHeading  = regexp.MustCompile(`(?i)\b(abilities|powers|skills|techniques|combat)\b`)
+	// techniqueHeading marks sections that describe how a character fights.
+	techniqueHeading = regexp.MustCompile(`(?i)\b(devil fruit|techniques?|fighting style|haki|gears?|forms?|transformations?|weapons?|moves?|attacks?|magic|arts|quirks?|jutsu)\b`)
 )
 
 var imageHosts = []string{"upload.wikimedia.org", "thumb.wikimedia.org", "static.wikia.nocookie.net"}
@@ -528,13 +535,24 @@ func fandomSource(content string, page *url.URL, name string, now time.Time) *un
 	document := parseHTML(content)
 	document.Find(sourceNoise).Remove()
 	root := articleRoot(document)
+	// Passages are grouped by their section. The next passage always goes to
+	// the section with the least text so far, technique sections first on a
+	// tie, so neither a long overview nor long physical-ability paragraphs
+	// can use the budget before the Devil Fruit, Haki or form sections are
+	// kept. Selected passages keep their page order.
 	type passage struct {
-		text     string
-		priority int
-		headings []string
+		order int
+		text  string
+	}
+	type group struct {
+		rank     int
+		passages []passage
 	}
 	var headings []section
-	var passages []passage
+	var groups []*group
+	index := map[string]*group{}
+	seen := map[string]bool{}
+	count := 0
 	root.Find("h2,h3,h4,h5,h6,p,li").Each(func(_ int, node *goquery.Selection) {
 		text := clean(node.Text())
 		if text == "" {
@@ -547,7 +565,7 @@ func fandomSource(content string, page *url.URL, name string, now time.Time) *un
 		if goquery.NodeName(node) == "li" && node.Find("p,li").Length() > 0 {
 			return
 		}
-		if s.UTF16Len(text) < 15 {
+		if s.UTF16Len(text) < 15 || seen[text] {
 			return
 		}
 		combat := (hasSuffix && abilityPage.MatchString(suffix)) || anyHeadingMatches(headings, combatHeading)
@@ -556,35 +574,64 @@ func fandomSource(content string, page *url.URL, name string, now time.Time) *un
 		if !combat && len(headings) > 0 {
 			return
 		}
-		priority := 1
-		if combat {
-			priority = 0
+		seen[text] = true
+		rank := 2
+		switch {
+		case anyHeadingMatches(headings, techniqueHeading):
+			rank = 0
+		case combat:
+			rank = 1
 		}
-		passages = append(passages, passage{text, priority, headingTexts(headings)})
+		path := headingTexts(headings)
+		key := strings.Join(path, "\n")
+		g := index[key]
+		if g == nil {
+			g = &group{rank: rank}
+			index[key] = g
+			groups = append(groups, g)
+		}
+		g.passages = append(g.passages, passage{count, strings.Join(append(path, text), "\n")})
+		count++
 	})
-	sort.SliceStable(passages, func(i, j int) bool { return passages[i].priority < passages[j].priority })
-	var selected []string
-	seen := map[string]bool{}
+	sort.SliceStable(groups, func(i, j int) bool { return groups[i].rank < groups[j].rank })
+	var chosen []passage
+	next := make([]int, len(groups))
+	used := make([]int, len(groups))
 	length, truncated := 0, false
-	for _, p := range passages {
-		if seen[p.text] {
-			continue
+	for {
+		pick := -1
+		for i, g := range groups {
+			if next[i] < len(g.passages) && (pick < 0 || used[i] < used[pick]) {
+				pick = i
+			}
 		}
-		seen[p.text] = true
-		text := strings.Join(append(append([]string{}, p.headings...), p.text), "\n")
-		if length+s.UTF16Len(text)+2 > 12_000 {
+		if pick < 0 {
+			break
+		}
+		p := groups[pick].passages[next[pick]]
+		size := s.UTF16Len(p.text) + 2
+		if length+size > fandomTextLimit {
+			// The section stops here, so its kept passages stay contiguous.
 			truncated = true
+			next[pick] = len(groups[pick].passages)
 			continue
 		}
-		selected = append(selected, text)
-		length += s.UTF16Len(text) + 2
+		chosen = append(chosen, p)
+		length += size
+		used[pick] += size
+		next[pick]++
+	}
+	sort.Slice(chosen, func(i, j int) bool { return chosen[i].order < chosen[j].order })
+	selected := make([]string, len(chosen))
+	for i, p := range chosen {
+		selected[i] = p.text
 	}
 	if len(selected) == 0 {
 		return nil
 	}
 	note := "Retrieved through the public MediaWiki parse API while gathering character references at " + now.UTC().Format("2006-01-02T15:04:05.000Z") + ". Identity matched through Wikidata and the character page name. Extracted article introduction and available ability sections; navigation, images and reference lists omitted."
 	if truncated {
-		note += " Text was capped at 12000 characters; this is not exhaustive."
+		note += fmt.Sprintf(" Text was capped at %d characters, each passage going to the section with the least text so far; this is not exhaustive.", fandomTextLimit)
 	}
 	note += " This fan-maintained secondary source may combine story periods and adaptations; it is not independently verified canon."
 	return &unit.Document{

@@ -281,16 +281,16 @@ func TargetedTierRepair(request *Request, previous any, issues []string) (*TierR
 	for i, issue := range issues {
 		violations[i] = issue
 	}
-	budget := repairLine155
+	budget := repairBudget
 	if isV2(request) {
 		budget = repairBudgetV2
 	}
-	prompt := []string{repairLine136, s.Stringify(context), budget, CountArithmeticGuidance, repairLine157}
+	prompt := []string{repairScope, s.Stringify(context), budget, CountArithmeticGuidance, repairCapstone, draftPromises}
 	prompt = append(prompt, VocabularyGuidance(request)...)
 	prompt = append(prompt, DesignGuidance(request)...)
 	prompt = append(prompt, s.Stringify(s.NewObject().Set("violations", violations)))
 	return &TierRepair{
-		Request: ModelRequest{System: repairLine134, Prompt: strings.Join(prompt, "\n\n"), Schema: ProviderJSONSchema(schema)},
+		Request: ModelRequest{System: repairSystem, Prompt: strings.Join(prompt, "\n\n"), Schema: ProviderJSONSchema(schema)},
 		Apply: func(patch any) (*s.Object, error) {
 			replacementValue, issues := s.Parse(schema, patch)
 			if len(issues) > 0 {
@@ -326,6 +326,9 @@ func CapstoneRepairContext(blueprint m.Blueprint, request *Request) []any {
 		return out
 	}
 	multiplier := *request.MechanicsDefinition.Profile.DesignPolicy.MinTier5SpecialtyMultiplier
+	// The same metrics as the gate in mechanics.DesignPolicyIssues, so a
+	// version 2 control or damage-over-time specialty is measured.
+	vocabulary := request.MechanicsDefinition.Terms()
 	for index, path := range m.PathKeys {
 		specialization := blueprint.Paths.At(index).Specialization
 		if specialization == "" {
@@ -336,8 +339,8 @@ func CapstoneRepairContext(blueprint m.Blueprint, request *Request) []any {
 		before := m.ResolveUnchecked(&blueprint, sel)
 		sel[index] = 5
 		after := m.ResolveUnchecked(&blueprint, sel)
-		tier4 := m.SpecialtyMetrics(before, specialization)
-		tier5 := m.SpecialtyMetrics(after, specialization)
+		tier4 := m.SpecialtyMetricsWith(before, specialization, &vocabulary)
+		tier5 := m.SpecialtyMetricsWith(after, specialization, &vocabulary)
 		metrics := []any{}
 		for _, metric := range tier4.Keys() {
 			v, _ := tier4.Get(metric)

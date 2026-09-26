@@ -420,7 +420,7 @@ func ResolvedIssues(build Build, definition Definition, prefix string, blueprint
 			add(path+".stats.splashRadius", "Area delivery requires a positive splash radius.")
 		}
 		if st.SplashRadius > 0 && st.Pierce < 2 {
-			add(path+".stats.splashRadius", "Splash requires pierce of at least 2 because the primary target consumes one target slot.")
+			add(path+".stats.splashRadius", "Splash requires pierce of at least 2 because the primary target consumes one target slot. Raise pierce to at least 2 in the purchase that adds splash or an earlier one on its path, or in the base attack.")
 		}
 	}
 	checkAttack(build.BaseAttack, "baseAttack")
@@ -480,93 +480,4 @@ func ResolveBuild(blueprint *Blueprint, selection Selection, definition Definiti
 		return ResolvedBuild{}, &ValidationError{issues}
 	}
 	return WithTierDeltas(blueprint, selection), nil
-}
-
-// TargetAssessment is static target eligibility, without simulating combat.
-type TargetAssessment struct {
-	Detected  bool `json:"detected"`
-	Reachable bool `json:"reachable"`
-	CanDamage bool `json:"canDamage"`
-	CanSlow   bool `json:"canSlow"`
-	CanStun   bool `json:"canStun"`
-}
-
-// AssessTarget reports whether an attack can detect, reach and affect a target.
-func AssessTarget(attack Attack, camo, obstructed bool, properties []string, definition Definition) TargetAssessment {
-	rules := definition.Rules
-	has := func(list []string) bool {
-		for _, a := range list {
-			for _, b := range properties {
-				if a == b {
-					return true
-				}
-			}
-		}
-		return false
-	}
-	detected := !camo || attack.Camo
-	reachable := !obstructed
-	eligible := detected && reachable
-	immune := has(rules.DamageImmunities.For(attack.DamageType))
-	return TargetAssessment{
-		Detected:  detected,
-		Reachable: reachable,
-		CanDamage: eligible && !immune && (attack.Stats.Damage > 0 || attack.Stats.BurnDamagePerSecond > 0),
-		CanSlow:   eligible && attack.Stats.SlowPercent > 0 && !has(rules.SlowImmune),
-		CanStun:   eligible && attack.Stats.StunSeconds > 0 && !has(rules.StunImmune),
-	}
-}
-
-// TargetEffects is static target eligibility under a version 2 Definition.
-// Statuses lists, in effect ID order, the attack's status effects the target
-// receives.
-type TargetEffects struct {
-	Detected  bool     `json:"detected"`
-	Reachable bool     `json:"reachable"`
-	CanDamage bool     `json:"canDamage"`
-	Statuses  []string `json:"statuses"`
-}
-
-// AssessTargetEffects is AssessTarget for any Definition. hidden names the
-// target's detection traits (such as camo); the attack must detect each one.
-// A status needs a positive magnitude, or a positive duration when its effect
-// has none, and a target without the effect's immunities. Damage over time is
-// damage of the attack, so the damage type's immunities also block it.
-func AssessTargetEffects(attack Attack, hidden []string, obstructed bool, properties []string, definition Definition) TargetEffects {
-	vocabulary := definition.Terms()
-	has := func(list []string) bool {
-		for _, a := range list {
-			for _, b := range properties {
-				if a == b {
-					return true
-				}
-			}
-		}
-		return false
-	}
-	detected := true
-	for _, trait := range hidden {
-		detected = detected && attack.DetectsTrait(trait)
-	}
-	reachable := !obstructed
-	eligible := detected && reachable
-	damageType, _ := vocabulary.DamageType(attack.DamageType)
-	immune := has(damageType.IneffectiveAgainst)
-	out := TargetEffects{Detected: detected, Reachable: reachable, CanDamage: eligible && !immune && attack.Stats.Damage > 0, Statuses: []string{}}
-	for _, status := range attack.AppliedStatuses() {
-		effect, ok := vocabulary.Effect(status.Effect)
-		strength := status.Seconds
-		if effect.Magnitude != nil {
-			strength = status.Strength()
-		}
-		if !ok || !eligible || strength <= 0 || has(effect.Immune) || (effect.Kind == KindDamageOverTime && immune) {
-			continue
-		}
-		out.Statuses = append(out.Statuses, status.Effect)
-		if effect.Kind == KindDamageOverTime {
-			out.CanDamage = true
-		}
-	}
-	sort.Strings(out.Statuses)
-	return out
 }

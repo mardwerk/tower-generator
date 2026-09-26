@@ -32,6 +32,9 @@ var (
 		"none", "manual-boost", "follow-up", "active-follow-up", "camo", "distinct-volley", "splash",
 		"slow", "burn", "stun", "delivery-change", "damage-type-change", "targeting-change",
 	}
+	// Tradeoffs are the dimensions a milestone may promise to reduce, such as
+	// the attack rate of a slower, heavier attack.
+	Tradeoffs            = []string{"damage", "attack-rate", "range", "pierce", "projectiles", "splash"}
 	UpgradeIntentSchema  = upgradeIntentSchema(s.Enum(Improvements...), s.Enum(Unlocks...))
 	UpgradeIntentsSchema = upgradeIntentsSchema(UpgradeIntentSchema)
 
@@ -40,7 +43,7 @@ var (
 		s.F("contract", s.Optional(s.Literal("purchase-plan-v1"))),
 		s.F("concept", planText()),
 		s.F("signature", s.StrictObject(s.F("name", planText().Max(80)), s.F("sourceIds", planSourceIDs), s.F("adaptation", planText()))),
-		s.F("repertoire", s.Array(s.StrictObject(s.F("name", planText().Max(80)), s.F("sourceIds", planSourceIDs), s.F("limitation", planText()))).Min(1).Max(32)),
+		s.F("repertoire", repertoireOf(s.Optional(planEffects))),
 		s.F("base", s.StrictObject(s.F("name", planText().Max(80)), s.F("sourceIds", planSourceIDs), s.F("behavior", planText()))),
 		s.F("paths", s.StrictObject(s.F("path1", planBranch), s.F("path2", planBranch), s.F("path3", planBranch))),
 		s.F("omittedTechniques", s.Array(s.StrictObject(s.F("name", planText().Max(80)), s.F("reason", planText()))).Max(12)),
@@ -52,15 +55,38 @@ var (
 
 	// DesignPlanAuthoringSchema is the plan a model authors, held to
 	// planAuthoringFloor.
-	DesignPlanAuthoringSchema = DesignPlanSchema.Extend(s.F("upgradeIntents", UpgradeIntentsSchema)).SuperRefine(planAuthoringFloor)
+	DesignPlanAuthoringSchema = DesignPlanSchema.Extend(s.F("upgradeIntents", UpgradeIntentsSchema), s.F("repertoire", authoredRepertoire)).SuperRefine(planAuthoringFloor)
 )
+
+// A technique's effects are what its cited passages describe it doing, such
+// as greater strength and greater speed for a form that raises both. Each is
+// adapted as the promises in adaptedAs, which PlanEffectIssues finds on a
+// purchase that adapts the technique, or, with adaptedAs empty, omitted; its
+// reason says how or why. Plans made before effects existed have none (Gear 2
+// strength was dropped without a record in 7 of 10 Luffy plans on #27).
+var (
+	planEffect = s.StrictObject(
+		s.F("effect", planText().Max(200)),
+		s.F("adaptedAs", s.Array(promiseID).Max(4)),
+		s.F("reason", planText().Max(300)),
+	)
+	planEffects        = s.Array(planEffect).Max(6)
+	authoredRepertoire = repertoireOf(s.Array(planEffect).Min(1).Max(6))
+)
+
+// repertoireOf is the repertoire with the given effects field.
+func repertoireOf(effects s.Schema) *s.ArraySchema {
+	return s.Array(s.StrictObject(
+		s.F("name", planText().Max(80)), s.F("sourceIds", planSourceIDs), s.F("limitation", planText()), s.F("effects", effects),
+	)).Min(1).Max(32)
+}
 
 // DesignPlanAuthoringSchemaFor is the authoring schema under a Definition.
 func DesignPlanAuthoringSchemaFor(d *mechanics.Definition) *s.ObjectSchema {
 	if d == nil || !d.IsV2() {
 		return DesignPlanAuthoringSchema
 	}
-	return DesignPlanSchema.Extend(s.F("upgradeIntents", UpgradeIntentsSchemaFor(d))).SuperRefine(planAuthoringFloor)
+	return DesignPlanSchema.Extend(s.F("upgradeIntents", UpgradeIntentsSchemaFor(d)), s.F("repertoire", authoredRepertoire)).SuperRefine(planAuthoringFloor)
 }
 
 // planAuthoringFloor adds a small lexical floor that catches empty
@@ -77,7 +103,7 @@ func planAuthoringFloor(plan *s.Object, add func(path []any, message string)) {
 			if len(path) > 0 {
 				last = path[len(path)-1]
 			}
-			if last == "name" || last == "path" || containsKey(path, "sourceIds") {
+			if last == "name" || last == "path" || containsKey(path, "sourceIds") || containsKey(path, "adaptedAs") {
 				return
 			}
 			// Every letter belongs to a word-like segment, so this matches
@@ -111,8 +137,25 @@ func planAuthoringFloor(plan *s.Object, add func(path []any, message string)) {
 	}
 }
 
+// techniqueName is the repertoire technique or base attack a purchase adapts.
+func techniqueName() *s.StringSchema { return s.String().Trim().Min(1).Max(80) }
+
+// tradeoffList is the dimensions a milestone promises to reduce.
+func tradeoffList() *s.ArraySchema { return s.Array(s.Enum(Tradeoffs...)).Max(3) }
+
+// improvesList is a milestone's improvements. The change budget, not this
+// cap, bounds what a purchase can promise: a Luffy plan on #27 was rejected
+// at 4 for an x-5-x promising damage, attack-rate and their active forms
+// plus active-duration, three primitive changes within a budget of five.
+func improvesList(improvement s.Schema) *s.ArraySchema { return s.Array(improvement).Max(5) }
+
+// upgradeIntentSchema is a retained promise. Plans made before purchases
+// named their technique or tradeoffs have none.
 func upgradeIntentSchema(improvement, unlock s.Schema) *s.ObjectSchema {
-	return s.StrictObject(s.F("improves", s.Array(improvement).Max(4)), s.F("unlock", unlock))
+	return s.StrictObject(
+		s.F("improves", improvesList(improvement)), s.F("unlock", unlock),
+		s.F("technique", s.Optional(techniqueName())), s.F("lowers", s.Optional(tradeoffList())),
+	)
 }
 
 func upgradeIntentsSchema(intent s.Schema) *s.ObjectSchema {
@@ -162,14 +205,17 @@ func UnlocksFor(d *mechanics.Definition) []string {
 // version 2 Definition given as nil (reading artifacts), any well-formed ID.
 func UpgradeIntentsSchemaFor(d *mechanics.Definition) *s.ObjectSchema {
 	if d == nil {
-		id := s.String().Regex(`^[a-z][a-z0-9-]{0,39}$`, "Use a promise ID of this Definition.")
-		return upgradeIntentsSchema(upgradeIntentSchema(id, id))
+		return upgradeIntentsSchema(upgradeIntentSchema(promiseID, promiseID))
 	}
 	if !d.IsV2() {
 		return UpgradeIntentsSchema
 	}
 	return upgradeIntentsSchema(upgradeIntentSchema(s.Enum(ImprovementsFor(d)...), s.Enum(UnlocksFor(d)...)))
 }
+
+// promiseID is any well-formed promise ID; the Definition's vocabulary
+// decides which ones a plan may use.
+var promiseID = s.String().Regex(`^[a-z][a-z0-9-]{0,39}$`, "Use a promise ID of this Definition.")
 
 func containsKey(path []any, key string) bool {
 	for _, p := range path {

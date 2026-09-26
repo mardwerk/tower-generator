@@ -44,7 +44,10 @@ var (
 		s.F("visualNotes", s.Optional(s.Array(text()))),
 	)
 	CharacterSchema = s.StrictObject(s.F("name", text()), s.F("work", text()), s.F("scope", text()))
-	FindingSchema   = s.StrictObject(
+	// factCitation is one resolved value a model finding relies on, as the
+	// review's legalBuilds lists it; code checks it.
+	factCitation  = s.StrictObject(s.F("build", text()), s.F("field", text()), s.F("value", text()))
+	FindingSchema = s.StrictObject(
 		s.F("id", text()),
 		s.F("method", s.Enum("deterministic", "model")),
 		s.F("category", s.Enum("conflict", "missing_specification", "unsupported", "evidence", "coverage", "scope")),
@@ -55,6 +58,7 @@ var (
 		s.F("message", text()),
 		s.F("evidence", refs()),
 		s.F("action", s.Nullable(text())),
+		s.F("facts", s.Optional(s.Array(factCitation).Max(8))),
 	)
 	basicAttackSchema = s.StrictObject(
 		s.F("name", text()), s.F("status", decisionStatus), s.F("decisionRefs", refs()), s.F("behavior", text()),
@@ -184,7 +188,7 @@ var (
 		s.F("draft", DraftSchema),
 		s.F("findings", s.Array(FindingSchema)),
 	)
-	reviewFinding        = FindingSchema.Extend(s.F("id", text().Regex(`^model\.[a-zA-Z0-9][a-zA-Z0-9._-]*$`, "")), s.F("method", s.Literal("model")))
+	reviewFinding        = FindingSchema.Extend(s.F("id", text().Regex(`^model\.[a-zA-Z0-9][a-zA-Z0-9._-]*$`, "")), s.F("method", s.Literal("model")), s.F("facts", s.Array(factCitation).Max(8)))
 	SemanticReviewSchema = s.StrictObject(s.F("summary", text()), s.F("findings", s.Array(reviewFinding)))
 	ResultSchema         = s.StrictObject(
 		s.F("schemaVersion", version),

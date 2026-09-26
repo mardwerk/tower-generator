@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { KeyRound } from 'lucide-react';
-import type { KeyState, ProviderState } from '../../api/contract.js';
+import type { KeyState, ModelCatalog, ProviderState } from '../../api/contract.js';
 import type { GenerationLibrary } from '../library/library.js';
 import { api } from '../../api/client.js';
 import { Alert } from '../../ui/alert.js';
@@ -18,6 +18,19 @@ const keySources: Record<KeyState['source'], string> = {
   settings: 'entered in Settings',
   none: '',
 };
+
+const reasoningLabels: Record<string, string> = {
+  none: 'None',
+  minimal: 'Minimal',
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  xhigh: 'Xhigh',
+  max: 'Max',
+  ultra: 'Ultra',
+};
+
+const codexDefaultModel = '__codex_default__';
 
 /** The provider state the server reports, refreshed whenever Settings closes. */
 export function useProvider(settingsOpen: boolean): ProviderState | null {
@@ -51,7 +64,7 @@ export function KeyStatus({ state, onOpen }: { state: ProviderState | null; onOp
         'max-w-[190px] font-mono',
         missing && 'font-sans text-warning hover:text-warning',
       )}
-      title={`${state.model || 'Codex configuration'} via ${
+      title={`${state.model || 'Codex configuration'}${state.reasoning ? ` (${state.reasoning} reasoning)` : ''} via ${
         state.provider === 'openrouter' ? 'OpenRouter' : 'Local Codex'
       }. ${
         key.configured
@@ -81,6 +94,9 @@ export function Settings({
 }) {
   const [provider, setProvider] = useState<ProviderState['provider']>('openrouter');
   const [model, setModel] = useState('');
+  const [reasoning, setReasoning] = useState('');
+  const [models, setModels] = useState<ModelCatalog['models']>([]);
+  const [modelMessage, setModelMessage] = useState('');
   const [imageModel, setImageModel] = useState('');
   const [key, setKey] = useState('');
   const [keyState, setKeyState] = useState<ProviderState['key'] | null>(null);
@@ -90,6 +106,44 @@ export function Settings({
   const [pending, setPending] = useState(true);
   const [directory, setDirectory] = useState(library.directory);
   const [folderMessage, setFolderMessage] = useState('');
+  const modelRequest = useRef(0);
+  const selectedModel = models.find((entry) => entry.id === model);
+  const reasoningLevels = selectedModel?.reasoning.length
+    ? selectedModel.reasoning
+    : !model || models.length === 0
+      ? provider === 'codex'
+        ? ['minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra']
+        : ['none', 'low', 'medium', 'high']
+      : reasoning
+        ? [reasoning]
+        : [];
+  async function loadModels(name: ProviderState['provider'], reset: boolean) {
+    const request = ++modelRequest.current;
+    setModelMessage('Loading models...');
+    try {
+      const catalog = await api<ModelCatalog>('models', { provider: name });
+      if (request !== modelRequest.current) return;
+      setModels([...catalog.models].sort((a, b) => a.id.localeCompare(b.id)));
+      setModelMessage(
+        `${catalog.models.length} models from ${name === 'codex' ? 'Codex' : 'OpenRouter'}.`,
+      );
+      if (reset) {
+        const nextModel = catalog.defaultModel;
+        setModel(nextModel);
+        const offered = catalog.models.find((entry) => entry.id === nextModel);
+        const preferred = catalog.defaultReasoning || (name === 'codex' ? 'medium' : 'none');
+        setReasoning(
+          offered?.reasoning.length && !offered.reasoning.includes(preferred)
+            ? (offered.reasoning[0] ?? preferred)
+            : preferred,
+        );
+      }
+    } catch (error) {
+      if (request !== modelRequest.current) return;
+      setModels([]);
+      setModelMessage(error instanceof Error ? error.message : String(error));
+    }
+  }
   useEffect(() => {
     let active = true;
     void api<ProviderState>('provider')
@@ -97,10 +151,12 @@ export function Settings({
         if (active) {
           setProvider(state.provider);
           setModel(state.model);
+          setReasoning(state.reasoning || (state.provider === 'codex' ? 'medium' : 'none'));
           setImageModel(state.images.model);
           setKeyState(state.key);
           setReady(state.ready);
           setMessage(state.message);
+          void loadModels(state.provider, false);
         }
       })
       .catch((error) => {
@@ -114,6 +170,15 @@ export function Settings({
     };
   }, []);
   useEffect(() => setDirectory(library.directory), [library.directory]);
+  useEffect(() => {
+    if (selectedModel?.reasoning.length && !selectedModel.reasoning.includes(reasoning)) {
+      setReasoning(
+        selectedModel.reasoning.includes('medium')
+          ? 'medium'
+          : (selectedModel.reasoning[0] ?? reasoning),
+      );
+    }
+  }, [selectedModel, reasoning]);
   async function saveProvider() {
     setPending(true);
     setError('');
@@ -123,13 +188,16 @@ export function Settings({
         ...(imageModel.trim() ? { imageModel: imageModel.trim() } : {}),
         ...(key.trim() ? { apiKey: key.trim() } : {}),
         ...(model.trim() ? { model: model.trim() } : {}),
+        ...(reasoning ? { reasoning } : {}),
       });
       setKey('');
       setKeyState(state.key);
       setReady(state.ready);
       setMessage(state.message);
       setModel(state.model);
+      setReasoning(state.reasoning);
       setImageModel(state.images.model);
+      void loadModels(state.provider, false);
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -158,7 +226,10 @@ export function Settings({
             onValueChange={(next) => {
               const value = next as ProviderState['provider'];
               setProvider(value);
-              setModel(value === 'openrouter' ? 'openrouter/free' : '');
+              setModel('');
+              setReasoning('');
+              setModels([]);
+              void loadModels(value, true);
               setKey('');
               setReady(false);
               setMessage(
@@ -206,16 +277,90 @@ export function Settings({
             </Field>
           </>
         }
-        <Disclosure title="Model">
-          <Field label="Model name (optional)">
-            <Input
-              value={model}
-              placeholder={
-                provider === 'openrouter' ? 'openrouter/free' : 'Use Codex configuration'
-              }
-              onChange={(e) => setModel(e.target.value)}
-            />
+        <Disclosure title="Model" defaultOpen>
+          <Field label="Model">
+            <Select
+              value={model || (provider === 'codex' ? codexDefaultModel : undefined)}
+              onValueChange={(value) => {
+                const next = value === codexDefaultModel ? '' : value;
+                setModel(next);
+                if (!next) {
+                  setReasoning('medium');
+                  return;
+                }
+                const offered = models.find((entry) => entry.id === next);
+                if (offered?.reasoning.length && !offered.reasoning.includes(reasoning)) {
+                  setReasoning(
+                    offered.reasoning.includes('medium')
+                      ? 'medium'
+                      : (offered.reasoning[0] ?? reasoning),
+                  );
+                }
+              }}
+            >
+              <SelectTrigger
+                id="model-select"
+                disabled={provider === 'openrouter' && models.length === 0 && !model}
+              >
+                <SelectValue placeholder="Loading models..." />
+              </SelectTrigger>
+              <SelectContent>
+                {provider === 'codex' && (
+                  <SelectItem
+                    value={codexDefaultModel}
+                    description="Use your local Codex configuration"
+                  >
+                    Codex default
+                  </SelectItem>
+                )}
+                {model && !selectedModel && (
+                  <SelectItem
+                    value={model}
+                    description="Current setting; not in the fetched catalog"
+                  >
+                    {model}
+                  </SelectItem>
+                )}
+                {models.map((entry) => (
+                  <SelectItem
+                    key={entry.id}
+                    value={entry.id}
+                    description={entry.name === entry.id ? undefined : entry.name}
+                  >
+                    {entry.id}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
+          <p className="text-xs text-muted-foreground" role="status" aria-live="polite">
+            {modelMessage}
+          </p>
+          <fieldset className="my-3 min-w-0">
+            <legend className="mb-1.5 text-xs text-muted-foreground">Reasoning level</legend>
+            <div className="flex flex-wrap gap-1.5">
+              {reasoningLevels.map((level) => (
+                <label key={level} className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="reasoning-level"
+                    value={level}
+                    checked={reasoning === level}
+                    onChange={() => setReasoning(level)}
+                    className="peer sr-only"
+                  />
+                  <span className="inline-flex h-8 items-center rounded-md border border-input bg-background px-3 text-xs text-foreground transition-colors hover:bg-accent peer-checked:border-primary peer-checked:bg-accent peer-checked:text-accent-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring/60">
+                    {reasoningLabels[level] ?? level}
+                  </span>
+                </label>
+              ))}
+            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              {selectedModel?.reasoning.length
+                ? 'Only levels available for this model are shown. Higher levels generally use more time and tokens.'
+                : 'Choose a listed model to see its supported levels. Higher levels generally use more time and tokens.'}
+            </p>
+          </fieldset>
         </Disclosure>
         <Disclosure title="Image generation">
           <Field label="OpenRouter image model">

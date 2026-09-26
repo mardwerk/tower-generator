@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { InspectedInput, LabArtifact, LabRequest, LabStage } from '../../api/contract.js';
 import { api } from '../../api/client.js';
 import { inputBeforeStage } from './stage-input.js';
-import { AuthoringJobs, authoringError, type AuthoringJob } from './authoring-jobs.js';
+import { AuthoringJobs, authoringError, type AuthoringJob, type Choice } from './authoring-jobs.js';
 export { stageNames, type RunningStep, type AuthoringJob } from './authoring-jobs.js';
 import {
   candidateOf,
@@ -30,7 +30,7 @@ import {
 } from '../generate/create-draft.js';
 
 /** Browser session ownership. Every stage receives an explicit artifact through the HTTP adapter. */
-export function useAuthoring(onComplete: (artifact: LabArtifact) => Promise<void>) {
+export function useAuthoring(onComplete: (artifact: LabArtifact) => Promise<unknown>) {
   const [creation, setCreation] = useState(() => createDraft());
   const [createError, setCreateError] = useState('');
   const [createBusy, setCreateBusy] = useState(false);
@@ -66,7 +66,9 @@ export function useAuthoring(onComplete: (artifact: LabArtifact) => Promise<void
           setDirty(false);
         }
       },
-      complete: (value) => completeRef.current(value),
+      complete: async (value) => {
+        await completeRef.current(value);
+      },
       needsProvider: () => setNeedsProvider(true),
     });
   const manager = managerRef.current;
@@ -138,6 +140,7 @@ export function useAuthoring(onComplete: (artifact: LabArtifact) => Promise<void
     remaining = job?.remaining ?? true,
     fresh?: CreateDraft,
     foreground = true,
+    reuse: { sourcesId?: string; refresh?: boolean } = {},
   ) {
     const query = (fresh?.name ?? name).trim();
     if (!query) return;
@@ -158,7 +161,7 @@ export function useAuthoring(onComplete: (artifact: LabArtifact) => Promise<void
           character: { ...emptyRequest().character, name: query },
         };
     const revision =
-      !fresh && choice !== undefined && selected
+      !fresh && (choice !== undefined || reuse.sourcesId || reuse.refresh) && selected
         ? selected
         : insertRevision(request, null, foreground, fresh?.profile ?? undefined);
     const profile = revision.profile;
@@ -168,6 +171,8 @@ export function useAuthoring(onComplete: (artifact: LabArtifact) => Promise<void
         name: query,
         ...(choice === undefined ? {} : { choice }),
         ...(profile ? { profileId: profile.profile.id } : {}),
+        ...(reuse.sourcesId ? { sourcesId: reuse.sourcesId } : {}),
+        ...(reuse.refresh ? { refresh: true } : {}),
       },
     });
   }
@@ -475,6 +480,7 @@ export function useAuthoring(onComplete: (artifact: LabArtifact) => Promise<void
     startedAt: job?.startedAt ?? 0,
     status: status || job?.status || '',
     error: error || job?.error || '',
+    failureEvidence: job?.state === 'failed' ? job.evidence : undefined,
     needsProvider,
     job,
     jobs,
@@ -485,7 +491,15 @@ export function useAuthoring(onComplete: (artifact: LabArtifact) => Promise<void
     generate,
     run,
     runStage,
-    findReferences: () => generate(undefined, false),
+    // Research again, extending the saved Sources for this character.
+    findReferences: () => generate(undefined, false, undefined, true, { refresh: true }),
+    choose: (choice: Choice) =>
+      choice.sourcesId || choice.refresh
+        ? generate(undefined, job?.remaining ?? true, undefined, true, {
+            ...(choice.sourcesId ? { sourcesId: choice.sourcesId } : {}),
+            ...(choice.refresh ? { refresh: true } : {}),
+          })
+        : generate(choice.id),
     revise,
     select,
     addArtifact,
