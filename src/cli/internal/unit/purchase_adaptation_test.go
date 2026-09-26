@@ -28,6 +28,12 @@ func TestPurchasesShowThePlannedAdaptation(t *testing.T) {
 	// A live run opened every change with "In build CODE," or "In CODE,".
 	plan.Paths.Path2.Milestones.Tier3 = "In x-3-x, three darts leave at once."
 	plan.Paths.Path3.Milestones.Tier4 = "In build x-x-4, the bolt hits twice as hard."
+	// Or later in the text: a code opening a sentence or clause is dropped,
+	// and one inside a clause only with "build".
+	plan.Paths.Path2.Milestones.Tier4 = "The darts fly faster. In x-4-x, the throw repeats; in build x-4-x, it never tires."
+	plan.Paths.Path3.Milestones.Tier5 = "The bow draws deeper, and in build x-x-5, the bolt keeps the range it gained in x-x-2, and pierces more."
+	intents.Path2.Tier4.Technique = "Fan Club"
+	intents.Path3.Tier5.Technique = "Crossbow Master"
 	for _, test := range []struct {
 		path, tier int
 		want       string
@@ -38,6 +44,8 @@ func TestPurchasesShowThePlannedAdaptation(t *testing.T) {
 		{0, 4, "Throws the ball faster, multiplies its pierce and switches it to normal damage so it can hit Lead."},
 		{1, 3, "Three darts leave at once."},
 		{2, 4, "The bolt hits twice as hard."},
+		{1, 4, "The darts fly faster. The throw repeats; it never tires."},
+		{2, 5, "The bow draws deeper, and the bolt keeps the range it gained in x-x-2, and pierces more."},
 		// A purchase of the base attack alone: its effects say it all.
 		{0, 1, ""},
 	} {
