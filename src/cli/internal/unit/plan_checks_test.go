@@ -43,8 +43,9 @@ func TestEarlyEffectPromisesNeedTheBaseAttack(t *testing.T) {
 // Under distinctFirstUpgrades two paths whose first two purchases only
 // improve the same dimension give no distinct early crosspath value, even
 // with different names, prices and amounts: a Luffy plan on #27 made
-// x-1-x, x-2-x, x-x-1 and x-x-2 interval-only. The plan is sent back before
-// drafting; a third purchase may still lead with that stat.
+// x-1-x, x-2-x, x-x-1 and x-x-2 interval-only, another 1-x-x, 2-x-x, x-x-1
+// and x-x-2 damage-only. The plan is sent back before drafting; a third
+// purchase may still lead with that stat.
 func TestMirroredEarlyPurchasesAreRejected(t *testing.T) {
 	stages, err := fixture.Build()
 	if err != nil {
@@ -52,6 +53,7 @@ func TestMirroredEarlyPurchasesAreRejected(t *testing.T) {
 	}
 	plan := *stages.Draft.Run.DesignPlan
 	intents := *plan.UpgradeIntents
+	fixtureIntents := intents
 	plan.UpgradeIntents = &intents
 	definition := unit.DefaultAuthoringDefinition()
 	mirrored := func() []string {
@@ -83,7 +85,18 @@ func TestMirroredEarlyPurchasesAreRejected(t *testing.T) {
 	if found := mirrored(); len(found) != 0 {
 		t.Errorf("an added early improvement was rejected: %v", found)
 	}
-	intents.Path3.Tier2.Improves = []string{"attack-rate"}
+	// Kyle's saved Luffy Result 760deca437db: Gear 3's 1-x-x and 2-x-x and
+	// Gear 4's x-x-1 and x-x-2 each raise damage alone.
+	intents = fixtureIntents
+	damage := unit.UpgradeIntent{Improves: []string{"damage"}, Unlock: "none"}
+	intents.Path1.Tier1, intents.Path1.Tier2 = damage, damage
+	intents.Path1.Tier1.Technique, intents.Path1.Tier2.Technique = "Gear 3", "Gear 3"
+	intents.Path3.Tier1, intents.Path3.Tier2 = damage, damage
+	intents.Path3.Tier1.Technique, intents.Path3.Tier2.Technique = "Gear 4", "Gear 4"
+	want = "upgradeIntents.path3.tier2: x-x-1 and x-x-2 only improve damage, as 1-x-x and 2-x-x do."
+	if found := mirrored(); len(found) != 1 || !strings.HasPrefix(found[0], want) || !strings.Contains(found[0], "such as pierce, range or attack-rate, or personal detection") {
+		t.Errorf("mirrored damage issues %v", found)
+	}
 	off := definition
 	policy := *definition.Profile.DesignPolicy
 	policy.DistinctFirstUpgrades = false
