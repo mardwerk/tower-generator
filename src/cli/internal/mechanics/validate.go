@@ -184,8 +184,30 @@ func abilityStat(a ResolvedAbility, stat string) float64 {
 }
 
 // ValidateBlueprint validates syntax, every reachable build and each
-// immediately purchasable upgrade. input and definition are JSON values.
+// immediately purchasable upgrade, including the authoring checks. input and
+// definition are JSON values.
 func ValidateBlueprint(input any, definitionValue any) []Issue {
+	return validateValue(input, definitionValue, true)
+}
+
+// ValidateTyped validates a typed blueprint under a typed Definition: its
+// structure plus the authoring checks. Making or checking a unit uses it.
+func ValidateTyped(blueprint *Blueprint, definition Definition) []Issue {
+	return ValidateBlueprint(s.FromGoValue(blueprint), s.FromGoValue(definition))
+}
+
+// ValidateStructure checks what reading a saved blueprint needs: the
+// Definition and blueprint schemas, cost ceilings, source fact references,
+// boost placement and valid resolved values in every legal build. It skips
+// the authoring checks (change budgets, early identity, no-op, downgrade and
+// ineffective changes, design policy), so a check added later cannot hide a
+// saved unit sheet. When it returns nothing, every ValidateTyped issue is an
+// authoring issue.
+func ValidateStructure(blueprint *Blueprint, definition Definition) []Issue {
+	return validateValue(s.FromGoValue(blueprint), s.FromGoValue(definition), false)
+}
+
+func validateValue(input any, definitionValue any, authoring bool) []Issue {
 	defOut, defIssues := s.Parse(DefinitionSchemaOf(definitionValue), definitionValue)
 	if len(defIssues) > 0 {
 		issues := make([]Issue, len(defIssues))
@@ -210,15 +232,14 @@ func ValidateBlueprint(input any, definitionValue any) []Issue {
 	if err := s.ToGo(bpOut, &blueprint); err != nil {
 		panic(err)
 	}
-	return validateParsed(&blueprint, rules)
+	return validateParsed(&blueprint, rules, authoring)
 }
 
-// ValidateTyped validates a typed blueprint under a typed Definition.
-func ValidateTyped(blueprint *Blueprint, definition Definition) []Issue {
-	return ValidateBlueprint(s.FromGoValue(blueprint), s.FromGoValue(definition))
-}
-
-func validateParsed(blueprint *Blueprint, rules Definition) []Issue {
+// validateParsed runs the structural checks and, when authoring is set, the
+// authoring checks, in one walk so ValidateTyped keeps its issue order. A new
+// design judgment belongs in an authoring branch only; a structural check
+// would hide the sheets of Results saved before it.
+func validateParsed(blueprint *Blueprint, rules Definition, authoring bool) []Issue {
 	var issues []Issue
 	add := func(path, message string) { issues = append(issues, Issue{path, message}) }
 	profile := rules.Profile
@@ -243,7 +264,7 @@ func validateParsed(blueprint *Blueprint, rules Definition) []Issue {
 			if tier <= profile.EarlyThrough() {
 				changeLimit = min(profile.EarlyTierMaxChanges, profile.MaxChangesPerTier)
 			}
-			if len(upgrade.Changes) > changeLimit {
+			if authoring && len(upgrade.Changes) > changeLimit {
 				add(prefix+".changes", "Exceeds the Definition change budget.")
 			}
 			if len(upgrade.Changes) == 0 {
@@ -286,7 +307,7 @@ func validateParsed(blueprint *Blueprint, rules Definition) []Issue {
 					}
 				}
 			}
-			if tier <= 2 {
+			if authoring && tier <= 2 {
 				beforeSel := Selection{}
 				beforeSel[pathIndex] = tier - 1
 				afterSel := beforeSel
@@ -325,6 +346,9 @@ func validateParsed(blueprint *Blueprint, rules Definition) []Issue {
 			resolvedValuesValid = false
 		}
 		issues = append(issues, buildIssues...)
+		if !authoring {
+			continue
+		}
 		for pathIndex, path := range PathKeys {
 			tier := selection[pathIndex]
 			if tier == 0 {
@@ -345,7 +369,7 @@ func validateParsed(blueprint *Blueprint, rules Definition) []Issue {
 			}
 		}
 	}
-	if resolvedValuesValid {
+	if authoring && resolvedValuesValid {
 		issues = append(issues, ineffectiveChanges(blueprint, rules, noOp)...)
 		issues = append(issues, DesignPolicyIssues(blueprint, rules)...)
 	}
