@@ -67,6 +67,7 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		comparisons = m.CompareCapstonePurchasesWith(blueprint, vocabulary)
 	}
 	context.Set("purchaseComparisons", comparisons).
+		Set("purchaseComparisonOrdering", capstoneOrdering(comparisons)).
 		Set("character", s.FromGoValue(request.Character)).
 		Set("task", request.Task).
 		Set("constraints", s.FromGoValue(request.Constraints)).
@@ -139,6 +140,47 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	}
 	prompt := []string{reviewStyle, reviewScope, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, reviewPolicy, reviewFindings, s.Stringify(context)}
 	return ModelRequest{System: reviewSystem, Prompt: strings.Join(prompt, "\n\n"), Schema: s.JSONSchema(schema)}
+}
+
+// capstoneOrdering gives review a checked numerical comparison. The raw
+// metrics remain in purchaseComparisons; this is prompt context, not saved
+// design evidence, so older drafts retain their exact evidence.
+func capstoneOrdering(comparisons []any) []any {
+	out := []any{}
+	metric := func(object *s.Object, key string) (float64, bool) {
+		value, ok := object.Get(key)
+		number, numeric := value.(float64)
+		return number, ok && numeric
+	}
+	for _, value := range comparisons {
+		comparison := value.(*s.Object)
+		path, _ := comparison.Get("path")
+		tier5, _ := comparison.Get("tier5")
+		copies, _ := comparison.Get("sameBudgetTier4Copies")
+		tier5Metrics, _ := tier5.(*s.Object).Get("metrics")
+		bounds, _ := copies.(*s.Object).Get("additiveThroughputUpperBounds")
+		row := s.NewObject().Set("path", path)
+		for _, key := range []string{"direct damage rate", "group damage rate upper bound"} {
+			tier5Value, validTier5 := metric(tier5Metrics.(*s.Object), key)
+			copiesValue, validCopies := metric(bounds.(*s.Object), key)
+			if !validTier5 || !validCopies {
+				continue
+			}
+			ordering := "equal"
+			if tier5Value > copiesValue {
+				ordering = "higher"
+			} else if tier5Value < copiesValue {
+				ordering = "lower"
+			}
+			var ratio any
+			if copiesValue > 0 {
+				ratio = tier5Value / copiesValue
+			}
+			row.Set(key, s.NewObject().Set("ordering", ordering).Set("tier5ToCopiesRatio", ratio))
+		}
+		out = append(out, row)
+	}
+	return out
 }
 
 func invalidReview() *ModelError {
