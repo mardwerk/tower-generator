@@ -113,8 +113,8 @@ func TestReviewFindingsCiteCheckedFacts(t *testing.T) {
 	}
 }
 
-// A correction cannot drop a finding whose citations hold, and the published
-// summary describes the published findings. A live Luffy review on #27
+// A correction cannot drop or change a finding whose citations hold, and the
+// published summary describes the published findings. A live Luffy review on #27
 // flagged a real Gatling capacity mismatch with correct facts and misread an
 // interval in another finding; the correction returned no findings and "No
 // concrete issue", and the Result reported a clean review.
@@ -139,20 +139,29 @@ func TestReviewCorrectionKeepsCheckedFindings(t *testing.T) {
 	findings, _ = changed.Get("findings")
 	findings.([]any)[0].(*s.Object).Set("outcome", "pass")
 	changed.Set("findings", findings.([]any)[:1])
-	for name, correction := range map[string]*s.Object{"dropped": clean, "changed outcome": changed} {
+	// A kept finding must return unchanged in every field: a correction
+	// that rewrites its message may summarize the rewritten text, which the
+	// Result would not hold (reported on #27).
+	rewritten := s.Clone(first).(*s.Object).Set("summary", "No concrete issue remains.")
+	findings, _ = rewritten.Get("findings")
+	findings.([]any)[0].(*s.Object).Set("message", "Rewritten.")
+	findings.([]any)[1].(*s.Object).Set("facts", fact("2-0-0", "attack.pierce", "5"))
+	for name, correction := range map[string]*s.Object{"dropped": clean, "changed outcome": changed, "rewritten message": rewritten} {
 		model := &fixture.Model{Outputs: []any{first, correction}}
-		_, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options())
+		result, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options())
 		if !errors.As(err, &failure) || !strings.Contains(failure.Message, "dropped or changed findings whose citations held (model.fan-club-allies)") || len(model.Requests) != 2 {
 			t.Errorf("%s: %v after %d calls", name, err, len(model.Requests))
 		}
+		if result.ID != "" || result.ReviewSummary != "" || len(result.Findings) != 0 {
+			t.Errorf("%s: a rejected correction published a Result: %+v", name, result)
+		}
 	}
 
-	// A correction that returns the kept finding publishes its summary with
-	// it; the kept finding keeps its original text, the flagged one is
-	// replaced, and a new finding is checked like the others.
+	// A correction that returns the kept finding verbatim publishes its
+	// summary with it; the flagged finding is replaced, and a new finding is
+	// checked like the others.
 	corrected := s.Clone(first).(*s.Object).Set("summary", "One unresolved scope limit.")
 	findings, _ = corrected.Get("findings")
-	findings.([]any)[0].(*s.Object).Set("message", "Rewritten.")
 	findings.([]any)[1].(*s.Object).Set("facts", fact("2-0-0", "attack.pierce", "5"))
 	extra := s.Clone(valid).(*s.Object).Set("id", "model.extra")
 	corrected.Set("findings", append(findings.([]any), extra))
@@ -162,7 +171,7 @@ func TestReviewCorrectionKeepsCheckedFindings(t *testing.T) {
 		t.Fatal(err)
 	}
 	prompt := model.Requests[1].Prompt
-	for _, want := range []string{"Your previous review was: {", "model.interval cites 2-0-0 attack.pierce as 3, but it is 5.", "a summary that describes exactly the findings you return", "Return model.fan-club-allies unchanged", "Return model.interval corrected under the same ID"} {
+	for _, want := range []string{"Your previous review was: {", "model.interval cites 2-0-0 attack.pierce as 3, but it is 5.", "a summary that describes exactly the findings you return", "Return model.fan-club-allies verbatim, every field exactly as in your previous review", "Return model.interval corrected under the same ID"} {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("the correction lacks %q", want)
 		}
@@ -171,8 +180,8 @@ func TestReviewCorrectionKeepsCheckedFindings(t *testing.T) {
 	for _, f := range result.Findings {
 		if strings.HasPrefix(f.ID, "model.") {
 			ids = append(ids, f.ID)
-			if f.ID == "model.fan-club-allies" && f.Message == "Rewritten." {
-				t.Error("the correction rewrote a kept finding")
+			if f.ID == "model.fan-club-allies" && s.Stringify(s.FromGoValue(f)) != s.Stringify(valid) {
+				t.Errorf("the kept finding changed: %+v", f)
 			}
 			if f.ID == "model.interval" && f.Facts[0].Value != "5" {
 				t.Errorf("the flagged finding was not replaced: %+v", f.Facts)

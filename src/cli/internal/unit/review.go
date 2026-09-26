@@ -221,7 +221,7 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 	if err == nil && definition != nil {
 		// A review that cites builds the Definition does not allow, or
 		// resolved values that are wrong, is corrected once, then rejected.
-		// Findings whose citations hold must come back unchanged.
+		// Findings whose citations hold must come back unchanged in every field.
 		citations := newReviewCitations(checked.Draft.Candidate.Blueprint, *definition)
 		if problems := citations.problems(review); len(problems) > 0 {
 			request.Prompt += correctionPrompt(review, problems)

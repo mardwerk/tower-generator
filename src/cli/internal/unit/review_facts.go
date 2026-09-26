@@ -17,7 +17,7 @@ import (
 // the Definition does not allow, or a resolved value that is wrong, is
 // corrected once and then rejected, so it cannot report findings about builds
 // such as 3-3-0. The correction must return the findings whose citations
-// held, so its summary describes them.
+// held unchanged in every field, so its summary describes them.
 
 var buildCodePattern = regexp.MustCompile(`\b[0-9]-[0-9]-[0-9]\b`)
 
@@ -171,14 +171,18 @@ func (c reviewCitations) wrongFacts(finding Finding) []string {
 	return out
 }
 
-// keepCheckedFindings merges a correction into the review it corrects. The
-// correction returns the whole review, so its summary describes the findings
-// it returns. Every finding whose citations held must come back under its ID
-// with the same outcome, and code restores its original text; a correction
+// keepCheckedFindings checks a correction against the review it corrects and
+// returns the correction. The correction returns the whole review, so its
+// summary describes the findings it returns. Every finding whose citations
+// held must come back under its ID identical in every field; a correction
 // that drops or changes one is rejected, because its summary was written
-// without it (reported on #27: a correction returned no findings and "No
-// concrete issue", losing a finding with valid facts). A flagged finding
-// comes back corrected under its ID or not at all.
+// about something other than the checked finding (reported on #27: a
+// correction returned no findings and "No concrete issue", losing a finding
+// with valid facts, and one that rewrote a kept finding's message would
+// publish a summary about text the Result does not hold). A flagged finding
+// comes back corrected under its ID or not at all. Because the published
+// findings are exactly the ones the correction returned, its summary is
+// published with them.
 func keepCheckedFindings(previous, corrected SemanticReview, problems []citationProblem) (SemanticReview, error) {
 	flagged := map[string]bool{}
 	for _, p := range problems {
@@ -186,32 +190,21 @@ func keepCheckedFindings(previous, corrected SemanticReview, problems []citation
 			flagged[p.finding] = true
 		}
 	}
-	kept := map[string]Finding{}
-	for _, f := range previous.Findings {
-		if !flagged[f.ID] {
-			kept[f.ID] = f
-		}
-	}
-	returned := map[string]Finding{}
-	out := SemanticReview{Summary: corrected.Summary, Findings: []Finding{}}
+	returned := map[string]string{}
 	for _, f := range corrected.Findings {
-		returned[f.ID] = f
-		if original, ok := kept[f.ID]; ok {
-			f = original
-		}
-		out.Findings = append(out.Findings, f)
+		returned[f.ID] = s.Stringify(s.FromGoValue(f))
 	}
 	var lost []string
 	for _, f := range previous.Findings {
-		if _, ok := kept[f.ID]; ok && returned[f.ID].Outcome != f.Outcome {
+		if got, ok := returned[f.ID]; !flagged[f.ID] && (!ok || got != s.Stringify(s.FromGoValue(f))) {
 			lost = append(lost, f.ID)
 		}
 	}
 	if len(lost) > 0 {
-		message := "The model review's correction dropped or changed findings whose citations held (" + strings.Join(lost, ", ") + "), so its summary does not describe them. The draft is retained. Retry the review or choose another model."
+		message := "The model review's correction dropped or changed findings whose citations held (" + strings.Join(lost, ", ") + "); they must return unchanged in every field, or its summary may not describe them. The draft is retained. Retry the review or choose another model."
 		return SemanticReview{}, &ModelError{Message: message, Failure: &Failure{Code: CodeOutputInvalid, Message: message, Stage: "review"}}
 	}
-	return out, nil
+	return SemanticReview{Summary: corrected.Summary, Findings: append([]Finding{}, corrected.Findings...)}, nil
 }
 
 // rejectedCitations is the error for citations that are still wrong after
@@ -268,7 +261,7 @@ func correctionPrompt(previous SemanticReview, problems []citationProblem) strin
 	}
 	text += "\nReturn the whole review again, with a summary that describes exactly the findings you return."
 	if len(kept) > 0 {
-		text += " Return " + strings.Join(kept, ", ") + " unchanged: their citations hold, and a review that drops or changes one is rejected."
+		text += " Return " + strings.Join(kept, ", ") + " verbatim, every field exactly as in your previous review, including message, subject, action, evidence and facts: their citations hold, and a review that drops or changes any field of one is rejected."
 	}
 	if len(flagged) > 0 {
 		text += " Return " + strings.Join(flagged, ", ") + " corrected under the same ID, or omit it when the resolved facts contradict its claim."
