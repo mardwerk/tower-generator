@@ -120,6 +120,21 @@ func TestStagesSerializeReloadAndRender(t *testing.T) {
 	}
 }
 
+// The build command resolves a saved Result that a later authoring check
+// flags, and the diagnostics list that check apart from the findings (#37).
+func TestSavedResultBuildsUnderLaterAuthoringCheck(t *testing.T) {
+	scratch(t)
+	saved := filepath.Join("..", "..", "data", "reference", "captures", "luffy-3b.result.json")
+	build, _, err := cli(t, "build", saved, "--tiers", "3,0,0")
+	if err != nil || !strings.Contains(build, `"tierDeltas"`) {
+		t.Errorf("build %v", err)
+	}
+	detailed, _, err := cli(t, "render", saved, "--details")
+	if err != nil || !strings.Contains(detailed, "## Current checks") {
+		t.Errorf("details %v", err)
+	}
+}
+
 func TestFailuresLeaveOutputAloneAndNeverOverwrite(t *testing.T) {
 	dir := scratch(t)
 	draft, _ := recordedFiles(t, dir)

@@ -9,7 +9,8 @@ import (
 )
 
 // Detailed renders the full reading view: purchases, usage, abilities,
-// mechanics, review counts, open findings and evidence.
+// mechanics, review counts, open findings, the authoring checks that fail
+// today (AuthoringIssues) and evidence.
 func Detailed(view View) string {
 	var lines []string
 	lines = append(lines, describeUnit(view)...)
@@ -18,6 +19,7 @@ func Detailed(view View) string {
 	lines = append(lines, describeAbilities(view)...)
 	lines = append(lines, describeMechanics(view)...)
 	lines = append(lines, describeReview(view)...)
+	lines = append(lines, currentChecks(view)...)
 	lines = append(lines, describeEvidence(view)...)
 	return strings.Join(lines, "\n") + "\n"
 }
