@@ -82,10 +82,14 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	context.Set("purchaseComparisonOrdering", capstoneOrdering(comparisons)).
 		Set("character", s.FromGoValue(request.Character)).
 		Set("task", request.Task).
-		Set("constraints", s.FromGoValue(request.Constraints)).
-		Set("previous", previousValue(request)).
-		Set("previousFindings", previousFindings(request)).
-		Set("feedback", nullableString(request.Feedback))
+		Set("constraints", s.FromGoValue(request.Constraints))
+	// A revision's review gets the earlier unit and the requested change, to
+	// check that the change was made, but not the earlier review's findings:
+	// a review of an edited Luffy plan on #27 repeated an earlier verdict
+	// that the revised plan no longer supported.
+	if revision := reviewRevision(request); revision != nil {
+		context.Set("revision", revision)
+	}
 	if request.MechanicsDefinition != nil {
 		context.Set("definition", s.FromGoValue(request.MechanicsDefinition))
 		if blueprint != nil {
@@ -163,7 +167,11 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	if isV2(request) {
 		statuses = reviewStatusesV2
 	}
-	prompt := []string{reviewStyle, reviewScope, reviewGrounding, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, fmt.Sprintf(reviewPolicy, inCurrency(currency)), reviewFindings, s.Stringify(context)}
+	prompt := []string{reviewStyle, reviewScope, reviewGrounding, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, fmt.Sprintf(reviewPolicy, inCurrency(currency)), reviewFindings}
+	if context.Has("revision") {
+		prompt = append(prompt, reviewRevisionRule)
+	}
+	prompt = append(prompt, s.Stringify(context))
 	return ModelRequest{System: reviewSystem, Prompt: strings.Join(prompt, "\n\n"), Schema: s.JSONSchema(schema)}
 }
 
@@ -366,4 +374,20 @@ func Author(ctx context.Context, request any, model Model, options Options) (Res
 		return Result{}, err
 	}
 	return ReviewDraft(ctx, checked, model, options)
+}
+
+// reviewRevision is what a review needs to know about a revision: the unit
+// before it and the change asked for. It is nil for a first generation.
+func reviewRevision(request *Request) *s.Object {
+	if request.Previous == nil && request.Feedback == nil {
+		return nil
+	}
+	revision := s.NewObject()
+	if request.Previous != nil {
+		revision.Set("earlierUnit", previousValue(request))
+	}
+	if request.Feedback != nil {
+		revision.Set("feedback", *request.Feedback)
+	}
+	return revision
 }

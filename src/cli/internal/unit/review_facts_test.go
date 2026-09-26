@@ -195,3 +195,37 @@ func TestReviewCorrectionKeepsCheckedFindings(t *testing.T) {
 		t.Errorf("model findings %v, summary %q", ids, result.ReviewSummary)
 	}
 }
+
+// The review of a revision judges the current plan and unit. It gets the
+// earlier unit and the requested change, but not the earlier review's
+// findings: a review of an edited Luffy plan on #27 repeated an earlier
+// verdict that Gear 2's speed was only temporary, which the revised plan
+// no longer said.
+func TestRevisionReviewsJudgeTheCurrentPlan(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	rule := "a verdict about the plan must hold for the current designPlan text"
+	first := unit.BlueprintReviewRequest(stages.Checked).Prompt
+	if strings.Contains(first, `"revision":{`) || strings.Contains(first, rule) || strings.Contains(first, "previousFindings") {
+		t.Error("a first generation's review carries revision context")
+	}
+	checked := stages.Checked
+	request := checked.Draft.Prepared.Request
+	feedback := "Make Gear 2 speed permanent."
+	request.Feedback = &feedback
+	request.Previous = &unit.Previous{ResultID: "earlier", Draft: stages.Result.Candidate, Findings: []unit.Finding{
+		{ID: "model.gear2", Method: "model", Outcome: "fail", Subject: "x-3-x", Message: "The plan limits Gear 2 speed to a temporary boost."},
+	}}
+	checked.Draft.Prepared.Request = request
+	prompt := unit.BlueprintReviewRequest(checked).Prompt
+	for _, want := range []string{`"revision":{"earlierUnit":{`, `"feedback":"Make Gear 2 speed permanent."`, rule} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("the revision review lacks %q", want)
+		}
+	}
+	if strings.Contains(prompt, "limits Gear 2 speed to a temporary boost") || strings.Contains(prompt, "previousFindings") {
+		t.Error("the revision review carries the earlier review's findings")
+	}
+}
