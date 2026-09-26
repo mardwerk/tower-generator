@@ -90,6 +90,9 @@ func TestPromptsSeparatePrivateChecksFromOutput(t *testing.T) {
 		t.Fatal(err)
 	}
 	plan, mechanics, review := model.Requests[0].Prompt, model.Requests[1].Prompt, model.Requests[2].Prompt
+	if strings.Contains(review, "energy rules") {
+		t.Error("review guidance still assumes a Default Profile damage type")
+	}
 	for name, test := range map[string]struct {
 		prompt string
 		want   []string
@@ -408,7 +411,29 @@ func TestPlanPromptDerivesTheActiveSlotFromTheDefinition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(request.Prompt, "Only the bottom path may have a player-activated ability, first at x-x-4.") || strings.Contains(request.Prompt, "middle path may have a player-activated") {
+	if !strings.Contains(request.Prompt, "Only the bottom path may have a player-activated ability, first at x-x-4.") || strings.Contains(request.Prompt, "middle path may have a player-activated") || strings.Contains(request.Prompt, "middle path's Active Ability") {
 		t.Error("the plan prompt does not follow the Definition's manualAbilityPath")
+	}
+}
+
+func TestPlanPromptAppliesEarlyIdentityOnlyWhenSelected(t *testing.T) {
+	prepared, err := fixture.Prepare()
+	if err != nil {
+		t.Fatal(err)
+	}
+	const line = "The first and second purchase preserve the existing attack"
+	withPolicy, err := unit.DesignPlanRequest(prepared)
+	if err != nil || !strings.Contains(withPolicy.Prompt, line) {
+		t.Fatalf("early-identity guidance missing: %v", err)
+	}
+	definition := *prepared.Request.MechanicsDefinition
+	policy := *definition.Profile.DesignPolicy
+	disabled := false
+	policy.PreserveEarlyAttackIdentity = &disabled
+	definition.Profile.DesignPolicy = &policy
+	prepared.Request.MechanicsDefinition = &definition
+	withoutPolicy, err := unit.DesignPlanRequest(prepared)
+	if err != nil || strings.Contains(withoutPolicy.Prompt, line) {
+		t.Fatalf("early-identity guidance remained after disabling the policy: %v", err)
 	}
 }

@@ -321,6 +321,9 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 	if d := request.MechanicsDefinition; d != nil && d.Profile.DesignPolicy != nil {
 		// Policy requirements go before the closing guidance line.
 		gates := []string{planPathGates}
+		if policy := d.Profile.DesignPolicy; policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity {
+			gates = append(gates, planEarlyIdentity)
+		}
 		if policy := d.Profile.DesignPolicy; policy.RequireTier3BehaviorChange != nil && *policy.RequireTier3BehaviorChange {
 			gates = append(gates, planTier3Behavior)
 		}
