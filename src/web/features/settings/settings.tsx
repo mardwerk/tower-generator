@@ -19,6 +19,19 @@ const keySources: Record<KeyState['source'], string> = {
   none: '',
 };
 
+const reasoningLabels: Record<string, string> = {
+  none: 'None',
+  minimal: 'Minimal',
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  xhigh: 'Xhigh',
+  max: 'Max',
+  ultra: 'Ultra',
+};
+
+const codexDefaultModel = '__codex_default__';
+
 /** The provider state the server reports, refreshed whenever Settings closes. */
 export function useProvider(settingsOpen: boolean): ProviderState | null {
   const [state, setState] = useState<ProviderState | null>(null);
@@ -94,21 +107,35 @@ export function Settings({
   const [directory, setDirectory] = useState(library.directory);
   const [folderMessage, setFolderMessage] = useState('');
   const modelRequest = useRef(0);
+  const selectedModel = models.find((entry) => entry.id === model);
+  const reasoningLevels = selectedModel?.reasoning.length
+    ? selectedModel.reasoning
+    : !model || models.length === 0
+      ? provider === 'codex'
+        ? ['minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra']
+        : ['none', 'low', 'medium', 'high']
+      : reasoning
+        ? [reasoning]
+        : [];
   async function loadModels(name: ProviderState['provider'], reset: boolean) {
     const request = ++modelRequest.current;
     setModelMessage('Loading models...');
     try {
       const catalog = await api<ModelCatalog>('models', { provider: name });
       if (request !== modelRequest.current) return;
-      setModels(catalog.models);
+      setModels([...catalog.models].sort((a, b) => a.id.localeCompare(b.id)));
       setModelMessage(
         `${catalog.models.length} models from ${name === 'codex' ? 'Codex' : 'OpenRouter'}.`,
       );
       if (reset) {
-        setModel((current) => current || catalog.defaultModel);
+        const nextModel = catalog.defaultModel;
+        setModel(nextModel);
+        const offered = catalog.models.find((entry) => entry.id === nextModel);
+        const preferred = catalog.defaultReasoning || (name === 'codex' ? 'medium' : 'none');
         setReasoning(
-          (current) =>
-            current || catalog.defaultReasoning || (name === 'codex' ? 'medium' : 'none'),
+          offered?.reasoning.length && !offered.reasoning.includes(preferred)
+            ? (offered.reasoning[0] ?? preferred)
+            : preferred,
         );
       }
     } catch (error) {
@@ -143,6 +170,15 @@ export function Settings({
     };
   }, []);
   useEffect(() => setDirectory(library.directory), [library.directory]);
+  useEffect(() => {
+    if (selectedModel?.reasoning.length && !selectedModel.reasoning.includes(reasoning)) {
+      setReasoning(
+        selectedModel.reasoning.includes('medium')
+          ? 'medium'
+          : (selectedModel.reasoning[0] ?? reasoning),
+      );
+    }
+  }, [selectedModel, reasoning]);
   async function saveProvider() {
     setPending(true);
     setError('');
@@ -243,51 +279,88 @@ export function Settings({
         }
         <Disclosure title="Model" defaultOpen>
           <Field label="Model">
-            <Input
-              list="provider-models"
-              value={model}
-              placeholder={
-                provider === 'openrouter'
-                  ? 'Choose or enter an OpenRouter model'
-                  : 'Choose a Codex model'
-              }
-              onChange={(e) => {
-                const next = e.target.value;
+            <Select
+              value={model || (provider === 'codex' ? codexDefaultModel : undefined)}
+              onValueChange={(value) => {
+                const next = value === codexDefaultModel ? '' : value;
                 setModel(next);
+                if (!next) {
+                  setReasoning('medium');
+                  return;
+                }
                 const offered = models.find((entry) => entry.id === next);
-                if (offered && !offered.reasoning.includes(reasoning)) {
-                  setReasoning(offered.reasoning[0] || '');
+                if (offered?.reasoning.length && !offered.reasoning.includes(reasoning)) {
+                  setReasoning(
+                    offered.reasoning.includes('medium')
+                      ? 'medium'
+                      : (offered.reasoning[0] ?? reasoning),
+                  );
                 }
               }}
-            />
-            <datalist id="provider-models">
-              {models.map((entry) => (
-                <option key={entry.id} value={entry.id} label={entry.name} />
-              ))}
-            </datalist>
-          </Field>
-          <p className="text-xs text-muted-foreground" role="status">
-            {modelMessage}
-          </p>
-          <Field label="Reasoning level">
-            <Select value={reasoning} onValueChange={setReasoning}>
-              <SelectTrigger id="reasoning-select">
-                <SelectValue placeholder="Use provider default" />
+            >
+              <SelectTrigger
+                id="model-select"
+                disabled={provider === 'openrouter' && models.length === 0 && !model}
+              >
+                <SelectValue placeholder="Loading models..." />
               </SelectTrigger>
               <SelectContent>
-                {(
-                  models.find((entry) => entry.id === model)?.reasoning ||
-                  (provider === 'codex'
-                    ? ['low', 'medium', 'high', 'xhigh', 'max', 'ultra']
-                    : ['none', 'low', 'medium', 'high'])
-                ).map((level) => (
-                  <SelectItem key={level} value={level}>
-                    {level}
+                {provider === 'codex' && (
+                  <SelectItem
+                    value={codexDefaultModel}
+                    description="Use your local Codex configuration"
+                  >
+                    Codex default
+                  </SelectItem>
+                )}
+                {model && !selectedModel && (
+                  <SelectItem
+                    value={model}
+                    description="Current setting; not in the fetched catalog"
+                  >
+                    {model}
+                  </SelectItem>
+                )}
+                {models.map((entry) => (
+                  <SelectItem
+                    key={entry.id}
+                    value={entry.id}
+                    description={entry.name === entry.id ? undefined : entry.name}
+                  >
+                    {entry.id}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
+          <p className="text-xs text-muted-foreground" role="status" aria-live="polite">
+            {modelMessage}
+          </p>
+          <fieldset className="my-3 min-w-0">
+            <legend className="mb-1.5 text-xs text-muted-foreground">Reasoning level</legend>
+            <div className="flex flex-wrap gap-1.5">
+              {reasoningLevels.map((level) => (
+                <label key={level} className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="reasoning-level"
+                    value={level}
+                    checked={reasoning === level}
+                    onChange={() => setReasoning(level)}
+                    className="peer sr-only"
+                  />
+                  <span className="inline-flex h-8 items-center rounded-md border border-input bg-background px-3 text-xs text-foreground transition-colors hover:bg-accent peer-checked:border-primary peer-checked:bg-accent peer-checked:text-accent-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring/60">
+                    {reasoningLabels[level] ?? level}
+                  </span>
+                </label>
+              ))}
+            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              {selectedModel?.reasoning.length
+                ? 'Only levels available for this model are shown. Higher levels generally use more time and tokens.'
+                : 'Choose a listed model to see its supported levels. Higher levels generally use more time and tokens.'}
+            </p>
+          </fieldset>
         </Disclosure>
         <Disclosure title="Image generation">
           <Field label="OpenRouter image model">
