@@ -145,6 +145,9 @@ func (srv *Server) posts() map[string]post {
 			if revision := render.Revision(view); revision != nil {
 				out.Set("revision", s.FromGoValue(revision))
 			}
+			if issues := render.AuthoringIssues(view.Candidate, definition); len(issues) > 0 {
+				out.Set("authoringIssues", s.FromGoValue(issues))
+			}
 			return out, nil
 		}},
 		"profiles/apply": {run: func(_ context.Context, body *s.Object) (any, error) {

@@ -510,6 +510,12 @@ export interface BaseUnit {
   text: string;
 }
 
+/** One authoring check that the unit's typed mechanics fail today. */
+export interface AuthoringIssue {
+  path: string;
+  message: string;
+}
+
 export interface UnitView {
   view: { kind: LabArtifact['kind']; designEvaluation?: unknown };
   base?: BaseUnit;
@@ -517,6 +523,11 @@ export interface UnitView {
   purchases?: PathPurchases[];
   crosspaths?: Crosspaths;
   revision?: RevisionNotes;
+  /**
+   * Authoring checks that fail today while the sheet still resolves, computed
+   * when the artifact is read. They are not stored findings.
+   */
+  authoringIssues?: AuthoringIssue[];
 }
 
 /** A purchase in top-middle-bottom notation: the second path's tier 4 is x-4-x. */

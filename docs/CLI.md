@@ -18,8 +18,8 @@ go build -o mardwerk-unit ./src/cli
 | `draft PREPARED` | → draft | 2–6 |
 | `check DRAFT` | → checked artifact with deterministic findings | none |
 | `review CHECKED` | → Result with a model review | 1 |
-| `render ARTIFACT` | → Markdown unit sheet: `0-0-0`, each purchase by build code, every crosspath build and, for a revision, patch notes; `--details` renders the diagnostics instead: provenance, review status, findings (including unsupported mechanics), purchase evidence, usage and evidence | none |
-| `build ARTIFACT --tiers 5,2,0` | → resolved stats and costs for one purchased build | none |
+| `render ARTIFACT` | → Markdown unit sheet: `0-0-0`, each purchase by build code, every crosspath build and, for a revision, patch notes; `--details` renders the diagnostics instead: provenance, review status, findings (including unsupported mechanics), current checks (the authoring checks the unit fails today, apart from its stored findings), purchase evidence, usage and evidence | none |
+| `build ARTIFACT --tiers 5,2,0` | → resolved stats and costs for one purchased build; it checks the blueprint's structure, not the authoring checks | none |
 | `inspect FILE` | → kind, validity and character of a saved file | none |
 | `definition` | → the bundled mechanics Definition | none |
 | `profiles` | → the bundled and saved Profiles | none |

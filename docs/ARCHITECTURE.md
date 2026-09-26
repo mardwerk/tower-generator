@@ -97,7 +97,7 @@ Exit codes: `0` the operation completed (findings may still fail), `1` failure. 
 | `POST /review` | `{checked}` | Result |
 | `POST /inspect` | `{artifact, editable?}` | `{kind, artifact}` |
 | `POST /render` | `{artifact, details?}` | `{markdown}` |
-| `POST /view` | `{artifact}` | `{view, base?, stats?, purchases?, crosspaths?, revision?}`: usage summary, design evaluation, the `0-0-0` description, per-tier stat changes, purchase sentences by build code, every legal two-path build and, for a revision, its mechanics and wording changes |
+| `POST /view` | `{artifact}` | `{view, base?, stats?, purchases?, crosspaths?, revision?, authoringIssues?}`: usage summary, design evaluation, the `0-0-0` description, per-tier stat changes, purchase sentences by build code, every legal two-path build, for a revision its mechanics and wording changes and, when the unit's structure is valid but today's [authoring checks](../CONTEXT.md) fail, those issues as `[{path, message}]`. `authoringIssues` is computed when the artifact is read; it is not a stored Finding and is omitted when empty |
 | `GET /profiles`, `POST /profiles/save`, `POST /profiles/delete` | –, `{profile}`, `{id}` | `{directory, profiles: [{profile, builtIn, progression}]}` |
 | `POST /profiles/apply` | `{request, profileId?\|profile?}` | the edited request under that Profile |
 | `GET /library`, `POST /library/configure` | –, `{directory}` | `{directory, entries}`; each entry has its record `path` relative to the folder, and saved Sources their researched `query` |
