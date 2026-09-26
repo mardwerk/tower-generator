@@ -13,10 +13,9 @@ func DesignGuidance(request *Request) []string {
 		specializations = "Use three different specializations."
 	}
 	out := []string{
-		"The selected designPolicy is a hard authoring constraint with heuristic metrics, not a BTD6 balance law. Declare a specialization for each path: direct-damage, group-damage, attack-speed, control, range or ability-burst. " +
+		"The selected designPolicy is a hard authoring constraint with heuristic metrics, not a balance law. Declare a specialization for each path: direct-damage, group-damage, attack-speed, control, range or ability-burst. " +
 			specializations + " Establish each specialty by the third purchase, make the fourth its major payoff and the fifth its capstone. At most " +
 			s.FormatNumber(float64(policy.MaxManualAbilityPaths)) + " paths may unlock a manual boost. Automatic paths are complete designs.",
-		guideRoleScales,
 	}
 	if policy.ManualAbilityPath.Present {
 		if policy.ManualAbilityPath.Null {
@@ -28,7 +27,7 @@ func DesignGuidance(request *Request) []string {
 	if policy.MinTier5SpecialtyMultiplier == nil {
 		out = append(out, guideNoCapstoneMultiplier)
 	} else {
-		out = append(out, "This custom Profile requires the fifth purchase to improve an established fourth-purchase specialty metric by at least "+s.FormatNumber(*policy.MinTier5SpecialtyMultiplier)+" times. This optional capacity heuristic is not a universal BTD6 rule. Compare resolved builds, not raw modifiers; duty-only gains must retain peak output.")
+		out = append(out, "This custom Profile requires the fifth purchase to improve an established fourth-purchase specialty metric by at least "+s.FormatNumber(*policy.MinTier5SpecialtyMultiplier)+" times. This optional capacity heuristic is not a universal game rule. Compare resolved builds, not raw modifiers; duty-only gains must retain peak output.")
 	}
 	first := "Repeated early behavior is allowed."
 	if policy.DistinctFirstUpgrades {
