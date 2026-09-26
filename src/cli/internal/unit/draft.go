@@ -144,7 +144,9 @@ func planDesign(ctx context.Context, prepared Prepared, model Model, repairs int
 			failure := StageFailure(err, "draft", totalUsage(*attempts), false)
 			return DesignPlan{}, &ModelError{Message: failure.Message, Usage: totalUsage(*attempts), Failure: failure.Failure, Cause: failure, Evidence: failureEvidence(&prepared.Request, nil, *attempts)}
 		}
-		correction = "\n\nCorrect this invalid design plan while retaining supported character identity: " +
+		// A Luffy retry on #27 returned only the one repertoire entry an
+		// issue named, and the shortened plan failed.
+		correction = "\n\nCorrect this invalid design plan while retaining supported character identity. Return the complete plan with every field and entry, changing only what the issues require: " +
 			s.Stringify(s.NewObject().Set("issues", stringList(issues)).Set("previous", response.Output))
 	}
 	last := (*attempts)[len(*attempts)-1]

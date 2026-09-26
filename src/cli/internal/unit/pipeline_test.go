@@ -388,6 +388,7 @@ func TestPlanCorrectionsQuoteTheRejectedValue(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(scripted.Requests) < 2 || !strings.Contains(scripted.Requests[1].Prompt, "omittedTechniques.1.name: Too big: expected string to have <=80 characters; it has 131") ||
+		!strings.Contains(scripted.Requests[1].Prompt, "Return the complete plan with every field and entry, changing only what the issues require") ||
 		!strings.Contains(scripted.Requests[1].Prompt, `Current value: \"`+long[:40]) {
 		t.Errorf("the correction does not quote the rejected name:\n%s", retryReason(scripted.Requests[len(scripted.Requests)-1].Prompt))
 	}

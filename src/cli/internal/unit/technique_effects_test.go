@@ -72,9 +72,10 @@ func TestTechniqueEffectsAreAdaptedOrOmitted(t *testing.T) {
 	}); err != nil {
 		t.Errorf("active-damage did not keep damage: %v", err)
 	}
-	// An entry that no purchase adapts cannot adapt an effect, but an entry
-	// named like the base attack is shown by 0-0-0 (seen in 3 of 5 Luffy
-	// plans on #27).
+	// Code checks only entries that purchases adapt: an entry named like the
+	// base attack is shown by 0-0-0, and an entry no purchase names adds
+	// nothing to the unit, so the review judges its list (4 of 5 Luffy plan
+	// retries on #27 came from these two cases).
 	unused := func(name string) func(*s.Object) {
 		return func(plan *s.Object) {
 			repertoire, _ := plan.Get("repertoire")
@@ -84,11 +85,10 @@ func TestTechniqueEffectsAreAdaptedOrOmitted(t *testing.T) {
 				Set("effects", []any{s.NewObject().Set("effect", "The dart flies to a distant target.").Set("adaptedAs", []any{"range"}).Set("reason", "Reach is range.")})))
 		}
 	}
-	if _, err := decode(unused("Dart Monkey Legend")); err == nil || !strings.Contains(err.Error(), `is adapted as range, but no purchase adapts "Dart Monkey Legend"`) {
-		t.Errorf("an unused entry adapted an effect: %v", err)
-	}
-	if _, err := decode(unused("dart throw")); err != nil {
-		t.Errorf("an entry named like the base attack was checked: %v", err)
+	for _, name := range []string{"Dart Monkey Legend", "dart throw"} {
+		if _, err := decode(unused(name)); err != nil {
+			t.Errorf("an entry no purchase adapts, %q, was checked: %v", name, err)
+		}
 	}
 	// Another path's promise does not keep it: Crossbow promises range.
 	if _, err := decode(func(plan *s.Object) {
@@ -125,7 +125,7 @@ func TestTechniqueEffectsAreAdaptedOrOmitted(t *testing.T) {
 		"a sudden speed increase or barrage can attack faster or fire more shots; a form that raises both strength and speed can hit harder and attack faster",
 		"In each repertoire entry's effects, list every effect its cited passages describe",
 		"code finds each on a purchase whose technique is that entry, in its plain or active form",
-		"including every effect of an entry that no purchase names as its technique; an entry named like the base attack is shown by 0-0-0 and is not checked",
+		"including every effect of an entry that no purchase names as its technique; an entry named like the base attack is shown by 0-0-0",
 		"reason says how the effect is adapted or why it is omitted",
 	} {
 		if strings.Count(request.Prompt, want) != 1 {
