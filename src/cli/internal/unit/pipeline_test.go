@@ -202,7 +202,8 @@ func TestRejectedPlansAreKeptAsFailureEvidence(t *testing.T) {
 	if !errors.As(err, &failure) || !strings.Contains(failure.Message, "could not be validated") || failure.Evidence == nil {
 		t.Fatalf("got %v", err)
 	}
-	if failure.Evidence.Plan != nil || len(failure.Evidence.Attempts) != 2 || len(model.Requests) != 2 {
+	if failure.Evidence.Plan != nil || len(failure.Evidence.Attempts) != 2 || len(model.Requests) != 2 ||
+		len(failure.Evidence.SourcePassages) == 0 || len(failure.Evidence.SourcePassages) != len(unit.AuthorEvidence(&prepared.Request)) {
 		t.Fatalf("evidence %+v after %d calls", failure.Evidence, len(model.Requests))
 	}
 	for _, attempt := range failure.Evidence.Attempts {

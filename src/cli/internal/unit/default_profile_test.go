@@ -314,3 +314,27 @@ func TestPathsShareTechniquesOnlyAsCrosspathSynergy(t *testing.T) {
 		t.Error("a plan milestone without a technique was accepted")
 	}
 }
+
+// A broken promise names the change that keeps it. The boost's multipliers
+// never keep a permanent promise, also at the purchase that unlocks the boost
+// (seen in a failed Luffy run on #27).
+func TestBrokenPromisesNameTheirFix(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	blueprint, plan := *stages.Result.Candidate.Blueprint, *stages.Draft.Run.DesignPlan
+	tier := &blueprint.Paths.Path2.Tiers.Tier4
+	var kept []m.Change
+	for _, change := range tier.Changes {
+		if change.Kind != "stat" || change.Stat != "intervalSeconds" {
+			kept = append(kept, change)
+		}
+	}
+	tier.Changes = kept
+	issues := unit.PlanIntentIssues(blueprint, plan.UpgradeIntents, unit.DefaultAuthoringDefinition())
+	if len(issues) != 1 || issues[0].Path != "paths.path2.tiers.tier4.planIntent" ||
+		!strings.Contains(issues[0].Message, "lowers intervalSeconds") || !strings.Contains(issues[0].Message, "intervalMultiplier is active-attack-rate and does not count") {
+		t.Errorf("issues %v", issues)
+	}
+}

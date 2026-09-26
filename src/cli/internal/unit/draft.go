@@ -136,20 +136,20 @@ func planDesign(ctx context.Context, prepared Prepared, model Model, repairs int
 		*attempts = append(*attempts, rejected)
 		if validation == nil {
 			failure := StageFailure(err, "draft", totalUsage(*attempts), false)
-			return DesignPlan{}, &ModelError{Message: failure.Message, Usage: totalUsage(*attempts), Failure: failure.Failure, Cause: failure, Evidence: failureEvidence(nil, *attempts)}
+			return DesignPlan{}, &ModelError{Message: failure.Message, Usage: totalUsage(*attempts), Failure: failure.Failure, Cause: failure, Evidence: failureEvidence(&prepared.Request, nil, *attempts)}
 		}
 		correction = "\n\nCorrect this invalid design plan while retaining supported character identity: " +
 			s.Stringify(s.NewObject().Set("issues", stringList(issues)).Set("previous", response.Output))
 	}
 	last := (*attempts)[len(*attempts)-1]
 	message := "The character design plan could not be validated. " + failureSummary(last.Issues)
-	return DesignPlan{}, &ModelError{Message: message, Usage: totalUsage(*attempts), Failure: &Failure{Code: CodeOutputInvalid, Stage: "draft", Message: message}, Evidence: failureEvidence(nil, *attempts)}
+	return DesignPlan{}, &ModelError{Message: message, Usage: totalUsage(*attempts), Failure: &Failure{Code: CodeOutputInvalid, Stage: "draft", Message: message}, Evidence: failureEvidence(&prepared.Request, nil, *attempts)}
 }
 
 // failureEvidence copies the attempts of a failed draft with the accepted
-// plan, if any.
-func failureEvidence(plan *DesignPlan, attempts []Attempt) *FailureEvidence {
-	evidence := &FailureEvidence{Attempts: append([]Attempt{}, attempts...)}
+// plan, if any, and the source passages the model was given.
+func failureEvidence(request *Request, plan *DesignPlan, attempts []Attempt) *FailureEvidence {
+	evidence := &FailureEvidence{Attempts: append([]Attempt{}, attempts...), SourcePassages: AuthorEvidence(request)}
 	if plan != nil {
 		retained := *plan
 		evidence.Plan = &retained
@@ -211,7 +211,7 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 		}
 		attempts = append(attempts, withUsage(Attempt{Number: len(attempts) + 1, Purpose: purpose, Issues: []string{}}, failedUsage))
 		failure := StageFailure(err, "draft", totalUsage(attempts), invalid)
-		return &ModelError{Message: failure.Message, Usage: totalUsage(attempts), Failure: failure.Failure, Cause: failure, Evidence: failureEvidence(&plan, attempts)}
+		return &ModelError{Message: failure.Message, Usage: totalUsage(attempts), Failure: failure.Failure, Cause: failure, Evidence: failureEvidence(request, &plan, attempts)}
 	}
 	for attempt := 0; attempt <= repairs; attempt++ {
 		if err := cancelled(ctx, attempts); err != nil {
@@ -330,7 +330,7 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 		}
 	}
 	message := fmt.Sprintf("The draft still failed mechanics checks after %d attempts. %s No invalid Unit was published.", designAttempts, failureSummary(issues))
-	return Draft{}, &ModelError{Message: message, Usage: totalUsage(attempts), Failure: &Failure{Code: CodeOutputInvalid, Stage: "draft", Message: message}, Evidence: failureEvidence(&plan, attempts)}
+	return Draft{}, &ModelError{Message: message, Usage: totalUsage(attempts), Failure: &Failure{Code: CodeOutputInvalid, Stage: "draft", Message: message}, Evidence: failureEvidence(request, &plan, attempts)}
 }
 
 func blueprintRequest(prepared Prepared, previous any, issues []string, plan DesignPlan) (ModelRequest, error) {

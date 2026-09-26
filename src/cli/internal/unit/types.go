@@ -243,11 +243,13 @@ type Attempt struct {
 }
 
 // FailureEvidence is what a failed draft keeps for diagnosis: every attempt
-// with its issues and rejected output, and the plan once one was accepted,
-// so a failure can be read without paying for the attempts again.
+// with its issues and rejected output, the plan once one was accepted and the
+// source passages the model was given, so a failure can be read without
+// paying for the attempts again.
 type FailureEvidence struct {
-	Plan     *DesignPlan `json:"plan,omitempty"`
-	Attempts []Attempt   `json:"attempts"`
+	Plan           *DesignPlan    `json:"plan,omitempty"`
+	Attempts       []Attempt      `json:"attempts"`
+	SourcePassages []EvidenceSpan `json:"sourcePassages"`
 }
 
 // Run records one model stage.

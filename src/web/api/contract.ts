@@ -395,10 +395,11 @@ export type InspectedInput =
   | { kind: 'checked'; artifact: CheckedArtifact }
   | { kind: 'result'; artifact: AuthorResult };
 
-/** What a failed draft keeps: each attempt's issues and rejected output, and the accepted plan. */
+/** What a failed draft keeps: each attempt's issues and rejected output, the accepted plan and the source passages. */
 export interface FailureEvidence {
   plan?: unknown;
   attempts: { number: number; purpose: string; issues: string[]; output?: unknown }[];
+  sourcePassages: { id: string; documentId: string; text: string }[];
 }
 
 export interface LabError {

@@ -364,6 +364,34 @@ func unlockedIntent(before, after m.Build, intent string, pathIndex, tier int, b
 	return false
 }
 
+// promiseFix names the change that keeps a promise. A promise without the
+// active prefix is permanent: the boost's own multipliers apply only while the
+// Active Ability runs and do not keep it.
+func promiseFix(dimension string) string {
+	switch dimension {
+	case "damage":
+		return "Add a statChanges entry that raises damage; the boost's damageMultiplier is active-damage and does not count."
+	case "attack-rate":
+		return "Add a statChanges entry that lowers intervalSeconds, such as multiply 0.8; the boost's intervalMultiplier is active-attack-rate and does not count."
+	case "range":
+		return "Add a statChanges entry that raises range; the boost's rangeBonus does not count."
+	case "pierce", "projectiles", "splash":
+		stat := map[string]string{"pierce": "pierce", "projectiles": "projectiles", "splash": "splashRadius"}[dimension]
+		return "Add a statChanges entry that raises " + stat + "."
+	case "follow-up":
+		return "Add or strengthen followUp: count, damageMultiplier, radius or status inheritance."
+	case "active-damage":
+		return "Raise the boost's damageMultiplier in boostChanges, or damage while the boost is owned."
+	case "active-attack-rate":
+		return "Lower the boost's intervalMultiplier in boostChanges, or the interval while the boost is owned."
+	case "active-duration":
+		return "Raise the boost's durationSeconds in boostChanges."
+	case "active-frequency":
+		return "Lower the boost's cooldownSeconds in boostChanges."
+	}
+	return "Raise the status effect's magnitude or seconds in statuses."
+}
+
 // PlanIntentIssues reports retained plan promises a blueprint does not implement.
 func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition m.Definition) []m.Issue {
 	if intents == nil {
@@ -395,13 +423,13 @@ func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition
 			previous[index] = tier - 1
 			before := m.ResolveUnchecked(&blueprint, previous)
 			label := fmt.Sprintf("%d-%d-%d", entry.selection[0], entry.selection[1], entry.selection[2])
-			report := func(promise string) {
+			report := func(promise, fix string) {
 				id := path + "." + key + "." + promise
 				if _, ok := found[id]; !ok {
 					order = append(order, id)
 					found[id] = m.Issue{
 						Path:    fmt.Sprintf("paths.%s.tiers.%s.planIntent", path, key),
-						Message: fmt.Sprintf("The retained plan promises %s, but this purchase does not implement it in legal build %s. Implement the promised dimension; an unrelated benefit does not satisfy it.", promise, label),
+						Message: fmt.Sprintf("The retained plan promises %s, but this purchase does not implement it in legal build %s. %s Keep the purchase's other promised changes; an unrelated benefit does not satisfy it.", promise, label, fix),
 					}
 				}
 			}
@@ -414,11 +442,11 @@ func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition
 					}
 				}
 				if !improved {
-					report("improved " + dimension)
+					report("improved "+dimension, promiseFix(dimension))
 				}
 			}
 			if !unlockedIntent(before, entry.build, intent.Unlock, index, tier, &blueprint, definition) {
-				report("unlock " + intent.Unlock)
+				report("unlock "+intent.Unlock, "Add the capability at exactly this purchase.")
 			}
 		}
 	}
