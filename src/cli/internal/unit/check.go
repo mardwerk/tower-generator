@@ -80,6 +80,20 @@ func CheckDraft(input Draft) (Checked, error) {
 				})
 			}
 		}
+		// distinctEarlyBenefits runs with or without a retained plan; the
+		// plan only lets it target the purchase that departs from it.
+		if len(issues) == 0 && candidate.Blueprint != nil {
+			var intents *UpgradeIntents
+			if draft.Run.DesignPlan != nil {
+				intents = draft.Run.DesignPlan.UpgradeIntents
+			}
+			for _, issue := range EarlyBenefitsIssues(*candidate.Blueprint, intents, *definition) {
+				report(checkFinding{
+					Category: "conflict", Outcome: "fail", Subject: issue.Path, Rule: "distinct-early-benefits", Message: issue.Message,
+					Action: act("Make the two paths' resolved early benefits distinct while keeping the retained plan true, and compile again."),
+				})
+			}
+		}
 	}
 	checkEvidence(candidate, request, report)
 	checkDependencies(candidate, request, report)

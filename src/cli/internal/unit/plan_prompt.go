@@ -17,9 +17,9 @@ const planPathGates = "Code checks every milestone's technique against these own
 // planEarlyIdentity applies only when the selected Definition enables it.
 const planEarlyIdentity = "The first and second purchase preserve the existing attack: do not unlock a new status, attack pattern, delivery, targeting or damage type. Personal detection and improvements to existing effects remain allowed. Do not promise projectiles on those purchases when a single-projectile attack must stay single."
 
-// planDistinctEarly applies when the design policy requires distinct first
-// upgrades; the plan check mirroredEarlyIssues enforces it.
-const planDistinctEarly = "No two paths' first and second purchases may together improve only the same dimension: when x-1-x, x-2-x, x-x-1 and x-x-2 all only improve attack-rate, the two paths give no distinct early crosspath value, whatever their names, prices or amounts. Give one of those paths another early improvement from its own technique. Code rejects a plan that repeats one; a third purchase may still lead with a single stat."
+// planDistinctEarly applies under distinctEarlyBenefits; the plan check
+// earlyBenefitsIssues enforces it.
+const planDistinctEarly = EarlyBenefitsRule + " For example, range then damage on x-1-x and x-2-x repeats damage then range on x-x-1 and x-x-2. Give one of those paths another improvement or unlock from its own technique. Code rejects a plan that repeats them; a third purchase may still lead with a single stat."
 
 // planGuidance follows the requested-character line of the plan prompt.
 var planGuidance = []string{

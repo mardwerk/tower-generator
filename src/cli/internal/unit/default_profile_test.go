@@ -67,7 +67,7 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 		}
 	}
 	definition := profile.MechanicsDefinition
-	if definition.Revision != "2026-09-26-atlas-56.3-v21" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
+	if definition.Revision != "2026-09-26-atlas-56.3-v22" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
 		t.Errorf("Definition %s %q", definition.Revision, definition.Label)
 	}
 	if scale := definition.Profile.ReferenceScale; scale.BaseCost != 200 || scale.BaseDamage != 1 || scale.BaseIntervalSeconds != 0.95 || scale.BaseRange != 32 || scale.BasePierce != 2 ||
@@ -519,14 +519,14 @@ func TestPlanPromptStatesDistinctEarlyPurchasesOnlyWhenSelected(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	const line = "No two paths' first and second purchases may together improve only the same dimension"
+	line := unit.EarlyBenefitsRule
 	withPolicy, err := unit.DesignPlanRequest(prepared)
 	if err != nil || !strings.Contains(withPolicy.Prompt, line) {
 		t.Fatalf("distinct early guidance missing: %v", err)
 	}
 	definition := *prepared.Request.MechanicsDefinition
 	policy := *definition.Profile.DesignPolicy
-	policy.DistinctFirstUpgrades = false
+	policy.DistinctEarlyBenefits = nil
 	definition.Profile.DesignPolicy = &policy
 	prepared.Request.MechanicsDefinition = &definition
 	withoutPolicy, err := unit.DesignPlanRequest(prepared)
