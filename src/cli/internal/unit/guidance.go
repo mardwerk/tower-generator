@@ -14,14 +14,14 @@ func DesignGuidance(request *Request) []string {
 	}
 	out := []string{
 		"The selected designPolicy is a hard authoring constraint with heuristic metrics, not a balance law. Declare a specialization for each path: direct-damage, group-damage, attack-speed, control, range or ability-burst. " +
-			specializations + " Establish each specialty by the third purchase, make the fourth its major payoff and the fifth its capstone. At most " +
+			specializations + " At most " +
 			s.FormatNumber(float64(policy.MaxManualAbilityPaths)) + " paths may unlock a manual boost. Automatic paths are complete designs.",
 	}
 	if policy.ManualAbilityPath.Present {
 		if policy.ManualAbilityPath.Null {
 			out = append(out, guideAutomaticOnly)
 		} else {
-			out = append(out, "Only "+policy.ManualAbilityPath.Value+" ("+pathPosition(policy.ManualAbilityPath.Value)+" path) may unlock a manual boost at its fourth purchase or modify it at its fifth; even that path may remain automatic. Every other path must keep unlockBoost null and boostChanges empty. Assign the character technique suited to manual activation to the permitted path rather than adding extra active paths.")
+			out = append(out, ActivationShape(*request.MechanicsDefinition)+" Every other path keeps unlockBoost null and boostChanges empty; even that path may remain automatic.")
 		}
 	}
 	if policy.MinTier5SpecialtyMultiplier == nil {

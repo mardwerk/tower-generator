@@ -256,7 +256,10 @@ func TestVersion2AuthorsWithStackingEffects(t *testing.T) {
 		t.Fatalf("%d model calls", len(scripted.Requests))
 	}
 	for i, request := range scripted.Requests {
-		if !strings.Contains(request.Prompt, "poison (Poison; also venom, toxin): damageOverTime, magnitude 0.5 to 5 damage/s, at most 8 s, stacks to 5 (independent), combined at most 10") {
+		// The Definition JSON carries the vocabulary; the prose says how to use it.
+		if !strings.Contains(request.Prompt, `"id":"poison","name":"Poison","aliases":["venom","toxin"],"kind":"damageOverTime"`) ||
+			!strings.Contains(request.Prompt, `"magnitude":{"unit":"damage/s","min":0.5,"max":5},"maxSeconds":8,"stacking":{"maxStacks":5,"refresh":"independent","maxMagnitude":10}`) ||
+			!strings.Contains(request.Prompt, "Map source wording to a status effect through its name and aliases") {
 			t.Errorf("call %d does not describe poison", i+1)
 		}
 	}

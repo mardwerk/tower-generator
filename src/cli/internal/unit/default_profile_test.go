@@ -23,7 +23,7 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 		"IceMonkey.json and -100 to -500", "TackShooter.json and -010 to -050", "MonkeyVillage.json",
 		"DartMonkey-400 and SuperMonkey-001, KnockbackModel",
 		"0-0-0", "Private design checks, never printed in the unit",
-		"a substantial improvement of one dimension may qualify", "no universal capstone multiplier",
+		"a substantial improvement of one dimension may qualify",
 		// Whole-number damage is the Profile's taste, not a mechanic rule.
 		"Keep damage per hit a whole number in every build", "Code accepts fractions",
 	} {
@@ -35,7 +35,11 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 	// crosspaths, Engine limits and output format belong to the Definition,
 	// the Engine's stage instructions and the renderer, so a custom Profile
 	// receives them too.
-	for _, generic := range []string{"Build codes.", "Crosspaths.", "Engine boundary.", "Unit output.", "Activation.", "Actions.", "Source fidelity.", "version 13"} {
+	// The review checklist, distinct paths, technique ownership and the
+	// capstone multiplier each have one owner in the Engine's stage
+	// instructions or the design policy.
+	for _, generic := range []string{"Build codes.", "Crosspaths.", "Engine boundary.", "Unit output.", "Activation.", "Actions.", "Source fidelity.", "version 13",
+		"a review for missing effects", "Keep the three paths behaviorally distinct", "universal capstone multiplier", "mechanicsDefinition owns"} {
 		if strings.Contains(rules, generic) {
 			t.Errorf("the default rules still hold the generic section %q", generic)
 		}
@@ -63,7 +67,7 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 		}
 	}
 	definition := profile.MechanicsDefinition
-	if definition.Revision != "2026-09-26-atlas-56.3-v18" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
+	if definition.Revision != "2026-09-26-atlas-56.3-v19" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
 		t.Errorf("Definition %s %q", definition.Revision, definition.Label)
 	}
 	if scale := definition.Profile.ReferenceScale; scale.BaseCost != 200 || scale.BaseDamage != 1 || scale.BaseIntervalSeconds != 0.95 || scale.BaseRange != 32 || scale.BasePierce != 2 ||
@@ -109,7 +113,8 @@ func TestPromptsSeparatePrivateChecksFromOutput(t *testing.T) {
 			"Refer to purchases by build code", "The boost is the only activated ability this Definition expresses",
 			"List in unsupportedMechanics", "a substantial improvement of one dimension may qualify",
 			"No universal capstone multiplier applies", "Scale references from btd6-atlas capture 56.3",
-			"sharp (Sharp: Darts, blades, spikes and arrows.) cannot damage Lead, Frozen; normal (Normal: Blunt blows and plain impacts.);",
+			`"id":"sharp","name":"Sharp","description":"Darts, blades, spikes and arrows.","ineffectiveAgainst":["lead","frozen"]`,
+			"ineffectiveAgainst lists the enemy properties it cannot damage",
 			"Code checks each milestone's improves and unlock in every legal build", "more projectiles do not count",
 			"Tier1 to Tier2 allow 1 to 3 primitive changes total; Tier3 to Tier5 allow up to 5.",
 			// A Gatling plan promised 3 distinct enemies and got 3 shots with pierce 3 (#27).
@@ -129,6 +134,10 @@ func TestPromptsSeparatePrivateChecksFromOutput(t *testing.T) {
 			if strings.Contains(strings.SplitN(test.prompt, "{", 2)[0], banned) {
 				t.Errorf("%s instructions use a dash %q", name, banned)
 			}
+		}
+		// The vocabulary is described once, in the Definition JSON.
+		if n := strings.Count(test.prompt, "Darts, blades, spikes and arrows."); n != 1 {
+			t.Errorf("%s prompt describes Sharp %d times", name, n)
 		}
 	}
 }

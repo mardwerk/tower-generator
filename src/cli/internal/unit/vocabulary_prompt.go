@@ -1,13 +1,5 @@
 package unit
 
-import (
-	"fmt"
-	"strings"
-
-	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
-	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
-)
-
 // Prompt lines for version 2 Definitions. They replace the version 1 lines
 // that name slow, burn, stun and Camo; the vocabulary supplies the rest.
 const (
@@ -23,82 +15,20 @@ func isV2(request *Request) bool {
 	return request.MechanicsDefinition != nil && request.MechanicsDefinition.IsV2()
 }
 
-// VocabularyGuidance summarizes a version 2 Definition's vocabulary for the
-// model, so source wording maps to IDs through names and aliases. It is
-// empty for version 1 Definitions, whose vocabulary is fixed in the prompts.
+// VocabularyGuidance says how to use a version 2 Definition's vocabulary.
+// The vocabulary itself, with IDs, names, aliases, bounds, stacking,
+// immunities and descriptions, is in the prompt context's
+// definition.vocabulary, so it is not restated here. It is empty for version
+// 1 Definitions, whose vocabulary is fixed in the prompts.
 func VocabularyGuidance(request *Request) []string {
 	if !isV2(request) {
 		return nil
 	}
-	v := request.MechanicsDefinition.Vocabulary
-	name := func(id string, terms []m.Term) string { return termName(id, terms) }
-	var effects []string
-	for _, effect := range v.StatusEffects {
-		text := effect.ID + " (" + effect.Name
-		if len(effect.Aliases) > 0 {
-			text += "; also " + strings.Join(effect.Aliases, ", ")
-		}
-		text += "): " + effect.Kind
-		if mag := effect.Magnitude; mag != nil {
-			text += fmt.Sprintf(", magnitude %s to %s %s", s.FormatNumber(mag.Min), s.FormatNumber(mag.Max), mag.Unit)
-		} else {
-			text += ", no magnitude"
-		}
-		text += ", at most " + s.FormatNumber(effect.MaxSeconds) + " s"
-		if effect.Stacking.MaxStacks > 1 {
-			text += fmt.Sprintf(", stacks to %d (%s)", effect.Stacking.MaxStacks, effect.Stacking.Refresh)
-		}
-		if limit := effect.Stacking.MaxMagnitude; limit != nil {
-			text += ", combined at most " + s.FormatNumber(*limit)
-		}
-		if len(effect.Immune) > 0 {
-			var immune []string
-			for _, id := range effect.Immune {
-				immune = append(immune, name(id, v.EnemyProperties))
-			}
-			text += "; immune: " + strings.Join(immune, ", ")
-		}
-		if effect.Description != "" {
-			text += ". " + effect.Description
-		}
-		effects = append(effects, text)
+	text := "definition.vocabulary lists every status effect, damage type, targeting mode and detection trait by ID; no other exists. "
+	if len(request.MechanicsDefinition.Vocabulary.StatusEffects) == 0 {
+		text += "It defines no status effects; express none. "
+	} else {
+		text += "Map source wording to a status effect through its name and aliases and keep within its magnitude, maxSeconds and stacking; describe anything else in unsupportedMechanics. "
 	}
-	var damageTypes []string
-	for _, t := range v.DamageTypes {
-		text := t.ID + " (" + t.Name
-		if t.Description != "" {
-			text += ": " + t.Description
-		}
-		text += ")"
-		if len(t.IneffectiveAgainst) > 0 {
-			var against []string
-			for _, id := range t.IneffectiveAgainst {
-				against = append(against, name(id, v.EnemyProperties))
-			}
-			text += " cannot damage " + strings.Join(against, ", ")
-		}
-		damageTypes = append(damageTypes, text)
-	}
-	terms := func(list []m.Term) string {
-		var out []string
-		for _, t := range list {
-			text := t.ID
-			if t.Description != "" {
-				text += " (" + t.Description + ")"
-			}
-			out = append(out, text)
-		}
-		if len(out) == 0 {
-			return "none"
-		}
-		return strings.Join(out, "; ")
-	}
-	status := "This Definition defines no status effects; express none."
-	if len(effects) > 0 {
-		status = "Status effects of this Definition, by ID. Map source wording to an effect through its name and aliases; describe anything else in unsupportedMechanics: " + strings.Join(effects, " | ") + "."
-	}
-	return []string{
-		status,
-		"Damage types: " + strings.Join(damageTypes, "; ") + ". Targeting: " + terms(v.Targeting) + ". Detection traits (hidden enemies need the matching detection to be targeted): " + terms(v.Detection) + ".",
-	}
+	return []string{text + "Choose a damage type from its description; ineffectiveAgainst lists the enemy properties it cannot damage. A hidden enemy can be targeted only by an attack with the matching detection trait."}
 }
