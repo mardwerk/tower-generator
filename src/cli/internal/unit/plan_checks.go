@@ -182,7 +182,7 @@ func independentPromises(intent UpgradeIntent) int {
 // single stat: the fourth and fifth.
 var developingTiers = []int{4, 5}
 
-// addsBehavior reports a third-purchase promise that adds behavior or access
+// addsBehavior reports a promise that adds behavior or access
 // rather than larger numbers: an unlock other than a targeting change, or
 // more projectiles. The mechanics check confirms it in the resolved builds.
 func addsBehavior(intent UpgradeIntent) bool {
@@ -218,6 +218,16 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 	}
 	if definition.Profile.DesignPolicy != nil {
 		for pathIndex, path := range m.PathKeys {
+			behavior := false
+			for tier := 1; tier <= 5; tier++ {
+				behavior = behavior || addsBehavior(*plan.UpgradeIntents.At(pathIndex).At(tier))
+			}
+			if !behavior {
+				issues = append(issues, m.Issue{
+					Path:    "upgradeIntents." + path,
+					Message: fmt.Sprintf("The %s path only raises numbers. At least one of its purchases must add a supported behavior or access: an unlock other than targeting-change, such as a new delivery, splash, a status effect, a follow-up, a damage-type change, a detection trait or an Active Ability, or more projectiles from the third purchase on.", pathPosition(path)),
+				})
+			}
 			for _, tier := range developingTiers {
 				if independentPromises(*plan.UpgradeIntents.At(pathIndex).At(tier)) < 2 {
 					issues = append(issues, m.Issue{

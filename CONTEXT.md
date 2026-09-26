@@ -26,6 +26,7 @@ Each term has one meaning here. Use it only with that meaning and do not substit
 | Patch notes | The changes a revision made: changed mechanics and the builds they affect, apart from renamed purchases. |
 | Run | The record of one model stage inside a Draft or Result: model, timing and usage. |
 | Active Ability | An ability that the unit's owner activates manually. The design policy calls it a manual ability (`manualAbilityPath`, `maxManualAbilityPaths`); those field names stay. |
+| Repertoire | The character's source-backed techniques and forms that a design plan selects (`repertoire`). The base attack is shared by every path; each other repertoire technique belongs to one path. |
 | Build code | A purchase or build written top-middle-bottom. `0-0-0` is the base unit; `x-4-x` is the middle path's fourth purchase, where `x` means unspecified; `1-2-0` is a concrete build. |
 | Crosspath | A legal build that buys two paths. Under the default Definition there are 12 early crosspaths, with both paths at their first or second purchase, and 36 advanced ones, with one path further. |
 | Mechanic proposal | A suggested addition to a Definition. It is not an approved rule and does not mean the Engine supports it. |

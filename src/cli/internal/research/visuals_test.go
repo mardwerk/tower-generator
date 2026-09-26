@@ -338,7 +338,7 @@ func TestReusedArticleTextPrioritizesAbilities(t *testing.T) {
     <h2>References</h2><ol class="references"><li>REFERENCE EXCLUDED CONTENT</li></ol>
     <script>UNTRUSTED SCRIPT</script></div>`
 	document := fandomSource(html, luffyPage, luffyLookup.name, time.Now())
-	if document == nil || !strings.HasPrefix(document.Text, "Abilities") || !strings.Contains(document.Text, "stretches his arms to punch") || !strings.Contains(document.Text, "pirate with an elastic body") ||
+	if document == nil || !strings.HasPrefix(document.Text, "Luffy is a pirate") || !strings.Contains(document.Text, "stretches his arms to punch") || !strings.Contains(document.Text, "pirate with an elastic body") ||
 		regexp.MustCompile(`EXCLUDED|SCRIPT`).MatchString(document.Text) || document.Origin.Location != luffyPage.String() || !strings.Contains(*document.Origin.Note, "fan-maintained secondary source") {
 		t.Fatalf("document %+v", document)
 	}
@@ -355,8 +355,39 @@ func TestReusedArticleTextPrioritizesAbilities(t *testing.T) {
 		long += fmt.Sprintf("<p>Attack %d: Luffy extends a rubber punch. %s</p>", i, strings.Repeat("Repeated source detail. ", 20))
 	}
 	capped := fandomSource(long+"</div>", mustURL(luffyPage.String()+"/Abilities_and_Powers"), luffyLookup.name, time.Now())
-	if capped == nil || s.UTF16Len(capped.Text) > 12000 || !strings.Contains(capped.Text, "Attack 0") || !strings.Contains(*capped.Origin.Note, "capped at 12000") {
+	if capped == nil || s.UTF16Len(capped.Text) > 16000 || !strings.Contains(capped.Text, "Attack 0") || !strings.Contains(*capped.Origin.Note, "capped at 16000") {
 		t.Errorf("capped %v", capped != nil)
+	}
+}
+
+func TestCappedAbilityPagesKeepEverySection(t *testing.T) {
+	filler := func(topic string, count int) string {
+		out := ""
+		for i := range count {
+			out += fmt.Sprintf("<p>%s %d: %s</p>", topic, i, strings.Repeat("Crew and fleet detail. ", 20))
+		}
+		return out
+	}
+	html := `<div class="mw-parser-output"><h2>Overview</h2>` + filler("Overview", 60) +
+		`<h2>Devil Fruit</h2><p>Luffy ate the Gomu Gomu no Mi, which makes his body rubber.</p>` +
+		`<h3>Gear Second</h3><p>Gear Second pumps his blood faster for speed.</p>` + filler("Gear Second", 20) +
+		`<h3>Gear Third</h3><p>Gear Third inflates his bones into giant limbs.</p>` +
+		`<h2>Haki</h2><p>Luffy uses Armament Haki to hit Logia users.</p></div>`
+	document := fandomSource(html, mustURL(luffyPage.String()+"/Abilities_and_Powers"), luffyLookup.name, time.Now())
+	if document == nil || s.UTF16Len(document.Text) > 16000 || !strings.Contains(*document.Origin.Note, "every section in turn") {
+		t.Fatalf("document %v", document != nil)
+	}
+	order := []string{"Overview 0:", "Gomu Gomu no Mi", "blood faster", "Gear Second 0:", "giant limbs", "Armament Haki"}
+	at := -1
+	for _, want := range order {
+		next := strings.Index(document.Text, want)
+		if next <= at {
+			t.Fatalf("%q at %d after %d in page order", want, next, at)
+		}
+		at = next
+	}
+	if strings.Contains(document.Text, "Overview 59:") {
+		t.Error("the overview took the budget of the technique sections")
 	}
 }
 

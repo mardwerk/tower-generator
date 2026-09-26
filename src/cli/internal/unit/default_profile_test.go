@@ -230,3 +230,72 @@ func TestEarlyPurchasesCannotPromiseProjectiles(t *testing.T) {
 		t.Error("no purchase may promise projectiles at all")
 	}
 }
+
+// A path whose five purchases only raise numbers is rejected at plan time;
+// one behavior or access anywhere on the path is enough (reported on #27).
+func TestEveryPathAddsABehavior(t *testing.T) {
+	prepared, err := fixture.Prepare()
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan := recordedOutput(t, "plan")
+	for _, tier := range []string{"tier2", "tier5"} {
+		at(plan, "paths", "path3", "milestones", tier).(*s.Object).Set("unlock", "none")
+	}
+	_, err = unit.DecodeDesignPlan(plan, &prepared.Request)
+	if err == nil || !strings.Contains(err.Error(), "The bottom path only raises numbers") || strings.Contains(err.Error(), "The top path") {
+		t.Errorf("a numbers-only bottom path: %v", err)
+	}
+	at(plan, "paths", "path3", "milestones", "tier4").(*s.Object).Set("improves", []any{"damage", "projectiles"})
+	if _, err := unit.DecodeDesignPlan(plan, &prepared.Request); err != nil {
+		t.Errorf("more projectiles at x-x-4 were not a behavior: %v", err)
+	}
+}
+
+// A source technique belongs to one path: the plan cannot name it in two
+// paths, and no purchase or Active Ability of another path may be named after
+// it. Two paths that both develop Gear Second read as one path split in two
+// (reported on #27).
+func TestATechniqueBelongsToOnePath(t *testing.T) {
+	prepared, err := fixture.Prepare()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if request, _ := unit.DesignPlanRequest(prepared); !strings.Contains(request.Prompt, "Code rejects a plan whose paths name the same repertoire technique") {
+		t.Error("the plan prompt does not state the ownership check")
+	}
+	plan := recordedOutput(t, "plan")
+	at(plan, "paths", "path2", "milestones", "tier4").(*s.Object).Set("change", "x-4-x halves the interval and unlocks a Spiked Ball frenzy.")
+	_, err = unit.DecodeDesignPlan(plan, &prepared.Request)
+	if err == nil || !strings.Contains(err.Error(), `The top and middle paths both name "Spiked Ball"`) {
+		t.Errorf("a technique named by two paths: %v", err)
+	}
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	blueprint, retained := *stages.Result.Candidate.Blueprint, *stages.Draft.Run.DesignPlan
+	if issues := unit.NamedTechniqueIssues(blueprint, retained); len(issues) > 0 {
+		t.Fatalf("the reference unit: %v", issues)
+	}
+	tier := &blueprint.Paths.Path2.Tiers.Tier4
+	tier.Changes = append([]m.Change(nil), tier.Changes...)
+	boost := -1
+	for i, change := range tier.Changes {
+		if change.Boost != nil {
+			copied := *change.Boost
+			copied.Name = "Spiked Ball Frenzy"
+			tier.Changes[i].Boost, boost = &copied, i
+		}
+	}
+	tier.Name = "Crossbow Club"
+	issues := unit.NamedTechniqueIssues(blueprint, retained)
+	var paths []string
+	for _, issue := range issues {
+		paths = append(paths, issue.Path)
+	}
+	want := []string{fmt.Sprintf("paths.path2.tiers.tier4.changes.%d.boost.name", boost), "paths.path2.tiers.tier4.name"}
+	if boost < 0 || strings.Join(paths, " ") != strings.Join(want, " ") || !strings.Contains(issues[0].Message, "which the plan gives to the top path") {
+		t.Errorf("issues %v", issues)
+	}
+}

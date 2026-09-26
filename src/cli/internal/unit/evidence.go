@@ -149,7 +149,7 @@ var (
 // AuthorEvidence is a bounded lexical selection of spans for the model.
 func AuthorEvidence(request *Request) []EvidenceSpan {
 	all := EvidenceSpans(request)
-	const limit, maxSpans = 18000, 96
+	const limit, maxSpans = 32000, 200
 	total := 0
 	for _, span := range all {
 		total += s.UTF16Len(span.Text)

@@ -317,10 +317,14 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 		last := guidance[len(guidance)-1]
 		guidance = append(append(guidance[:len(guidance)-1], VocabularyGuidance(request)...), last)
 	}
-	if d := request.MechanicsDefinition; d != nil && d.Profile.DesignPolicy != nil && d.Profile.DesignPolicy.RequireTier3BehaviorChange != nil && *d.Profile.DesignPolicy.RequireTier3BehaviorChange {
-		// The requirement goes before the closing guidance line.
+	if d := request.MechanicsDefinition; d != nil && d.Profile.DesignPolicy != nil {
+		// Policy requirements go before the closing guidance line.
+		gates := []string{planPathGates}
+		if policy := d.Profile.DesignPolicy; policy.RequireTier3BehaviorChange != nil && *policy.RequireTier3BehaviorChange {
+			gates = append(gates, planTier3Behavior)
+		}
 		last := guidance[len(guidance)-1]
-		guidance = append(append(append([]string{}, guidance[:len(guidance)-1]...), planTier3Behavior), last)
+		guidance = append(append(append([]string{}, guidance[:len(guidance)-1]...), gates...), last)
 	}
 	parts = append(parts, guidance...)
 	parts = append(parts, s.Stringify(context))
@@ -475,7 +479,11 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 		issues = append(issues, s.Issue{Code: "custom", Path: []any{"upgradeIntents"}, Message: fmt.Sprintf("The plan requires active boosts on %d paths; the Definition permits at most %d.", len(activePaths), policy.MaxManualAbilityPaths)})
 	}
 	if request.MechanicsDefinition != nil {
-		for _, issue := range PlanFeasibilityIssues(plan, *request.MechanicsDefinition) {
+		feasibility := PlanFeasibilityIssues(plan, *request.MechanicsDefinition)
+		if policy != nil {
+			feasibility = append(feasibility, PlanOwnershipIssues(plan)...)
+		}
+		for _, issue := range feasibility {
 			var path []any
 			for _, p := range strings.Split(issue.Path, ".") {
 				path = append(path, p)

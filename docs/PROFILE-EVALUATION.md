@@ -17,7 +17,7 @@ Runs:
 2. **Revision** of run 1 at commit `a9ea6e5`: `edit` with the feedback quoted below. Result: [dart-monkey.revision.json](../data/reference/captures/dart-monkey.revision.json) ([sheet](../data/reference/captures/dart-monkey.revision.md)).
 3. **Before**: the same brief on `main` at `01000bf`, whose bundled default is rules `default-td-profile-v11`. Result: [dart-monkey.v11.result.json](../data/reference/captures/dart-monkey.v11.result.json) ([sheet](../data/reference/captures/dart-monkey.v11.result.md)).
 
-Commits after these runs changed the renderer, one rules sentence about rendered output, the name Cold Snap in a scale reference, prompt lines stating length limits and how plan promises are checked, the change budget (four to five changes per later purchase), and in rules `default-td-profile-v13` a third purchase that needs a significant reason to commit, judged by the review, with no-op changes rejected by code. Each artifact keeps the exact rules text and Definition it was prepared with.
+Commits after these runs changed the renderer, one rules sentence about rendered output, the name Cold Snap in a scale reference, prompt lines stating length limits and how plan promises are checked, the change budget (four to five changes per later purchase), in rules `default-td-profile-v13` a third purchase that needs a significant reason to commit, judged by the review, with no-op changes rejected by code, and in `default-td-profile-v14` one path per source technique and at least one behavior or access on every path, both checked by code. Each artifact keeps the exact rules text and Definition it was prepared with.
 
 ## Generation against the atlas
 
@@ -101,6 +101,6 @@ The candidate's lesson, coherent scale and distinct mechanics per path, applies 
 
 ## Not covered
 
-- **Luffy before and after.** The regression audited in [#22](https://github.com/mardwerk/unit-generator/issues/22) needs the owner's saved Luffy Sources and a live model; Wikipedia and Fandom were not reachable from this container, so it was not rerun.
+- **Luffy before and after.** The regression audited in [#22](https://github.com/mardwerk/unit-generator/issues/22) needs the owner's saved Luffy Sources and a live model; Wikipedia, Fandom and OpenRouter were not reachable from this container, so it was not rerun live. Tracing the owner's Sources found three causes. The Fandom ability page was cut at 12,000 characters in page order, so the overview used the budget and the Devil Fruit, Gear and Haki sections never arrived. Only 96 of 367 passages reached the model. No check rejected a path of only larger numbers or a form shared by two paths. Extraction now takes every section in turn up to 16,000 characters, the selection allows 200 passages and 32,000 characters, and the plan checks in [MECHANICS.md](MECHANICS.md) reject both designs. Saved Sources keep the old extraction until they are found again.
 - **MangaMayhem.** Its Profile is not available here.
 - **Repeat samples.** Each configuration ran once.

@@ -261,6 +261,11 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 			for _, issue := range PlanIntentIssues(blueprint, plan.UpgradeIntents, definition) {
 				issues = append(issues, issue.Path+": "+issue.Message)
 			}
+			if definition.Profile.DesignPolicy != nil {
+				for _, issue := range NamedTechniqueIssues(blueprint, plan) {
+					issues = append(issues, issue.Path+": "+issue.Message)
+				}
+			}
 		}
 		var draft *Draft
 		if validation == nil && len(issues) == 0 {
