@@ -139,7 +139,7 @@ func TestUnitSheetUsesBuildCodesAndEveryCrosspath(t *testing.T) {
 	if strings.Contains(detailed, plan.Paths.Path1.BuyFor) || strings.Contains(detailed, "Capstone intention") {
 		t.Error("the detailed render prints private purchase notes")
 	}
-	for _, diagnostic := range []string{"Structural checks and model review complete", "Critical shot counter", "Unsupported mechanic"} {
+	for _, diagnostic := range []string{"Structural checks and model review complete", "Draft claim: the Definition cannot express Critical shot counter."} {
 		if !strings.Contains(detailed, diagnostic) {
 			t.Errorf("the diagnostics lack %q", diagnostic)
 		}

@@ -87,9 +87,8 @@ func (s *NumberSchema) jsonSchema() *Object {
 	return out
 }
 
-func (boolSchema) jsonSchema() *Object    { return NewObject().Set("type", "boolean") }
-func (nullSchema) jsonSchema() *Object    { return NewObject().Set("type", "null") }
-func (unknownSchema) jsonSchema() *Object { return NewObject() }
+func (boolSchema) jsonSchema() *Object { return NewObject().Set("type", "boolean") }
+func (nullSchema) jsonSchema() *Object { return NewObject().Set("type", "null") }
 
 func (s *LiteralSchema) jsonSchema() *Object {
 	if _, ok := s.value.(float64); ok {
@@ -117,7 +116,6 @@ func (s nullableSchema) jsonSchema() *Object {
 }
 
 func (s optionalSchema) jsonSchema() *Object { return s.inner.jsonSchema() }
-func (s *refined) jsonSchema() *Object       { return s.inner.jsonSchema() }
 
 func (s *ArraySchema) jsonSchema() *Object {
 	out := NewObject()

@@ -38,7 +38,7 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 	}
 	// A copy bound is context for a capstone, not a verdict, and the draft's
 	// proposals are claims to check, not facts (reported on #27).
-	for _, want := range []string{"A same-budget copy bound is context, not a verdict", "They are the drafting model's claims and can be wrong"} {
+	for _, want := range []string{"A same-budget copy bound is context, not a verdict", "They are the drafting model's claims and can be wrong", "A name taken from the source"} {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("the review prompt lacks %q", want)
 		}

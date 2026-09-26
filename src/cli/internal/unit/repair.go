@@ -326,6 +326,9 @@ func CapstoneRepairContext(blueprint m.Blueprint, request *Request) []any {
 		return out
 	}
 	multiplier := *request.MechanicsDefinition.Profile.DesignPolicy.MinTier5SpecialtyMultiplier
+	// The same metrics as the gate in mechanics.DesignPolicyIssues, so a
+	// version 2 control or damage-over-time specialty is measured.
+	vocabulary := request.MechanicsDefinition.Terms()
 	for index, path := range m.PathKeys {
 		specialization := blueprint.Paths.At(index).Specialization
 		if specialization == "" {
@@ -336,8 +339,8 @@ func CapstoneRepairContext(blueprint m.Blueprint, request *Request) []any {
 		before := m.ResolveUnchecked(&blueprint, sel)
 		sel[index] = 5
 		after := m.ResolveUnchecked(&blueprint, sel)
-		tier4 := m.SpecialtyMetrics(before, specialization)
-		tier5 := m.SpecialtyMetrics(after, specialization)
+		tier4 := m.SpecialtyMetricsWith(before, specialization, &vocabulary)
+		tier5 := m.SpecialtyMetricsWith(after, specialization, &vocabulary)
 		metrics := []any{}
 		for _, metric := range tier4.Keys() {
 			v, _ := tier4.Get(metric)

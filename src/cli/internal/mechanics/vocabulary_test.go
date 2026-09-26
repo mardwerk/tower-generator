@@ -2,7 +2,6 @@ package mechanics
 
 import (
 	"math"
-	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -174,7 +173,7 @@ func TestVersion2ReproducesVersion1(t *testing.T) {
 		vocabulary := upgraded.Terms()
 		for _, selection := range AllLegalBuilds(legacy) {
 			a, b := ResolveUnchecked(&v1, selection), ResolveUnchecked(&v2, selection)
-			if got, want := s.Stringify(PurchaseMetricsWith(b, &vocabulary)), s.Stringify(PurchaseMetrics(a)); got != want {
+			if got, want := s.Stringify(PurchaseMetricsWith(b, &vocabulary)), s.Stringify(PurchaseMetricsWith(a, nil)); got != want {
 				t.Fatalf("variant %d %v metrics: version 2 %s, version 1 %s", index, selection, got, want)
 			}
 			// Version 2 sorts statuses by ID; version 1 lists slow, burn, stun.
@@ -184,59 +183,12 @@ func TestVersion2ReproducesVersion1(t *testing.T) {
 				t.Fatalf("variant %d %v statuses differ", index, selection)
 			}
 		}
-		if got, want := s.Stringify(CompareCapstonePurchasesWith(&v2, &vocabulary)), s.Stringify(CompareCapstonePurchases(&v1)); got != want {
+		if got, want := s.Stringify(CompareCapstonePurchasesWith(&v2, &vocabulary)), s.Stringify(CompareCapstonePurchasesWith(&v1, nil)); got != want {
 			t.Fatalf("variant %d capstones: version 2 %s, version 1 %s", index, got, want)
 		}
 	}
 	if valid < 5 {
 		t.Fatalf("only %d valid variants compared", valid)
-	}
-}
-
-// AssessTargetEffects agrees with AssessTarget for every damage type,
-// status and target property, under version 1 and its version 2 translation.
-func TestAssessTargetEffectsReproducesVersion1(t *testing.T) {
-	legacy := DefaultDefinition()
-	checked := 0
-	for _, damageType := range DamageTypes {
-		for _, stats := range []AttackStats{
-			{Damage: 1, IntervalSeconds: 1, Range: 10, Pierce: 1, Projectiles: 1},
-			{Damage: 0, IntervalSeconds: 1, Range: 10, Pierce: 1, Projectiles: 1, SlowPercent: 30, SlowSeconds: 2},
-			{Damage: 1, IntervalSeconds: 1, Range: 10, Pierce: 1, Projectiles: 1, BurnDamagePerSecond: 2, BurnSeconds: 2, StunSeconds: 1},
-		} {
-			for _, camo := range []bool{false, true} {
-				attack := Attack{Name: "a", Cost: 1, Delivery: "projectile", DamageType: damageType, Targeting: "first", Camo: camo, Stats: stats}
-				var v2 Attack
-				if err := s.ToGo(upgradeAttack(s.FromGoValue(attack)), &v2); err != nil {
-					t.Fatal(err)
-				}
-				for _, target := range []struct {
-					camo, obstructed bool
-					properties       []string
-				}{{false, false, nil}, {true, false, nil}, {false, true, nil}, {false, false, []string{"lead"}}, {false, false, []string{"purple", "blimp"}}, {true, false, []string{"black", "boss"}}} {
-					var hidden []string
-					if target.camo {
-						hidden = []string{"camo"}
-					}
-					want := AssessTarget(attack, target.camo, target.obstructed, target.properties, legacy)
-					for _, version := range []struct {
-						attack     Attack
-						definition Definition
-					}{{attack, legacy}, {v2, UpgradeDefinition(legacy)}} {
-						got := AssessTargetEffects(version.attack, hidden, target.obstructed, target.properties, version.definition)
-						applies := func(effect string) bool { return slices.Contains(got.Statuses, effect) }
-						if got.Detected != want.Detected || got.Reachable != want.Reachable || got.CanDamage != want.CanDamage ||
-							applies("slow") != want.CanSlow || applies("stun") != want.CanStun {
-							t.Errorf("version %s %s %+v: got %+v, want %+v", version.definition.Version, damageType, target, got, want)
-						}
-					}
-					checked++
-				}
-			}
-		}
-	}
-	if checked < 100 {
-		t.Fatalf("only %d targets compared", checked)
 	}
 }
 

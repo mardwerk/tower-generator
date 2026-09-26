@@ -85,13 +85,6 @@ func groupDamage(attack Attack, vocabulary *Vocabulary) float64 {
 	return direct + secondary
 }
 
-// SpecialtyMetrics are capacity heuristics for a pure build, in insertion
-// order, for version 1 builds. Version 2 builds need their vocabulary:
-// see SpecialtyMetricsWith.
-func SpecialtyMetrics(build Build, specialization string) *s.Object {
-	return SpecialtyMetricsWith(build, specialization, nil)
-}
-
 // SpecialtyMetricsWith measures a build with its Definition's vocabulary.
 // Control counts every movement, disable and damage-taken effect of the
 // vocabulary, zero when the attack does not apply it.
@@ -368,10 +361,6 @@ func DesignPolicyIssues(blueprint *Blueprint, definition Definition) []Issue {
 
 func finite(x float64) bool { return !math.IsNaN(x) && !math.IsInf(x, 0) }
 
-// PurchaseMetrics are analytic capacities of a version 1 build, not
-// measured combat output. Version 2 builds use PurchaseMetricsWith.
-func PurchaseMetrics(build Build) *s.Object { return PurchaseMetricsWith(build, nil) }
-
 // PurchaseMetricsWith measures a build with its Definition's vocabulary.
 func PurchaseMetricsWith(build Build, vocabulary *Vocabulary) *s.Object {
 	out := s.NewObject()
@@ -391,12 +380,6 @@ func PurchaseMetricsWith(build Build, vocabulary *Vocabulary) *s.Object {
 		}
 	}
 	return out
-}
-
-// CompareCapstonePurchases compares each path's tier 4 and tier 5
-// purchases of a version 1 blueprint; see CompareCapstonePurchasesWith.
-func CompareCapstonePurchases(blueprint *Blueprint) []any {
-	return CompareCapstonePurchasesWith(blueprint, nil)
 }
 
 // CompareCapstonePurchasesWith compares capstones with a vocabulary.

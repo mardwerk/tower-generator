@@ -240,7 +240,7 @@ func TestDesignPolicyGates(t *testing.T) {
 // The capstone comparison counts pure T4 copies at the T5 budget and keeps
 // per-copy metrics that do not add across copies.
 func TestCapstoneComparison(t *testing.T) {
-	comparisons := CompareCapstonePurchases(starter())
+	comparisons := CompareCapstonePurchasesWith(starter(), nil)
 	first := s.FromGoValue(comparisons[0]).(*s.Object)
 	count, _ := first.Get("tier4CopiesAtTier5Budget")
 	tier4Total := 200.0 + 100 + 150 + 400 + 1500

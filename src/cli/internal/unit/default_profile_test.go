@@ -167,7 +167,7 @@ func TestUnsupportedMechanicsAreFindings(t *testing.T) {
 			names = append(names, finding.Message)
 		}
 	}
-	if len(names) != 3 || !strings.Contains(names[1], "Unsupported mechanic Critical shot counter") {
+	if len(names) != 3 || !strings.Contains(names[1], "Draft claim: the Definition cannot express Critical shot counter.") {
 		t.Errorf("unsupported findings %v", names)
 	}
 }

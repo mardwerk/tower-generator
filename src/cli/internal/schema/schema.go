@@ -134,22 +134,25 @@ func runLengthChecks(c *ctx, checks []lengthCheck, value any, path []any) {
 	default:
 		return
 	}
+	// Each message gives the allowed and the current length, so a repair
+	// knows how much to shorten or add.
+	current := "; it has " + strconv.Itoa(length)
 	for _, check := range checks {
 		n := strconv.Itoa(check.n)
 		switch check.kind {
 		case "min":
 			if length < check.n {
-				c.add("too_small", path, "Too small: expected "+origin+" to have >="+n+" "+unit, false)
+				c.add("too_small", path, "Too small: expected "+origin+" to have >="+n+" "+unit+current, false)
 			}
 		case "max":
 			if length > check.n {
-				c.add("too_big", path, "Too big: expected "+origin+" to have <="+n+" "+unit, false)
+				c.add("too_big", path, "Too big: expected "+origin+" to have <="+n+" "+unit+current, false)
 			}
 		case "exact":
 			if length < check.n {
-				c.add("too_small", path, "Too small: expected "+origin+" to have exactly "+n+" "+unit, false)
+				c.add("too_small", path, "Too small: expected "+origin+" to have exactly "+n+" "+unit+current, false)
 			} else if length > check.n {
-				c.add("too_big", path, "Too big: expected "+origin+" to have exactly "+n+" "+unit, false)
+				c.add("too_big", path, "Too big: expected "+origin+" to have exactly "+n+" "+unit+current, false)
 			}
 		}
 	}
@@ -404,13 +407,6 @@ func (nullSchema) run(c *ctx, value any, path []any) any {
 	return value
 }
 
-type unknownSchema struct{}
-
-// Unknown returns z.unknown(): any value, including an absent one.
-func Unknown() Schema { return unknownSchema{} }
-
-func (unknownSchema) run(_ *ctx, value any, _ []any) any { return value }
-
 // LiteralSchema is z.literal(value) for a string or number.
 type LiteralSchema struct{ value any }
 
@@ -486,36 +482,10 @@ func isOptional(s Schema) bool {
 	switch v := s.(type) {
 	case optionalSchema:
 		return true
-	case unknownSchema:
-		return true
 	case nullableSchema:
-		return isOptional(v.inner)
-	case *refined:
 		return isOptional(v.inner)
 	}
 	return false
-}
-
-type refined struct {
-	inner Schema
-	refs  []refinement
-}
-
-// Refine returns inner.refine(fn, message).
-func Refine(inner Schema, fn func(value any) bool, message string) Schema {
-	return &refined{inner, []refinement{{fn: fn, message: message}}}
-}
-
-// SuperRefine returns inner.superRefine(fn); fn adds issues at relative paths.
-func SuperRefine(inner Schema, fn func(value any, add func(path []any, message string))) Schema {
-	return &refined{inner, []refinement{{super: fn}}}
-}
-
-func (s *refined) run(c *ctx, value any, path []any) any {
-	start := len(c.issues)
-	out := s.inner.run(c, value, path)
-	runRefinements(c, s.refs, out, path, start)
-	return out
 }
 
 // ---- array and tuple ----

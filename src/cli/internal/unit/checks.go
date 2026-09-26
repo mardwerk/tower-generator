@@ -222,7 +222,9 @@ func checkDependencies(candidate Candidate, request Request, report reporter) {
 			case "proposed_extension":
 				// A blueprint proposal names behavior the Definition cannot express.
 				category, rule = "unsupported", UnsupportedMechanicRule
-				message = "Unsupported mechanic " + mechanic.Name + ": the Definition cannot express it, so no build grants it."
+				// The draft makes this claim; code confirms only that no build
+				// grants the behavior.
+				message = "Draft claim: the Definition cannot express " + mechanic.Name + ". No build grants it; the claim that the Definition cannot express it is the drafting model's and is not checked."
 			}
 			action := "Resolve the mechanic definition or capability gap."
 			if mechanic.RequiredDecision != nil {
