@@ -338,7 +338,9 @@ func statusIssues(attack Attack, definition Definition, add func(path, message s
 	}
 }
 
-// ResolvedIssues checks the values of a resolved build.
+// ResolvedIssues checks the values of a resolved build. It is structural:
+// reading a saved blueprint runs it too, so add a new design judgment to the
+// authoring checks in validateParsed, not here.
 func ResolvedIssues(build Build, definition Definition, prefix string, blueprint *Blueprint) []Issue {
 	var issues []Issue
 	add := func(path, message string) { issues = append(issues, Issue{prefix + "." + path, message}) }
@@ -471,9 +473,11 @@ func WithTierDeltas(blueprint *Blueprint, selection Selection) ResolvedBuild {
 	return ResolvedBuild{resolved.Selection, resolved.BaseAttack, resolved.Abilities, resolved.CumulativeCost, deltas}
 }
 
-// ResolveBuild validates the blueprint and selection, then resolves the build.
+// ResolveBuild checks the blueprint's structure (ValidateStructure) and the
+// selection, then resolves the build. It does not run the authoring checks,
+// so a saved blueprint that a later authoring check flags still resolves.
 func ResolveBuild(blueprint *Blueprint, selection Selection, definition Definition) (ResolvedBuild, error) {
-	if issues := ValidateBlueprint(s.FromGoValue(blueprint), s.FromGoValue(definition)); len(issues) > 0 {
+	if issues := ValidateStructure(blueprint, definition); len(issues) > 0 {
 		return ResolvedBuild{}, &ValidationError{issues}
 	}
 	if issues := SelectionIssues(selection, definition); len(issues) > 0 {

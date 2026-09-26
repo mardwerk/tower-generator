@@ -55,7 +55,9 @@ func newSheet(blueprint *m.Blueprint, definition *m.Definition) *sheet {
 	if definition != nil {
 		d = *definition
 	}
-	if len(m.ValidateTyped(blueprint, d)) > 0 {
+	// A reading view checks structure only; the authoring checks judge how a
+	// unit is made, and AuthoringIssues reports them beside the sheet.
+	if len(m.ValidateStructure(blueprint, d)) > 0 {
 		return nil
 	}
 	return &sheet{blueprint: blueprint, definition: d, vocabulary: d.Terms(), currency: d.Profile.Currency}

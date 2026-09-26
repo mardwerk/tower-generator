@@ -23,7 +23,7 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 		"IceMonkey.json and -100 to -500", "TackShooter.json and -010 to -050", "MonkeyVillage.json",
 		"DartMonkey-400 and SuperMonkey-001, KnockbackModel",
 		"0-0-0", "Private design checks, never printed in the unit",
-		"a substantial improvement of one dimension may qualify",
+		"a substantial improvement of one dimension other than damage may qualify",
 		// Whole-number damage is the Profile's taste, not a mechanic rule.
 		"Keep damage per hit a whole number in every build", "Code accepts fractions",
 	} {
@@ -67,7 +67,7 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 		}
 	}
 	definition := profile.MechanicsDefinition
-	if definition.Revision != "2026-09-26-atlas-56.3-v20" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
+	if definition.Revision != "2026-09-26-atlas-56.3-v21" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
 		t.Errorf("Definition %s %q", definition.Revision, definition.Label)
 	}
 	if scale := definition.Profile.ReferenceScale; scale.BaseCost != 200 || scale.BaseDamage != 1 || scale.BaseIntervalSeconds != 0.95 || scale.BaseRange != 32 || scale.BasePierce != 2 ||
@@ -105,14 +105,14 @@ func TestPromptsSeparatePrivateChecksFromOutput(t *testing.T) {
 	}{
 		"plan": {plan, []string{
 			"buyFor, weakness and capstoneValue are private design checks and never appear in the unit description",
-			"Name every purchase by build code", "a substantial improvement of one dimension may qualify",
+			"Name every purchase by build code", "a substantial improvement of one dimension other than damage may qualify",
 			"A second Active at the fifth purchase", "12 early and 36 advanced crosspath builds",
 			"more shots per attack to projectiles, heavier hits to damage",
 			"The unit shows the change of every purchase whose technique is not the base attack",
 		}},
 		"mechanics": {mechanics, []string{
 			"Refer to purchases by build code", "The boost is the only activated ability this Definition expresses",
-			"List in unsupportedMechanics", "a substantial improvement of one dimension may qualify",
+			"List in unsupportedMechanics", "a substantial improvement of one dimension other than damage may qualify",
 			"No universal capstone multiplier applies", "Scale references from btd6-atlas capture 56.3",
 			`"id":"sharp","name":"Sharp","description":"Darts, blades, spikes and arrows.","ineffectiveAgainst":["lead","frozen"]`,
 			"ineffectiveAgainst lists the enemy properties it cannot damage",
@@ -532,5 +532,53 @@ func TestPlanPromptStatesDistinctEarlyPurchasesOnlyWhenSelected(t *testing.T) {
 	withoutPolicy, err := unit.DesignPlanRequest(prepared)
 	if err != nil || strings.Contains(withoutPolicy.Prompt, line) {
 		t.Fatalf("distinct early guidance remained after disabling the policy: %v", err)
+	}
+}
+
+// Every BTD6 tier 3 to 5 purchase that raises damage also changes something
+// else, and range is never its only companion (R1, #31). The rules document
+// owns that rule and reaches the plan and the review; the review flags a
+// purchase whose typed changes only raise damage, of any size, and no longer
+// exempts a capstone whose damage step is not "token".
+func TestAdvancedDamagePurchasesChangeSomethingElse(t *testing.T) {
+	rule := "From the third purchase on, a purchase that raises damage also changes how the attack reaches or affects enemies: pierce, attack rate, projectiles, splash, a follow-up, a status, damage type, delivery or the Active Ability, as the scale references show; more range alone does not count."
+	clause := "When the purchase roles ask a damage increase to come with another change, flag a third, fourth or fifth purchase whose typed changes only raise damage, of any size."
+	contradiction := "flag its payoff only when it barely develops its own path over the fourth purchase, such as a token damage step"
+	rules := unit.DefaultProfile().Rules.Text
+	if strings.Count(rules, rule) != 1 {
+		t.Errorf("the default rules hold the damage rule %d times, want once", strings.Count(rules, rule))
+	}
+	if strings.Contains(rules, "a small ordinary-damage step is not a capstone") {
+		t.Error("the default rules keep the capstone damage-step rule the new sentence replaces")
+	}
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	model := &fixture.Model{Outputs: []any{recordedOutput(t, "plan"), recordedOutput(t, "mechanics"), recordedOutput(t, "review")}}
+	draft, err := unit.DraftUnit(context.Background(), stages.Prepared, model, fixture.Options())
+	if err != nil {
+		t.Fatal(err)
+	}
+	checked, _ := unit.CheckDraft(draft)
+	if _, err := unit.ReviewDraft(context.Background(), checked, model, fixture.Options()); err != nil {
+		t.Fatal(err)
+	}
+	plan, review := model.Requests[0].Prompt, model.Requests[2].Prompt
+	for name, prompt := range map[string]string{"plan": plan, "review": review} {
+		if got := strings.Count(prompt, rule); got != 1 {
+			t.Errorf("the %s prompt states the damage rule %d times, want once", name, got)
+		}
+	}
+	if !strings.Contains(review, clause) {
+		t.Error("the review prompt lacks the damage-only clause")
+	}
+	if !strings.Contains(review, "Do not fail a capstone only because same-budget copies out-throughput it.") {
+		t.Error("the review prompt lost the copy-bound exemption")
+	}
+	for name, prompt := range map[string]string{"plan": plan, "mechanics": model.Requests[1].Prompt, "review": review} {
+		if strings.Contains(prompt, contradiction) || strings.Contains(prompt, "token damage step") {
+			t.Errorf("the %s prompt still exempts a capstone with a small damage step", name)
+		}
 	}
 }

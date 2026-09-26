@@ -200,7 +200,7 @@ func TestStagesRunThroughTheAPI(t *testing.T) {
 	if base, _ := at(view, "base", "text").(string); !strings.HasPrefix(base, "Placement costs 200 Gold.") || at(view, "base", "code") != "0-0-0" {
 		t.Errorf("view base %q", base)
 	}
-	if len(early) != 12 || len(advanced) != 36 || len(purchases.([]any)) != 3 || view.Has("revision") {
+	if len(early) != 12 || len(advanced) != 36 || len(purchases.([]any)) != 3 || view.Has("revision") || view.Has("authoringIssues") {
 		t.Errorf("view has %d early and %d advanced builds", len(early), len(advanced))
 	}
 	// The kit shows the planned adaptation of a technique purchase; the plan
@@ -226,6 +226,34 @@ func TestStagesRunThroughTheAPI(t *testing.T) {
 	next := h.post("prepare", map[string]any{"request": revision})
 	if at(next, "request", "previous", "resultId") != at(result, "id") {
 		t.Error("the revision lost its previous Result")
+	}
+}
+
+// A saved Result that a later authoring check flags keeps its sheet in the
+// view, and the view reports the current authoring issues beside it (#37).
+func TestViewReportsCurrentAuthoringIssues(t *testing.T) {
+	data, err := os.ReadFile("../../../../data/reference/captures/luffy-3b.result.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := s.Decode(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := start(t, nil, nil)
+	view := h.post("view", map[string]any{"artifact": result})
+	for _, key := range []string{"stats", "base", "purchases", "crosspaths"} {
+		if !view.Has(key) {
+			t.Errorf("the view lost %s", key)
+		}
+	}
+	issues, _ := view.Get("authoringIssues")
+	list, _ := issues.([]any)
+	if len(list) != 1 || at(list[0], "path") != "paths.path1.tiers.tier3.changes.3" || !strings.HasPrefix(at(list[0], "message").(string), "This change has no effect") {
+		t.Errorf("authoringIssues %s", s.Stringify(issues))
+	}
+	if s.Canonical(at(view, "view", "findings")) != s.Canonical(at(result, "findings")) {
+		t.Error("the view changed the stored findings")
 	}
 }
 
