@@ -60,7 +60,7 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	}
 	context := s.NewObject()
 	if checked.Draft.Run.DesignPlan != nil {
-		context.Set("designPlan", s.FromGoValue(checked.Draft.Run.DesignPlan))
+		context.Set("designPlan", reviewDesignPlan(*checked.Draft.Run.DesignPlan))
 	}
 	if checked.Draft.Run.DesignEvaluation != nil {
 		// The retained evidence plus the time-averaged Active rates and the
@@ -133,19 +133,8 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		var tiers []any
 		for _, t := range p.Tiers {
 			entry := s.NewObject().Set("tier", float64(t.Tier)).Set("name", t.Name).Set("benefit", t.Benefit)
-			// The reviewer checks each purchased tier on its own: the
-			// technique its plan names and the adaptation the rendered unit
-			// shows (reported on #27: compression credited with range at
-			// x-x-1 was flagged only in crosspath proposals).
-			if len(candidate.Paths) == len(m.PathKeys) && t.Tier >= 1 && t.Tier <= len(m.TierKeys) {
-				if plan := checked.Draft.Run.DesignPlan; plan != nil && plan.UpgradeIntents != nil {
-					if technique := strings.TrimSpace(plan.UpgradeIntents.At(index).At(t.Tier).Technique); technique != "" {
-						entry.Set("technique", technique)
-					}
-				}
-				if adaptation := PurchaseAdaptation(checked.Draft.Run.DesignPlan, index, t.Tier); adaptation != "" {
-					entry.Set("adaptation", adaptation)
-				}
+			if plan := checked.Draft.Run.DesignPlan; plan != nil && len(candidate.Paths) == len(m.PathKeys) && t.Tier >= 1 && t.Tier <= len(m.TierKeys) {
+				plannedTier(entry, *plan, index, t.Tier)
 			}
 			tiers = append(tiers, entry)
 		}
@@ -181,6 +170,77 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	}
 	prompt = append(prompt, s.Stringify(context))
 	return ModelRequest{System: reviewSystem, Prompt: strings.Join(prompt, "\n\n"), Schema: s.JSONSchema(schema)}
+}
+
+// reviewDesignPlan is the plan as the review sees it: its decisions across
+// purchases. What it says about one purchase goes on that purchase's tier in
+// unit.paths (plannedTier), so the review reads each planned text once, on
+// the build code the unit shows it with. A compact plan's crosspath
+// contributions are left out: code wrote them from the side path's first and
+// second milestones, so they repeated those texts as proposals (reported on
+// #27: compression credited with range at x-x-1 was flagged only in those
+// crosspath proposals, not on the purchased tier).
+func reviewDesignPlan(plan DesignPlan) *s.Object {
+	view := s.FromGoValue(plan).(*s.Object)
+	view.Delete("upgradeIntents")
+	paths := field(view, "paths").(*s.Object)
+	for _, key := range m.PathKeys {
+		branch := field(paths, key).(*s.Object)
+		branch.Delete("milestones")
+		if plan.Contract == "purchase-plan-v1" {
+			branch.Delete("crosspaths")
+			branch.Delete("referenceExample")
+		}
+	}
+	return view
+}
+
+// plannedTier sets what the plan says about one purchase on its review tier:
+// the technique it adapts with that technique's citations, its typed
+// promises, and its planned text, as adaptation when the unit shows it and
+// as plannedChange when it stays private.
+func plannedTier(entry *s.Object, plan DesignPlan, pathIndex, tier int) {
+	if plan.UpgradeIntents != nil {
+		intent := plan.UpgradeIntents.At(pathIndex).At(tier)
+		if technique := strings.TrimSpace(intent.Technique); technique != "" {
+			entry.Set("technique", technique)
+			if sources := techniqueSources(plan, technique); sources != nil {
+				entry.Set("sourceIds", anyStrings(sources))
+			}
+		}
+		promises := s.NewObject().Set("improves", anyStrings(intent.Improves)).Set("unlock", intent.Unlock)
+		if len(intent.Lowers) > 0 {
+			promises.Set("lowers", anyStrings(intent.Lowers))
+		}
+		entry.Set("promises", promises)
+	}
+	if adaptation := PurchaseAdaptation(&plan, pathIndex, tier); adaptation != "" {
+		entry.Set("adaptation", adaptation)
+	} else if change := strings.TrimSpace(plan.Paths.At(pathIndex).Milestones.At(tier)); change != "" {
+		entry.Set("plannedChange", change)
+	}
+}
+
+// techniqueSources are the citations of the base attack or repertoire entry
+// a purchase names.
+func techniqueSources(plan DesignPlan, technique string) []string {
+	if sameTechnique(technique, plan.Base.Name) {
+		return plan.Base.SourceIDs
+	}
+	for _, entry := range plan.Repertoire {
+		if sameTechnique(technique, entry.Name) {
+			return entry.SourceIDs
+		}
+	}
+	return nil
+}
+
+func anyStrings(values []string) []any {
+	out := make([]any, len(values))
+	for i, v := range values {
+		out[i] = v
+	}
+	return out
 }
 
 // ReferencePriceFacts compares each path's five incremental prices with the

@@ -51,17 +51,69 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 		// Snakeman purchase whose text only said the punch hits harder.
 		"a mechanism credited with an effect the source ties to another",
 		"is a fail when the cited evidence explains the technique", "unresolved only when the evidence lacks the detail to judge the connection",
-		// Each purchased tier carries its planned technique and is judged on
-		// its own build code (reported on #27: compression credited with
-		// range at x-x-1 was flagged only in crosspath proposals).
-		`"technique":"Dart Throw"}`, `"technique":"Spiked Ball","adaptation":"Replaces the dart`,
-		"Judge every purchased tier on its own build code",
+		// Each purchased tier carries what the plan says about it and is
+		// judged on its own build code (reported on #27: compression credited
+		// with range at x-x-1 was flagged only in crosspath proposals).
+		`"technique":"Dart Throw","sourceIds":["source1:2","source1:3"],"promises":{"improves":["pierce"],"unlock":"none"},"plannedChange":"1-x-x raises dart pierce by one."}`,
+		`"technique":"Spiked Ball","sourceIds":["source1:6"],"promises":{"improves":["damage","pierce","range"],"unlock":"none","lowers":["attack-rate"]},"adaptation":"Replaces the dart`,
+		"Judge every purchased tier on its own build code, the first and second purchases included",
+		"against the passages its sourceIds cite", "which designPlan does not repeat",
 		// Each technique's effects are judged against its passages.
 		`"effects":[{"effect":"A heavier spiked ball replaces the dart and deals more damage.","adaptedAs":["damage"]`,
 		"fail a described effect the list leaves out, an omission whose reason does not hold"} {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("the review prompt lacks %q", want)
 		}
+	}
+}
+
+// The review reads each purchase's planned text once, on its tier. Before,
+// the designPlan repeated every milestone and a compact plan's crosspath
+// contributions repeated each first and second milestone as "Proposed early
+// purchases", and a Luffy review on #27 flagged compression credited with
+// range there instead of on the purchased x-x-1.
+func TestReviewReadsEachPlannedPurchaseOnItsTier(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	prompt := unit.BlueprintReviewRequest(stages.Checked).Prompt
+	plan := stages.Checked.Draft.Run.DesignPlan
+	for path := 0; path < 3; path++ {
+		for tier := 1; tier <= 5; tier++ {
+			change := plan.Paths.At(path).Milestones.At(tier)
+			shown := unit.PurchaseAdaptation(plan, path, tier)
+			if shown != "" && (strings.Count(prompt, shown) != 1 || strings.Contains(prompt, change) && change != shown) {
+				t.Errorf("%s: the shown adaptation appears %d times, the raw milestone %v", unit.BuildCode(path, tier), strings.Count(prompt, shown), strings.Contains(prompt, change))
+			}
+			if shown == "" && strings.Count(prompt, change) != 1 {
+				t.Errorf("%s: the planned change appears %d times", unit.BuildCode(path, tier), strings.Count(prompt, change))
+			}
+		}
+	}
+	paragraphs := strings.Split(prompt, "\n\n")
+	var context map[string]any
+	if err := json.Unmarshal([]byte(paragraphs[len(paragraphs)-1]), &context); err != nil {
+		t.Fatal(err)
+	}
+	designPlan, _ := json.Marshal(context["designPlan"])
+	for _, banned := range []string{"Proposed early purchases", `"upgradeIntents"`, `"milestones"`, `"crosspaths"`, `"referenceExample"`} {
+		if strings.Contains(string(designPlan), banned) {
+			t.Errorf("the review's designPlan still holds %s", banned)
+		}
+	}
+	if strings.Contains(prompt, "Proposed early purchases") {
+		t.Error("the review context repeats early purchases as crosspath proposals")
+	}
+	// The plan's decisions across purchases stay.
+	for _, want := range []string{`"designPlan":{"contract":"purchase-plan-v1","concept":`, `"buyFor":"Dense lanes where one throw can pass through many enemies."`, `"omittedTechniques":`} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("the review context lacks %s", want)
+		}
+	}
+	// The saved draft keeps the whole plan.
+	if saved := s.Stringify(s.FromGoValue(stages.Checked.Draft.Run.DesignPlan)); !strings.Contains(saved, "Proposed early purchases") || !strings.Contains(saved, `"upgradeIntents"`) {
+		t.Error("the saved plan lost its crosspaths or promises")
 	}
 }
 
