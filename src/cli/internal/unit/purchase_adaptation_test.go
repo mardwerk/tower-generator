@@ -25,6 +25,9 @@ func TestPurchasesShowThePlannedAdaptation(t *testing.T) {
 	plan.Paths.Path1.Milestones.Tier3 = "3-x-x Gear 3 inflates Luffy's arm into a giant limb: the punch lands slower and harder, and its impact hits enemies around the target."
 	intents.Path3.Tier3.Technique = "Gear 4"
 	plan.Paths.Path3.Milestones.Tier3 = "x-x-3: Gear 4 compresses the limb and releases it, so each hit rebounds onto two nearby enemies"
+	// A live run opened every change with "In build CODE," or "In CODE,".
+	plan.Paths.Path2.Milestones.Tier3 = "In x-3-x, three darts leave at once."
+	plan.Paths.Path3.Milestones.Tier4 = "In build x-x-4, the bolt hits twice as hard."
 	for _, test := range []struct {
 		path, tier int
 		want       string
@@ -33,6 +36,8 @@ func TestPurchasesShowThePlannedAdaptation(t *testing.T) {
 		{2, 3, "Gear 4 compresses the limb and releases it, so each hit rebounds onto two nearby enemies."},
 		// The build code the plan starts with is dropped; the sentence keeps its capital.
 		{0, 4, "Throws the ball faster, multiplies its pierce and switches it to normal damage so it can hit Lead."},
+		{1, 3, "Three darts leave at once."},
+		{2, 4, "The bolt hits twice as hard."},
 		// A purchase of the base attack alone: its effects say it all.
 		{0, 1, ""},
 	} {

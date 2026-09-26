@@ -7,7 +7,9 @@ import (
 	"unicode/utf8"
 )
 
-var leadingBuildCode = regexp.MustCompile(`^\s*[0-9x]-[0-9x]-[0-9x][\s:,.]*`)
+// leadingBuildCode matches the build code a planned change opens with, as
+// "3-x-x", "x-x-3:" or "In build 1-x-x,"; the unit already shows the code.
+var leadingBuildCode = regexp.MustCompile(`(?i)^\s*(?:(?:in|at|for)\s+)?(?:(?:the\s+)?build\s+)?[0-9x]-[0-9x]-[0-9x]\b(?:\s+purchase)?[\s:,.;]*`)
 
 // PurchaseAdaptation is the retained plan's description of how a purchase
 // adapts its source technique, such as "Replaces the dart with a heavier
