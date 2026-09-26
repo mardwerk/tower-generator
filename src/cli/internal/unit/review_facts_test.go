@@ -49,7 +49,8 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 		"judge them across its purchases together, not as a promise every purchase repeats",
 		// Live Luffy runs on #27: compression credited with range, and a
 		// Snakeman purchase whose text only said the punch hits harder.
-		"a mechanism credited with an effect the source ties to another", "Report as unresolved an adaptation that only restates stat changes"} {
+		"a mechanism credited with an effect the source ties to another",
+		"is a fail when the cited evidence explains the technique", "unresolved only when the evidence lacks the detail to judge the connection"} {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("the review prompt lacks %q", want)
 		}
