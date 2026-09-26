@@ -32,6 +32,7 @@ Each term has one meaning here. Use it only with that meaning and do not substit
 | Crosspath | A legal build that buys two paths. Under the default Definition there are 12 early crosspaths, with both paths at their first or second purchase, and 36 advanced ones, with one path further. |
 | Mechanic proposal | A suggested addition to a Definition. It is not an approved rule and does not mean the Engine supports it. |
 | Unsupported mechanic | Behavior a unit's sources call for that its Definition cannot express. It is recorded as a Mechanic proposal and reported as an `unsupported-mechanic` Finding; no build grants it. |
+| Bonus damage | Typed extra damage per hit that an attack deals to enemies with one enemy property, such as +50 against Hardened. A Definition's vocabulary lists the properties that accept it (`bonusDamageProperties`); the Default Profile lists only Hardened, its adaptation of BTD6 Ceramic. A damage type that cannot hurt a property blocks its bonus damage too. BTD6's class bonuses, such as Deadly Precision's +50 to Ceramic, are what it adapts. |
 | Library | The folder, chosen by the user (`data/runs/library` by default), where saved Sources, artifacts with their Markdown, icons and portraits live, arranged by work and character. The CLI and `serve` write it; nothing else is stored. |
 | Consumer | The game or runtime that executes generated units. |
 | Towerright | The separate project that owns project history, multi-tool orchestration, wider evaluation and acceptance. |

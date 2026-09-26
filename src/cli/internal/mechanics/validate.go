@@ -38,7 +38,8 @@ func capabilities(attack Attack) map[string]bool {
 var capabilityOrder = []string{"splash", "slow", "burn", "stun", "camo", "distinct-volley", "follow-up"}
 
 // capabilityList is a version 2 attack's capability groups in order:
-// splash, each status effect, each detection trait, then the volley shapes.
+// splash, each status effect, each bonus damage property, each detection
+// trait, then the volley shapes.
 func capabilityList(attack Attack) []string {
 	var out []string
 	if attack.Stats.SplashRadius > 0 {
@@ -46,6 +47,9 @@ func capabilityList(attack Attack) []string {
 	}
 	for _, status := range attack.AppliedStatuses() {
 		out = append(out, status.Effect)
+	}
+	for _, bonus := range attack.BonusDamage {
+		out = append(out, BonusCapability(bonus.Property))
 	}
 	out = append(out, attack.DetectionTraits()...)
 	if attack.Distribution == "distinct-targets" {
@@ -82,17 +86,35 @@ func addedCapabilities(before, after Attack) []string {
 	return added
 }
 
-func sameBehavior(a, b Build) bool {
-	return s.Stringify(behaviorValue(a)) == s.Stringify(behaviorValue(b))
+// BonusCapability names the capability group of bonus damage against an
+// enemy property, as the early capability budget counts it.
+func BonusCapability(property string) string { return "bonus damage against " + property }
+
+// usableBonuses are the attack's bonuses its damage type can deal: a hit an
+// enemy is immune to deals no damage, bonus included.
+func usableBonuses(attack Attack, vocabulary *Vocabulary) []DamageBonus {
+	var out []DamageBonus
+	for _, bonus := range attack.BonusDamage {
+		if vocabulary.CanDamage(attack.DamageType, bonus.Property) {
+			out = append(out, bonus)
+		}
+	}
+	return out
 }
 
-func behaviorValue(build Build) any {
+func sameBehavior(a, b Build, vocabulary *Vocabulary) bool {
+	return s.Stringify(behaviorValue(a, vocabulary)) == s.Stringify(behaviorValue(b, vocabulary))
+}
+
+func behaviorValue(build Build, vocabulary *Vocabulary) any {
 	effective := func(attack Attack) Attack {
 		// One projectile can reach only one initial target, regardless of
 		// distribution. A distinct-targets flag alone adds no behavior.
 		if attack.Stats.Projectiles <= 1 {
 			attack.Distribution = ""
 		}
+		// A bonus against a property the damage type cannot hurt deals nothing.
+		attack.BonusDamage = usableBonuses(attack, vocabulary)
 		return attack
 	}
 	abilities := make([]ResolvedAbility, len(build.Abilities))
@@ -104,7 +126,7 @@ func behaviorValue(build Build) any {
 }
 
 // hasBenefit rejects pure downgrades; it does not compare different benefits.
-func hasBenefit(before, after Build) bool {
+func hasBenefit(before, after Build, vocabulary *Vocabulary) bool {
 	prior, next := before.BaseAttack, after.BaseAttack
 	for _, stat := range StatKeys {
 		if stat == "splashRadius" && next.Stats.Pierce <= 1 {
@@ -130,6 +152,11 @@ func hasBenefit(before, after Build) bool {
 		for _, status := range next.AppliedStatuses() {
 			earlier, ok := prior.Status(status.Effect)
 			if !ok || status.Strength() > earlier.Strength() || status.Seconds > earlier.Seconds {
+				return true
+			}
+		}
+		for _, bonus := range usableBonuses(next, vocabulary) {
+			if bonus.Damage > prior.Bonus(bonus.Property) {
 				return true
 			}
 		}
@@ -246,6 +273,15 @@ func validateParsed(blueprint *Blueprint, rules Definition, authoring bool) []Is
 	if blueprint.BaseAttack.Cost > profile.MaxBaseCost {
 		add("baseAttack.cost", "Exceeds the Definition base cost ceiling.")
 	}
+	// Resolution keys bonus damage by property, so the base attack may list
+	// each property once.
+	bonuses := map[string]bool{}
+	for index, bonus := range blueprint.BaseAttack.BonusDamage {
+		if bonuses[bonus.Property] {
+			add(fmt.Sprintf("baseAttack.bonusDamage.%d.property", index), "Each enemy property may have one bonus per attack.")
+		}
+		bonuses[bonus.Property] = true
+	}
 	for pathIndex, path := range PathKeys {
 		branch := blueprint.Paths.At(pathIndex)
 		for ref, index := range branch.SourceFactIndices {
@@ -327,7 +363,7 @@ func validateParsed(blueprint *Blueprint, rules Definition, authoring bool) []Is
 					}
 				}
 				if preserve && (nonCamo || before.Delivery != after.Delivery || before.Targeting != after.Targeting || (before.Stats.Projectiles == 1 && after.Stats.Projectiles > 1)) {
-					add(prefix+".changes", "T1 and T2 improve the existing basic attack. They cannot introduce a new attack pattern, status or delivery; personal detection and improvements to existing stats remain allowed. Specialize at T3.")
+					add(prefix+".changes", "T1 and T2 improve the existing basic attack. They cannot introduce a new attack pattern, status, bonus damage or delivery; personal detection and improvements to existing stats remain allowed. Specialize at T3.")
 				}
 				if len(added) > profile.EarlyTierMaxNewCapabilities {
 					add(prefix+".changes", fmt.Sprintf("Early tiers may add at most %d capability group; this adds %s.", profile.EarlyTierMaxNewCapabilities, strings.Join(added, ", ")))
@@ -335,6 +371,7 @@ func validateParsed(blueprint *Blueprint, rules Definition, authoring bool) []Is
 			}
 		}
 	}
+	vocabulary := rules.Terms()
 	resolvedValuesValid := true
 	noOp := map[string]bool{}
 	downgrade := map[string]bool{}
@@ -358,12 +395,12 @@ func validateParsed(blueprint *Blueprint, rules Definition, authoring bool) []Is
 			previousSel[pathIndex] = tier - 1
 			previous := ResolveUnchecked(blueprint, previousSel)
 			key := fmt.Sprintf("paths.%s.tiers.%s", path, TierKeys[tier-1])
-			if sameBehavior(previous, build) {
+			if sameBehavior(previous, build, &vocabulary) {
 				if !noOp[key] {
 					add(key, fmt.Sprintf("Upgrade changes no behavior in legal build %s.", label))
 					noOp[key] = true
 				}
-			} else if !hasBenefit(previous, build) && !downgrade[key] {
+			} else if !hasBenefit(previous, build, &vocabulary) && !downgrade[key] {
 				add(key, fmt.Sprintf("Upgrade only reduces or preserves supported gameplay dimensions in legal build %s. Add a benefit; tradeoffs are allowed.", label))
 				downgrade[key] = true
 			}
@@ -383,6 +420,7 @@ func validateParsed(blueprint *Blueprint, rules Definition, authoring bool) []Is
 func ineffectiveChanges(blueprint *Blueprint, rules Definition, reported map[string]bool) []Issue {
 	var issues []Issue
 	builds := AllLegalBuilds(rules)
+	vocabulary := rules.Terms()
 	for pathIndex, path := range PathKeys {
 		for tier := 1; tier <= 5; tier++ {
 			key := fmt.Sprintf("paths.%s.tiers.%s", path, TierKeys[tier-1])
@@ -418,7 +456,7 @@ func ineffectiveChanges(blueprint *Blueprint, rules Definition, reported map[str
 				tiers.At(tier).Changes = trimmed
 				effective := false
 				for _, selection := range builds {
-					if selection[pathIndex] >= tier && !sameBehavior(ResolveUnchecked(blueprint, selection), ResolveUnchecked(&without, selection)) {
+					if selection[pathIndex] >= tier && !sameBehavior(ResolveUnchecked(blueprint, selection), ResolveUnchecked(&without, selection), &vocabulary) {
 						effective = true
 						break
 					}

@@ -138,6 +138,30 @@ func (sh *sheet) status(status m.StatusApplication) string {
 	return text
 }
 
+// bonusAgainst names bonus damage against a property: "+50 damage against
+// Hardened enemies".
+func (sh *sheet) bonusAgainst(damage float64, property string) string {
+	return "+" + decimal(damage) + " damage against " + sh.vocabulary.PropertyName(property) + " enemies"
+}
+
+// bonusSentence says what an attack's bonus damage adds to each hit, with
+// the resulting damage per hit: "Each hit deals +50 damage against Hardened
+// enemies (70 per hit)." A bonus the damage type cannot deal says so.
+func (sh *sheet) bonusSentence(attack m.Attack) string {
+	var parts []string
+	for _, bonus := range attack.BonusDamage {
+		text := sh.bonusAgainst(bonus.Damage, bonus.Property) + " (" + decimal(attack.Stats.Damage+bonus.Damage) + " per hit)"
+		if !sh.vocabulary.CanDamage(attack.DamageType, bonus.Property) {
+			text = sh.bonusAgainst(bonus.Damage, bonus.Property) + ", which its " + sh.damageTypeName(attack.DamageType) + " damage cannot deal"
+		}
+		parts = append(parts, text)
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return "Each hit deals " + joinAnd(parts) + "."
+}
+
 func (sh *sheet) detectionName(trait string) string {
 	return termName(trait, sh.vocabulary.Detection)
 }
@@ -221,6 +245,9 @@ func (sh *sheet) attackSentences(attack m.Attack) []string {
 	}
 	if len(statuses) > 0 {
 		out = append(out, "Each hit applies "+joinAnd(statuses)+".")
+	}
+	if bonus := sh.bonusSentence(attack); bonus != "" {
+		out = append(out, bonus)
 	}
 	if attack.FollowUp != nil {
 		out = append(out, capitalized(sh.followUp(*attack.FollowUp, st.Damage))+".")
@@ -339,6 +366,8 @@ func (sh *sheet) purchaseEffects(changes []m.Change, before, after m.Build) []st
 			key = change.Kind + "." + change.Effect
 		case "detection":
 			key = change.Kind + "." + change.Trait
+		case "bonusDamage":
+			key = change.Kind + "." + change.Property
 		}
 		if _, ok := groups[key]; !ok {
 			order = append(order, key)
@@ -374,6 +403,21 @@ func (sh *sheet) purchaseEffects(changes []m.Change, before, after m.Build) []st
 				if was.Seconds != now.Seconds {
 					out = append(out, numberChange(effect.Name+" duration", " s", was.Seconds, now.Seconds, false, ""))
 				}
+			}
+		case "bonusDamage":
+			name := sh.vocabulary.PropertyName(change.Property)
+			was, now := prior.Bonus(change.Property), next.Bonus(change.Property)
+			switch {
+			case was == 0 && now > 0:
+				text := fmt.Sprintf("Adds %s (%s to %s per hit).", sh.bonusAgainst(now, change.Property), decimal(next.Stats.Damage), decimal(next.Stats.Damage+now))
+				if !sh.vocabulary.CanDamage(next.DamageType, change.Property) {
+					text = fmt.Sprintf("Adds %s, which its %s damage cannot deal.", sh.bonusAgainst(now, change.Property), sh.damageTypeName(next.DamageType))
+				}
+				out = append(out, text)
+			case was > 0 && now == 0:
+				out = append(out, "Removes the bonus damage against "+name+" enemies.")
+			default:
+				out = append(out, numberChange("bonus damage against "+name+" enemies", "", was, now, false, operations(group)+scaledBy(group, now-was)))
 			}
 		case "detection", "camo":
 			trait := change.Trait

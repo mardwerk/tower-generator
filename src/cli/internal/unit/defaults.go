@@ -1,6 +1,10 @@
 package unit
 
-import "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
+import (
+	"slices"
+
+	"github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
+)
 
 func boolPtr(v bool) *bool        { return &v }
 func intPtr(v int) *int           { return &v }
@@ -12,8 +16,10 @@ func floatPtr(v float64) *float64 { return &v }
 // changes per later purchase, the
 // BTD6-inspired design policy and a version 2 vocabulary. The vocabulary
 // names the base scale's slow, burn, stun, damage types, targeting and Camo
-// detection, so it behaves exactly as the version 1 starter. Its scale and
-// the rules document's references come from btd6-atlas capture 56.3.
+// detection, so it behaves exactly as the version 1 starter, and adds
+// Knockback and the Hardened enemy property, the only property attacks may
+// deal bonus damage against. Its scale and the rules document's references
+// come from btd6-atlas capture 56.3.
 func DefaultAuthoringDefinition() mechanics.Definition {
 	d := mechanics.DefaultDefinition()
 	d.Label = "BTD6-inspired Gold and Health starter, btd6-atlas 56.3 scale"
@@ -35,6 +41,14 @@ func DefaultAuthoringDefinition() mechanics.Definition {
 	d = mechanics.UpgradeDefinition(d)
 	d.Revision = defaultAuthoringRevision
 	describeVocabulary(d.Vocabulary)
+	// Hardened adapts BTD6 Ceramic, whose class bonuses (Deadly Precision's
+	// +50, Juggernaut's +3) are DamageModifierForTagModel entries; see the
+	// rules document's scale references. It stands before Blimp and Boss,
+	// and it alone accepts bonus damage: a Blimp is not Hardened.
+	properties := d.Vocabulary.EnemyProperties
+	at := slices.IndexFunc(properties, func(term mechanics.Term) bool { return term.ID == "blimp" })
+	d.Vocabulary.EnemyProperties = slices.Insert(properties, at, mechanics.Term{ID: "hardened", Name: defaultHardened[0], Description: defaultHardened[1]})
+	d.Vocabulary.BonusDamageProperties = []string{"hardened"}
 	// Knockback follows the atlas KnockbackModel of Juggernaut and Super
 	// Monkey's Knockback; see the rules document's scale references.
 	d.Vocabulary.StatusEffects = append(d.Vocabulary.StatusEffects, mechanics.StatusEffect{
@@ -77,6 +91,9 @@ var defaultEnemyProperties = map[string][2]string{
 	"blimp":  {"Blimp", "Large armored carrier; ignores slow, stun and knockback."},
 	"boss":   {"Boss", "Boss enemy; ignores slow, stun and knockback."},
 }
+
+// defaultHardened names the Default Profile's Hardened enemy property.
+var defaultHardened = [2]string{"Hardened", "A tough, many-layered enemy, adapted from Ceramic; the Consumer sets its health. Attacks may deal bonus damage against it."}
 
 // defaultDamageTypes name each damage type and the attacks it suits.
 var defaultDamageTypes = map[string][2]string{

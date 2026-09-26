@@ -69,6 +69,15 @@ func attackFacts(attack m.Attack) *s.Object {
 	if statuses := attack.AppliedStatuses(); len(statuses) > 0 {
 		facts.Set("statuses", s.FromGoValue(statuses))
 	}
+	// Bonus damage per hit by enemy property, so a finding can cite
+	// attack.bonusDamage.hardened.
+	if len(attack.BonusDamage) > 0 {
+		bonuses := s.NewObject()
+		for _, bonus := range attack.BonusDamage {
+			bonuses.Set(bonus.Property, bonus.Damage)
+		}
+		facts.Set("bonusDamage", bonuses)
+	}
 	var detects []string
 	if attack.Detects != nil {
 		detects = *attack.Detects

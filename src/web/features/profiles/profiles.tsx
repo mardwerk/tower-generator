@@ -238,6 +238,10 @@ function VocabularyFacts({ vocabulary, ceiling }: { vocabulary: Vocabulary; ceil
             ['Targeting', vocabulary.targeting.map((term) => term.name).join(', ')],
             ['Detection', vocabulary.detection.map((term) => term.name).join(', ') || 'none'],
             ['Enemy properties', properties.map((term) => term.name).join(', ') || 'none'],
+            [
+              'Bonus damage against',
+              names(vocabulary.bonusDamageProperties ?? [], properties) || 'none',
+            ],
           ] as const
         ).map(([term, value]) => (
           <div className="contents" key={term}>

@@ -94,6 +94,8 @@ export interface StatusEffect {
 
 export interface Vocabulary {
   enemyProperties: Term[];
+  /** Enemy properties attacks may deal bonus damage against; absent when none. */
+  bonusDamageProperties?: string[];
   damageTypes: DamageType[];
   targeting: Term[];
   detection: Term[];
@@ -444,14 +446,16 @@ export interface IconGenerationResponse {
 
 /**
  * One visible difference a purchase makes, from /api/v1/view. Version 2
- * status effects and detection traits come with their vocabulary label, the
- * unit of the number and the effect kind ('detection' for a trait).
+ * status effects, detection traits and bonus damage come with their
+ * vocabulary label, the unit of the number and the kind: the effect kind,
+ * 'detection' for a trait or 'bonusDamage' for bonus damage per hit against
+ * an enemy property, shown as +N.
  */
 export interface StatChange {
   key: string;
   label?: string;
   unit?: string;
-  kind?: EffectKind | 'detection';
+  kind?: EffectKind | 'detection' | 'bonusDamage';
   before?: number | string;
   after: number | string;
   improvement?: boolean;

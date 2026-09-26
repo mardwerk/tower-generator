@@ -47,6 +47,10 @@ func budgetSubsets(tier *s.Object, limit int) []subset {
 			groups = append(groups, group{fmt.Sprintf("statuses.%d", i), cost})
 		}
 	}
+	bonuses, _ := field(tier, "bonusDamage").([]any)
+	for i := range bonuses {
+		groups = append(groups, group{fmt.Sprintf("bonusDamage.%d", i), 1})
+	}
 	for _, key := range nullable {
 		if present(tier, key) {
 			cost := 1
@@ -110,6 +114,9 @@ func budgetSubsets(tier *s.Object, limit int) []subset {
 		filter("boostChanges")
 		if v2 {
 			filter("statuses")
+		}
+		if bonuses != nil {
+			filter("bonusDamage")
 		}
 		for _, key := range nullable {
 			if !kept[key] && (!v2 || selected.Has(key)) {

@@ -263,9 +263,25 @@ func StatusApplicationSchema(v *Vocabulary) *s.ObjectSchema {
 	)
 }
 
-// AttackSchemaV2 is a version 2 attack.
+// HasBonusDamage reports a vocabulary that lets attacks deal bonus damage.
+// Given nil (reading artifacts) it accepts bonus damage against any ID.
+func HasBonusDamage(v *Vocabulary) bool { return v == nil || len(v.BonusDamageProperties) > 0 }
+
+// BonusPropertySchema is an enemy property attacks may deal bonus damage
+// against.
+func BonusPropertySchema(v *Vocabulary) s.Schema {
+	return vocabularyIDs(v, func(v *Vocabulary) []string { return v.BonusDamageProperties })
+}
+
+// DamageBonusSchema is one resolved bonus: a positive damage per hit.
+func DamageBonusSchema(v *Vocabulary) *s.ObjectSchema {
+	return s.StrictObject(s.F("property", BonusPropertySchema(v)), s.F("damage", positive()))
+}
+
+// AttackSchemaV2 is a version 2 attack. It has bonusDamage only when the
+// vocabulary lists bonus damage properties.
 func AttackSchemaV2(v *Vocabulary) *s.ObjectSchema {
-	return s.StrictObject(
+	fields := []s.Field{
 		s.F("name", text()),
 		s.F("cost", positive()),
 		s.F("delivery", DeliverySchema),
@@ -274,15 +290,21 @@ func AttackSchemaV2(v *Vocabulary) *s.ObjectSchema {
 		s.F("detects", s.Array(DetectionSchemaV2(v)).Max(8)),
 		s.F("stats", CoreStatsSchema),
 		s.F("statuses", s.Array(StatusApplicationSchema(v)).Max(16)),
-		s.F("distribution", s.Optional(DistributionSchema)),
-		s.F("followUp", s.Optional(FollowUpSchema)),
-	)
+	}
+	if HasBonusDamage(v) {
+		fields = append(fields, s.F("bonusDamage", s.Optional(s.Array(DamageBonusSchema(v)).Max(32))))
+	}
+	fields = append(fields, s.F("distribution", s.Optional(DistributionSchema)), s.F("followUp", s.Optional(FollowUpSchema)))
+	return s.StrictObject(fields...)
 }
 
 // ChangeSchemaV2 is one typed effect of a version 2 upgrade: core stats,
-// status fields and detection replace the version 1 stats and camo.
+// status fields and detection replace the version 1 stats and camo. When
+// the vocabulary lists bonus damage properties, a bonusDamage change adds,
+// multiplies or sets the bonus against one of them, like a stat; its value
+// is always positive.
 func ChangeSchemaV2(v *Vocabulary) s.Schema {
-	return s.DiscriminatedUnion("kind",
+	variants := []*s.ObjectSchema{
 		s.StrictObject(s.F("kind", lit("stat")), s.F("target", lit("base")), s.F("stat", enum(CoreStatKeys)), s.F("operation", OperationSchema), s.F("value", s.Number())),
 		s.StrictObject(s.F("kind", lit("status")), s.F("target", lit("base")), s.F("effect", EffectSchemaV2(v)), s.F("field", StatusFieldSchema), s.F("operation", OperationSchema), s.F("value", s.Number())),
 		s.StrictObject(s.F("kind", lit("detection")), s.F("target", lit("base")), s.F("trait", DetectionSchemaV2(v)), s.F("value", s.Bool())),
@@ -293,7 +315,11 @@ func ChangeSchemaV2(v *Vocabulary) s.Schema {
 		s.StrictObject(s.F("kind", lit("followUp")), s.F("target", s.Enum("base", "boost")), s.F("value", FollowUpSchema)),
 		s.StrictObject(s.F("kind", lit("unlockBoost")), s.F("target", lit("base")), s.F("boost", BoostSchema)),
 		s.StrictObject(s.F("kind", lit("modifyBoost")), s.F("target", lit("base")), s.F("stat", enum(BoostStatKeys)), s.F("operation", OperationSchema), s.F("value", s.Number())),
-	)
+	}
+	if HasBonusDamage(v) {
+		variants = append(variants, s.StrictObject(s.F("kind", lit("bonusDamage")), s.F("target", lit("base")), s.F("property", BonusPropertySchema(v)), s.F("operation", OperationSchema), s.F("value", positive())))
+	}
+	return s.DiscriminatedUnion("kind", variants...)
 }
 
 // MaxChangesLimit bounds the change budget a version 2 Definition profile

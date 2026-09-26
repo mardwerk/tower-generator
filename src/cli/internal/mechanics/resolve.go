@@ -287,6 +287,56 @@ func resolveV2(attack *Attack, changes []Change) {
 	}
 	sort.Strings(traits)
 	attack.Statuses, attack.Detects = &statuses, &traits
+	attack.BonusDamage = resolveBonusDamage(attack.BonusDamage, changes)
+}
+
+// resolveBonusDamage resolves each property's bonus damage like a stat,
+// from the base attack's bonus or zero, sorted by property. A bonus that
+// resolves to zero is dropped.
+func resolveBonusDamage(initial []DamageBonus, changes []Change) []DamageBonus {
+	base := map[string]float64{}
+	var properties []string
+	for _, bonus := range initial {
+		if _, ok := base[bonus.Property]; !ok {
+			properties = append(properties, bonus.Property)
+		}
+		base[bonus.Property] = bonus.Damage
+	}
+	for _, c := range changes {
+		if _, ok := base[c.Property]; c.Kind == "bonusDamage" && !ok {
+			base[c.Property] = 0
+			properties = append(properties, c.Property)
+		}
+	}
+	sort.Strings(properties)
+	var out []DamageBonus
+	for _, property := range properties {
+		var matching []Change
+		for _, c := range changes {
+			if c.Kind == "bonusDamage" && c.Property == property {
+				matching = append(matching, c)
+			}
+		}
+		if damage := calculate(base[property], matching); damage != 0 {
+			out = append(out, DamageBonus{Property: property, Damage: damage})
+		}
+	}
+	return out
+}
+
+// bonusIssues checks what the attack schema cannot about a version 2
+// attack's resolved bonus damage, whose properties the schema holds to the
+// vocabulary: within the stat ceiling, and on an attack that deals damage,
+// since the bonus adds to its hits.
+func bonusIssues(attack Attack, definition Definition, add func(path, message string), path string) {
+	for index, bonus := range attack.BonusDamage {
+		if bonus.Damage > definition.Profile.MaxStatValue {
+			add(fmt.Sprintf("%s.bonusDamage.%d.damage", path, index), "Exceeds the Definition stat ceiling.")
+		}
+	}
+	if len(attack.BonusDamage) > 0 && attack.Stats.Damage <= 0 {
+		add(path+".bonusDamage", "Bonus damage adds to the attack's hits, so the attack must deal damage.")
+	}
 }
 
 // statusIssues checks a version 2 attack's statuses against the vocabulary.
@@ -404,6 +454,7 @@ func ResolvedIssues(build Build, definition Definition, prefix string, blueprint
 		}
 		if attack.IsV2() {
 			statusIssues(attack, definition, add, path)
+			bonusIssues(attack, definition, add, path)
 			if st.Damage == 0 && len(attack.AppliedStatuses()) == 0 {
 				add(path, "An attack must supply damage or a status effect.")
 			}

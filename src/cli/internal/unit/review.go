@@ -163,6 +163,9 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	statuses := reviewStatusesV1
 	if isV2(request) {
 		statuses = reviewStatusesV2
+		if len(request.MechanicsDefinition.Vocabulary.BonusDamageProperties) > 0 {
+			statuses += " " + reviewBonusDamage
+		}
 	}
 	prompt := []string{reviewStyle, reviewScope, reviewGrounding, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, fmt.Sprintf(reviewPolicy, inCurrency(currency)), reviewFindings}
 	if context.Has("revision") {

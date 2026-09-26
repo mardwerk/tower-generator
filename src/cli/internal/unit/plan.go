@@ -370,12 +370,13 @@ func earlyIdentityAllowed(d *m.Definition, unlock string) bool {
 }
 
 // earlyIdentityBreaking reports an unlock that changes a T1/T2 attack's
-// identity: a new status, attack pattern, delivery, targeting or damage type.
+// identity: a new status, bonus damage, attack pattern, delivery, targeting
+// or damage type.
 func earlyIdentityBreaking(d *m.Definition, unlock string) bool {
 	if d == nil || !d.IsV2() {
 		return earlyIdentityBlocked[unlock]
 	}
-	if _, ok := d.Vocabulary.Effect(unlock); ok {
+	if _, ok := d.Vocabulary.Effect(unlock); ok || unlock == BonusDamagePromise {
 		return true
 	}
 	return earlyIdentityBlocked[unlock] && unlock != "slow" && unlock != "burn" && unlock != "stun"
@@ -476,11 +477,14 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 				}
 			}
 			if number <= 2 && policy != nil && policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity && earlyIdentityBreaking(request.MechanicsDefinition, intent.Unlock) {
-				detection := "personal Camo detection"
+				detection, bonusText := "personal Camo detection", ""
 				if d := request.MechanicsDefinition; d != nil && d.IsV2() {
 					detection = "personal detection"
+					if len(d.Vocabulary.BonusDamageProperties) > 0 {
+						bonusText = "bonus damage, "
+					}
 				}
-				issue(BuildCode(pathIndex, number) + " must preserve the existing attack identity: the first and second purchase of a path add no new status, attack pattern, delivery, targeting or damage-type access before the third; " + detection + " and improvements to existing effects remain allowed.")
+				issue(BuildCode(pathIndex, number) + " must preserve the existing attack identity: the first and second purchase of a path add no new status, " + bonusText + "attack pattern, delivery, targeting or damage-type access before the third; " + detection + " and improvements to existing effects remain allowed.")
 			}
 			if number <= 2 && policy != nil && policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity && slices.Contains(intent.Improves, "projectiles") {
 				issue(BuildCode(pathIndex, number) + " cannot promise projectiles: the first and second purchase keep a single-projectile attack single, so the mechanics could not keep that promise. Promise projectiles from the third purchase on; an attack that already fires several projectiles may still add more without promising it.")
