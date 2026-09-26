@@ -133,7 +133,11 @@ func TestUnitSheetUsesBuildCodesAndEveryCrosspath(t *testing.T) {
 		}
 	}
 	for _, want := range []string{
-		"## Top path: Juggernaut Line", "**3-x-x Spike-o-pult** (320 Gold). Raises damage from 1 to 2 (+1).",
+		// A purchase names the technique it adapts, from the plan, and what
+		// its typed changes make of the attack; one of the base attack alone
+		// shows only its effects.
+		"## Top path: Juggernaut Line", "**3-x-x Spike-o-pult** (320 Gold). Adapts Spiked Ball: the attack becomes slower, heavier and longer-reaching and can hit up to 18 enemies per shot. Raises damage from 1 to 2 (+1).",
+		"**1-x-x Sharp Shots** (140 Gold). Raises pierce from 2 to 3 (+1).",
 		"**x-4-x Super Monkey Fan Club** (7,200 Gold).", "Adds Fan Club Frenzy, this Unit's Active Ability: for 15 s it multiplies its interval by 0.0625 and adds 8 range",
 		"**x-x-5 Crossbow Master** (21,500 Gold).", "Switches damage from Sharp to Normal.",
 		"### Early builds (12)", "### Advanced builds (36)",
@@ -300,7 +304,7 @@ func TestScaledAdditionsNameTheMultiplier(t *testing.T) {
 		}
 	}
 	candidate.Blueprint = &blueprint
-	purchases := render.Purchases(candidate, stages.Result.Prepared.Request.MechanicsDefinition)
+	purchases := render.Purchases(candidate, stages.Result.Prepared.Request.MechanicsDefinition, nil)
 	if purchases == nil {
 		t.Fatal("the edited blueprint is invalid")
 	}
@@ -336,7 +340,7 @@ func TestKnockbackResolvesAndReads(t *testing.T) {
 		t.Fatalf("a knockback purchase: %v", issues)
 	}
 	candidate.Blueprint = &blueprint
-	effects := strings.Join(render.Purchases(candidate, definition)[2].Purchases[2].Effects, " ")
+	effects := strings.Join(render.Purchases(candidate, definition, nil)[2].Purchases[2].Effects, " ")
 	if !strings.Contains(effects, "Knockback 1.25 times enemy speed for 0.5 s") {
 		t.Errorf("x-x-3 reads %s", effects)
 	}

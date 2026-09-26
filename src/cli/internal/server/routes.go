@@ -136,7 +136,7 @@ func (srv *Server) posts() map[string]post {
 			if base := render.Base(view.Candidate, definition); base != nil {
 				out.Set("base", s.FromGoValue(base))
 			}
-			if purchases := render.Purchases(view.Candidate, definition); purchases != nil {
+			if purchases := render.Purchases(view.Candidate, definition, view.Plan); purchases != nil {
 				out.Set("purchases", s.FromGoValue(purchases))
 			}
 			if crosspaths := render.ResolveCrosspaths(view.Candidate, definition); crosspaths != nil {

@@ -34,6 +34,7 @@ func Compact(view View) string {
 	if sh == nil {
 		return compactProse(view)
 	}
+	sh.plan = view.Plan
 	var lines []string
 	lines = append(lines, "# "+Escape(view.Candidate.Character.Name), "")
 	lines = append(lines, sh.baseSection()...)
@@ -67,7 +68,11 @@ func (sh *sheet) pathSections() []string {
 	for _, path := range sh.purchases() {
 		lines = append(lines, "## "+path.Position+" path: "+Escape(path.Name), "")
 		for _, purchase := range path.Purchases {
-			lines = append(lines, "**"+purchase.Code+" "+Escape(purchase.Name)+"** ("+sh.money(purchase.Cost)+"). "+Escape(strings.Join(purchase.Effects, " ")), "")
+			text := strings.Join(purchase.Effects, " ")
+			if purchase.Adaptation != "" {
+				text = purchase.Adaptation + " " + text
+			}
+			lines = append(lines, "**"+purchase.Code+" "+Escape(purchase.Name)+"** ("+sh.money(purchase.Cost)+"). "+Escape(text), "")
 		}
 	}
 	return lines

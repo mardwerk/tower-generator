@@ -20,10 +20,13 @@ var pathPositions = []string{"Top", "Middle", "Bottom"}
 
 // Purchase is one bought upgrade as the unit sheet shows it.
 type Purchase struct {
-	Code    string   `json:"code"`
-	Name    string   `json:"name"`
-	Cost    float64  `json:"cost"`
-	Effects []string `json:"effects"`
+	Code string  `json:"code"`
+	Name string  `json:"name"`
+	Cost float64 `json:"cost"`
+	// Adaptation names the technique the purchase adapts and what its typed
+	// changes make of the attack; see unit.PurchaseAdaptation.
+	Adaptation string   `json:"adaptation,omitempty"`
+	Effects    []string `json:"effects"`
 }
 
 // PathPurchases are a path's five purchases in order.
@@ -39,6 +42,8 @@ type sheet struct {
 	definition m.Definition
 	vocabulary m.Vocabulary
 	currency   string
+	// plan, when set, names the technique each purchase adapts.
+	plan *unit.DesignPlan
 }
 
 func newSheet(blueprint *m.Blueprint, definition *m.Definition) *sheet {
@@ -512,12 +517,14 @@ func (sh *sheet) baseText(base m.Attack) string {
 }
 
 // Purchases describes every purchase of a valid blueprint along its pure
-// path. It returns nil for a candidate without valid typed mechanics.
-func Purchases(candidate unit.Candidate, definition *m.Definition) []PathPurchases {
+// path, with the technique each adapts when the plan names one. It returns
+// nil for a candidate without valid typed mechanics.
+func Purchases(candidate unit.Candidate, definition *m.Definition, plan *unit.DesignPlan) []PathPurchases {
 	sh := newSheet(candidate.Blueprint, definition)
 	if sh == nil {
 		return nil
 	}
+	sh.plan = plan
 	return sh.purchases()
 }
 
@@ -532,7 +539,8 @@ func (sh *sheet) purchases() []PathPurchases {
 			upgrade := path.Tiers.At(tier)
 			entry.Purchases = append(entry.Purchases, Purchase{
 				Code: unit.BuildCode(index, tier), Name: upgrade.Name, Cost: upgrade.Cost,
-				Effects: sh.purchaseEffects(upgrade.Changes, sh.resolve(before), sh.resolve(after)),
+				Adaptation: unit.PurchaseAdaptation(sh.blueprint, sh.plan, sh.definition, index, tier),
+				Effects:    sh.purchaseEffects(upgrade.Changes, sh.resolve(before), sh.resolve(after)),
 			})
 		}
 		out = append(out, entry)

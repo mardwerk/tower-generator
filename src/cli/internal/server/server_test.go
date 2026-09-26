@@ -203,6 +203,12 @@ func TestStagesRunThroughTheAPI(t *testing.T) {
 	if len(early) != 12 || len(advanced) != 36 || len(purchases.([]any)) != 3 || view.Has("revision") {
 		t.Errorf("view has %d early and %d advanced builds", len(early), len(advanced))
 	}
+	// The kit shows which technique a purchase adapts; the plan itself stays
+	// out of the view.
+	top, _ := at(purchases.([]any)[0], "purchases").([]any)
+	if adaptation, _ := at(top[2], "adaptation").(string); !strings.HasPrefix(adaptation, "Adapts Spiked Ball: the attack becomes slower") || at(view, "view").(*s.Object).Has("plan") {
+		t.Errorf("3-x-x adaptation %q", adaptation)
+	}
 	entry := h.post("library/save", map[string]any{"artifact": result})
 	if path, _ := at(entry, "path").(string); strings.Count(path, "/") != 2 || !strings.Contains(path, ".result.") {
 		t.Errorf("saved to %q, not a work and character folder", path)

@@ -121,10 +121,17 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	}
 	context.Set("pathEvidence", pathEvidence)
 	var paths []any
-	for _, p := range candidate.Paths {
+	for index, p := range candidate.Paths {
 		var tiers []any
 		for _, t := range p.Tiers {
-			tiers = append(tiers, s.NewObject().Set("tier", float64(t.Tier)).Set("name", t.Name).Set("benefit", t.Benefit))
+			entry := s.NewObject().Set("tier", float64(t.Tier)).Set("name", t.Name).Set("benefit", t.Benefit)
+			// The reviewer reads the adaptation line the rendered unit shows.
+			if request.MechanicsDefinition != nil && len(candidate.Paths) == len(m.PathKeys) && t.Tier >= 1 && t.Tier <= len(m.TierKeys) {
+				if adaptation := PurchaseAdaptation(blueprint, checked.Draft.Run.DesignPlan, *request.MechanicsDefinition, index, t.Tier); adaptation != "" {
+					entry.Set("adaptation", adaptation)
+				}
+			}
+			tiers = append(tiers, entry)
 		}
 		if tiers == nil {
 			tiers = []any{}

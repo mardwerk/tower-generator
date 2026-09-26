@@ -471,6 +471,8 @@ export interface Purchase {
   code: string;
   name: string;
   cost: number;
+  /** The technique the purchase adapts and what its typed changes make of the attack, when the plan names one. */
+  adaptation?: string;
   effects: string[];
 }
 

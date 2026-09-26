@@ -39,7 +39,9 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 	// A copy bound is context for a capstone, not a verdict, the draft's
 	// proposals are claims to check, not facts, and the period decision is
 	// context, not text the Unit must print (reported on #27).
-	for _, want := range []string{"A same-budget copy bound is context, not a verdict", "They are the drafting model's claims and can be wrong", "A name taken from the source", "not text the Unit must print"} {
+	for _, want := range []string{"A same-budget copy bound is context, not a verdict", "They are the drafting model's claims and can be wrong", "A name taken from the source", "not text the Unit must print",
+		// The reviewer reads the adaptation line the rendered unit shows.
+		`"adaptation":"Adapts Spiked Ball: the attack becomes slower, heavier and longer-reaching and can hit up to 18 enemies per shot."`} {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("the review prompt lacks %q", want)
 		}

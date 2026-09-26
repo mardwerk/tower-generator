@@ -363,13 +363,17 @@ export function CharacterSheet({
                     candidate.paths.length === 3
                       ? buildCode(pathIndex, tier.tier)
                       : String(tier.tier);
-                  const effects = purchases?.[pathIndex]?.purchases.find(
-                    (purchase) => purchase.code === code,
-                  )?.effects;
+                  const purchase = purchases?.[pathIndex]?.purchases.find(
+                    (entry) => entry.code === code,
+                  );
+                  const effects = purchase?.effects;
+                  const adaptation = purchase?.adaptation;
                   const openTier = () =>
                     setDetail({
                       title: `${code} ${tier.name}`,
-                      description: effects?.join(' ') ?? tier.benefit,
+                      description: effects
+                        ? [adaptation, ...effects].filter(Boolean).join(' ')
+                        : tier.benefit,
                       abilityIds: tier.abilityIds,
                       changes: tierStats?.changes,
                       cost: tierStats?.cost,
@@ -405,6 +409,9 @@ export function CharacterSheet({
                           <h4 className="font-semibold">{tier.name}</h4>
                           {tier.status !== 'proposed' && <Status value={tier.status} />}
                         </div>
+                        {adaptation && (
+                          <p className="mt-1 text-[13px] text-muted-foreground">{adaptation}</p>
+                        )}
                         {tierStats ? (
                           <>
                             <Cost value={tierStats.cost} currency={currency} />

@@ -20,6 +20,9 @@ type View struct {
 	ReviewSummary    *string        `json:"reviewSummary"`
 	Usage            UsageSummary   `json:"usage"`
 	DesignEvaluation *s.Object      `json:"designEvaluation,omitempty"`
+	// Plan is the retained design plan, which names the technique each
+	// purchase adapts. The view API does not send it.
+	Plan *unit.DesignPlan `json:"-"`
 }
 
 // ReadView reads a Result, checked artifact or draft, in that order. The
@@ -35,6 +38,7 @@ func ReadView(value any) (View, error) {
 			ReviewSummary:    &result.ReviewSummary,
 			Usage:            SummarizeUsage(&result.Run.Draft, &result.Run.Review),
 			DesignEvaluation: result.Run.Draft.DesignEvaluation,
+			Plan:             result.Run.Draft.DesignPlan,
 		}, nil
 	}
 	if checked, err := unit.ParseChecked(value); err == nil {
@@ -45,6 +49,7 @@ func ReadView(value any) (View, error) {
 			Findings:         checked.Findings,
 			Usage:            SummarizeUsage(&checked.Draft.Run, nil),
 			DesignEvaluation: checked.Draft.Run.DesignEvaluation,
+			Plan:             checked.Draft.Run.DesignPlan,
 		}, nil
 	}
 	draft, err := unit.ParseDraft(value)
@@ -58,6 +63,7 @@ func ReadView(value any) (View, error) {
 		Findings:         []unit.Finding{},
 		Usage:            SummarizeUsage(&draft.Run, nil),
 		DesignEvaluation: draft.Run.DesignEvaluation,
+		Plan:             draft.Run.DesignPlan,
 	}, nil
 }
 
