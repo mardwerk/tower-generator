@@ -351,6 +351,18 @@ type PlanRepertoire struct {
 	Name       string   `json:"name"`
 	SourceIDs  []string `json:"sourceIds"`
 	Limitation string   `json:"limitation"`
+	// Effects are what the cited passages describe the technique doing, each
+	// adapted or omitted; plans made before the field have none.
+	Effects []PlanEffect `json:"effects,omitempty"`
+}
+
+// PlanEffect is one source-described effect of a technique: adapted as the
+// promises in AdaptedAs, or omitted when AdaptedAs is empty. Reason says how
+// or why.
+type PlanEffect struct {
+	Effect    string   `json:"effect"`
+	AdaptedAs []string `json:"adaptedAs"`
+	Reason    string   `json:"reason"`
 }
 
 // PlanBase is the planned base attack.

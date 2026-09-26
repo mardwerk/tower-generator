@@ -39,8 +39,21 @@ func purchaseBranchOf(milestone s.Schema) *s.ObjectSchema {
 func purchasePlanOf(branch s.Schema) *s.ObjectSchema {
 	return DesignPlanSchema.Omit("upgradeIntents").Extend(
 		s.F("contract", s.Literal("purchase-plan-v1")),
+		s.F("repertoire", authoredRepertoire),
 		s.F("paths", s.StrictObject(s.F("path1", branch), s.F("path2", branch), s.F("path3", branch))),
 	)
+}
+
+// effectPromises are the promise IDs an effect may be adapted as: every
+// improvement and unlock of the Definition except none.
+func effectPromises(definition *m.Definition) []string {
+	var out []string
+	for _, id := range append(append([]string{}, ImprovementsFor(definition)...), UnlocksFor(definition)...) {
+		if id != "none" && !slices.Contains(out, id) {
+			out = append(out, id)
+		}
+	}
+	return out
 }
 
 // PurchasePlanOutputSchema narrows the compact plan to what the Definition supports.
@@ -90,15 +103,19 @@ func PurchasePlanOutputSchema(request *Request) *s.ObjectSchema {
 					improvements = append(improvements, dimension)
 				}
 			}
-			return milestoneSchema.Extend(s.F("improves", s.Array(s.Enum(improvements...)).Max(4)), s.F("unlock", s.Enum(unlocks...)))
+			return milestoneSchema.Extend(s.F("improves", improvesList(s.Enum(improvements...))), s.F("unlock", s.Enum(unlocks...)))
 		}
 		return purchaseBranch.Extend(s.F("milestones", s.StrictObject(
 			s.F("tier1", atTier(1)), s.F("tier2", atTier(2)), s.F("tier3", atTier(3)), s.F("tier4", atTier(4)), s.F("tier5", atTier(5)),
 		)))
 	}
-	return PurchasePlanSchema.Extend(s.F("paths", s.StrictObject(
-		s.F("path1", pathSchema("path1")), s.F("path2", pathSchema("path2")), s.F("path3", pathSchema("path3")),
-	)))
+	effect := planEffect.Extend(s.F("adaptedAs", s.Array(s.Enum(effectPromises(definition)...)).Max(4)))
+	return PurchasePlanSchema.Extend(
+		s.F("repertoire", repertoireOf(s.Array(effect).Min(1).Max(6))),
+		s.F("paths", s.StrictObject(
+			s.F("path1", pathSchema("path1")), s.F("path2", pathSchema("path2")), s.F("path3", pathSchema("path3")),
+		)),
+	)
 }
 
 func earlyPurchases(branch *s.Object) string {
@@ -483,7 +500,7 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 		issues = append(issues, s.Issue{Code: "custom", Path: []any{"upgradeIntents"}, Message: fmt.Sprintf("The plan requires active boosts on %d paths; the Definition permits at most %d.", len(activePaths), policy.MaxManualAbilityPaths)})
 	}
 	if request.MechanicsDefinition != nil {
-		feasibility := PlanFeasibilityIssues(plan, *request.MechanicsDefinition)
+		feasibility := append(PlanFeasibilityIssues(plan, *request.MechanicsDefinition), PlanEffectIssues(plan)...)
 		if policy != nil {
 			feasibility = append(feasibility, PlanTechniqueIssues(plan, *request.MechanicsDefinition)...)
 		}

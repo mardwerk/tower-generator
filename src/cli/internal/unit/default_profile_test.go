@@ -158,6 +158,8 @@ func TestPlansLeavePayoffToTheReview(t *testing.T) {
 			at(plan, "paths", path, "milestones", tier).(*s.Object).Set("improves", []any{"damage"}).Set("unlock", "none")
 		}
 	}
+	// 4-x-x no longer changes the damage type, so Spiked Ball omits Frozen access.
+	repertoireEffect(plan, 0, 2).Set("adaptedAs", []any{})
 	if _, err := unit.DecodeDesignPlan(plan, &prepared.Request); err != nil {
 		t.Fatalf("single-dimension fourth and fifth purchases were rejected: %v", err)
 	}

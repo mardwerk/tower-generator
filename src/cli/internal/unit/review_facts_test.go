@@ -55,7 +55,10 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 		// its own build code (reported on #27: compression credited with
 		// range at x-x-1 was flagged only in crosspath proposals).
 		`"technique":"Dart Throw"}`, `"technique":"Spiked Ball","adaptation":"Replaces the dart`,
-		"Judge every purchased tier on its own build code"} {
+		"Judge every purchased tier on its own build code",
+		// Each technique's effects are judged against its passages.
+		`"effects":[{"effect":"A heavier spiked ball replaces the dart and deals more damage.","adaptedAs":["damage"]`,
+		"fail a described effect the list leaves out, an omission whose reason does not hold"} {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("the review prompt lacks %q", want)
 		}
