@@ -153,6 +153,9 @@ func TestValidationRejectsInvalidPurchases(t *testing.T) {
 		{"ineffective change in an effective purchase", func(b *Blueprint) {
 			b.Paths.Path1.Tiers.Tier3.Changes = append(b.Paths.Path1.Tiers.Tier3.Changes, stat("range", "set", 30))
 		}, "tier3.changes.2: This change has no effect in any legal build"},
+		{"one-projectile distribution in an effective purchase", func(b *Blueprint) {
+			b.Paths.Path1.Tiers.Tier3.Changes = append(b.Paths.Path1.Tiers.Tier3.Changes, Change{Kind: "distribution", Target: "base", Text: "distinct-targets"})
+		}, "tier3.changes.2: This change has no effect in any legal build"},
 		{"downgrade", func(b *Blueprint) { b.Paths.Path1.Tiers.Tier2.Changes = []Change{stat("range", "add", -5)} }, "only reduces or preserves"},
 		{"fractional count", func(b *Blueprint) { b.Paths.Path2.Tiers.Tier3.Changes = []Change{stat("projectiles", "multiply", 1.5)} }, "Resolved projectiles is 1.5"},
 		{"boost too early", func(b *Blueprint) { b.Paths.Path2.Tiers.Tier3.Changes = b.Paths.Path2.Tiers.Tier4.Changes }, "only unlock at tier 4"},

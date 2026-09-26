@@ -87,7 +87,20 @@ func sameBehavior(a, b Build) bool {
 }
 
 func behaviorValue(build Build) any {
-	return s.NewObject().Set("baseAttack", s.FromGoValue(build.BaseAttack)).Set("abilities", s.FromGoValue(build.Abilities))
+	effective := func(attack Attack) Attack {
+		// One projectile can reach only one initial target, regardless of
+		// distribution. A distinct-targets flag alone adds no behavior.
+		if attack.Stats.Projectiles <= 1 {
+			attack.Distribution = ""
+		}
+		return attack
+	}
+	abilities := make([]ResolvedAbility, len(build.Abilities))
+	copy(abilities, build.Abilities)
+	for i := range abilities {
+		abilities[i].BoostedAttack = effective(abilities[i].BoostedAttack)
+	}
+	return s.NewObject().Set("baseAttack", s.FromGoValue(effective(build.BaseAttack))).Set("abilities", s.FromGoValue(abilities))
 }
 
 // hasBenefit rejects pure downgrades; it does not compare different benefits.
