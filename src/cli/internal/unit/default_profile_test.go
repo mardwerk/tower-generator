@@ -513,3 +513,24 @@ func TestPlanPromptAppliesEarlyIdentityOnlyWhenSelected(t *testing.T) {
 		t.Fatalf("early-identity guidance remained after disabling the policy: %v", err)
 	}
 }
+
+func TestPlanPromptStatesDistinctEarlyPurchasesOnlyWhenSelected(t *testing.T) {
+	prepared, err := fixture.Prepare()
+	if err != nil {
+		t.Fatal(err)
+	}
+	const line = "No two paths' first and second purchases may together improve only the same dimension"
+	withPolicy, err := unit.DesignPlanRequest(prepared)
+	if err != nil || !strings.Contains(withPolicy.Prompt, line) {
+		t.Fatalf("distinct early guidance missing: %v", err)
+	}
+	definition := *prepared.Request.MechanicsDefinition
+	policy := *definition.Profile.DesignPolicy
+	policy.DistinctFirstUpgrades = false
+	definition.Profile.DesignPolicy = &policy
+	prepared.Request.MechanicsDefinition = &definition
+	withoutPolicy, err := unit.DesignPlanRequest(prepared)
+	if err != nil || strings.Contains(withoutPolicy.Prompt, line) {
+		t.Fatalf("distinct early guidance remained after disabling the policy: %v", err)
+	}
+}

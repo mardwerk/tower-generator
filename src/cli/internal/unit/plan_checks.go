@@ -194,6 +194,13 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 			}
 		}
 	}
+	// Under distinctFirstUpgrades two paths' first two purchases may not
+	// promise only the same dimension: four interval-only upgrades on two
+	// paths gave them no distinct early crosspath value (a Luffy Result on
+	// #27). Third purchases stay free, so a stat-led path keeps its route.
+	if policy := definition.Profile.DesignPolicy; policy != nil && policy.DistinctFirstUpgrades {
+		issues = append(issues, mirroredEarlyIssues(plan.UpgradeIntents)...)
+	}
 	boostTier := definition.Rules.ManualBoostUnlockTier
 	boostKey := m.TierKeys[boostTier-1]
 	for pathIndex, path := range m.PathKeys {
@@ -238,6 +245,58 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 				report(fmt.Sprintf("These promises require at least %d primitive effects, exceeding the Definition's %d-effect budget. %s; overlapping improvements and unlocks are counted once. Reduce the promised dimensions or move a purchase to another tier.", minimum, limit, pairs))
 			}
 		}
+	}
+	return issues
+}
+
+// earlyDimension is the one dimension a path's first two purchases promise
+// together, or "" when they promise more than one or unlock anything.
+func earlyDimension(intents *PathIntents) string {
+	dimensions := map[string]bool{}
+	for tier := 1; tier <= 2; tier++ {
+		intent := intents.At(tier)
+		if intent.Unlock != "" && intent.Unlock != "none" {
+			return ""
+		}
+		for _, dimension := range intent.Improves {
+			dimensions[dimension] = true
+		}
+	}
+	if len(dimensions) != 1 {
+		return ""
+	}
+	for dimension := range dimensions {
+		return dimension
+	}
+	return ""
+}
+
+// mirroredEarlyIssues reports a path whose first two purchases only improve
+// the dimension another path's first two purchases only improve.
+func mirroredEarlyIssues(intents *UpgradeIntents) []m.Issue {
+	var issues []m.Issue
+	owner := map[string]int{}
+	for index, path := range m.PathKeys {
+		dimension := earlyDimension(intents.At(index))
+		if dimension == "" {
+			continue
+		}
+		other, taken := owner[dimension]
+		if !taken {
+			owner[dimension] = index
+			continue
+		}
+		var others []string
+		for _, candidate := range []string{"damage", "pierce", "range", "attack-rate"} {
+			if candidate != dimension && len(others) < 3 {
+				others = append(others, candidate)
+			}
+		}
+		issues = append(issues, m.Issue{
+			Path: "upgradeIntents." + path + ".tier2",
+			Message: fmt.Sprintf("%s and %s only improve %s, as %s and %s do. Two paths' first two purchases must give distinct early crosspath value: give this path's first or second purchase another improvement from its own technique, such as %s, %s or %s, or personal detection, and keep %s alone on at most one path's first two purchases.",
+				BuildCode(index, 1), BuildCode(index, 2), dimension, BuildCode(other, 1), BuildCode(other, 2), others[0], others[1], others[2], dimension),
+		})
 	}
 	return issues
 }

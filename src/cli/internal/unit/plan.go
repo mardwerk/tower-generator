@@ -341,6 +341,9 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 		if policy := d.Profile.DesignPolicy; policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity {
 			gates = append(gates, planEarlyIdentity)
 		}
+		if d.Profile.DesignPolicy.DistinctFirstUpgrades {
+			gates = append(gates, planDistinctEarly)
+		}
 		if policy := d.Profile.DesignPolicy; policy.RequireTier3BehaviorChange != nil && *policy.RequireTier3BehaviorChange {
 			gates = append(gates, planTier3Behavior)
 		}
