@@ -140,7 +140,10 @@ func EvidenceSpans(request *Request) []EvidenceSpan {
 }
 
 var (
-	combatWords   = regexp.MustCompile(`(?i)\b(?:abilit\w*|power\w*|attack\w*|combat|strength|speed|technique\w*|transform\w*|form\w*|damage|control|weapon\w*|punch\w*|beam\w*|stretc\w*|absor\w*|mimic\w*|summon\w*|limit\w*|weak\w*|cannot|unable|immune|immunity)\b`)
+	combatWords = regexp.MustCompile(`(?i)\b(?:abilit\w*|power\w*|attack\w*|combat|strength|speed|technique\w*|transform\w*|form\w*|damage|control|weapon\w*|punch\w*|beam\w*|stretc\w*|absor\w*|mimic\w*|summon\w*|limit\w*|weak\w*|cannot|unable|immune|immunity)\b`)
+	// effectWords mark what an attack does to its targets, which a Tower
+	// Defense adaptation maps to area, status, rate and capacity.
+	effectWords   = regexp.MustCompile(`(?i)\b(?:flames?|fire|ignit\w*|burn\w*|explo\w*|freez\w*|ice|poison\w*|electri\w*|lightning|shock\w*|paraly\w*|stun\w*|slow\w*|knock\w*|blast\w*|area|gigantic|inflat\w*|multiple|barrage|rapid\w*|flurry|pierc\w*|bounc\w*)\b`)
 	signatureWord = regexp.MustCompile(`(?i)\b(?:signature|primary|characteristic)\b`)
 	actionWords   = regexp.MustCompile(`(?i)\b(?:fires?|firing|shoots?|shooting|launch\w*|emits?|emitting|strikes?|striking|throws?|throwing|projectiles?|slashes?|slashing)\b`)
 	limitWords    = regexp.MustCompile(`(?i)\b(?:cannot|unable|requires?|only|former|limitations?|weakness\w*)\b`)
@@ -177,6 +180,7 @@ func AuthorEvidence(request *Request) []EvidenceSpan {
 			relevance += 3
 		}
 		relevance += min(len(actionWords.FindAllStringIndex(span.Text, -1)), 3)
+		relevance += min(len(effectWords.FindAllStringIndex(span.Text, -1)), 3)
 		if limitWords.MatchString(span.Text) {
 			relevance += 4
 		}

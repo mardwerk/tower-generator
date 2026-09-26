@@ -132,7 +132,7 @@ Not yet tested live from the development container:
 - **Codex** with a real `codex` CLI and login, including MCP-server disabling against a real `config.toml`.
 - **Character research** against live Wikipedia, Wikidata and Fandom; the rules are tested on fixtures only.
 - **Windows.** Codex process cleanup uses process groups on Unix only.
-- **Unit quality.** An owner-run generation of Monkey D. Luffy showed repetitive paths ([#22](https://github.com/mardwerk/unit-generator/issues/22)). The trace found Fandom text cut off before the technique sections, a small evidence selection and no check against a form split between two paths; all three are changed, the Default Profile gained Knockback, and no live run has confirmed the result yet ([evaluation](docs/PROFILE-EVALUATION.md#not-covered)). The relayed Dart Monkey comparison is one sample, not a quality measurement.
+- **Unit quality.** An owner-run generation of Monkey D. Luffy showed repetitive paths ([#22](https://github.com/mardwerk/unit-generator/issues/22)). The trace found Fandom text cut off before the technique sections, a small evidence selection and no check against a form split between two paths; all three are changed and the Default Profile gained Knockback. Three of four live runs since gave each path its own behavior; the middle path's damage and unused Knockback remain weak ([evaluation](docs/PROFILE-EVALUATION.md#not-covered)). The relayed Dart Monkey comparison is one sample, not a quality measurement.
 
 ## Documentation
 
