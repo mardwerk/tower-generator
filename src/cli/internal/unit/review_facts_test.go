@@ -2,6 +2,7 @@ package unit_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -230,5 +231,70 @@ func TestRevisionReviewsJudgeTheCurrentPlan(t *testing.T) {
 	}
 	if strings.Contains(prompt, "limits Gear 2 speed to a temporary boost") || strings.Contains(prompt, "previousFindings") {
 		t.Error("the revision review carries the earlier review's findings")
+	}
+}
+
+// Kyle's diagnostic edit of a Luffy Result on #27: the earlier version said
+// Gear 2's speed appeared only in the Active, the revised plan made it
+// permanent from x-3-x, and the review still judged the earlier claim. The
+// review of that edit presents only the revised plan as current; the
+// earlier claim is left only inside revision.earlierUnit, and the earlier
+// review's finding is gone.
+func TestRevisionReviewTreatsOnlyTheNewPlanAsCurrent(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	earlier := "Gear 2 speed appears only in the Active."
+	current := "Gear 2 speed is permanent from x-3-x, and the Active amplifies it."
+	previous := stages.Result.Candidate
+	blueprint := *previous.Blueprint
+	blueprint.Paths.Path2.Rationale = earlier
+	previous.Blueprint = &blueprint
+	checked := stages.Checked
+	plan := *checked.Draft.Run.DesignPlan
+	plan.Repertoire = append([]unit.PlanRepertoire(nil), plan.Repertoire...)
+	plan.Repertoire[0].Limitation = current
+	checked.Draft.Run.DesignPlan = &plan
+	request := checked.Draft.Prepared.Request
+	feedback := "Gear 2 is a form that raises strength and speed; do not keep its speed only in the Active."
+	request.Feedback = &feedback
+	request.Previous = &unit.Previous{ResultID: "earlier", Draft: previous, Findings: []unit.Finding{
+		{ID: "model.gear2", Method: "model", Outcome: "fail", Subject: "x-4-x", Message: "The plan limits Gear 2 speed to a temporary boost: " + earlier},
+	}}
+	checked.Draft.Prepared.Request = request
+	prompt := unit.BlueprintReviewRequest(checked).Prompt
+	paragraphs := strings.Split(prompt, "\n\n")
+	var context map[string]any
+	if err := json.Unmarshal([]byte(paragraphs[len(paragraphs)-1]), &context); err != nil {
+		t.Fatal(err)
+	}
+	text := func(value any) string {
+		encoded, err := json.Marshal(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(encoded)
+	}
+	if got := text(context["designPlan"]); !strings.Contains(got, current) || strings.Contains(got, earlier) {
+		t.Errorf("the current designPlan is not the revised plan: %s", got)
+	}
+	for _, key := range []string{"previous", "previousFindings", "feedback"} {
+		if _, ok := context[key]; ok {
+			t.Errorf("the review context holds %s as a current fact", key)
+		}
+	}
+	revision, _ := context["revision"].(map[string]any)
+	if !strings.Contains(text(revision["earlierUnit"]), earlier) || revision["feedback"] != feedback {
+		t.Errorf("revision does not hold the earlier unit and the requested change: %s", text(revision))
+	}
+	if got := strings.Count(prompt, earlier); got != 1 {
+		t.Errorf("the earlier claim appears %d times, want once inside revision.earlierUnit", got)
+	}
+	if strings.Contains(prompt, "limits Gear 2 speed to a temporary boost") {
+		t.Error("the review carries the earlier review's finding")
+	}
+	if !strings.Contains(prompt, "a verdict about the plan must hold for the current designPlan text, and nothing an earlier version said is evidence about this one") {
+		t.Error("the review lacks the rule to judge the current plan")
 	}
 }

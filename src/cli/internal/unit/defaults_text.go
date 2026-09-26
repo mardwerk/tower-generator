@@ -28,7 +28,7 @@ var defaultRulesSections = []string{
 
 	"Precision, Dart Monkey bottom (DartMonkey-001 to -005): 0-0-1 Long Range Darts 90, range 40. 0-0-2 Enhanced Eyesight 200, range 48 and personal Camo detection. 0-0-3 Crossbow 575: 3 damage, pierce 4, range 60. 0-0-4 Sharp Shooter 2050: 6 damage every 0.475 s; every tenth shot is a 50-damage critical. 0-0-5 Crossbow Master 21500: 8 damage every 0.2375 s, pierce 8, range 80, hurts every type; every fifth shot is an 80-damage critical. Counting a critical shot as its critical damage, single-target damage per second is 3.2, about 22 and about 94: each advanced purchase multiplies precise damage and the capstone also adds reach, pierce and access.",
 
-	"Attack speed with an allied active, Dart Monkey middle (DartMonkey-010 to -050): 0-1-0 Quick Shots 100, every 0.8075 s. 0-2-0 Very Quick Shots 190, every 0.6365 s. 0-3-0 Triple Shot 450: three darts in a 30 degree arc every 0.477 s. 0-4-0 Super Monkey Fan Club 7200: every 0.239 s; an activated ability for 15 s, recharging in 50 s, turns up to 10 nearby Dart Monkeys with no path above 2 into super monkeys that attack at about 0.063 times their interval. 0-5-0 Plasma Monkey Fan Club 45000: same timing, up to 20 monkeys, +1 damage and +3 pierce on their darts. Darts per second grow 1.05, 1.24, 1.57, 6.3 and 12.6; most value of x-4-x and x-5-x lies in allies, which this Definition cannot express.",
+	"Attack speed with an allied active, Dart Monkey middle (DartMonkey-010 to -050): 0-1-0 Quick Shots 100, every 0.8075 s. 0-2-0 Very Quick Shots 190, every 0.6365 s. 0-3-0 Triple Shot 450: three darts in a 30 degree arc every 0.477 s. 0-4-0 Super Monkey Fan Club 7200: every 0.239 s; an activated ability for 15 s, recharging in 50 s, turns up to 10 nearby Dart Monkeys with no path above 2 into super monkeys that attack at about 0.063 times their interval. 0-5-0 Plasma Monkey Fan Club 45000: same timing, up to 20 monkeys, +1 damage and +3 pierce on their darts. Darts per second grow 1.05, 1.24, 1.57, 6.3 and 12.6. The 7200 and 45000 prices of x-4-x and x-5-x pay mostly for transforming allied towers, which this Definition cannot express, so they must not price or shape a self-only Active Ability; the Boomerang Monkey and Tack Shooter middle paths below are the self Active references.",
 
 	"Attack speed with a self active, Boomerang Monkey middle (BoomerangMonkey.json and -010 to -050): base 315 Gold, 1 damage every 1.2 s, pierce 4, range 43, returning flight. 0-1-0 Faster Throwing 175, every 0.9 s. 0-2-0 Faster Rangs 250, every 0.6 s. 0-3-0 Bionic Boomerang 1250: every 0.15 s, 8 times the base frequency, and +1 damage to MOAB-class enemies. 0-4-0 Turbo Charge 4200: activated for 10 s, recharging in 45 s: interval times 0.2 and +1 damage. 0-5-0 Perma Charge 35000: permanently every 0.03 s with 4 damage; its active adds 10 damage for 15 s, recharging in 45 s. Single-target damage per second is 0.83, 6.7 at 0-3-0, 67 during the 0-4-0 active (22 percent uptime), 133 permanently at 0-5-0 and 467 during its active. Pierce stays 4, so group capacity grows only through frequency.",
 
@@ -50,8 +50,8 @@ var defaultRulesSections = []string{
 // defaultRulesText is the bundled rules document text.
 var defaultRulesText = strings.Join(defaultRulesSections, "\n\n")
 
-const defaultRulesID = "default-td-profile-v19"
-const defaultRulesLocation = "mardwerk-unit:default-td-profile:v19"
+const defaultRulesID = "default-td-profile-v20"
+const defaultRulesLocation = "mardwerk-unit:default-td-profile:v20"
 const defaultRulesNote = "Bundled starter preset. Edit or replace it in Inputs and rules before preparing a custom Request."
 const defaultProfileName = "BTD6-inspired (default)"
-const defaultAuthoringRevision = "2026-09-26-atlas-56.3-v19"
+const defaultAuthoringRevision = "2026-09-26-atlas-56.3-v20"

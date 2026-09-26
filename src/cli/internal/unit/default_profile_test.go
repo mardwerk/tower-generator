@@ -67,7 +67,7 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 		}
 	}
 	definition := profile.MechanicsDefinition
-	if definition.Revision != "2026-09-26-atlas-56.3-v19" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
+	if definition.Revision != "2026-09-26-atlas-56.3-v20" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
 		t.Errorf("Definition %s %q", definition.Revision, definition.Label)
 	}
 	if scale := definition.Profile.ReferenceScale; scale.BaseCost != 200 || scale.BaseDamage != 1 || scale.BaseIntervalSeconds != 0.95 || scale.BaseRange != 32 || scale.BasePierce != 2 ||
@@ -428,6 +428,65 @@ func TestPlanPromptDerivesTheActiveSlotFromTheDefinition(t *testing.T) {
 	}
 	if !strings.Contains(request.Prompt, "Only the bottom path may have a player-activated ability, first at x-x-4.") || strings.Contains(request.Prompt, "middle path may have a player-activated") || strings.Contains(request.Prompt, "middle path's Active Ability") {
 		t.Error("the plan prompt does not follow the Definition's manualAbilityPath")
+	}
+}
+
+// The Dart Monkey Fan Club prices pay for transforming allied towers, which
+// the Definition cannot express. On #27 a Luffy plan copied them for a
+// self-only Gear 2 Active; the rules say once, in the reference that owns
+// them, that they must not price a self Active, and point to the self
+// Active references instead.
+func TestAlliedActivePricesDoNotPriceASelfActive(t *testing.T) {
+	rules := unit.DefaultProfile().Rules.Text
+	rule := "The 7200 and 45000 prices of x-4-x and x-5-x pay mostly for transforming allied towers, which this Definition cannot express, so they must not price or shape a self-only Active Ability; the Boomerang Monkey and Tack Shooter middle paths below are the self Active references."
+	for _, want := range []string{rule, "0-4-0 Super Monkey Fan Club 7200", "0-5-0 Plasma Monkey Fan Club 45000",
+		"Attack speed with a self active, Boomerang Monkey middle", "0-4-0 Turbo Charge 4200", "Burst active, Tack Shooter middle"} {
+		if strings.Count(rules, want) != 1 {
+			t.Errorf("the default rules hold %q %d times, want once", want, strings.Count(rules, want))
+		}
+	}
+	if strings.Index(rules, rule) > strings.Index(rules, "Attack speed with a self active") {
+		t.Error("the allied-price rule does not precede the self Active references it points to")
+	}
+	prepared, err := fixture.Prepare()
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan, err := unit.DesignPlanRequest(prepared)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The plan receives the rule through the rules document only.
+	if got := strings.Count(plan.Prompt, "must not price or shape a self-only Active Ability"); got != 1 {
+		t.Errorf("the plan prompt states the allied-price rule %d times", got)
+	}
+}
+
+// A Luffy plan on #27 said Gear 2's speed appeared only in the Active while
+// its own x-3-x made that speed permanent. The plan prompt asks that a
+// path's permanent purchases and its Active develop one form.
+func TestPlanPromptKeepsAFormConsistentWithItsActive(t *testing.T) {
+	prepared, err := fixture.Prepare()
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan, err := unit.DesignPlanRequest(prepared)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "Plan a path's permanent purchases and its Active as one form: both develop it, and the Active amplifies what the path already owns, so never describe an effect a permanent purchase grants as appearing only in the Active."
+	if strings.Count(plan.Prompt, want) != 1 {
+		t.Errorf("the plan prompt lacks, or repeats, %q", want)
+	}
+	// It sits in the Active paragraph, after the Definition's Active slot.
+	paragraph := ""
+	for _, p := range strings.Split(plan.Prompt, "\n\n") {
+		if strings.Contains(p, want) {
+			paragraph = p
+		}
+	}
+	if !strings.HasPrefix(paragraph, "Only the middle path may have a player-activated ability, first at x-4-x.") {
+		t.Errorf("the form sentence is outside the Active paragraph: %q", paragraph)
 	}
 }
 
