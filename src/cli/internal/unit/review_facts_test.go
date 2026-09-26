@@ -50,7 +50,12 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 		// Live Luffy runs on #27: compression credited with range, and a
 		// Snakeman purchase whose text only said the punch hits harder.
 		"a mechanism credited with an effect the source ties to another",
-		"is a fail when the cited evidence explains the technique", "unresolved only when the evidence lacks the detail to judge the connection"} {
+		"is a fail when the cited evidence explains the technique", "unresolved only when the evidence lacks the detail to judge the connection",
+		// Each purchased tier carries its planned technique and is judged on
+		// its own build code (reported on #27: compression credited with
+		// range at x-x-1 was flagged only in crosspath proposals).
+		`"technique":"Dart Throw"}`, `"technique":"Spiked Ball","adaptation":"Replaces the dart`,
+		"Judge every purchased tier on its own build code"} {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("the review prompt lacks %q", want)
 		}

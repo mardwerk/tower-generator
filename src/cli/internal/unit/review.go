@@ -133,8 +133,16 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		var tiers []any
 		for _, t := range p.Tiers {
 			entry := s.NewObject().Set("tier", float64(t.Tier)).Set("name", t.Name).Set("benefit", t.Benefit)
-			// The reviewer checks the adaptation the rendered unit shows.
+			// The reviewer checks each purchased tier on its own: the
+			// technique its plan names and the adaptation the rendered unit
+			// shows (reported on #27: compression credited with range at
+			// x-x-1 was flagged only in crosspath proposals).
 			if len(candidate.Paths) == len(m.PathKeys) && t.Tier >= 1 && t.Tier <= len(m.TierKeys) {
+				if plan := checked.Draft.Run.DesignPlan; plan != nil && plan.UpgradeIntents != nil {
+					if technique := strings.TrimSpace(plan.UpgradeIntents.At(index).At(t.Tier).Technique); technique != "" {
+						entry.Set("technique", technique)
+					}
+				}
 				if adaptation := PurchaseAdaptation(checked.Draft.Run.DesignPlan, index, t.Tier); adaptation != "" {
 					entry.Set("adaptation", adaptation)
 				}
