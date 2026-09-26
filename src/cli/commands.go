@@ -89,6 +89,15 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 			fmt.Fprintf(stderr, "Wrote the failure evidence to %s\n", path)
 		}
 	}
+	if errors.As(err, &failed) && failed.Checked != nil {
+		if in.output == "" {
+			fmt.Fprintln(stderr, "Add -o FILE to keep the checked draft of a failed review.")
+		} else if path := checkedPath(in.output); writeNew(path, s.Indent(s.FromGoValue(failed.Checked))+"\n") != nil {
+			fmt.Fprintf(stderr, "Could not write the checked draft to %s.\n", path)
+		} else {
+			fmt.Fprintf(stderr, "Wrote the checked draft to %s. Retry the review with the same model options: mardwerk-unit review %s -o %s\n", path, path, in.output)
+		}
+	}
 	if in.evidence != nil {
 		if err == nil {
 			err = in.evidence.Finish(artifact)
@@ -118,6 +127,12 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 // been path: dart.json keeps it in dart.failure.json.
 func failurePath(path string) string {
 	return strings.TrimSuffix(path, filepath.Ext(path)) + ".failure.json"
+}
+
+// checkedPath names the checked draft of a failed review whose Result would
+// have been path: dart.json keeps it in dart.checked.json.
+func checkedPath(path string) string {
+	return strings.TrimSuffix(path, filepath.Ext(path)) + ".checked.json"
 }
 
 // writeNew publishes a complete file without replacing an existing one.

@@ -17,7 +17,11 @@ import (
 // the Definition does not allow, or a resolved value that is wrong, is
 // corrected once and then rejected, so it cannot report findings about builds
 // such as 3-3-0. The correction must return the findings whose citations
-// held unchanged in every field, so its summary describes them.
+// held unchanged in every field, so its summary describes them. A flagged
+// finding whose only fault is build notation, such as 5-x-2 for x-x-5, must
+// return under its ID with only the flagged codes replaced; one that names
+// an impossible build or a wrong fact may be corrected or withdrawn
+// (keepCheckedFindings). No impossible build is ever published.
 
 // buildCodePattern matches what a review writes as a build code: a
 // concrete build such as 3-2-0, a purchase such as x-4-x, or a malformed mix
@@ -120,29 +124,50 @@ func newReviewCitations(blueprint *m.Blueprint, definition m.Definition) reviewC
 }
 
 // citationProblem is what code rejected in one finding, or in the summary
-// when finding is empty: illegal build codes, wrong facts and purchases the
-// text names in place of the one its subject names.
+// when finding is empty: impossible builds, malformed codes, wrong facts and
+// purchases the text names in place of the one its subject names.
 type citationProblem struct {
 	finding    string
 	illegal    []string
+	malformed  []string
 	wrong      []string
-	mismatched []string
+	mismatched []purchaseMismatch
+}
+
+// purchaseMismatch is a purchase a finding's subject names and the purchase
+// on another path at the same tier that its text names instead.
+type purchaseMismatch struct {
+	finding, subject, text string
+}
+
+func (m purchaseMismatch) String() string {
+	return fmt.Sprintf("%s's subject names %s, but its text names %s instead.", m.finding, m.subject, m.text)
+}
+
+// mismatchSentences are the mismatches as the prompt and errors state them.
+func mismatchSentences(mismatches []purchaseMismatch) []string {
+	var out []string
+	for _, m := range mismatches {
+		out = append(out, m.String())
+	}
+	return out
 }
 
 // problems lists the review's rejected citations, the summary first, then
 // the findings in order.
 func (c reviewCitations) problems(review SemanticReview) []citationProblem {
 	var out []citationProblem
-	if illegal := c.illegal(review.Summary); len(illegal) > 0 {
-		out = append(out, citationProblem{illegal: illegal})
+	if illegal, malformed := c.illegal(review.Summary); len(illegal)+len(malformed) > 0 {
+		out = append(out, citationProblem{illegal: illegal, malformed: malformed})
 	}
 	for _, f := range review.Findings {
-		texts := []string{f.Subject, f.Message}
+		texts := []string{f.Subject, f.Rule, f.Message}
 		if f.Action != nil {
 			texts = append(texts, *f.Action)
 		}
-		problem := citationProblem{finding: f.ID, illegal: c.illegal(texts...), wrong: c.wrongFacts(f), mismatched: mismatchedPurchases(f)}
-		if len(problem.illegal) > 0 || len(problem.wrong) > 0 || len(problem.mismatched) > 0 {
+		illegal, malformed := c.illegal(texts...)
+		problem := citationProblem{finding: f.ID, illegal: illegal, malformed: malformed, wrong: c.wrongFacts(f), mismatched: mismatchedPurchases(f)}
+		if len(problem.illegal) > 0 || len(problem.malformed) > 0 || len(problem.wrong) > 0 || len(problem.mismatched) > 0 {
 			out = append(out, problem)
 		}
 	}
@@ -170,21 +195,21 @@ func purchaseTier(code string) string {
 // instead, such as a subject x-5-x with a message about 5-x-x (a live Luffy
 // review on #27). A text that names the subject's purchase may compare it
 // with any other.
-func mismatchedPurchases(f Finding) []string {
+func mismatchedPurchases(f Finding) []purchaseMismatch {
 	subject := purchaseCodes(f.Subject)
 	text := f.Message
 	if f.Action != nil {
 		text += "\n" + *f.Action
 	}
 	named := purchaseCodes(text)
-	var out []string
+	var out []purchaseMismatch
 	for _, code := range subject {
 		if slices.Contains(named, code) {
 			continue
 		}
 		for _, other := range named {
 			if purchaseTier(other) == purchaseTier(code) && !slices.Contains(subject, other) {
-				out = append(out, fmt.Sprintf("%s's subject names %s, but its text names %s instead.", f.ID, code, other))
+				out = append(out, purchaseMismatch{finding: f.ID, subject: code, text: other})
 				break
 			}
 		}
@@ -196,16 +221,129 @@ func mismatchedPurchases(f Finding) []string {
 // allow, in order of first mention: concrete builds legalBuilds does not
 // list, and codes that are neither a build nor a purchase, such as 1-x-5
 // for 1-5-0 (reported on #27).
-func (c reviewCitations) illegal(texts ...string) []string {
-	var out []string
+func (c reviewCitations) illegal(texts ...string) (impossible, malformed []string) {
 	seen := map[string]bool{}
 	for _, code := range buildCodePattern.FindAllString(strings.Join(texts, "\n"), -1) {
 		if _, legal := c.builds[code]; !legal && !purchaseCode(code) && !seen[code] {
 			seen[code] = true
-			out = append(out, code)
+			if strings.Contains(code, "x") {
+				malformed = append(malformed, code)
+			} else {
+				impossible = append(impossible, code)
+			}
 		}
 	}
-	return out
+	return impossible, malformed
+}
+
+// flagClass is what a correction may do with a flagged finding.
+type flagClass int
+
+const (
+	flagNotation   flagClass = iota // (a) same ID, notation fixed, or reject
+	flagImpossible                  // (b) fix or withdraw; never published
+	flagFact                        // (c) correct or withdraw
+)
+
+func (p citationProblem) class() flagClass {
+	switch {
+	case len(p.wrong) > 0:
+		return flagFact
+	case len(p.illegal) > 0:
+		return flagImpossible
+	}
+	return flagNotation
+}
+
+// notationOnly reports a review whose only rejected citations are notation:
+// malformed codes or another path's purchase, with no wrong fact and no
+// impossible build in any finding or the summary. Its correction may change
+// build codes and nothing else.
+func notationOnly(problems []citationProblem) bool {
+	for _, p := range problems {
+		if p.class() != flagNotation {
+			return false
+		}
+	}
+	return true
+}
+
+// splitCodes splits a text at its build codes: the words around them, one
+// more than there are codes, and the codes in order.
+func splitCodes(text string) (words, codes []string) {
+	last := 0
+	for _, at := range buildCodePattern.FindAllStringIndex(text, -1) {
+		words = append(words, text[last:at[0]])
+		codes = append(codes, text[at[0]:at[1]])
+		last = at[1]
+	}
+	return append(words, text[last:]), codes
+}
+
+// onlyFlaggedCodesChanged reports whether after is before with a build code
+// replaced only where before wrote one of the flagged codes. Every word and
+// every other code stays exact, so a correction cannot change a comparison
+// code that was valid while it fixes a malformed one (SOL-34-05). Whether a
+// replacement is itself valid is checked again after the correction.
+func onlyFlaggedCodesChanged(before, after string, flagged []string) bool {
+	beforeWords, beforeCodes := splitCodes(before)
+	afterWords, afterCodes := splitCodes(after)
+	if !slices.Equal(beforeWords, afterWords) || len(beforeCodes) != len(afterCodes) {
+		return false
+	}
+	for i, code := range beforeCodes {
+		if afterCodes[i] != code && !slices.Contains(flagged, code) {
+			return false
+		}
+	}
+	return true
+}
+
+// notationFixed reports whether a class (a) finding came back with only its
+// flagged build codes replaced: its malformed codes anywhere in its text,
+// and for a mismatch the subject's purchase in the subject and the other
+// path's purchase in the message and action. Every other word and code of
+// subject, rule, message and action, and every other field, must stay as it
+// was (SOL-34-04: a correction kept the ID, outcome and facts but replaced
+// the claim with "No payoff concern").
+func notationFixed(before, after Finding, p citationProblem) bool {
+	var subject, text []string
+	for _, m := range p.mismatched {
+		subject, text = append(subject, m.subject), append(text, m.text)
+	}
+	action := func(f Finding) string {
+		if f.Action == nil {
+			return ""
+		}
+		return *f.Action
+	}
+	if (before.Action == nil) != (after.Action == nil) ||
+		!onlyFlaggedCodesChanged(before.Subject, after.Subject, slices.Concat(p.malformed, subject)) ||
+		!onlyFlaggedCodesChanged(before.Rule, after.Rule, p.malformed) ||
+		!onlyFlaggedCodesChanged(before.Message, after.Message, slices.Concat(p.malformed, text)) ||
+		!onlyFlaggedCodesChanged(action(before), action(after), slices.Concat(p.malformed, text)) {
+		return false
+	}
+	before.Subject, before.Rule, before.Message, before.Action = "", "", "", nil
+	after.Subject, after.Rule, after.Message, after.Action = "", "", "", nil
+	return s.Stringify(s.FromGoValue(before)) == s.Stringify(s.FromGoValue(after))
+}
+
+// impossibleBuilds lists the numeric builds this Definition does not allow
+// anywhere in what a Result would publish; evidence holds document IDs.
+func (c reviewCitations) impossibleBuilds(summary string, findings []Finding) []string {
+	texts := []string{summary}
+	for _, f := range findings {
+		texts = append(texts, f.ID, f.Subject, f.Rule, f.Message)
+		if f.Action != nil {
+			texts = append(texts, *f.Action)
+		}
+		for _, fact := range f.Facts {
+			texts = append(texts, fact.Build, fact.Field, fact.Value)
+		}
+	}
+	impossible, _ := c.illegal(texts...)
+	return impossible
 }
 
 // wrongFacts checks the resolved values a finding cites against legalBuilds,
@@ -245,29 +383,80 @@ func (c reviewCitations) wrongFacts(finding Finding) []string {
 // about something other than the checked finding (reported on #27: a
 // correction returned no findings and "No concrete issue", losing a finding
 // with valid facts, and one that rewrote a kept finding's message would
-// publish a summary about text the Result does not hold). A flagged finding
-// comes back corrected under its ID or not at all. Because the published
-// findings are exactly the ones the correction returned, its summary is
-// published with them.
+// publish a summary about text the Result does not hold). What a flagged
+// finding may do depends on its class (#34):
+//   - (a) notation, a malformed code or another path's purchase with no
+//     wrong fact: it must come back under its ID with only its flagged build
+//     codes replaced (notationFixed), or the review is rejected;
+//   - (b) impossible, a numeric build legalBuilds does not list: it may be
+//     fixed under any ID or withdrawn, and is never published;
+//   - (c) fact, a wrong or unverifiable fact: it may be corrected under its
+//     ID or withdrawn.
+//
+// When every problem is notation, the correction adds no finding and its
+// summary may change only at the codes the first review flagged there.
+// Because the published findings are exactly the ones the correction
+// returned, its summary is published with them.
 func keepCheckedFindings(previous, corrected SemanticReview, problems []citationProblem) (SemanticReview, error) {
-	flagged := map[string]bool{}
+	flagged := map[string]citationProblem{}
+	var summary citationProblem
 	for _, p := range problems {
-		if p.finding != "" {
-			flagged[p.finding] = true
+		if p.finding == "" {
+			summary = p
+		} else {
+			flagged[p.finding] = p
 		}
 	}
-	returned := map[string]string{}
+	returned := map[string]Finding{}
 	for _, f := range corrected.Findings {
-		returned[f.ID] = s.Stringify(s.FromGoValue(f))
+		returned[f.ID] = f
 	}
-	var lost []string
-	for _, f := range previous.Findings {
-		if got, ok := returned[f.ID]; !flagged[f.ID] && (!ok || got != s.Stringify(s.FromGoValue(f))) {
-			lost = append(lost, f.ID)
+	// Only notation was wrong: the correction may change flagged build codes
+	// and nothing else, so it adds no finding and keeps its summary but for
+	// the codes flagged in it.
+	onlyNotation := notationOnly(problems)
+	var lost, notation, added []string
+	summaryChanged := onlyNotation && !onlyFlaggedCodesChanged(previous.Summary, corrected.Summary, summary.malformed)
+	if onlyNotation {
+		before := map[string]bool{}
+		for _, f := range previous.Findings {
+			before[f.ID] = true
+		}
+		for _, f := range corrected.Findings {
+			if !before[f.ID] {
+				added = append(added, f.ID)
+			}
 		}
 	}
+	for _, f := range previous.Findings {
+		got, ok := returned[f.ID]
+		problem, isFlagged := flagged[f.ID]
+		switch {
+		case !isFlagged && (!ok || s.Stringify(s.FromGoValue(got)) != s.Stringify(s.FromGoValue(f))):
+			lost = append(lost, f.ID)
+		case isFlagged && problem.class() == flagNotation && (!ok || !notationFixed(f, got, problem)):
+			notation = append(notation, f.ID)
+		}
+	}
+	var parts []string
 	if len(lost) > 0 {
-		message := "The model review's correction dropped or changed findings whose citations held (" + strings.Join(lost, ", ") + "); they must return unchanged in every field, or its summary may not describe them. The draft is retained. Retry the review or choose another model."
+		parts = append(parts, "The model review's correction dropped or changed findings whose citations held ("+strings.Join(lost, ", ")+"); they must return unchanged in every field, or its summary may not describe them.")
+	}
+	if len(notation) > 0 {
+		parts = append(parts, "The model review's correction withdrew or changed findings whose facts held but whose build notation was wrong ("+strings.Join(notation, ", ")+"); they must return under the same ID with only the build codes code flagged replaced: every other build code, word and field must stay as it was.")
+	}
+	if summaryChanged || len(added) > 0 {
+		part := "The model review's correction changed its summary"
+		if len(added) > 0 {
+			part = "The model review's correction added findings (" + strings.Join(added, ", ") + ")"
+			if summaryChanged {
+				part += " and changed its summary"
+			}
+		}
+		parts = append(parts, part+" when only build notation was wrong; the summary must return with only the build codes code flagged in it replaced, and no finding may be added.")
+	}
+	if len(parts) > 0 {
+		message := strings.Join(parts, " ") + " The draft is retained. Retry the review or choose another model."
 		return SemanticReview{}, &ModelError{Message: message, Failure: &Failure{Code: CodeOutputInvalid, Message: message, Stage: "review"}}
 	}
 	return SemanticReview{Summary: corrected.Summary, Findings: append([]Finding{}, corrected.Findings...)}, nil
@@ -279,19 +468,27 @@ func rejectedCitations(problems []citationProblem) error {
 	if len(problems) == 0 {
 		return nil
 	}
-	var illegal, wrong, mismatched []string
+	var illegal, malformed, wrong, mismatched []string
 	for _, p := range problems {
 		for _, code := range p.illegal {
 			if !slices.Contains(illegal, code) {
 				illegal = append(illegal, code)
 			}
 		}
+		for _, code := range p.malformed {
+			if !slices.Contains(malformed, code) {
+				malformed = append(malformed, code)
+			}
+		}
 		wrong = append(wrong, p.wrong...)
-		mismatched = append(mismatched, p.mismatched...)
+		mismatched = append(mismatched, mismatchSentences(p.mismatched)...)
 	}
 	message := "The model review cited resolved facts that are wrong after one correction: " + strings.Join(wrong, " ") + " The draft is retained. Retry the review or choose another model."
 	if len(wrong) == 0 {
 		message = "The model review named another path's purchase than its subject after one correction: " + strings.Join(mismatched, " ") + " The draft is retained. Retry the review or choose another model."
+	}
+	if len(malformed) > 0 {
+		message = "The model review wrote build codes that are neither a purchase nor a build (" + strings.Join(malformed, ", ") + ") after one correction. The draft is retained. Retry the review or choose another model."
 	}
 	if len(illegal) > 0 {
 		message = "The model review cited builds that are not legal (" + strings.Join(illegal, ", ") + ") after one correction. The draft is retained. Retry the review or choose another model."
@@ -302,19 +499,25 @@ func rejectedCitations(problems []citationProblem) error {
 // correctionPrompt asks for the flagged findings again, with the previous
 // review and what code rejected in it.
 func correctionPrompt(previous SemanticReview, problems []citationProblem) string {
-	var illegal, wrong, mismatched, flagged []string
+	var illegal, malformed, wrong, mismatched, flagged []string
+	byClass := map[flagClass][]string{}
 	seen := map[string]bool{}
 	for _, p := range problems {
-		for _, code := range p.illegal {
+		for _, code := range append(append([]string{}, p.illegal...), p.malformed...) {
 			if !seen[code] {
 				seen[code] = true
-				illegal = append(illegal, code)
+				if strings.Contains(code, "x") {
+					malformed = append(malformed, code)
+				} else {
+					illegal = append(illegal, code)
+				}
 			}
 		}
 		wrong = append(wrong, p.wrong...)
-		mismatched = append(mismatched, p.mismatched...)
+		mismatched = append(mismatched, mismatchSentences(p.mismatched)...)
 		if p.finding != "" {
 			flagged = append(flagged, p.finding)
+			byClass[p.class()] = append(byClass[p.class()], p.finding)
 		}
 	}
 	var kept []string
@@ -325,10 +528,17 @@ func correctionPrompt(previous SemanticReview, problems []citationProblem) strin
 	}
 	text := "\n\nCorrect this review. Your previous review was: " + s.Stringify(s.FromGoValue(previous))
 	if len(illegal) > 0 {
-		text += "\nIt cites builds that are not legal under this Definition: " + strings.Join(illegal, ", ") + ". legalBuilds lists every legal build; judge only those, and read counts from their resolved facts. Write a purchase as 3-x-x, x-4-x or x-x-5 and a build as 1-5-0."
+		text += "\nIt cites builds that are not legal under this Definition: " + strings.Join(illegal, ", ") + ". legalBuilds lists every legal build; judge only those, and read counts from their resolved facts."
+	}
+	if len(malformed) > 0 {
+		var each []string
+		for _, code := range malformed {
+			each = append(each, code+" is neither a purchase nor a build")
+		}
+		text += "\nSome build codes are notation errors, not builds: " + strings.Join(each, "; ") + ". Fix the notation, not the claim: write a purchase as 3-x-x, x-4-x or x-x-5 and a build as 1-5-0, and use a build legalBuilds lists."
 	}
 	if len(wrong) > 0 {
-		text += "\nSome cited facts are wrong: " + strings.Join(wrong, " ") + " Read each value in legalBuilds."
+		text += "\nSome cited facts are wrong or cannot be checked: " + strings.Join(wrong, " ") + " Read each value in legalBuilds, and cite only builds and fields it lists."
 	}
 	if len(mismatched) > 0 {
 		text += "\nSome findings name another path's purchase than their subject: " + strings.Join(mismatched, " ") + " Name the purchase the finding is about with the build code its subject uses."
@@ -337,8 +547,17 @@ func correctionPrompt(previous SemanticReview, problems []citationProblem) strin
 	if len(kept) > 0 {
 		text += " Return " + strings.Join(kept, ", ") + " verbatim, every field exactly as in your previous review, including message, subject, action, evidence and facts: their citations hold, and a review that drops or changes any field of one is rejected."
 	}
-	if len(flagged) > 0 {
-		text += " Return " + strings.Join(flagged, ", ") + " corrected under the same ID, or omit it when the resolved facts contradict its claim."
+	if ids := byClass[flagNotation]; len(ids) > 0 {
+		text += " Return " + strings.Join(ids, ", ") + " under the same ID with its build codes corrected and every other field unchanged, including outcome, severity, evidence and facts: code found no wrong fact in it, so a review that omits it or changes those fields is rejected. Replace only the codes named above as notation errors or as another path's purchase, each with one code, and keep every other build code and word exactly, in subject, rule, message and action."
+	}
+	if notationOnly(problems) {
+		text += " Only build notation was wrong: return the summary as before with only the codes named above corrected, and add no finding."
+	}
+	if ids := byClass[flagImpossible]; len(ids) > 0 {
+		text += " Replace each build legalBuilds does not list in " + strings.Join(ids, ", ") + " with a legal build and revise the finding to match that build's resolved facts, or omit the finding. No build legalBuilds does not list may appear anywhere in the review, including IDs and rules."
+	}
+	if ids := byClass[flagFact]; len(ids) > 0 {
+		text += " Return " + strings.Join(ids, ", ") + " corrected under the same ID, or omit it when the resolved facts contradict its claim or do not list what it cites."
 	}
 	return text
 }
