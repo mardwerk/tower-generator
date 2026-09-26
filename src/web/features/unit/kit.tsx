@@ -159,6 +159,9 @@ export function CharacterSheet({
   const unitView = useUnitView(artifact);
   const stats = unitView?.stats;
   const purchases = unitView?.purchases;
+  // Checks run on today's rules when the view loads; the artifact's findings
+  // stay as they were recorded.
+  const currentChecks = unitView?.authoringIssues ?? [];
   const currency = definition?.profile.currency ?? 'Gold';
   const findings = findingsOf(artifact);
   const failures = findings.filter((f) => f.outcome === 'fail');
@@ -186,6 +189,13 @@ export function CharacterSheet({
         !assigned.has(ability.id) &&
         !(unitView?.purchases && ['reserved', 'omitted'].includes(ability.placement)),
     ) ?? [];
+  const openReport = () => {
+    setReportOpen(true);
+    requestAnimationFrame(() => {
+      report.current?.scrollIntoView({ block: 'start' });
+      reportTrigger.current?.focus();
+    });
+  };
   const status =
     artifact.kind === 'draft'
       ? 'Draft only. Checks and review have not run.'
@@ -240,17 +250,7 @@ export function CharacterSheet({
             </div>
             <div className="mt-3.5 mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
               <span>{failures.length ? 'Draft needs another pass.' : status}</span>
-              <Button
-                variant="link"
-                size="xs"
-                onClick={() => {
-                  setReportOpen(true);
-                  requestAnimationFrame(() => {
-                    report.current?.scrollIntoView({ block: 'start' });
-                    reportTrigger.current?.focus();
-                  });
-                }}
-              >
+              <Button variant="link" size="xs" onClick={openReport}>
                 View checks
               </Button>
               {failures.length > 0 && (artifact.kind === 'result' ? onImprove : onContinue) && (
@@ -266,6 +266,20 @@ export function CharacterSheet({
               )}
             </div>
           </header>
+          {currentChecks.length > 0 && (
+            <p
+              role="note"
+              className="current-checks-notice mt-4 border-l-2 border-warning bg-muted/40 p-3 text-[13px]"
+            >
+              Current checks flag {currentChecks.length}{' '}
+              {currentChecks.length === 1 ? 'issue' : 'issues'} in this unit&apos;s mechanics under
+              today&apos;s rules. Every build still resolves, so the sheet is shown. These are not
+              findings stored in this {artifact.kind === 'result' ? 'Result' : 'artifact'}.{' '}
+              <Button variant="link" size="xs" className="h-auto p-0" onClick={openReport}>
+                View current checks
+              </Button>
+            </p>
+          )}
           <p className="mt-5 text-[15px]">{unitView?.base?.text ?? candidate.role}</p>
           <div className="my-6 grid gap-4 md:grid-cols-2 [&>:only-child]:col-span-full">
             {stats && (
@@ -565,6 +579,28 @@ export function CharacterSheet({
               </p>
             )}
             {artifact.kind === 'result' && <p className="my-2">{artifact.reviewSummary}</p>}
+            {currentChecks.length > 0 && (
+              <section className="current-checks my-4" aria-label="Current checks">
+                <h3 className="text-sm font-semibold">Current checks ({currentChecks.length})</h3>
+                <p className="my-2 text-xs text-muted-foreground">
+                  Today&apos;s authoring checks, run when this unit was opened. They are not stored
+                  findings; the findings below stay as recorded.
+                </p>
+                {currentChecks.map((issue, i) => (
+                  <article
+                    key={i}
+                    className="my-3.5 border-l-2 border-warning bg-muted/40 p-3 text-[13px]"
+                  >
+                    <div className={entryHeading}>
+                      <Badge variant="warning">current check</Badge>
+                    </div>
+                    <h4 className="mt-2 font-semibold [overflow-wrap:anywhere]">{issue.path}</h4>
+                    <p className="my-2">{issue.message}</p>
+                  </article>
+                ))}
+                <h3 className="mt-5 text-sm font-semibold">Stored findings</h3>
+              </section>
+            )}
             {[...failures, ...unresolved, ...unchecked].map((finding, i) => (
               <FindingCard key={i} finding={finding} />
             ))}

@@ -143,36 +143,44 @@ func TestCrosspathArithmetic(t *testing.T) {
 	}
 }
 
+// ValidateTyped rejects every case. ValidateStructure, which reading paths
+// use, rejects only the structural ones; authoring checks such as no-op,
+// downgrade, ineffective changes, change budgets and early capabilities
+// judge how a unit is made and must not hide a saved sheet (#37).
 func TestValidationRejectsInvalidPurchases(t *testing.T) {
 	for _, test := range []struct {
-		name   string
-		change func(*Blueprint)
-		want   string
+		name       string
+		change     func(*Blueprint)
+		want       string
+		structural bool
 	}{
-		{"no-op upgrade", func(b *Blueprint) { b.Paths.Path1.Tiers.Tier2.Changes = []Change{stat("damage", "add", 0)} }, "changes no behavior"},
+		{"no-op upgrade", func(b *Blueprint) { b.Paths.Path1.Tiers.Tier2.Changes = []Change{stat("damage", "add", 0)} }, "changes no behavior", false},
 		{"ineffective change in an effective purchase", func(b *Blueprint) {
 			b.Paths.Path1.Tiers.Tier3.Changes = append(b.Paths.Path1.Tiers.Tier3.Changes, stat("range", "set", 30))
-		}, "tier3.changes.2: This change has no effect in any legal build"},
+		}, "tier3.changes.2: This change has no effect in any legal build", false},
 		{"one-projectile distribution in an effective purchase", func(b *Blueprint) {
 			b.Paths.Path1.Tiers.Tier3.Changes = append(b.Paths.Path1.Tiers.Tier3.Changes, Change{Kind: "distribution", Target: "base", Text: "distinct-targets"})
-		}, "tier3.changes.2: This change has no effect in any legal build"},
-		{"downgrade", func(b *Blueprint) { b.Paths.Path1.Tiers.Tier2.Changes = []Change{stat("range", "add", -5)} }, "only reduces or preserves"},
-		{"fractional count", func(b *Blueprint) { b.Paths.Path2.Tiers.Tier3.Changes = []Change{stat("projectiles", "multiply", 1.5)} }, "Resolved projectiles is 1.5"},
-		{"boost too early", func(b *Blueprint) { b.Paths.Path2.Tiers.Tier3.Changes = b.Paths.Path2.Tiers.Tier4.Changes }, "only unlock at tier 4"},
+		}, "tier3.changes.2: This change has no effect in any legal build", false},
+		{"downgrade", func(b *Blueprint) { b.Paths.Path1.Tiers.Tier2.Changes = []Change{stat("range", "add", -5)} }, "only reduces or preserves", false},
+		{"fractional count", func(b *Blueprint) { b.Paths.Path2.Tiers.Tier3.Changes = []Change{stat("projectiles", "multiply", 1.5)} }, "Resolved projectiles is 1.5", true},
+		{"boost too early", func(b *Blueprint) { b.Paths.Path2.Tiers.Tier3.Changes = b.Paths.Path2.Tiers.Tier4.Changes }, "only unlock at tier 4", true},
 		{"boost modified early", func(b *Blueprint) {
 			b.Paths.Path2.Tiers.Tier4.Changes = append(b.Paths.Path2.Tiers.Tier4.Changes, Change{Kind: "modifyBoost", Target: "base", Stat: "cooldownSeconds", Operation: "add", Number: -5})
-		}, "only be modified at tier 5"},
+		}, "only be modified at tier 5", true},
 		{"splash on one target", func(b *Blueprint) {
 			b.BaseAttack.Stats.Pierce = 1
 			b.Paths.Path1.Tiers.Tier2.Changes = []Change{stat("damage", "add", 1)}
 			b.Paths.Path1.Tiers.Tier3.Changes = []Change{stat("damage", "set", 20)}
-		}, "Splash requires pierce of at least 2"},
+		}, "Splash requires pierce of at least 2", true},
 		{"too many early capabilities", func(b *Blueprint) {
 			b.Paths.Path3.Tiers.Tier2.Changes = []Change{{Kind: "camo", Target: "base", Bool: true}, stat("stunSeconds", "add", 1)}
-		}, "Early tiers may add at most 1 capability group"},
+		}, "Early tiers may add at most 1 capability group", false},
 		{"duration above cooldown", func(b *Blueprint) {
 			b.Paths.Path2.Tiers.Tier5.Changes = []Change{{Kind: "modifyBoost", Target: "base", Stat: "durationSeconds", Operation: "add", Number: 40}}
-		}, "Duration may not exceed cooldown"},
+		}, "Duration may not exceed cooldown", true},
+		{"over the change budget", func(b *Blueprint) {
+			b.Paths.Path1.Tiers.Tier1.Changes = []Change{stat("damage", "add", 1), stat("range", "add", 1), stat("pierce", "add", 1), stat("damage", "add", 1)}
+		}, "Exceeds the Definition change budget", false},
 	} {
 		blueprint := starter()
 		test.change(blueprint)
@@ -182,6 +190,13 @@ func TestValidationRejectsInvalidPurchases(t *testing.T) {
 		}
 		if joined := strings.Join(messages, "\n"); !strings.Contains(joined, test.want) {
 			t.Errorf("%s: want %q in\n%s", test.name, test.want, joined)
+		}
+		var structure []string
+		for _, issue := range ValidateStructure(blueprint, extended()) {
+			structure = append(structure, issue.Path+": "+issue.Message)
+		}
+		if joined := strings.Join(structure, "\n"); strings.Contains(joined, test.want) != test.structural {
+			t.Errorf("%s: structural %v, but the structure check reports\n%s", test.name, test.structural, joined)
 		}
 	}
 }

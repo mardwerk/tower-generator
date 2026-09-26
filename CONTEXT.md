@@ -21,6 +21,7 @@ Each term has one meaning here. Use it only with that meaning and do not substit
 | Result | A checked artifact plus a model review. |
 | Artifact | Any of the above saved as versioned JSON. |
 | Finding | One recorded issue or observation: what it concerns, how it was established (deterministic or model), severity and outcome (`pass`, `fail`, `unresolved`, `not_checked`). |
+| Authoring check | A typed mechanics check that judges how a unit is made, not whether its blueprint can be read: change budgets, early attack identity and capabilities, purchases with no effect or only drawbacks, single changes with no effect, and the design policy. Drafting, repair, `check` and review run them. Reading an artifact (`render`, `view`, `build`) checks only its structure, so an authoring check added later cannot hide a saved Unit sheet. The view (`authoringIssues`) and `render --details` list the authoring checks that fail today as current checks, apart from the stored Findings. |
 | Candidate | The readable unit, with its blueprint when mechanics are typed. Drafts, checked artifacts and Results each carry one. |
 | Unit sheet | The rendered unit: its name, `0-0-0`, each purchase by build code with exact numbers, every crosspath and, for a revision, patch notes. Findings, usage and provenance are rendered apart from it (`render --details`). |
 | Patch notes | The changes a revision made: changed mechanics and the builds they affect, apart from renamed purchases. |
