@@ -51,8 +51,9 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		}
 		documents = append(documents, entry.Set("origin", s.FromGoValue(d.Origin)))
 	}
-	// The Definition profile's currency names the unit of the side-purchase
-	// comparison; without a Definition the text stays currency-neutral.
+	// The Definition profile's currency names the currency of the
+	// side-purchase comparison's prices; without a Definition the text stays
+	// currency-neutral.
 	currency := ""
 	if request.MechanicsDefinition != nil {
 		currency = request.MechanicsDefinition.Profile.Currency
@@ -62,9 +63,9 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		context.Set("designPlan", s.FromGoValue(checked.Draft.Run.DesignPlan))
 	}
 	if checked.Draft.Run.DesignEvaluation != nil {
-		// The retained evidence plus the time-averaged Active rates and side
-		// purchase gains per 100 of the Definition's currency derived from
-		// it; the saved draft is unchanged.
+		// The retained evidence plus the time-averaged Active rates and the
+		// absolute side-purchase gains against the capstone derived from it;
+		// the saved draft is unchanged.
 		context.Set("purchaseEvidence", ReviewPurchaseEvidence(checked.Draft.Run.DesignEvaluation, currency))
 	}
 	comparisons := []any{}
@@ -162,7 +163,7 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	if isV2(request) {
 		statuses = reviewStatusesV2
 	}
-	prompt := []string{reviewStyle, reviewScope, reviewGrounding, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, fmt.Sprintf(reviewPolicy, per100(currency)), reviewFindings, s.Stringify(context)}
+	prompt := []string{reviewStyle, reviewScope, reviewGrounding, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, fmt.Sprintf(reviewPolicy, inCurrency(currency)), reviewFindings, s.Stringify(context)}
 	return ModelRequest{System: reviewSystem, Prompt: strings.Join(prompt, "\n\n"), Schema: s.JSONSchema(schema)}
 }
 

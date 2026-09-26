@@ -155,7 +155,7 @@ func describePurchases(view View) []string {
 	lines := []string{
 		"## Purchase evidence",
 		"",
-		"Calculated from the resolved builds. Throughput assumes eligible targets continuously in reach; group values are capacity upper bounds. Time-averaged rates use the Active Ability whenever it is ready and equal the ordinary rate without one. Each crosspath purchase compares its time-averaged gain per 100 " + currency + " with its main path's own fifth purchase. These comparisons do not prove balance, source fidelity or player preference.",
+		"Calculated from the resolved builds. Throughput assumes eligible targets continuously in reach; group values are capacity upper bounds. Time-averaged rates use the Active Ability whenever it is ready and equal the ordinary rate without one. Each crosspath purchase states its absolute time-averaged gain and price beside those of its main path's own fifth purchase. These comparisons do not prove balance, source fidelity or player preference.",
 		"",
 	}
 	for _, path := range list(field(evaluation, "paths")) {
@@ -183,7 +183,7 @@ func describePurchases(view View) []string {
 				}
 				changed = Escape(changed)
 			}
-			if against := per100CurrencyText(field(purchase, unit.Per100CurrencyAgainstCapstone), currency); against != "" {
+			if against := againstCapstoneText(field(purchase, unit.AgainstCapstone), currency); against != "" {
 				if !strings.HasSuffix(changed, ".") {
 					changed += "."
 				}
@@ -205,17 +205,18 @@ func describePurchases(view View) []string {
 	return lines
 }
 
-// per100CurrencyText states a side purchase's time-averaged gain per 100 of
-// the Definition's currency beside its main path's fifth purchase; empty
-// without a comparison.
-func per100CurrencyText(against any, currency string) string {
+// againstCapstoneText states a side purchase's absolute time-averaged gain
+// and price beside those of its main path's fifth purchase, such as "Side
+// 1-x-x adds direct +1.05, group +2.1 for 140 Gold; the path's x-5-x adds
+// direct +12.64, group +25.28 for 45,000 Gold."; empty without a comparison.
+func againstCapstoneText(against any, currency string) string {
 	if against == nil {
 		return ""
 	}
-	gains := func(side string) string {
-		return "direct " + signed(field(against, unit.TimeAveragedDirect, side)) + ", group " + signed(field(against, unit.TimeAveragedGroup, side))
+	adds := func(side string) string {
+		return Escape(text(field(against, side, "code"))) + " adds direct " + signed(field(against, unit.TimeAveragedDirect, side)) + ", group " + signed(field(against, unit.TimeAveragedGroup, side)) + " for " + gold(field(against, side, "price")) + " " + currency
 	}
-	return "Per 100 " + currency + ": this purchase adds " + gains("sidePurchase") + "; the path's " + Escape(text(field(against, "capstone"))) + " adds " + gains("capstone") + "."
+	return "Side " + adds("sidePurchase") + "; the path's " + adds("capstone") + "."
 }
 
 // signed writes a measured change with its sign.

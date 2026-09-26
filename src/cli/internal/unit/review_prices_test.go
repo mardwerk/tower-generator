@@ -86,7 +86,9 @@ func TestPriceGuidanceAsksForUnitSpecificPrices(t *testing.T) {
 	instructions, _ := reviewContext(t, stages.Checked)
 	for _, want := range []string{
 		"whether each fourth and fifth purchase's price fits what it adds, and whether the capstone keeps a reason to buy at its price",
-		"a side purchase that adds as much time-averaged output as the capstone, or more, for a small fraction of its price",
+		"Compare absolute gains and prices: a cheap side purchase that adds as much absolute time-averaged gain as the capstone, or more, is evidence that the capstone is overpriced or adds too little, and only then does a side purchase count against the capstone.",
+		"A side purchase that adds less absolute gain than the capstone is no evidence against it.",
+		"Never use a gain per unit of currency as capstone evidence by itself",
 		"referencePrices.facts states each path whose five prices equal the Definition's reference sequence exactly",
 		"not thresholds or a required multiplier",
 	} {
@@ -96,6 +98,16 @@ func TestPriceGuidanceAsksForUnitSpecificPrices(t *testing.T) {
 	}
 	if strings.Count(instructions, "referencePrices") != 1 {
 		t.Error("more than one review instruction owns the reference-price rule")
+	}
+	// One instruction owns the side-purchase rule, and no instruction offers
+	// a normalized ratio or calls a cheap side purchase stronger.
+	if strings.Count(instructions, "againstCapstone") != 1 {
+		t.Error("more than one review instruction owns the side-purchase rule")
+	}
+	for _, ratio := range []string{"per 100", "per100", "stronger"} {
+		if strings.Contains(instructions, ratio) {
+			t.Errorf("the review instructions contain %q", ratio)
+		}
 	}
 
 	prepared, err := fixture.Prepare()

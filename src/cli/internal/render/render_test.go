@@ -57,9 +57,9 @@ func TestMarkdownRendersEveryStage(t *testing.T) {
 }
 
 // Purchase evidence shows the Active's time-averaged rates next to its peak
-// and duty fraction, and compares each crosspath purchase per 100 of the
-// Definition's currency, Gold in the fixture, with its main path's fifth
-// purchase. Fan Club Frenzy lasts 15 of 50 s at
+// and duty fraction, and states each crosspath purchase's absolute gain and
+// price, in the Definition's currency (Gold in the fixture), beside its main
+// path's fifth purchase. Fan Club Frenzy lasts 15 of 50 s at
 // x-4-x and 20 of 50 s at x-5-x: 0.6 × 12.54 + 0.4 × 401.3 = 168.
 func TestDetailsShowTimeAveragedAndSidePurchaseEvidence(t *testing.T) {
 	stages, err := fixture.Build()
@@ -73,11 +73,47 @@ func TestDetailsShowTimeAveragedAndSidePurchaseEvidence(t *testing.T) {
 	for _, want := range []string{
 		// A milestone is the path's own purchase: no comparison follows it.
 		"| 0-4-0 → 0-5-0 | 45,000 | active peak direct damage rate: 200.7 → 401.3; active peak group damage rate upper bound: 401.3 → 802.6; active duty fraction: 0.3 → 0.4; time-averaged direct damage rate: 68.97 → 168; time-averaged group damage rate upper bound: 137.9 → 336.1 |",
-		"| 0-5-0 → 1-5-0 | 140 | group damage rate upper bound: 25.08 → 37.62; active peak group damage rate upper bound: 802.6 → 1204; time-averaged group damage rate upper bound: 336.1 → 504.1. Per 100 Gold: this purchase adds direct +0, group +120; the path's x-5-x adds direct +0.2202, group +0.4403. |",
-		"| 0-5-0 → 0-5-1 | 90 | range: 32 → 40. Per 100 Gold: this purchase adds direct +0, group +0; the path's x-5-x adds direct +0.2202, group +0.4403. |",
+		"| 0-5-0 → 1-5-0 | 140 | group damage rate upper bound: 25.08 → 37.62; active peak group damage rate upper bound: 802.6 → 1204; time-averaged group damage rate upper bound: 336.1 → 504.1. Side 1-x-x adds direct +0, group +168 for 140 Gold; the path's x-5-x adds direct +99.07, group +198.1 for 45,000 Gold. |",
+		"| 0-5-0 → 0-5-1 | 90 | range: 32 → 40. Side x-x-1 adds direct +0, group +0 for 90 Gold; the path's x-5-x adds direct +99.07, group +198.1 for 45,000 Gold. |",
 	} {
 		if !strings.Contains(detailed, want) {
 			t.Errorf("details lack %q", want)
+		}
+	}
+}
+
+// A 140 Gold side purchase adding direct +1.05 on top of a 45,000 Gold
+// capstone adding +12.64, the shape of a live run on #27, reads as the
+// smaller gain it is: absolute gains and prices, no gain per currency.
+func TestDetailsShowACheapSidePurchaseAsTheSmallerGain(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	evaluation, err := s.Decode([]byte(`{"paths":[{"path":"path3","name":"Bottom","milestones":[
+{"from":[0,0,4],"to":[0,0,5],"incrementalGold":45000,"metricDeltas":{
+"direct damage rate":{"before":10,"after":22.64,"change":12.64},
+"group damage rate upper bound":{"before":20,"after":45.28,"change":25.28}}}],
+"crosspaths":[{"from":[0,0,5],"to":[1,0,5],"incrementalGold":140,"metricDeltas":{
+"direct damage rate":{"before":22.64,"after":23.69,"change":1.05},
+"group damage rate upper bound":{"before":45.28,"after":47.38,"change":2.1}}}]}],
+"limitations":[]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	view, err := render.ReadView(s.FromGoValue(stages.Result))
+	if err != nil {
+		t.Fatal(err)
+	}
+	view.DesignEvaluation = evaluation.(*s.Object)
+	detailed := render.Detailed(view)
+	want := "| 0-0-5 → 1-0-5 | 140 | direct damage rate: 22.64 → 23.69; group damage rate upper bound: 45.28 → 47.38. Side 1-x-x adds direct +1.05, group +2.1 for 140 Gold; the path's x-x-5 adds direct +12.64, group +25.28 for 45,000 Gold. |"
+	if !strings.Contains(detailed, want) {
+		t.Errorf("details lack %q", want)
+	}
+	for _, ratio := range []string{"Per 100", "per 100", "stronger"} {
+		if strings.Contains(detailed, ratio) {
+			t.Errorf("details contain %q", ratio)
 		}
 	}
 }

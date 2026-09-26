@@ -22,10 +22,16 @@ const (
 	TimeAveragedGroup  = "time-averaged group damage rate upper bound"
 )
 
-// Per100CurrencyAgainstCapstone is the key a side purchase's comparison with
-// its main path's fifth purchase is stored under. The name is
-// currency-neutral: the gain is per 100 of the Definition's currency.
-const Per100CurrencyAgainstCapstone = "per100CurrencyAgainstCapstone"
+// AgainstCapstone is the key a side purchase's comparison with its main
+// path's fifth purchase is stored under. It holds absolute gains and prices,
+// never a gain per unit of currency: a cheap side purchase almost always
+// wins such a ratio, so the ratio says nothing about the capstone.
+const AgainstCapstone = "againstCapstone"
+
+// SideGainAtLeastCapstone states, per metric, whether the side purchase's
+// absolute gain is as large as the capstone's or larger. It is a plain fact
+// for the review, never a finding.
+const SideGainAtLeastCapstone = "sideGainAtLeastCapstone"
 
 const activeDuty = "active duty fraction"
 
@@ -36,31 +42,31 @@ var timeAveragedMetrics = []struct{ name, ordinary, peak string }{
 	{TimeAveragedGroup, "group damage rate upper bound", "active peak group damage rate upper bound"},
 }
 
-// per100 names the amount a side-purchase gain is measured against: 100 of
-// the Definition's currency, such as "100 Gold". Without a named currency it
-// stays neutral.
-func per100(currency string) string {
+// inCurrency names the currency prices are in: the Definition's currency,
+// such as "Gold". Without a named currency it stays neutral.
+func inCurrency(currency string) string {
 	if currency == "" {
-		return "100 of the Definition's currency"
+		return "the Definition's currency"
 	}
-	return "100 " + currency
+	return currency
 }
 
 // derivedLimitation states how the derived readings are computed, in the
 // Definition's currency.
 func derivedLimitation(currency string) string {
-	return "Time-averaged rates use the Active Ability whenever it is ready and equal the ordinary rate without one. " + Per100CurrencyAgainstCapstone + " compares a side purchase's time-averaged gain per " + per100(currency) + " with the gain of its main path's own fifth purchase. Both are derived evidence, not thresholds."
+	return "Time-averaged rates use the Active Ability whenever it is ready and equal the ordinary rate without one. " + AgainstCapstone + " states a side purchase's absolute time-averaged gain and its price in " + inCurrency(currency) + " beside the absolute gain and price of its main path's own fifth purchase (4 to 5); it divides no gain by a price. Both are derived evidence, not thresholds."
 }
 
 // ReviewPurchaseEvidence returns a copy of retained purchase evidence with
 // two derived readings. Wherever the evidence shows an Active Ability's
 // peak and duty fraction, the time-averaged direct and group rates follow
 // them, with their change for a purchase. Each crosspath purchase also
-// gets per100CurrencyAgainstCapstone: its time-averaged direct and group
-// gain per 100 of the Definition's currency beside the same gain of its main
-// path's fifth purchase (4-0-0 to 5-0-0 for the top path). A value that
-// cannot be computed is null. currency is the Definition profile's currency,
-// named in the derived limitation; empty keeps that text neutral.
+// gets againstCapstone: its build code, price and absolute time-averaged
+// direct and group gain beside the same of its main path's fifth purchase
+// (4-0-0 to 5-0-0 for the top path), and whether the side gain is at least
+// the capstone's. A value that cannot be computed is null. currency is the
+// Definition profile's currency, named in the derived limitation; empty keeps
+// that text neutral.
 func ReviewPurchaseEvidence(evaluation *s.Object, currency string) *s.Object {
 	if evaluation == nil {
 		return nil
@@ -93,13 +99,21 @@ func ReviewPurchaseEvidence(evaluation *s.Object, currency string) *s.Object {
 			if !ok || capstone == nil {
 				continue
 			}
-			side := per100Currency(crosspath)
-			step := per100Currency(capstone)
-			against := s.NewObject().Set("capstone", code)
+			side := gains(crosspath)
+			step := gains(capstone)
+			against := s.NewObject().
+				Set("sidePurchase", s.NewObject().Set("code", sideCode(crosspath)).Set("price", incrementalPrice(crosspath))).
+				Set("capstone", s.NewObject().Set("code", code).Set("price", incrementalPrice(capstone)))
 			for _, metric := range timeAveragedMetrics {
-				against.Set(metric.name, s.NewObject().Set("sidePurchase", side[metric.name]).Set("capstone", step[metric.name]))
+				var atLeast any
+				x, okSide := evidenceNumber(side[metric.name])
+				y, okStep := evidenceNumber(step[metric.name])
+				if okSide && okStep {
+					atLeast = x >= y
+				}
+				against.Set(metric.name, s.NewObject().Set("sidePurchase", side[metric.name]).Set("capstone", step[metric.name]).Set(SideGainAtLeastCapstone, atLeast))
 			}
-			crosspath.Set(Per100CurrencyAgainstCapstone, against)
+			crosspath.Set(AgainstCapstone, against)
 		}
 	}
 	if limitations, ok := out.Get("limitations"); ok {
@@ -219,26 +233,60 @@ func averageDeltas(value any) {
 	purchase.Set("metricDeltas", out)
 }
 
-// per100Currency is a purchase's time-averaged gain per 100 of the
-// Definition's currency, by metric. The retained incremental price is in that
-// currency, whatever its saved field name. The gain is null without a
-// positive price or a finite gain.
-func per100Currency(purchase *s.Object) map[string]any {
+// gains is a purchase's absolute time-averaged gain, by metric; null
+// without a finite gain.
+func gains(purchase *s.Object) map[string]any {
 	out := map[string]any{}
 	deltas, _ := objectAt(purchase, "metricDeltas")
-	value, _ := purchase.Get("incrementalGold")
-	spent, validPrice := evidenceNumber(value)
 	for _, metric := range timeAveragedMetrics {
 		out[metric.name] = nil
-		if deltas == nil || !validPrice || spent <= 0 {
+		if deltas == nil {
 			continue
 		}
 		delta, _ := averagedDelta(deltas, metric.ordinary, metric.peak).Get("change")
 		if change, valid := evidenceNumber(delta); valid {
-			out[metric.name] = change / spent * 100
+			out[metric.name] = change
 		}
 	}
 	return out
+}
+
+// incrementalPrice is a purchase's retained incremental price, in the
+// Definition's currency whatever its saved field name; null when not a
+// finite number.
+func incrementalPrice(purchase *s.Object) any {
+	value, _ := purchase.Get("incrementalGold")
+	if spent, ok := evidenceNumber(value); ok {
+		return spent
+	}
+	return nil
+}
+
+// sideCode names the purchase a crosspath comparison adds, such as 1-x-x
+// for 0-5-0 to 1-5-0; empty when no single path rises by one tier.
+func sideCode(purchase *s.Object) string {
+	from, _ := purchase.Get("from")
+	to, _ := purchase.Get("to")
+	before, after := asList(from), asList(to)
+	if len(before) != len(m.PathKeys) || len(after) != len(m.PathKeys) {
+		return ""
+	}
+	code := ""
+	for index := range m.PathKeys {
+		x, okBefore := before[index].(float64)
+		y, okAfter := after[index].(float64)
+		if !okBefore || !okAfter {
+			return ""
+		}
+		if y == x {
+			continue
+		}
+		if y != x+1 || code != "" || y < 1 || y > 5 {
+			return ""
+		}
+		code = BuildCode(index, int(y))
+	}
+	return code
 }
 
 // capstoneStep finds a path's own fifth purchase among its milestones and

@@ -138,7 +138,7 @@ func TestTimeAveragedActiveOutput(t *testing.T) {
 		t.Error("a purchase without an Active shows a time-averaged rate")
 	}
 	// The retained evidence is not changed, so check still compares it exactly.
-	if strings.Contains(s.Stringify(retained), "time-averaged") || strings.Contains(s.Stringify(retained), unit.Per100CurrencyAgainstCapstone) {
+	if strings.Contains(s.Stringify(retained), "time-averaged") || strings.Contains(s.Stringify(retained), unit.AgainstCapstone) {
 		t.Error("deriving the review evidence changed the retained evidence")
 	}
 }
@@ -146,30 +146,84 @@ func TestTimeAveragedActiveOutput(t *testing.T) {
 func TestSidePurchasesAgainstCapstone(t *testing.T) {
 	_, derived := burstEvidence(t)
 	for _, test := range []struct {
-		path             int
-		from, to, code   string
-		side, capstone   float64
-		sideGroupGain    float64
-		capstoneGroupPer float64
+		path                        int
+		from, to                    string
+		sideCode, capstoneCode      string
+		sidePrice, capstonePrice    float64
+		sideDirect, capstoneDirect  float64
+		sideGroup, capstoneGroup    float64
+		directAtLeast, groupAtLeast bool
 	}{
-		// x-1-x: +2 time-averaged for 100 Gold; x-5-x: +2 for 20,000 Gold.
-		{1, "0-5-0", "1-5-0", "x-5-x", 2, 0.01, 2, 0.01},
+		// 1-x-x adds 1 damage while the Active doubles it half the time:
+		// +2 for 100 Gold, as much as x-5-x adds for 20,000 Gold.
+		{1, "0-5-0", "1-5-0", "1-x-x", "x-5-x", 100, 20000, 2, 2, 2, 2, true, true},
 		// x-x-2 only adds range.
-		{1, "0-4-1", "0-4-2", "x-5-x", 0, 0.01, 0, 0.01},
+		{1, "0-4-1", "0-4-2", "x-x-2", "x-5-x", 100, 20000, 0, 2, 0, 2, false, false},
 		// 4-0-0 → 5-0-0 doubles 4 damage at pierce 2 for 10,000 Gold: +4
 		// direct and +8 group. The middle path's x-1-x only adds range.
-		{0, "5-0-0", "5-1-0", "5-x-x", 0, 0.04, 0, 0.08},
+		{0, "5-0-0", "5-1-0", "x-1-x", "5-x-x", 100, 10000, 0, 4, 0, 8, false, false},
 	} {
-		against := at(purchase(t, derived, test.path, "crosspaths", test.from, test.to), unit.Per100CurrencyAgainstCapstone)
-		if at(against, "capstone") != test.code ||
-			!near(at(against, unit.TimeAveragedDirect, "sidePurchase"), test.side) || !near(at(against, unit.TimeAveragedDirect, "capstone"), test.capstone) ||
-			!near(at(against, unit.TimeAveragedGroup, "sidePurchase"), test.sideGroupGain) || !near(at(against, unit.TimeAveragedGroup, "capstone"), test.capstoneGroupPer) {
+		against := at(purchase(t, derived, test.path, "crosspaths", test.from, test.to), unit.AgainstCapstone)
+		if at(against, "sidePurchase", "code") != test.sideCode || at(against, "capstone", "code") != test.capstoneCode ||
+			!near(at(against, "sidePurchase", "price"), test.sidePrice) || !near(at(against, "capstone", "price"), test.capstonePrice) ||
+			!near(at(against, unit.TimeAveragedDirect, "sidePurchase"), test.sideDirect) || !near(at(against, unit.TimeAveragedDirect, "capstone"), test.capstoneDirect) ||
+			!near(at(against, unit.TimeAveragedGroup, "sidePurchase"), test.sideGroup) || !near(at(against, unit.TimeAveragedGroup, "capstone"), test.capstoneGroup) ||
+			at(against, unit.TimeAveragedDirect, unit.SideGainAtLeastCapstone) != test.directAtLeast ||
+			at(against, unit.TimeAveragedGroup, unit.SideGainAtLeastCapstone) != test.groupAtLeast {
 			t.Errorf("%s → %s: %s", test.from, test.to, s.Stringify(against))
 		}
 	}
 	// Milestones are the path's own purchases and carry no comparison.
-	if at(purchase(t, derived, 1, "milestones", "0-4-0", "0-5-0"), unit.Per100CurrencyAgainstCapstone) != nil {
+	if at(purchase(t, derived, 1, "milestones", "0-4-0", "0-5-0"), unit.AgainstCapstone) != nil {
 		t.Error("a milestone carries a side-purchase comparison")
+	}
+}
+
+// cheapSideEvidence has the shape of a live run on #27: the bottom path's
+// x-x-5 adds time-averaged direct +12.64 for 45,000 Gold, and a 140 Gold
+// 1-x-x on top of it adds only +1.05. Per 100 Gold the side purchase would
+// look far stronger (0.75 against 0.028); in absolute terms the capstone
+// adds twelve times as much.
+const cheapSideEvidence = `{"paths":[{"path":"path3","name":"Bottom","milestones":[
+{"from":[0,0,4],"to":[0,0,5],"incrementalGold":45000,"metricDeltas":{
+"direct damage rate":{"before":10,"after":22.64,"change":12.64},
+"group damage rate upper bound":{"before":20,"after":45.28,"change":25.28}}}],
+"crosspaths":[{"from":[0,0,5],"to":[1,0,5],"incrementalGold":140,"metricDeltas":{
+"direct damage rate":{"before":22.64,"after":23.69,"change":1.05},
+"group damage rate upper bound":{"before":45.28,"after":47.38,"change":2.1}}}]}],
+"limitations":[]}`
+
+// A cheap side purchase that adds less than the capstone is shown as less:
+// the evidence states absolute gains and prices, no gain per currency, and
+// never marks the side purchase as at least the capstone.
+func TestCheapSidePurchaseAddingLessThanTheCapstone(t *testing.T) {
+	retained, err := s.Decode([]byte(cheapSideEvidence))
+	if err != nil {
+		t.Fatal(err)
+	}
+	derived := unit.ReviewPurchaseEvidence(retained.(*s.Object), "Gold")
+	against := at(purchase(t, derived, 0, "crosspaths", "0-0-5", "1-0-5"), unit.AgainstCapstone)
+	side, capstone := at(against, unit.TimeAveragedDirect, "sidePurchase"), at(against, unit.TimeAveragedDirect, "capstone")
+	if !near(side, 1.05) || !near(capstone, 12.64) || side.(float64) >= capstone.(float64) {
+		t.Errorf("direct gains %v and %v, want side +1.05 below capstone +12.64", side, capstone)
+	}
+	if !near(at(against, unit.TimeAveragedGroup, "sidePurchase"), 2.1) || !near(at(against, unit.TimeAveragedGroup, "capstone"), 25.28) {
+		t.Errorf("group gains: %s", s.Stringify(against))
+	}
+	if at(against, "sidePurchase", "code") != "1-x-x" || at(against, "capstone", "code") != "x-x-5" ||
+		!near(at(against, "sidePurchase", "price"), 140) || !near(at(against, "capstone", "price"), 45000) {
+		t.Errorf("codes and prices: %s", s.Stringify(against))
+	}
+	for _, metric := range []string{unit.TimeAveragedDirect, unit.TimeAveragedGroup} {
+		if at(against, metric, unit.SideGainAtLeastCapstone) != false {
+			t.Errorf("%s: the side purchase is marked as adding at least the capstone's gain", metric)
+		}
+	}
+	text := strings.ToLower(s.Stringify(derived))
+	for _, ratio := range []string{"per 100", "per100", "per unit", "0.75", "stronger"} {
+		if strings.Contains(text, ratio) {
+			t.Errorf("the derived evidence contains %q", ratio)
+		}
 	}
 }
 
@@ -189,12 +243,12 @@ func TestReviewContextCarriesDerivedPurchaseEvidence(t *testing.T) {
 		t.Error("the review context does not carry the derived purchase evidence")
 	}
 	text := s.Stringify(evidence)
-	for _, want := range []string{`"` + unit.TimeAveragedDirect + `"`, `"` + unit.TimeAveragedGroup + `"`, `"` + unit.Per100CurrencyAgainstCapstone + `"`, `"capstone":"x-5-x"`} {
+	for _, want := range []string{`"` + unit.TimeAveragedDirect + `"`, `"` + unit.TimeAveragedGroup + `"`, `"` + unit.AgainstCapstone + `"`, `"capstone":{"code":"x-5-x","price":45000}`} {
 		if !strings.Contains(text, want) {
 			t.Errorf("the review's purchase evidence lacks %s", want)
 		}
 	}
-	if !strings.Contains(prompt, "per100CurrencyAgainstCapstone gives that side purchase's time-averaged gain per 100 Gold") {
+	if !strings.Contains(prompt, "againstCapstone gives that side purchase's absolute time-averaged direct and group gain and its price in Gold") {
 		t.Error("the review prompt does not explain the derived evidence")
 	}
 }
@@ -217,7 +271,7 @@ func TestReviewContextUsesTheDefinitionCurrency(t *testing.T) {
 	if strings.Contains(instructions, "Gold") {
 		t.Error("the review instructions name Gold for a Definition in Berries")
 	}
-	if !strings.Contains(instructions, "per100CurrencyAgainstCapstone gives that side purchase's time-averaged gain per 100 Berries") {
+	if !strings.Contains(instructions, "againstCapstone gives that side purchase's absolute time-averaged direct and group gain and its price in Berries") {
 		t.Error("the review instructions do not name the Definition's currency")
 	}
 	context, err := s.Decode([]byte(request.Prompt[split+2:]))
@@ -225,7 +279,7 @@ func TestReviewContextUsesTheDefinitionCurrency(t *testing.T) {
 		t.Fatal(err)
 	}
 	evidence := s.Stringify(at(context, "purchaseEvidence"))
-	if !strings.Contains(evidence, "gain per 100 Berries") {
+	if !strings.Contains(evidence, "its price in Berries") {
 		t.Error("the derived limitation does not name the Definition's currency")
 	}
 	if strings.Contains(strings.NewReplacer(`"incrementalGold"`, "", `"totalGold"`, "").Replace(evidence), "Gold") {
@@ -237,7 +291,7 @@ func TestReviewContextUsesTheDefinitionCurrency(t *testing.T) {
 func TestDerivedEvidenceWithoutACurrencyIsNeutral(t *testing.T) {
 	retained, _ := burstEvidence(t)
 	evidence := s.Stringify(unit.ReviewPurchaseEvidence(retained, ""))
-	if !strings.Contains(evidence, "gain per 100 of the Definition's currency") {
+	if !strings.Contains(evidence, "its price in the Definition's currency") {
 		t.Error("the derived limitation is not currency-neutral without a currency")
 	}
 }
