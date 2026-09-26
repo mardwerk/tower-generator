@@ -210,3 +210,23 @@ func TestThirdPurchaseBehaviorIsAnOptInGate(t *testing.T) {
 		}
 	}
 }
+
+// Under the early-identity policy the first and second purchase keep a
+// single-projectile attack single, so a plan cannot promise projectiles
+// there; the mechanics could never keep that promise (reported on #27).
+func TestEarlyPurchasesCannotPromiseProjectiles(t *testing.T) {
+	prepared, err := fixture.Prepare()
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan := recordedOutput(t, "plan")
+	at(plan, "paths", "path1", "milestones", "tier2").(*s.Object).Set("improves", []any{"pierce", "projectiles"})
+	_, err = unit.DecodeDesignPlan(plan, &prepared.Request)
+	if err == nil || !strings.Contains(err.Error(), "2-x-x cannot promise projectiles") {
+		t.Errorf("an early projectiles promise was accepted: %v", err)
+	}
+	schema := s.Stringify(s.JSONSchema(unit.PurchasePlanOutputSchema(&prepared.Request)))
+	if !strings.Contains(schema, `"projectiles"`) {
+		t.Error("no purchase may promise projectiles at all")
+	}
+}

@@ -3,6 +3,7 @@ package unit
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
@@ -77,8 +78,14 @@ func PurchasePlanOutputSchema(request *Request) *s.ObjectSchema {
 					unlocks = append(unlocks, unlock)
 				}
 			}
+			// Under the early-identity policy a first or second purchase keeps a
+			// single-projectile attack single, so it cannot promise projectiles.
+			earlyIdentity := tier <= 2 && policy != nil && policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity
 			var improvements []string
 			for _, dimension := range ImprovementsFor(definition) {
+				if earlyIdentity && dimension == "projectiles" {
+					continue
+				}
 				if (!strings.HasPrefix(dimension, "active-") || active) && (dimension != "follow-up" || rules.HasExtension("volley-follow-up")) {
 					improvements = append(improvements, dimension)
 				}
@@ -446,6 +453,9 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 					detection = "personal detection"
 				}
 				issue(BuildCode(pathIndex, number) + " must preserve the existing attack identity: the first and second purchase of a path add no new status, attack pattern, delivery, targeting or damage-type access before the third; " + detection + " and improvements to existing effects remain allowed.")
+			}
+			if number <= 2 && policy != nil && policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity && slices.Contains(intent.Improves, "projectiles") {
+				issue(BuildCode(pathIndex, number) + " cannot promise projectiles: the first and second purchase keep a single-projectile attack single, so the mechanics could not keep that promise. Promise projectiles from the third purchase on; an attack that already fires several projectiles may still add more without promising it.")
 			}
 			if intent.Unlock == "manual-boost" && number != boostTier {
 				issue(fmt.Sprintf("Manual boost unlocks are supported only at tier %d.", boostTier))
