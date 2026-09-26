@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"unicode/utf8"
 )
 
 // Stringify writes a value exactly as JavaScript's JSON.stringify would:
@@ -181,12 +180,6 @@ func isJSSpace(r rune) bool {
 // Trim is JavaScript's String.prototype.trim.
 func Trim(s string) string { return strings.TrimFunc(s, isJSSpace) }
 
-// TrimStart is JavaScript's String.prototype.trimStart.
-func TrimStart(s string) string { return strings.TrimLeftFunc(s, isJSSpace) }
-
-// TrimEnd is JavaScript's String.prototype.trimEnd.
-func TrimEnd(s string) string { return strings.TrimRightFunc(s, isJSSpace) }
-
 // SliceUTF16 is JavaScript's String.prototype.slice(start, end) for non-negative bounds.
 func SliceUTF16(s string, start, end int) string {
 	var b strings.Builder
@@ -324,9 +317,6 @@ func isEmpty(v reflect.Value) bool {
 	}
 	return false
 }
-
-// validUTF8 reports whether s is valid UTF-8 (JSON text must be).
-func validUTF8(s string) bool { return utf8.ValidString(s) }
 
 // Canonical renders a value like JSON.stringify but with object keys sorted,
 // so two values compare equal when JSON.stringify would agree up to key order.

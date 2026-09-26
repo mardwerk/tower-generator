@@ -111,12 +111,6 @@ func earlyPurchases(branch *s.Object) string {
 	return "Proposed contributions are the side path's first and second purchases. Consult resolved purchase evidence for their actual effects."
 }
 
-// ExpandPurchasePlan turns a compact plan into the retained plan shape.
-// Other values pass through unchanged.
-func ExpandPurchasePlan(output any) (any, error) {
-	return expandPurchasePlan(output, PurchasePlanSchema)
-}
-
 // ExpandPurchasePlanFor expands a compact plan written under a Definition.
 func ExpandPurchasePlanFor(output any, definition *m.Definition) (any, error) {
 	if definition != nil && definition.IsV2() {
@@ -231,13 +225,6 @@ func constrainCitations(value any, ids []any) {
 	}
 }
 
-// omitMissing adds key only when value is not a missing (undefined) value.
-func setDefined(o *s.Object, key string, value any) {
-	if value != nil {
-		o.Set(key, value)
-	}
-}
-
 // previousValue is request.previous?.draft.blueprint ?? request.previous?.draft ?? null.
 func previousValue(request *Request) any {
 	if request.Previous == nil {
@@ -313,9 +300,17 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 	parts := []string{
 		fmt.Sprintf("Requested character: %s. The context below supplies %d selected evidence passages for this character. Read those passages before choosing powers; selection is bounded and does not establish complete source coverage.", s.Stringify(request.Character.Name), len(evidence)),
 	}
-	guidance := planGuidance
+	guidance := append([]string{}, planGuidance...)
+	// Build legality, crosspath counts and the Active slot come from the
+	// Definition, not from text written for the Default Profile.
+	activation, shape := "A player-activated ability exists only where the Definition allows one.", "Code resolves every legal crosspath build; do not output a crosspath tree."
+	if d := request.MechanicsDefinition; d != nil {
+		activation, shape = ActivationShape(*d), BuildShape(*d)
+	}
+	for i, line := range guidance {
+		guidance[i] = strings.NewReplacer("{{activation}}", activation, "{{buildShape}}", shape).Replace(line)
+	}
 	if isV2(request) {
-		guidance = append([]string{}, planGuidance...)
 		for i, line := range guidance {
 			guidance[i] = strings.Replace(line, "slow and burn each need two primitive changes", "a status effect with a magnitude needs two primitive changes", 1)
 		}

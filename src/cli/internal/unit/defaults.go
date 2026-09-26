@@ -54,7 +54,7 @@ func describeVocabulary(v *mechanics.Vocabulary) {
 		term.Name, term.Description = defaultEnemyProperties[term.ID][0], defaultEnemyProperties[term.ID][1]
 	}
 	for i := range v.DamageTypes {
-		v.DamageTypes[i].Name = defaultDamageTypes[v.DamageTypes[i].ID]
+		v.DamageTypes[i].Name, v.DamageTypes[i].Description = defaultDamageTypes[v.DamageTypes[i].ID][0], defaultDamageTypes[v.DamageTypes[i].ID][1]
 	}
 	for i := range v.Targeting {
 		term := &v.Targeting[i]
@@ -78,7 +78,13 @@ var defaultEnemyProperties = map[string][2]string{
 	"boss":   {"Boss", "Boss enemy; ignores slow, stun and knockback."},
 }
 
-var defaultDamageTypes = map[string]string{"sharp": "Sharp", "normal": "Normal", "explosive": "Explosive", "energy": "Energy"}
+// defaultDamageTypes name each damage type and the attacks it suits.
+var defaultDamageTypes = map[string][2]string{
+	"sharp":     {"Sharp", "Darts, blades, spikes and arrows."},
+	"normal":    {"Normal", "Blunt blows and plain impacts."},
+	"explosive": {"Explosive", "Blasts and bombs."},
+	"energy":    {"Energy", "Beams and energy attacks."},
+}
 
 var defaultTargeting = map[string][2]string{
 	"first":  {"First", "The enemy furthest along the track."},

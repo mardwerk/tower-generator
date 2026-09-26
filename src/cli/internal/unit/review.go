@@ -66,8 +66,9 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		}
 		comparisons = m.CompareCapstonePurchasesWith(blueprint, vocabulary)
 	}
-	context.Set("purchaseComparisons", comparisons).
-		Set("purchaseComparisonOrdering", capstoneOrdering(comparisons)).
+	// The raw capstone comparisons are in purchaseEvidence per path; the
+	// review also gets their checked ordering.
+	context.Set("purchaseComparisonOrdering", capstoneOrdering(comparisons)).
 		Set("character", s.FromGoValue(request.Character)).
 		Set("task", request.Task).
 		Set("constraints", s.FromGoValue(request.Constraints)).
@@ -146,7 +147,7 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 }
 
 // capstoneOrdering gives review a checked numerical comparison. The raw
-// metrics remain in purchaseComparisons; this is prompt context, not saved
+// metrics remain in purchaseEvidence; this is prompt context, not saved
 // design evidence, so older drafts retain their exact evidence.
 func capstoneOrdering(comparisons []any) []any {
 	out := []any{}

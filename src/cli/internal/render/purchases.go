@@ -109,13 +109,6 @@ func capitalized(text string) string {
 	return strings.ToUpper(text[:1]) + text[1:]
 }
 
-func lowerFirst(text string) string {
-	if text == "" {
-		return text
-	}
-	return strings.ToLower(text[:1]) + text[1:]
-}
-
 // magnitude writes an effect's magnitude with its unit: 30% or 5 damage/s.
 func (sh *sheet) magnitude(value float64, effect m.StatusEffect) string {
 	return decimal(value) + magnitudeSuffix(effect)

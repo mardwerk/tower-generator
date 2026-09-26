@@ -46,9 +46,6 @@ type missingType struct{}
 // missing stands for an absent object member (JavaScript undefined).
 var missing = &missingType{}
 
-// Missing is the sentinel for an absent value; Parse outputs never contain it.
-var Missing any = missing
-
 // Schema validates a value and produces its parse output.
 type Schema interface {
 	run(c *ctx, value any, path []any) any

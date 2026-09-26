@@ -22,13 +22,20 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 		"DartMonkey-100 to -500", "BoomerangMonkey.json and -010 to -050", "SniperMonkey.json and -100 to -500",
 		"IceMonkey.json and -100 to -500", "TackShooter.json and -010 to -050", "MonkeyVillage.json",
 		"DartMonkey-400 and SuperMonkey-001, KnockbackModel",
-		"0-0-0", "x-4-x", "1-2-0", "12 early builds", "36 advanced builds",
-		"Private design checks, never printed in the unit", "Unit output.",
-		"a substantial damage improvement may qualify",
-		"A second x-5-x Active", "no universal capstone multiplier",
+		"0-0-0", "Private design checks, never printed in the unit",
+		"a substantial improvement of one dimension may qualify", "no universal capstone multiplier",
 	} {
 		if !strings.Contains(rules, want) {
 			t.Errorf("the default rules lack %q", want)
+		}
+	}
+	// The Profile keeps design taste and cited scale. Build codes, legality,
+	// crosspaths, Engine limits and output format belong to the Definition,
+	// the Engine's stage instructions and the renderer, so a custom Profile
+	// receives them too.
+	for _, generic := range []string{"Build codes.", "Crosspaths.", "Engine boundary.", "Unit output.", "Activation.", "Actions.", "Source fidelity.", "version 13"} {
+		if strings.Contains(rules, generic) {
+			t.Errorf("the default rules still hold the generic section %q", generic)
 		}
 	}
 	prepared, err := fixture.Prepare()
@@ -45,8 +52,16 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 			t.Errorf("the default Profile or plan prompt still cites %q", retired)
 		}
 	}
+	for _, derived := range []string{
+		"Only the middle path may have a player-activated ability, first at x-4-x.",
+		"A Unit buys at most 2 paths, and at most 1 of them beyond its second purchase; 3-3-0 and 1-1-1 are illegal. Code resolves the 12 early and 36 advanced crosspath builds",
+	} {
+		if !strings.Contains(plan.Prompt, derived) {
+			t.Errorf("the plan prompt lacks the Definition's %q", derived)
+		}
+	}
 	definition := profile.MechanicsDefinition
-	if definition.Revision != "2026-09-26-atlas-56.3-v16" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
+	if definition.Revision != "2026-09-26-atlas-56.3-v17" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
 		t.Errorf("Definition %s %q", definition.Revision, definition.Label)
 	}
 	if scale := definition.Profile.ReferenceScale; scale.BaseCost != 200 || scale.BaseDamage != 1 || scale.BaseIntervalSeconds != 0.95 || scale.BaseRange != 32 || scale.BasePierce != 2 ||
@@ -372,5 +387,27 @@ func TestTradeoffsAreCheckedLikePromises(t *testing.T) {
 	at(contradictory, "paths", "path2", "milestones", "tier1").(*s.Object).Set("lowers", []any{"attack-rate"})
 	if _, err := unit.DecodeDesignPlan(contradictory, &prepared.Request); err == nil || !strings.Contains(err.Error(), "cannot both raise and lower attack-rate") {
 		t.Errorf("a purchase raising and lowering attack-rate: %v", err)
+	}
+}
+
+// Build legality, crosspath counts and the Active Ability slot come from the
+// Definition: a Profile that moves the Active to the bottom path gets that
+// sentence, not the Default's middle path.
+func TestPlanPromptDerivesTheActiveSlotFromTheDefinition(t *testing.T) {
+	prepared, err := fixture.Prepare()
+	if err != nil {
+		t.Fatal(err)
+	}
+	definition := *prepared.Request.MechanicsDefinition
+	policy := *definition.Profile.DesignPolicy
+	policy.ManualAbilityPath = m.NullableString{Present: true, Value: "path3"}
+	definition.Profile.DesignPolicy = &policy
+	prepared.Request.MechanicsDefinition = &definition
+	request, err := unit.DesignPlanRequest(prepared)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(request.Prompt, "Only the bottom path may have a player-activated ability, first at x-x-4.") || strings.Contains(request.Prompt, "middle path may have a player-activated") {
+		t.Error("the plan prompt does not follow the Definition's manualAbilityPath")
 	}
 }

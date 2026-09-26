@@ -404,6 +404,9 @@ func blueprintRequest(prepared Prepared, previous any, issues []string, plan Des
 	}
 	budget = fmt.Sprintf(budget, budgetSentence(request))
 	prompt := []string{draftPlan, draftPromises, draftStyle, draftOwnership, draftShape, draftTruth, budget, form, draftArithmetic, draftExtensions, CountArithmeticGuidance}
+	if d := request.MechanicsDefinition; d != nil {
+		prompt = append(prompt, BuildShape(*d))
+	}
 	prompt = append(prompt, VocabularyGuidance(request)...)
 	prompt = append(prompt, DesignGuidance(request)...)
 	prompt = append(prompt, draftBoost, example, draftUnsupported, s.Stringify(context))
