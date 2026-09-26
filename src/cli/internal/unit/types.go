@@ -237,6 +237,17 @@ type Attempt struct {
 	Purpose string   `json:"purpose"`
 	Issues  []string `json:"issues"`
 	Usage   *Usage   `json:"usage,omitempty"`
+	// Output is a rejected model output. Only failure evidence keeps it; a
+	// published draft drops it.
+	Output any `json:"output,omitempty"`
+}
+
+// FailureEvidence is what a failed draft keeps for diagnosis: every attempt
+// with its issues and rejected output, and the plan once one was accepted,
+// so a failure can be read without paying for the attempts again.
+type FailureEvidence struct {
+	Plan     *DesignPlan `json:"plan,omitempty"`
+	Attempts []Attempt   `json:"attempts"`
 }
 
 // Run records one model stage.

@@ -81,6 +81,14 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 		}
 	}
 	artifact, err := in.execute(ctx)
+	var failed *unit.ModelError
+	if errors.As(err, &failed) && failed.Evidence != nil {
+		if in.output == "" {
+			fmt.Fprintln(stderr, "Add -o FILE to keep the rejected plan and outputs of a failed run.")
+		} else if path := failurePath(in.output); writeNew(path, s.Indent(s.FromGoValue(failed.Evidence))+"\n") == nil {
+			fmt.Fprintf(stderr, "Wrote the failure evidence to %s\n", path)
+		}
+	}
 	if in.evidence != nil {
 		if err == nil {
 			err = in.evidence.Finish(artifact)
@@ -104,6 +112,12 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	}
 	fmt.Fprintf(stderr, "Wrote %s\n", in.output)
 	return nil
+}
+
+// failurePath names the failure evidence of a run whose output would have
+// been path: dart.json keeps it in dart.failure.json.
+func failurePath(path string) string {
+	return strings.TrimSuffix(path, filepath.Ext(path)) + ".failure.json"
 }
 
 // writeNew publishes a complete file without replacing an existing one.

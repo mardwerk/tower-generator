@@ -110,22 +110,29 @@ func TestPromptsSeparatePrivateChecksFromOutput(t *testing.T) {
 	}
 }
 
-// A plan whose fourth or fifth purchase promises one dimension is rejected
-// before any mechanics call.
-func TestPlansRejectTokenCapstones(t *testing.T) {
+// Code does not judge payoff: a fourth or fifth purchase that promises one
+// dimension passes the plan check, and the review judges it from the
+// resolved purchase evidence (decided on #27). Impossible promises still fail.
+func TestPlansLeavePayoffToTheReview(t *testing.T) {
 	prepared, err := fixture.Prepare()
 	if err != nil {
 		t.Fatal(err)
 	}
 	plan := recordedOutput(t, "plan")
-	at(plan, "paths", "path3", "milestones", "tier5").(*s.Object).Set("improves", []any{"damage", "active-damage"}).Set("unlock", "none")
-	_, err = unit.DecodeDesignPlan(plan, &prepared.Request)
-	if err == nil || !strings.Contains(err.Error(), "x-x-5 must promise at least two independent dimensions or an unlock") {
-		t.Fatalf("got %v", err)
+	for _, path := range []string{"path1", "path3"} {
+		for _, tier := range []string{"tier4", "tier5"} {
+			at(plan, "paths", path, "milestones", tier).(*s.Object).Set("improves", []any{"damage"}).Set("unlock", "none")
+		}
 	}
-	fine := recordedOutput(t, "plan")
-	if _, err := unit.DecodeDesignPlan(fine, &prepared.Request); err != nil {
-		t.Fatalf("the fixture plan was rejected: %v", err)
+	if _, err := unit.DecodeDesignPlan(plan, &prepared.Request); err != nil {
+		t.Fatalf("single-dimension fourth and fifth purchases were rejected: %v", err)
+	}
+	at(plan, "paths", "path3", "milestones", "tier5").(*s.Object).Set("improves", []any{"damage", "active-damage"})
+	if _, err := unit.DecodeDesignPlan(plan, &prepared.Request); err == nil || !strings.Contains(err.Error(), "same-path manual-boost") {
+		t.Errorf("an active promise without a boost was accepted: %v", err)
+	}
+	if request, _ := unit.DesignPlanRequest(prepared); strings.Contains(request.Prompt, "code rejects") {
+		t.Error("the plan prompt still says code rejects a token step")
 	}
 }
 

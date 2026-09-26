@@ -1,5 +1,5 @@
 import type { LibraryEntry, LibraryState, PreparedRequest, Sources } from '../../api/contract.js';
-import type { LabArtifact, LabStage, ProviderState } from '../../api/contract.js';
+import type { FailureEvidence, LabArtifact, LabStage, ProviderState } from '../../api/contract.js';
 import { LabApiError, type api } from '../../api/client.js';
 import { formatCost } from '../../api/usage.js';
 import { nextStage, requestOf, type Revision } from '../../api/artifacts.js';
@@ -54,6 +54,8 @@ export type AuthoringJob = {
   startedAt: number;
   status: string;
   error: string;
+  /** The rejected plan and outputs of a failed draft, kept for diagnosis. */
+  evidence?: FailureEvidence;
   choices: Choice[];
   remaining: boolean;
 };
@@ -301,7 +303,14 @@ export class AuthoringJobs {
         id,
         controller.signal.aborted
           ? { state: 'stopped', status: 'Stopped. The last completed stage is retained.' }
-          : { state: 'failed', error: authoringError(error), status: '' },
+          : {
+              state: 'failed',
+              error: authoringError(error),
+              status: '',
+              ...(error instanceof LabApiError && error.evidence
+                ? { evidence: error.evidence }
+                : {}),
+            },
       );
     } finally {
       this.#controllers.delete(id);

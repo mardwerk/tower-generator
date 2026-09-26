@@ -430,6 +430,23 @@ func TestModelFailuresReturnSafeFactsAndUsage(t *testing.T) {
 	}
 }
 
+// A draft that fails validation returns its rejected plans and their issues,
+// so the web app can keep them without another paid attempt.
+func TestDraftFailuresReturnTheirEvidence(t *testing.T) {
+	request, outputs := recorded(t)
+	broken := s.Clone(outputs[0]).(*s.Object)
+	at(broken, "paths", "path3", "milestones", "tier3").(*s.Object).Set("technique", "Unknown Art")
+	h := start(t, &scripted{outputs: []any{broken, broken}}, nil)
+	prepared := h.post("prepare", map[string]any{"request": request})
+	status, value := h.call(http.MethodPost, "draft", map[string]any{"prepared": prepared}, nil)
+	attempts, _ := at(value, "error", "evidence", "attempts").([]any)
+	if status != 502 || len(attempts) != 2 || at(attempts[0], "purpose") != "plan" ||
+		at(attempts[0], "output", "paths", "path3", "milestones", "tier3", "technique") != "Unknown Art" ||
+		!strings.Contains(s.Stringify(at(attempts[1], "issues")), "Unknown Art") {
+		t.Errorf("%d %s", status, s.Stringify(value))
+	}
+}
+
 type failingModel struct{ err error }
 
 func (m failingModel) ID() string { return "test:failing" }

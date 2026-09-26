@@ -151,6 +151,11 @@ func TestTargetedRepairKeepsOtherTiers(t *testing.T) {
 	if draft.Candidate.Blueprint.Paths.Path3.Tiers.Tier5.Cost != 21500 {
 		t.Error("repair changed an untouched tier")
 	}
+	for _, attempt := range *draft.Run.Attempts {
+		if attempt.Output != nil {
+			t.Errorf("the published draft keeps attempt %d's rejected output", attempt.Number)
+		}
+	}
 }
 
 // Output that stays invalid through the repair budget is never published.
@@ -169,6 +174,41 @@ func TestInvalidMechanicsAreNeverPublished(t *testing.T) {
 	var failure *unit.ModelError
 	if !errors.As(err, &failure) || !strings.Contains(failure.Message, "No invalid Unit was published") || !strings.Contains(failure.Message, "projectiles") {
 		t.Fatalf("got %v", err)
+	}
+	// The failure keeps the accepted plan and the rejected output with its
+	// issues, so it can be diagnosed without another paid attempt.
+	evidence := failure.Evidence
+	if evidence == nil || evidence.Plan == nil || evidence.Plan.Base.Name != "Dart Throw" || len(evidence.Attempts) != 2 {
+		t.Fatalf("evidence %+v", evidence)
+	}
+	design := evidence.Attempts[1]
+	if design.Purpose != "design" || len(design.Issues) == 0 || s.Stringify(at(design.Output.(*s.Object), "paths", "path2", "tiers", "tier3")) != s.Stringify(at(broken, "paths", "path2", "tiers", "tier3")) {
+		t.Errorf("design attempt %+v", design)
+	}
+}
+
+// A plan that stays invalid fails before any mechanics call and keeps every
+// rejected plan with its issues.
+func TestRejectedPlansAreKeptAsFailureEvidence(t *testing.T) {
+	prepared, err := fixture.Prepare()
+	if err != nil {
+		t.Fatal(err)
+	}
+	broken := recordedOutput(t, "plan")
+	at(broken, "paths", "path3", "milestones", "tier3").(*s.Object).Set("technique", "Unknown Art")
+	model := &fixture.Model{Outputs: []any{broken, broken}}
+	_, err = unit.DraftUnit(context.Background(), prepared, model, fixture.Options())
+	var failure *unit.ModelError
+	if !errors.As(err, &failure) || !strings.Contains(failure.Message, "could not be validated") || failure.Evidence == nil {
+		t.Fatalf("got %v", err)
+	}
+	if failure.Evidence.Plan != nil || len(failure.Evidence.Attempts) != 2 || len(model.Requests) != 2 {
+		t.Fatalf("evidence %+v after %d calls", failure.Evidence, len(model.Requests))
+	}
+	for _, attempt := range failure.Evidence.Attempts {
+		if attempt.Purpose != "plan" || attempt.Output == nil || !strings.Contains(strings.Join(attempt.Issues, " "), "Unknown Art") {
+			t.Errorf("plan attempt %+v", attempt)
+		}
 	}
 }
 

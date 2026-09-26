@@ -129,17 +129,32 @@ func planDesign(ctx context.Context, prepared Prepared, model Model, repairs int
 		if errors.As(err, &modelErr) && modelErr.Usage != nil {
 			billed = modelErr.Usage
 		}
-		*attempts = append(*attempts, withUsage(Attempt{Number: len(*attempts) + 1, Purpose: "plan", Issues: issues}, billed))
+		rejected := withUsage(Attempt{Number: len(*attempts) + 1, Purpose: "plan", Issues: issues}, billed)
+		if validation != nil {
+			rejected.Output = response.Output
+		}
+		*attempts = append(*attempts, rejected)
 		if validation == nil {
 			failure := StageFailure(err, "draft", totalUsage(*attempts), false)
-			return DesignPlan{}, &ModelError{Message: failure.Message, Usage: totalUsage(*attempts), Failure: failure.Failure, Cause: failure}
+			return DesignPlan{}, &ModelError{Message: failure.Message, Usage: totalUsage(*attempts), Failure: failure.Failure, Cause: failure, Evidence: failureEvidence(nil, *attempts)}
 		}
 		correction = "\n\nCorrect this invalid design plan while retaining supported character identity: " +
 			s.Stringify(s.NewObject().Set("issues", stringList(issues)).Set("previous", response.Output))
 	}
 	last := (*attempts)[len(*attempts)-1]
 	message := "The character design plan could not be validated. " + failureSummary(last.Issues)
-	return DesignPlan{}, &ModelError{Message: message, Usage: totalUsage(*attempts), Failure: &Failure{Code: CodeOutputInvalid, Stage: "draft", Message: message}}
+	return DesignPlan{}, &ModelError{Message: message, Usage: totalUsage(*attempts), Failure: &Failure{Code: CodeOutputInvalid, Stage: "draft", Message: message}, Evidence: failureEvidence(nil, *attempts)}
+}
+
+// failureEvidence copies the attempts of a failed draft with the accepted
+// plan, if any.
+func failureEvidence(plan *DesignPlan, attempts []Attempt) *FailureEvidence {
+	evidence := &FailureEvidence{Attempts: append([]Attempt{}, attempts...)}
+	if plan != nil {
+		retained := *plan
+		evidence.Plan = &retained
+	}
+	return evidence
 }
 
 func stringList(values []string) []any {
@@ -196,7 +211,7 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 		}
 		attempts = append(attempts, withUsage(Attempt{Number: len(attempts) + 1, Purpose: purpose, Issues: []string{}}, failedUsage))
 		failure := StageFailure(err, "draft", totalUsage(attempts), invalid)
-		return &ModelError{Message: failure.Message, Usage: totalUsage(attempts), Failure: failure.Failure, Cause: failure}
+		return &ModelError{Message: failure.Message, Usage: totalUsage(attempts), Failure: failure.Failure, Cause: failure, Evidence: failureEvidence(&plan, attempts)}
 	}
 	for attempt := 0; attempt <= repairs; attempt++ {
 		if err := cancelled(ctx, attempts); err != nil {
@@ -293,9 +308,16 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 			}
 			draft = &d
 		}
-		attempts = append(attempts, withUsage(Attempt{Number: len(attempts) + 1, Purpose: purpose, Issues: issues}, usage))
+		attempt := withUsage(Attempt{Number: len(attempts) + 1, Purpose: purpose, Issues: issues}, usage)
+		if len(issues) > 0 {
+			attempt.Output = authored
+		}
+		attempts = append(attempts, attempt)
 		if draft != nil && len(issues) == 0 {
 			all := append([]Attempt(nil), attempts...)
+			for i := range all {
+				all[i].Output = nil
+			}
 			draft.Run.Attempts = &all
 			draft.Run.Usage = totalUsage(attempts)
 			return *draft, nil
@@ -308,7 +330,7 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 		}
 	}
 	message := fmt.Sprintf("The draft still failed mechanics checks after %d attempts. %s No invalid Unit was published.", designAttempts, failureSummary(issues))
-	return Draft{}, &ModelError{Message: message, Usage: totalUsage(attempts), Failure: &Failure{Code: CodeOutputInvalid, Stage: "draft", Message: message}}
+	return Draft{}, &ModelError{Message: message, Usage: totalUsage(attempts), Failure: &Failure{Code: CodeOutputInvalid, Stage: "draft", Message: message}, Evidence: failureEvidence(&plan, attempts)}
 }
 
 func blueprintRequest(prepared Prepared, previous any, issues []string, plan DesignPlan) (ModelRequest, error) {

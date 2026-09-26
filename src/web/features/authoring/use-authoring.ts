@@ -480,6 +480,7 @@ export function useAuthoring(onComplete: (artifact: LabArtifact) => Promise<unkn
     startedAt: job?.startedAt ?? 0,
     status: status || job?.status || '',
     error: error || job?.error || '',
+    failureEvidence: job?.state === 'failed' ? job.evidence : undefined,
     needsProvider,
     job,
     jobs,

@@ -157,6 +157,49 @@ func TestFailuresLeaveOutputAloneAndNeverOverwrite(t *testing.T) {
 	}
 }
 
+// A draft that fails validation writes its rejected outputs beside the
+// requested output, so the failure can be read without paying again.
+func TestFailedDraftsKeepTheirEvidence(t *testing.T) {
+	dir := scratch(t)
+	request := filepath.Join("..", "..", "data", "reference", "dart-monkey.request.json")
+	prepared := filepath.Join(dir, "prepared.json")
+	if _, _, err := cli(t, "prepare", request, "--profile", "default", "-o", prepared); err != nil {
+		t.Fatal(err)
+	}
+	plan, err := fixture.JSON("plan")
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan.(*s.Object).Set("repertoire", []any{})
+	answer := filepath.Join(dir, "answer.json")
+	if err := os.WriteFile(answer, []byte(s.Stringify(plan)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	// A stand-in codex answers every call with the same invalid plan.
+	codex := filepath.Join(dir, "codex")
+	script := "#!/bin/sh\nout=\"\"\nwhile [ $# -gt 0 ]; do\n  if [ \"$1\" = --output-last-message ]; then out=\"$2\"; shift; fi\n  shift\ndone\ncat >/dev/null\ncp " + answer + " \"$out\"\n"
+	if err := os.WriteFile(codex, []byte(script), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	output := filepath.Join(dir, "dart.json")
+	_, stderr, err := cli(t, "draft", prepared, "--provider", "codex", "--codex", codex, "--timeout", "20", "-o", output)
+	if err == nil || !strings.Contains(err.Error(), "could not be validated") {
+		t.Fatalf("draft: %v\n%s", err, stderr)
+	}
+	saved, readErr := os.ReadFile(filepath.Join(dir, "dart.failure.json"))
+	if readErr != nil || !strings.Contains(stderr, "Wrote the failure evidence to") {
+		t.Fatalf("no failure evidence: %v\n%s", readErr, stderr)
+	}
+	value, _ := s.Decode(saved)
+	attempts, _ := value.(*s.Object).Get("attempts")
+	if list, _ := attempts.([]any); len(list) != 2 {
+		t.Errorf("evidence %s", saved)
+	}
+	if _, err := os.Stat(output); err == nil {
+		t.Error("a failed draft wrote its output")
+	}
+}
+
 func TestModelCommandsNeedAKeyAndReportIt(t *testing.T) {
 	dir := scratch(t)
 	t.Setenv("OPENROUTER_MODEL", "")

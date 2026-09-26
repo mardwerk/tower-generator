@@ -1,5 +1,5 @@
 import type { LabError } from './contract.js';
-import type { ModelUsage, ModelFailure } from './contract.js';
+import type { FailureEvidence, ModelUsage, ModelFailure } from './contract.js';
 
 export class LabApiError extends Error {
   constructor(
@@ -7,6 +7,7 @@ export class LabApiError extends Error {
     readonly usage?: ModelUsage,
     readonly code = 'OPERATION_FAILED',
     readonly details?: ModelFailure,
+    readonly evidence?: FailureEvidence,
   ) {
     super(message);
   }
@@ -52,6 +53,7 @@ export async function api<T>(endpoint: string, body?: unknown, signal?: AbortSig
       error.error?.usage,
       error.error?.code,
       error.error?.details,
+      error.error?.evidence,
     );
   }
   return result as T;

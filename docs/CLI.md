@@ -74,4 +74,6 @@ Without `-o`, stdout carries the complete JSON artifact (Markdown for `render`) 
 
 Model inputs and raw outputs are recorded only with `--evidence-dir`: each run gets a new folder with the input, a manifest (the binary's build and SHA-256), every request, raw answer, output and outcome.
 
+A `draft`, `generate` or `author` run that fails validation after its repairs writes its failure evidence beside `-o`: `-o dart.json` keeps the rejected plans and outputs, their issues and any accepted plan in `dart.failure.json`, and the failed run writes nothing to `dart.json`. Without `-o` the CLI says so; `--evidence-dir` keeps every request and answer as well.
+
 Configuration: existing environment variables win over `.env` in the working directory; command-line options win over both. `.env` is read from the working directory only, as UTF-8 or UTF-16 with a byte-order mark; a line it cannot read is an error that names the line. `serve` prints the model and the OpenRouter key it uses, the key masked, and the `.env` file or variable it came from. `UNIT_DATA_DIR` moves `data/`, and `UNIT_RUNS_DIR` moves `data/runs/`. Credentials never enter artifacts. Agents must follow [OPENROUTER.md](OPENROUTER.md).

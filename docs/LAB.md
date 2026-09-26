@@ -18,6 +18,7 @@ When you change the client, rebuild it with `pnpm build` (Node.js 22 or newer) a
 Enter a character name and select Generate. The Profile dropdown below the name, beside Inputs and rules and Import, picks the rules; the BTD6-inspired default is preselected. The server looks the character up on Wikipedia (with Wikidata and Fandom for text and images) and asks you to choose when the name is ambiguous. It saves the found Sources to your library, prepares them under the Profile, then drafts, checks and reviews the unit. Missing sources produce an error, never invented canon.
 
 - Starting a generation clears the name field and hides earlier failed or stopped runs from the activity bar; their revisions stay available.
+- A generation that fails its checks after the repair attempts shows **Download failure evidence** below the error: the rejected plans and outputs with their issues, and the accepted plan if there was one, so the failure can be read without generating again.
 - Ctrl-click or Cmd-click Generate to stay on the create page; several runs can proceed at once, each with its own Stop.
 - **Inputs and rules** lets you edit or import a request before generating. An imported request keeps its own rules until you pick a Profile; otherwise the selected Profile's rules apply when it is prepared.
 - The sidebar runs each stage (prepare, draft, check, review) separately. Rerunning a stage creates a new revision and keeps the old one. Continue runs the remaining stages; Stop cancels the current one.
