@@ -2,141 +2,114 @@ package unit
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
 )
 
-// A source technique or form belongs to one path. Two paths that develop the
-// same technique read as one path split in two, and an Active Ability that
-// boosts another path's form makes one path depend on the other's identity.
-// The base attack is shared by every path and belongs to none.
+// Every planned purchase names the technique it adapts: a repertoire entry or
+// the base attack. The names are typed plan data, so the checks below do not
+// depend on how a purchase or Active Ability is later named.
+//
+// A path needs a technique of its own. Two paths may adapt the same technique
+// as crosspath synergy, but only where a legal build owns both purchases;
+// otherwise the technique is split between purchases that never meet, such as
+// a middle-path Active Ability boosting a form the top path reaches at its
+// third purchase.
 
-// ownedTechnique is a repertoire technique and the paths whose own plan text
-// names it.
-type ownedTechnique struct {
-	name     string
-	patterns []*regexp.Regexp
-	paths    []int
+// adaptation is one purchase's technique.
+type adaptation struct {
+	path, tier int
 }
 
-var parenthetical = regexp.MustCompile(`\s*\([^)]*\)`)
-
-// techniquePatterns match a technique name as whole words, ignoring case and
-// parenthetical notes; "A / B" names two spellings of one technique.
-func techniquePatterns(name string) []*regexp.Regexp {
-	var out []*regexp.Regexp
-	for _, spelling := range strings.Split(parenthetical.ReplaceAllString(name, ""), "/") {
-		words := strings.Fields(spelling)
-		if len(strings.Join(words, " ")) < 3 {
-			continue
-		}
-		for i, word := range words {
-			words[i] = regexp.QuoteMeta(word)
-		}
-		out = append(out, regexp.MustCompile(`(?i)(?:^|[^\p{L}\p{N}])`+strings.Join(words, `\s+`)+`(?:$|[^\p{L}\p{N}])`))
-	}
-	return out
+func sameTechnique(a, b string) bool {
+	return strings.EqualFold(strings.Join(strings.Fields(a), " "), strings.Join(strings.Fields(b), " "))
 }
 
-func mentions(patterns []*regexp.Regexp, text string) bool {
-	for _, pattern := range patterns {
-		if pattern.MatchString(text) {
+// ownedTogether reports a legal build that owns both purchases.
+func ownedTogether(a, b adaptation, builds []m.Selection) bool {
+	for _, build := range builds {
+		if build[a.path] >= a.tier && build[b.path] >= b.tier {
 			return true
 		}
 	}
 	return false
 }
 
-// pathText is a planned path's own description: its name, reason to buy,
-// purchases and capstone. Its weakness may compare it with another path and
-// is left out.
-func pathText(branch PlanBranch) string {
-	texts := []string{branch.Name, branch.BuyFor, branch.CapstoneValue}
-	for tier := 1; tier <= 5; tier++ {
-		texts = append(texts, branch.Milestones.At(tier))
+// PlanTechniqueIssues checks the typed technique of every planned purchase.
+// Plans without techniques predate the field and are not checked.
+func PlanTechniqueIssues(plan DesignPlan, definition m.Definition) []m.Issue {
+	if plan.UpgradeIntents == nil {
+		return nil
 	}
-	return strings.Join(texts, "\n")
-}
-
-// techniqueOwnership lists the repertoire techniques other than the base
-// attack with the paths that name them.
-func techniqueOwnership(plan DesignPlan) []ownedTechnique {
-	var out []ownedTechnique
-	for _, entry := range plan.Repertoire {
-		patterns := techniquePatterns(entry.Name)
-		if len(patterns) == 0 || mentions(patterns, plan.Base.Name) {
-			continue
+	var issues []m.Issue
+	known := func(name string) (canonical string, base bool, ok bool) {
+		if sameTechnique(name, plan.Base.Name) {
+			return plan.Base.Name, true, true
 		}
-		owned := ownedTechnique{name: entry.Name, patterns: patterns}
-		for index := range m.PathKeys {
-			if mentions(patterns, pathText(*plan.Paths.At(index))) {
-				owned.paths = append(owned.paths, index)
+		for _, entry := range plan.Repertoire {
+			if sameTechnique(name, entry.Name) {
+				return entry.Name, false, true
 			}
 		}
-		out = append(out, owned)
+		return "", false, false
 	}
-	return out
-}
-
-func pathList(paths []int) string {
-	names := make([]string, len(paths))
-	for i, index := range paths {
-		names[i] = pathPosition(m.PathKeys[index])
-	}
-	if len(names) == 2 {
-		return names[0] + " and " + names[1]
-	}
-	return strings.Join(names[:len(names)-1], ", ") + " and " + names[len(names)-1]
-}
-
-// PlanOwnershipIssues rejects a plan whose paths share a repertoire technique.
-func PlanOwnershipIssues(plan DesignPlan) []m.Issue {
-	var issues []m.Issue
-	for _, technique := range techniqueOwnership(plan) {
-		if len(technique.paths) < 2 {
-			continue
-		}
-		issues = append(issues, m.Issue{
-			Path:    "paths." + m.PathKeys[technique.paths[1]],
-			Message: fmt.Sprintf("The %s paths both name %q. A source technique or form belongs to one path: give it to one path and build the others from their own techniques. The middle path's Active Ability comes from its own technique, not from a form another path develops. List distinct techniques separately in the repertoire when the source distinguishes them.", pathList(technique.paths), technique.name),
-		})
-	}
-	return issues
-}
-
-// NamedTechniqueIssues rejects a purchase or Active Ability named after a
-// technique that the plan gives to another path.
-func NamedTechniqueIssues(blueprint m.Blueprint, plan DesignPlan) []m.Issue {
-	var issues []m.Issue
-	for _, technique := range techniqueOwnership(plan) {
-		if len(technique.paths) != 1 {
-			continue
-		}
-		owner := technique.paths[0]
-		for index, path := range m.PathKeys {
-			if index == owner {
+	var order []string
+	uses := map[string][]adaptation{}
+	for pathIndex, path := range m.PathKeys {
+		for tier := 1; tier <= 5; tier++ {
+			technique := plan.UpgradeIntents.At(pathIndex).At(tier).Technique
+			if technique == "" {
+				return nil
+			}
+			name, base, ok := known(technique)
+			if !ok {
+				issues = append(issues, m.Issue{
+					Path:    "upgradeIntents." + path + "." + m.TierKeys[tier-1] + ".technique",
+					Message: fmt.Sprintf("%q is neither the base attack nor a repertoire entry. Name the technique this purchase adapts exactly as the base or repertoire names it.", technique),
+				})
 				continue
 			}
-			report := func(where, name string) {
+			if base {
+				continue
+			}
+			if _, seen := uses[name]; !seen {
+				order = append(order, name)
+			}
+			uses[name] = append(uses[name], adaptation{pathIndex, tier})
+		}
+	}
+	builds := m.AllLegalBuilds(definition)
+	own := make([]bool, len(m.PathKeys))
+	for _, name := range order {
+		paths := map[int]bool{}
+		for _, use := range uses[name] {
+			paths[use.path] = true
+		}
+		if len(paths) == 1 {
+			own[uses[name][0].path] = true
+			continue
+		}
+		reported := false
+		for i, a := range uses[name] {
+			for _, b := range uses[name][i+1:] {
+				if reported || a.path == b.path || ownedTogether(a, b, builds) {
+					continue
+				}
+				reported = true
 				issues = append(issues, m.Issue{
-					Path:    "paths." + path + ".tiers." + where,
-					Message: fmt.Sprintf("%q names %q, which the plan gives to the %s path. Name this path's purchases and Active Ability after its own techniques.", name, technique.name, pathPosition(m.PathKeys[owner])),
+					Path:    "upgradeIntents." + m.PathKeys[b.path] + "." + m.TierKeys[b.tier-1] + ".technique",
+					Message: fmt.Sprintf("%s and %s both adapt %q, and no legal build owns both, so neither can build on the other. Two paths share a technique only as crosspath synergy: give it to one path, or keep the other path's use to a purchase a crosspath can own with it (a first or second purchase).", BuildCode(a.path, a.tier), BuildCode(b.path, b.tier), name),
 				})
 			}
-			for tier := 1; tier <= 5; tier++ {
-				purchase := blueprint.Paths.At(index).Tiers.At(tier)
-				key := m.TierKeys[tier-1]
-				if mentions(technique.patterns, purchase.Name) {
-					report(key+".name", purchase.Name)
-				}
-				for number, change := range purchase.Changes {
-					if change.Boost != nil && mentions(technique.patterns, change.Boost.Name) {
-						report(fmt.Sprintf("%s.changes.%d.boost.name", key, number), change.Boost.Name)
-					}
-				}
-			}
+		}
+	}
+	for pathIndex, path := range m.PathKeys {
+		if !own[pathIndex] {
+			issues = append(issues, m.Issue{
+				Path:    "upgradeIntents." + path,
+				Message: fmt.Sprintf("The %s path adapts no technique of its own: every purchase adapts the base attack or a technique another path also adapts. Give the path a repertoire technique that is its identity; it may still build on other paths' techniques in crosspaths.", pathPosition(path)),
+			})
 		}
 	}
 	return issues

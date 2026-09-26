@@ -71,7 +71,8 @@ export interface DamageType extends Term {
   ineffectiveAgainst: string[];
 }
 
-export type EffectKind = 'moveSpeed' | 'damageOverTime' | 'disable' | 'damageTaken' | 'custom';
+export type EffectKind =
+  'moveSpeed' | 'damageOverTime' | 'disable' | 'damageTaken' | 'knockback' | 'custom';
 
 /** A Profile-defined status effect: its bounds, duration limit, stacking and immunities. */
 export interface StatusEffect {

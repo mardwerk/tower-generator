@@ -54,6 +54,9 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	if checked.Draft.Run.DesignPlan != nil {
 		context.Set("designPlan", s.FromGoValue(checked.Draft.Run.DesignPlan))
 	}
+	if checked.Draft.Run.DesignEvaluation != nil {
+		context.Set("purchaseEvidence", checked.Draft.Run.DesignEvaluation)
+	}
 	comparisons := []any{}
 	if blueprint != nil {
 		var vocabulary *m.Vocabulary

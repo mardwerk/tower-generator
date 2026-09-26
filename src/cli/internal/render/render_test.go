@@ -282,3 +282,40 @@ func TestScaledAdditionsNameTheMultiplier(t *testing.T) {
 		t.Errorf("x-x-4 %v, x-x-5 %s", purchases[2].Purchases[3].Effects, effects)
 	}
 }
+
+// The Default Profile's Knockback is a control status with a speed-multiple
+// magnitude: it validates in every legal build, reads as a sentence, counts
+// as control and does not reach Blimp or Boss enemies (requested on #27 for
+// Luffy's Bazooka and Kong Gun, and Juggernaut's knockback).
+func TestKnockbackResolvesAndReads(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	definition := stages.Result.Prepared.Request.MechanicsDefinition
+	terms := definition.Terms()
+	effect, ok := terms.Effect("knockback")
+	if !ok || effect.Kind != mechanics.KindKnockback || strings.Join(effect.Immune, ",") != "blimp,boss" {
+		t.Fatalf("the Default Profile's Knockback: %+v", effect)
+	}
+	candidate := stages.Result.Candidate
+	blueprint := *candidate.Blueprint
+	tier := &blueprint.Paths.Path3.Tiers.Tier3
+	tier.Changes = append(append([]mechanics.Change(nil), tier.Changes...),
+		mechanics.Change{Kind: "status", Target: "base", Effect: "knockback", Field: "magnitude", Operation: "set", Number: 1.25},
+		mechanics.Change{Kind: "status", Target: "base", Effect: "knockback", Field: "seconds", Operation: "set", Number: 0.5},
+	)
+	if issues := mechanics.ValidateBlueprint(s.FromGoValue(blueprint), s.FromGoValue(*definition)); len(issues) > 0 {
+		t.Fatalf("a knockback purchase: %v", issues)
+	}
+	candidate.Blueprint = &blueprint
+	effects := strings.Join(render.Purchases(candidate, definition)[2].Purchases[2].Effects, " ")
+	if !strings.Contains(effects, "Knockback 1.25 times enemy speed for 0.5 s") {
+		t.Errorf("x-x-3 reads %s", effects)
+	}
+	build := mechanics.ResolveUnchecked(&blueprint, mechanics.Selection{0, 0, 3})
+	metrics := s.Stringify(mechanics.SpecialtyMetricsWith(build, "control", &terms))
+	if !strings.Contains(metrics, `"knockback coverage upper bound"`) || strings.Contains(metrics, `"knockback coverage upper bound":0`) {
+		t.Errorf("control metrics %s", metrics)
+	}
+}

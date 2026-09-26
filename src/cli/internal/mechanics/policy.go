@@ -117,7 +117,7 @@ func SpecialtyMetricsWith(build Build, specialization string, vocabulary *Vocabu
 			break
 		}
 		for _, effect := range vocabulary.StatusEffects {
-			if effect.Kind != KindMoveSpeed && effect.Kind != KindDisable && effect.Kind != KindDamageTaken {
+			if effect.Kind != KindMoveSpeed && effect.Kind != KindDisable && effect.Kind != KindDamageTaken && effect.Kind != KindKnockback {
 				continue
 			}
 			coverage := 0.0

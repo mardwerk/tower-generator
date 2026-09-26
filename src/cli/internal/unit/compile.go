@@ -320,7 +320,7 @@ func PathSummary(base m.Attack, build m.ResolvedBuild) string { return pathSumma
 // kinds read as enemy control, damage over time and other kinds by name.
 func statusSummary(base, after m.Attack, vocabulary *m.Vocabulary) (gains, losses []string) {
 	control := func(kind string) bool {
-		return kind == m.KindMoveSpeed || kind == m.KindDisable
+		return kind == m.KindMoveSpeed || kind == m.KindDisable || kind == m.KindKnockback
 	}
 	var gainedControl, lostControl bool
 	seen := map[string]bool{}

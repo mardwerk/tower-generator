@@ -111,8 +111,13 @@ func planAuthoringFloor(plan *s.Object, add func(path []any, message string)) {
 	}
 }
 
+// techniqueName is the repertoire technique or base attack a purchase adapts.
+func techniqueName() *s.StringSchema { return s.String().Trim().Min(1).Max(80) }
+
+// upgradeIntentSchema is a retained promise. Plans made before purchases
+// named their technique have none.
 func upgradeIntentSchema(improvement, unlock s.Schema) *s.ObjectSchema {
-	return s.StrictObject(s.F("improves", s.Array(improvement).Max(4)), s.F("unlock", unlock))
+	return s.StrictObject(s.F("improves", s.Array(improvement).Max(4)), s.F("unlock", unlock), s.F("technique", s.Optional(techniqueName())))
 }
 
 func upgradeIntentsSchema(intent s.Schema) *s.ObjectSchema {

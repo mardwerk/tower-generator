@@ -276,6 +276,8 @@ func TestVocabularyIssues(t *testing.T) {
 		StatusEffect{ID: "freeze", Name: "Freeze", Kind: KindDisable, Magnitude: &Magnitude{Unit: "percent", Max: 10}, MaxSeconds: 1, Stacking: Stacking{MaxStacks: 1, Refresh: RefreshReset}, Immune: []string{"ghost"}},
 		StatusEffect{ID: "poison", Name: "Poison", Aliases: []string{"burn"}, Kind: KindDamageOverTime, Magnitude: &Magnitude{Unit: "hp", Max: 10}, MaxSeconds: 1, Stacking: Stacking{MaxStacks: 1, Refresh: RefreshReset}},
 		StatusEffect{ID: "splash", Name: "Splash", Kind: KindCustom, MaxSeconds: 1, Stacking: Stacking{MaxStacks: 1, Refresh: RefreshReset}},
+		StatusEffect{ID: "shove", Name: "Shove", Kind: KindKnockback, Magnitude: &Magnitude{Unit: "percent", Max: 5}, MaxSeconds: 1, Stacking: Stacking{MaxStacks: 1, Refresh: RefreshReset}},
+		StatusEffect{ID: "push", Name: "Push", Kind: KindKnockback, MaxSeconds: 1, Stacking: Stacking{MaxStacks: 1, Refresh: RefreshReset}},
 	)
 	var messages []string
 	for _, issue := range VocabularyIssues(broken) {
@@ -289,6 +291,8 @@ func TestVocabularyIssues(t *testing.T) {
 		"statusEffects.5.aliases.0: burn already names the effect burn",
 		"statusEffects.5.magnitude.unit: Damage over time is measured in damage/s",
 		"statusEffects.6.id: splash is reserved by the Engine",
+		"statusEffects.7.magnitude.unit: Knockback is measured in times enemy speed",
+		"statusEffects.8.magnitude: A knockback effect needs a magnitude",
 	} {
 		if !strings.Contains(joined, "vocabulary."+want) {
 			t.Errorf("missing %q in\n%s", want, joined)

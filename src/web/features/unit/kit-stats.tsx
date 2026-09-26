@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  ChevronsLeft,
   Coins,
   Crosshair,
   Timer,
@@ -92,6 +93,7 @@ const kindIcons: Record<NonNullable<StatChange['kind']>, LucideIcon> = {
   damageOverTime: Flame,
   disable: Zap,
   damageTaken: ShieldOff,
+  knockback: ChevronsLeft,
   custom: Sparkles,
   detection: Eye,
 };

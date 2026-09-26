@@ -154,6 +154,7 @@ const effectKinds: Record<StatusEffect['kind'], string> = {
   damageOverTime: 'Damage over time',
   disable: 'Disable',
   damageTaken: 'Damage taken',
+  knockback: 'Knockback',
   custom: 'Custom',
 };
 

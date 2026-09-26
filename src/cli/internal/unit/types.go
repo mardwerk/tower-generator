@@ -389,6 +389,9 @@ type PlanOmission struct {
 type UpgradeIntent struct {
 	Improves []string `json:"improves"`
 	Unlock   string   `json:"unlock"`
+	// Technique is the repertoire technique or base attack the purchase
+	// adapts; plans made before it existed have none.
+	Technique string `json:"technique,omitempty"`
 }
 
 // PathIntents are the five promises of a path.

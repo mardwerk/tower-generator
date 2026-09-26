@@ -35,6 +35,15 @@ func DefaultAuthoringDefinition() mechanics.Definition {
 	d = mechanics.UpgradeDefinition(d)
 	d.Revision = defaultAuthoringRevision
 	describeVocabulary(d.Vocabulary)
+	// Knockback follows the atlas KnockbackModel of Juggernaut and Super
+	// Monkey's Knockback; see the rules document's scale references.
+	d.Vocabulary.StatusEffects = append(d.Vocabulary.StatusEffects, mechanics.StatusEffect{
+		ID: "knockback", Name: "Knockback", Aliases: []string{"push back", "launch"}, Kind: mechanics.KindKnockback,
+		Description: "Pushes the enemy back along the track at the magnitude times its own speed for the duration. The strongest knockback applies; a new one refreshes the duration.",
+		Magnitude:   &mechanics.Magnitude{Unit: mechanics.KnockbackUnit, Min: 0, Max: 5}, MaxSeconds: 1,
+		Stacking: mechanics.Stacking{MaxStacks: 1, Refresh: mechanics.RefreshReset},
+		Immune:   []string{"blimp", "boss"},
+	})
 	return d
 }
 
@@ -65,8 +74,8 @@ var defaultEnemyProperties = map[string][2]string{
 	"purple": {"Purple", "Resists energy damage."},
 	"black":  {"Black", "Resists explosive damage."},
 	"zebra":  {"Zebra", "Resists explosive damage."},
-	"blimp":  {"Blimp", "Large armored carrier; ignores slow and stun."},
-	"boss":   {"Boss", "Boss enemy; ignores slow and stun."},
+	"blimp":  {"Blimp", "Large armored carrier; ignores slow, stun and knockback."},
+	"boss":   {"Boss", "Boss enemy; ignores slow, stun and knockback."},
 }
 
 var defaultDamageTypes = map[string]string{"sharp": "Sharp", "normal": "Normal", "explosive": "Explosive", "energy": "Energy"}
