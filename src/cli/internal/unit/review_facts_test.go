@@ -63,7 +63,13 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 		"against the passages its sourceIds cite", "which designPlan does not repeat",
 		// Each technique's effects are judged against its passages.
 		`"effects":[{"effect":"A heavier spiked ball replaces the dart and deals more damage.","adaptedAs":["damage"]`,
-		"fail a described effect the list leaves out, an omission whose reason does not hold"} {
+		"fail a described effect the list leaves out, an omission whose reason does not hold",
+		// The review sees which entries code checked (Kyle on #27: an entry
+		// no purchase names was skipped while the review was told code had
+		// checked every adapted promise).
+		`"adaptedBy":["3-x-x","4-x-x","5-x-x"]}`, `"adaptedBy":["x-4-x","x-5-x"]}`,
+		"Code checks no entry whose adaptedBy is empty: fail a nonempty adaptedAs there",
+		"except for an entry named like the base attack: judge that entry's adaptations against 0-0-0"} {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("the review prompt lacks %q", want)
 		}
@@ -113,6 +119,21 @@ func TestReviewReadsEachPlannedPurchaseOnItsTier(t *testing.T) {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("the review context lacks %s", want)
 		}
+	}
+	// An entry no purchase names shows an empty adaptedBy, so the review can
+	// fail an adaptation it claims; code does not check it.
+	checked := stages.Checked
+	unused := *checked.Draft.Run.DesignPlan
+	unused.Repertoire = append(append([]unit.PlanRepertoire(nil), unused.Repertoire...), unit.PlanRepertoire{
+		Name: "Dart Monkey Legend", SourceIDs: []string{"source1:2"}, Limitation: "Not purchased.",
+		Effects: []unit.PlanEffect{{Effect: "The dart flies far.", AdaptedAs: []string{"range"}, Reason: "Reach is range."}},
+	})
+	if issues := unit.PlanEffectIssues(unused); len(issues) > 0 {
+		t.Errorf("code checked an entry no purchase names: %v", issues)
+	}
+	checked.Draft.Run.DesignPlan = &unused
+	if got := unit.BlueprintReviewRequest(checked).Prompt; !strings.Contains(got, `"name":"Dart Monkey Legend","sourceIds":["source1:2"],"limitation":"Not purchased.","effects":[{"effect":"The dart flies far.","adaptedAs":["range"],"reason":"Reach is range."}],"adaptedBy":[]}`) {
+		t.Error("the review does not see that no purchase adapts the entry")
 	}
 	// The saved draft keeps the whole plan.
 	if saved := s.Stringify(s.FromGoValue(stages.Checked.Draft.Run.DesignPlan)); !strings.Contains(saved, "Proposed early purchases") || !strings.Contains(saved, `"upgradeIntents"`) {

@@ -180,8 +180,28 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 // second milestones, so they repeated those texts as proposals (reported on
 // #27: compression credited with range at x-x-1 was flagged only in those
 // crosspath proposals, not on the purchased tier).
+//
+// Each repertoire entry gains adaptedBy, the purchases whose technique is
+// that entry, as code found them: PlanEffectIssues checks an entry's adapted
+// effects only on those purchases, so the review can see which entries code
+// did not check (Kyle on #27: an entry no purchase names could claim an
+// adaptation the unit lacks while the review was told code had checked it).
 func reviewDesignPlan(plan DesignPlan) *s.Object {
 	view := s.FromGoValue(plan).(*s.Object)
+	if plan.UpgradeIntents != nil {
+		entries, _ := view.Get("repertoire")
+		for index, entry := range plan.Repertoire {
+			adaptedBy := []any{}
+			for pathIndex := range m.PathKeys {
+				for tier := 1; tier <= len(m.TierKeys); tier++ {
+					if sameTechnique(plan.UpgradeIntents.At(pathIndex).At(tier).Technique, entry.Name) {
+						adaptedBy = append(adaptedBy, BuildCode(pathIndex, tier))
+					}
+				}
+			}
+			entries.([]any)[index].(*s.Object).Set("adaptedBy", adaptedBy)
+		}
+	}
 	view.Delete("upgradeIntents")
 	paths := field(view, "paths").(*s.Object)
 	for _, key := range m.PathKeys {
