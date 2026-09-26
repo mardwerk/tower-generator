@@ -347,3 +347,39 @@ func TestReviewsCitingMalformedCodesAreCorrected(t *testing.T) {
 		t.Errorf("%d calls; the correction does not name 3-x-3 and 4-x-4", len(model.Requests))
 	}
 }
+
+// A finding names the purchases its subject names. A live Luffy review on
+// #27 had subject x-4-x and x-5-x but wrote 4-x-x and 5-x-x in its
+// message, legal codes on the wrong path; it is corrected once. A message
+// that names the subject's purchase may compare it with another path.
+func TestReviewsNameTheSubjectsPurchase(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	finding := func(subject, message string) *s.Object {
+		review := recordedOutput(t, "review")
+		findings, _ := review.Get("findings")
+		findings.([]any)[0].(*s.Object).Set("subject", subject).Set("message", message)
+		return review
+	}
+	comparing := finding("x-5-x", "x-5-x adds less than the 140 Gold 1-x-x side purchase; 5-x-x is not comparable.")
+	model := &fixture.Model{Outputs: []any{comparing}}
+	if _, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options()); err != nil || len(model.Requests) != 1 {
+		t.Fatalf("a comparison that names its subject: %v after %d calls", err, len(model.Requests))
+	}
+	swapped := finding("x-4-x and x-5-x", "4-x-x costs 7,200 Gold and 5-x-x adds little over it.")
+	model = &fixture.Model{Outputs: []any{swapped, comparing}}
+	if _, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options()); err != nil {
+		t.Fatalf("a corrected finding: %v", err)
+	}
+	if len(model.Requests) != 2 || !strings.Contains(model.Requests[1].Prompt, "model.fan-club-allies's subject names x-4-x, but its text names 4-x-x instead. model.fan-club-allies's subject names x-5-x, but its text names 5-x-x instead.") {
+		t.Errorf("%d calls; the correction does not name the swapped purchases", len(model.Requests))
+	}
+	model = &fixture.Model{Outputs: []any{swapped, swapped}}
+	_, err = unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options())
+	var failure *unit.ModelError
+	if !errors.As(err, &failure) || !strings.Contains(failure.Message, "named another path's purchase than its subject after one correction") {
+		t.Errorf("a finding swapped twice: %v", err)
+	}
+}

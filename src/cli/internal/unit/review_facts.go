@@ -120,11 +120,13 @@ func newReviewCitations(blueprint *m.Blueprint, definition m.Definition) reviewC
 }
 
 // citationProblem is what code rejected in one finding, or in the summary
-// when finding is empty: illegal build codes and wrong facts.
+// when finding is empty: illegal build codes, wrong facts and purchases the
+// text names in place of the one its subject names.
 type citationProblem struct {
-	finding string
-	illegal []string
-	wrong   []string
+	finding    string
+	illegal    []string
+	wrong      []string
+	mismatched []string
 }
 
 // problems lists the review's rejected citations, the summary first, then
@@ -139,9 +141,52 @@ func (c reviewCitations) problems(review SemanticReview) []citationProblem {
 		if f.Action != nil {
 			texts = append(texts, *f.Action)
 		}
-		problem := citationProblem{finding: f.ID, illegal: c.illegal(texts...), wrong: c.wrongFacts(f)}
-		if len(problem.illegal) > 0 || len(problem.wrong) > 0 {
+		problem := citationProblem{finding: f.ID, illegal: c.illegal(texts...), wrong: c.wrongFacts(f), mismatched: mismatchedPurchases(f)}
+		if len(problem.illegal) > 0 || len(problem.wrong) > 0 || len(problem.mismatched) > 0 {
 			out = append(out, problem)
+		}
+	}
+	return out
+}
+
+// purchaseCodes lists the purchases a text names in build-code notation.
+func purchaseCodes(text string) []string {
+	var out []string
+	for _, code := range buildCodePattern.FindAllString(text, -1) {
+		if purchaseCode(code) && !slices.Contains(out, code) {
+			out = append(out, code)
+		}
+	}
+	return out
+}
+
+// purchaseTier is the tier a purchase code names: 4 for x-4-x.
+func purchaseTier(code string) string {
+	return strings.Trim(strings.ReplaceAll(code, "-", ""), "x")
+}
+
+// mismatchedPurchases reports a finding whose message and action never name
+// the purchase its subject names but name the same tier on another path
+// instead, such as a subject x-5-x with a message about 5-x-x (a live Luffy
+// review on #27). A text that names the subject's purchase may compare it
+// with any other.
+func mismatchedPurchases(f Finding) []string {
+	subject := purchaseCodes(f.Subject)
+	text := f.Message
+	if f.Action != nil {
+		text += "\n" + *f.Action
+	}
+	named := purchaseCodes(text)
+	var out []string
+	for _, code := range subject {
+		if slices.Contains(named, code) {
+			continue
+		}
+		for _, other := range named {
+			if purchaseTier(other) == purchaseTier(code) && !slices.Contains(subject, other) {
+				out = append(out, fmt.Sprintf("%s's subject names %s, but its text names %s instead.", f.ID, code, other))
+				break
+			}
 		}
 	}
 	return out
@@ -234,7 +279,7 @@ func rejectedCitations(problems []citationProblem) error {
 	if len(problems) == 0 {
 		return nil
 	}
-	var illegal, wrong []string
+	var illegal, wrong, mismatched []string
 	for _, p := range problems {
 		for _, code := range p.illegal {
 			if !slices.Contains(illegal, code) {
@@ -242,8 +287,12 @@ func rejectedCitations(problems []citationProblem) error {
 			}
 		}
 		wrong = append(wrong, p.wrong...)
+		mismatched = append(mismatched, p.mismatched...)
 	}
 	message := "The model review cited resolved facts that are wrong after one correction: " + strings.Join(wrong, " ") + " The draft is retained. Retry the review or choose another model."
+	if len(wrong) == 0 {
+		message = "The model review named another path's purchase than its subject after one correction: " + strings.Join(mismatched, " ") + " The draft is retained. Retry the review or choose another model."
+	}
 	if len(illegal) > 0 {
 		message = "The model review cited builds that are not legal (" + strings.Join(illegal, ", ") + ") after one correction. The draft is retained. Retry the review or choose another model."
 	}
@@ -253,7 +302,7 @@ func rejectedCitations(problems []citationProblem) error {
 // correctionPrompt asks for the flagged findings again, with the previous
 // review and what code rejected in it.
 func correctionPrompt(previous SemanticReview, problems []citationProblem) string {
-	var illegal, wrong, flagged []string
+	var illegal, wrong, mismatched, flagged []string
 	seen := map[string]bool{}
 	for _, p := range problems {
 		for _, code := range p.illegal {
@@ -263,6 +312,7 @@ func correctionPrompt(previous SemanticReview, problems []citationProblem) strin
 			}
 		}
 		wrong = append(wrong, p.wrong...)
+		mismatched = append(mismatched, p.mismatched...)
 		if p.finding != "" {
 			flagged = append(flagged, p.finding)
 		}
@@ -279,6 +329,9 @@ func correctionPrompt(previous SemanticReview, problems []citationProblem) strin
 	}
 	if len(wrong) > 0 {
 		text += "\nSome cited facts are wrong: " + strings.Join(wrong, " ") + " Read each value in legalBuilds."
+	}
+	if len(mismatched) > 0 {
+		text += "\nSome findings name another path's purchase than their subject: " + strings.Join(mismatched, " ") + " Name the purchase the finding is about with the build code its subject uses."
 	}
 	text += "\nReturn the whole review again, with a summary that describes exactly the findings you return."
 	if len(kept) > 0 {
