@@ -116,8 +116,18 @@ export function CrosspathOverview({
         )}
       </div>
       <Disclosure title="All crosspath builds">
-        <CrosspathTable title="Early builds" rows={crosspaths.early} currency={currency} />
-        <CrosspathTable title="Advanced builds" rows={crosspaths.advanced} currency={currency} />
+        <CrosspathTable
+          title="Early builds"
+          contributions="Each path on its own"
+          rows={crosspaths.early}
+          currency={currency}
+        />
+        <CrosspathTable
+          title="Advanced builds"
+          contributions="Added by the other path"
+          rows={crosspaths.advanced}
+          currency={currency}
+        />
       </Disclosure>
     </section>
   );
@@ -145,10 +155,12 @@ function BuildDetail({ row, currency }: { row: BuildRow; currency: string }) {
 /** Every legal two-path build, as the server resolved it. */
 function CrosspathTable({
   title,
+  contributions,
   rows,
   currency,
 }: {
   title: string;
+  contributions: string;
   rows: BuildRow[];
   currency: string;
 }) {
@@ -161,7 +173,7 @@ function CrosspathTable({
             <tr>
               <th className="py-1.5 pr-3 font-medium">Build</th>
               <th className="py-1.5 pr-3 font-medium">Total</th>
-              <th className="py-1.5 pr-3 font-medium">Added by the other path</th>
+              <th className="py-1.5 pr-3 font-medium">{contributions}</th>
               <th className="py-1.5 font-medium">Resulting attack</th>
             </tr>
           </thead>

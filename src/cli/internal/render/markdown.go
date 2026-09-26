@@ -78,16 +78,16 @@ func (sh *sheet) crosspathSection() []string {
 	early, advanced := len(crosspaths.Early), len(crosspaths.Advanced)
 	lines := []string{
 		"## Crosspaths", "",
-		fmt.Sprintf("A Unit can combine two paths: %d early builds keep both at their first or second purchase, and %d advanced builds take one further. Each row shows what each path's purchases add to the other and the resulting attack.", early, advanced), "",
+		fmt.Sprintf("A Unit can combine two paths: %d early builds keep both at their first or second purchase, and %d advanced builds take one further. An early row shows what each path's purchases do on their own, an advanced row what the side path adds to the main path, and each row the resulting attack.", early, advanced), "",
 		fmt.Sprintf("### Early builds (%d)", early), "",
 	}
-	lines = append(lines, crosspathTable(crosspaths.Early, sh)...)
+	lines = append(lines, crosspathTable(crosspaths.Early, sh, "Each path on its own")...)
 	lines = append(lines, fmt.Sprintf("### Advanced builds (%d)", advanced), "")
-	return append(lines, crosspathTable(crosspaths.Advanced, sh)...)
+	return append(lines, crosspathTable(crosspaths.Advanced, sh, "Added by the other path")...)
 }
 
-func crosspathTable(rows []BuildRow, sh *sheet) []string {
-	lines := []string{"| Build | Total | Added by the other path | Resulting attack |", "| --- | --- | --- | --- |"}
+func crosspathTable(rows []BuildRow, sh *sheet, contributions string) []string {
+	lines := []string{"| Build | Total | " + contributions + " | Resulting attack |", "| --- | --- | --- | --- |"}
 	for _, row := range rows {
 		var added []string
 		for _, contribution := range row.Contributions {

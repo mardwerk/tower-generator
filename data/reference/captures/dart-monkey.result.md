@@ -42,11 +42,11 @@ Placement costs 200 Gold. Dart Throw is an automatic projectile attack. Every 0.
 
 ## Crosspaths
 
-A Unit can combine two paths: 12 early builds keep both at their first or second purchase, and 36 advanced builds take one further. Each row shows what each path's purchases add to the other and the resulting attack.
+A Unit can combine two paths: 12 early builds keep both at their first or second purchase, and 36 advanced builds take one further. An early row shows what each path's purchases do on their own, an advanced row what the side path adds to the main path, and each row the resulting attack.
 
 ### Early builds (12)
 
-| Build | Total | Added by the other path | Resulting attack |
+| Build | Total | Each path on its own | Resulting attack |
 | --- | --- | --- | --- |
 | 1-1-0 | 440 Gold | 1-x-x: pierce 2 → 3; x-1-x: interval 0.95 s → 0.8075 s | 1 projectile every 0.8075 s, 1 Sharp damage, pierce 3, range 32 |
 | 1-2-0 | 630 Gold | 1-x-x: pierce 2 → 3; x-1-x and x-2-x: interval 0.95 s → 0.6379 s | 1 projectile every 0.6379 s, 1 Sharp damage, pierce 3, range 32 |

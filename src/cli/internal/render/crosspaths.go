@@ -107,7 +107,9 @@ func (sh *sheet) crosspaths() *Crosspaths {
 }
 
 // row resolves one build. An advanced row shows what the side purchases
-// add to the main path; an early row shows what each path adds to the other.
+// add to the main path. An early row shows what each path does on its own
+// from 0-0-0, so a stat both paths raise is not reported twice; the
+// resulting attack shows their combination.
 func (sh *sheet) row(selection m.Selection, advanced bool) BuildRow {
 	build := sh.resolve(selection)
 	row := BuildRow{Code: unit.SelectionCode(selection), Cost: build.CumulativeCost, Attack: sh.attackSummary(build.BaseAttack)}
@@ -119,9 +121,16 @@ func (sh *sheet) row(selection m.Selection, advanced bool) BuildRow {
 		if advanced && path.tier > limit {
 			continue
 		}
-		without := selection
-		without[path.index] = 0
-		changes := sh.buildChanges(sh.resolve(without), build)
+		var changes []string
+		if advanced {
+			without := selection
+			without[path.index] = 0
+			changes = sh.buildChanges(sh.resolve(without), build)
+		} else {
+			alone := m.Selection{}
+			alone[path.index] = path.tier
+			changes = sh.buildChanges(sh.resolve(m.Selection{}), sh.resolve(alone))
+		}
 		if len(changes) == 0 {
 			changes = []string{"no change"}
 		}

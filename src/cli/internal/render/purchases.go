@@ -427,7 +427,8 @@ func boostChange(name, stat string, before, after float64) string {
 	case "damageMultiplier":
 		return numberChange(name+"'s damage multiplier", "", before, after, false, "")
 	case "intervalMultiplier":
-		return numberChange(name+"'s interval multiplier", "", before, after, true, "")
+		// A multiplier is lowered, not shortened, even though lower is faster.
+		return numberChange(name+"'s interval multiplier", "", before, after, false, "")
 	}
 	return numberChange(name+"'s range bonus", "", before, after, false, "")
 }

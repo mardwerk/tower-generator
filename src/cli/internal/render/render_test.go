@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/mardwerk/unit-generator/src/cli/internal/fixture"
+	"github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
 	"github.com/mardwerk/unit-generator/src/cli/internal/render"
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
 	"github.com/mardwerk/unit-generator/src/cli/internal/unit"
@@ -223,4 +224,33 @@ func TestReferenceCapturesRenderAsCommitted(t *testing.T) {
 			t.Errorf("%s no longer renders as its committed sheet; run render on it again", filepath.Base(file))
 		}
 	}
+}
+
+// An early crosspath row reports what each path does on its own, so a stat
+// both paths raise is not counted twice; the resulting attack combines them.
+func TestEarlyCrosspathsDoNotRepeatSharedChanges(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	candidate := stages.Result.Candidate
+	blueprint := *candidate.Blueprint
+	tier := &blueprint.Paths.Path3.Tiers.Tier1
+	tier.Changes = append(append([]mechanics.Change(nil), tier.Changes...), mechanics.Change{Kind: "stat", Target: "base", Stat: "pierce", Operation: "add", Number: 1})
+	candidate.Blueprint = &blueprint
+	crosspaths := render.ResolveCrosspaths(candidate, stages.Result.Prepared.Request.MechanicsDefinition)
+	if crosspaths == nil {
+		t.Fatal("the edited blueprint is invalid")
+	}
+	for _, row := range crosspaths.Early {
+		if row.Code != "1-0-1" {
+			continue
+		}
+		got := s.Stringify(s.FromGoValue(row.Contributions))
+		if !strings.Contains(got, `{"from":"1-x-x","changes":["pierce 2 → 3"]}`) || !strings.Contains(got, `"pierce 2 → 3"`) || !strings.Contains(row.Attack, "pierce 4") {
+			t.Errorf("1-0-1 reports %s, %s", got, row.Attack)
+		}
+		return
+	}
+	t.Fatal("no 1-0-1 row")
 }
