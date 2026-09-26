@@ -125,10 +125,6 @@ func minimumEffects(intent UpgradeIntent, d m.Definition) int {
 			effects[key] = 1
 		}
 	}
-	improves := map[string]bool{}
-	for _, d := range intent.Improves {
-		improves[d] = true
-	}
 	if intent.Unlock != "none" {
 		add(intent.Unlock)
 	}
@@ -144,7 +140,6 @@ func minimumEffects(intent UpgradeIntent, d m.Definition) int {
 			add("damage")
 		case dimension == "active-attack-rate":
 			add("attack-rate")
-		case dimension == "follow-up" && (improves["damage"] || improves["active-damage"]):
 		default:
 			add(dimension)
 		}
@@ -285,12 +280,14 @@ func measures(build m.Build, path string, dimension string) []float64 {
 	case "stun":
 		return []float64{st.StunSeconds}
 	case "follow-up":
+		// The follow-up's own fields, not its damage product: a damage raise
+		// is the damage dimension and does not also improve the follow-up.
 		if f := attack.FollowUp; f != nil {
 			inherit := 0.0
 			if f.InheritStatuses {
 				inherit = 1
 			}
-			return []float64{f.Count, f.DamageMultiplier * st.Damage, f.Radius, inherit}
+			return []float64{f.Count, f.DamageMultiplier, f.Radius, inherit}
 		}
 		return []float64{0, 0, 0, 0}
 	case "active-damage":

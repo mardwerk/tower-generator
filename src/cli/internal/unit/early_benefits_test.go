@@ -406,3 +406,50 @@ func TestEarlyBenefitsPromptIssueAndRetryAgree(t *testing.T) {
 		t.Errorf("targeted repair: %s", retryReason(scripted.Requests[len(scripted.Requests)-1].Prompt))
 	}
 }
+
+// A follow-up promise means the follow-up's own fields improve: count,
+// damage multiplier, radius or inheritance. A base damage raise does not
+// keep it, so the plan and resolved checks agree and the resolved repair
+// targets the purchase that skipped its follow-up (OPUS-CODE-43-1,
+// SOL-PR43-02).
+func TestDamageRaiseDoesNotImproveTheFollowUp(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	definition := unit.DefaultAuthoringDefinition()
+	b := *stages.Draft.Candidate.Blueprint
+	b.BaseAttack.FollowUp = &m.FollowUp{Name: "Shockwave", Count: 2, DamageMultiplier: 0.5, Radius: 20}
+	early := [2][]m.Change{{statChange("range", "add", 2)}, {statChange("damage", "add", 1)}}
+	b.Paths.Path1.Tiers.Tier1.Changes, b.Paths.Path1.Tiers.Tier2.Changes = early[0], early[1]
+	b.Paths.Path3.Tiers.Tier1.Changes, b.Paths.Path3.Tiers.Tier2.Changes = early[0], early[1]
+	intents := *stages.Draft.Run.DesignPlan.UpgradeIntents
+	intents.Path1.Tier1, intents.Path1.Tier2 = intent("none", "range"), intent("none", "damage")
+	intents.Path3.Tier1, intents.Path3.Tier2 = intent("none", "range"), intent("none", "damage", "follow-up")
+
+	var early3 []string
+	for _, issue := range unit.PlanIntentIssues(b, &intents, definition) {
+		if strings.HasPrefix(issue.Path, "paths.path1.tiers.tier1") || strings.HasPrefix(issue.Path, "paths.path1.tiers.tier2") ||
+			strings.HasPrefix(issue.Path, "paths.path3.tiers.tier1") || strings.HasPrefix(issue.Path, "paths.path3.tiers.tier2") {
+			early3 = append(early3, issue.Path+": "+issue.Message)
+		}
+	}
+	if len(early3) != 1 || !strings.HasPrefix(early3[0], "paths.path3.tiers.tier2.planIntent: The retained plan promises improved follow-up,") {
+		t.Errorf("plan intent issues: %v", early3)
+	}
+
+	got := unit.EarlyBenefitsIssues(b, &intents, definition)
+	if len(got) != 1 || got[0].Path != "paths.path3.tiers.tier2" ||
+		!strings.HasSuffix(got[0].Message, "The retained plan promises damage and follow-up at x-x-2; the resolved purchase gives damage. Deliver x-x-2's promised follow-up so the two paths' early benefits differ as the plan does.") {
+		t.Errorf("resolved issues: %v", got)
+	}
+
+	// Raising the follow-up's own multiplier keeps the promise and makes
+	// the two paths distinct.
+	stronger := *b.BaseAttack.FollowUp
+	stronger.DamageMultiplier = 0.75
+	b.Paths.Path3.Tiers.Tier2.Changes = []m.Change{statChange("damage", "add", 1), {Kind: "followUp", Target: "base", FollowUp: &stronger}}
+	if got := unit.EarlyBenefitsIssues(b, &intents, definition); len(got) != 0 {
+		t.Errorf("a kept follow-up promise: %v", got)
+	}
+}
