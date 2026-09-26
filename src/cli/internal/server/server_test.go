@@ -385,6 +385,30 @@ func TestHealthShowsTheMaskedKeyFromEnvFile(t *testing.T) {
 	}
 }
 
+func TestCodexModelAndReasoningUseEnvDefaultsAndSettingsOverride(t *testing.T) {
+	t.Setenv("CODEX_MODEL", "")
+	t.Setenv("CODEX_REASONING", "")
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, ".env"), []byte("CODEX_MODEL=gpt-6-luna\nCODEX_REASONING=medium\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	env, err := provider.LoadEnvironment(filepath.Join(dir, ".env"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, err := newConnection(env, "codex", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state := c.state(); state.Model != "gpt-6-luna" || state.Reasoning != "medium" {
+		t.Fatalf("Codex defaults: %+v", state)
+	}
+	state, err := c.configure(s.FromGoValue(map[string]any{"provider": "codex", "model": "gpt-6-sol", "reasoning": "high"}))
+	if err != nil || state.Model != "gpt-6-sol" || state.Reasoning != "high" {
+		t.Fatalf("Codex override: %+v, %v", state, err)
+	}
+}
+
 func TestModelStagesNeedAProviderAndLockSettings(t *testing.T) {
 	request, outputs := recorded(t)
 	h := start(t, nil, nil)

@@ -368,3 +368,24 @@ func TestContractsAreStrict(t *testing.T) {
 		t.Error("a negative price was accepted")
 	}
 }
+
+// A plan correction quotes the rejected text, so the model can find the
+// entry without counting array positions (on #27 it shortened the wrong
+// omitted technique and the draft failed).
+func TestPlanCorrectionsQuoteTheRejectedValue(t *testing.T) {
+	prepared, err := fixture.Prepare()
+	if err != nil {
+		t.Fatal(err)
+	}
+	long := strings.Repeat("Gear 5 environment rubberization ", 4)
+	invalid := recordedOutput(t, "plan")
+	at(invalid, "omittedTechniques").([]any)[1].(*s.Object).Set("name", long)
+	scripted := &fixture.Model{Outputs: []any{invalid, recordedOutput(t, "plan"), recordedOutput(t, "mechanics")}}
+	if _, err := unit.DraftUnit(context.Background(), prepared, scripted, unit.Options{}); err != nil {
+		t.Fatal(err)
+	}
+	if len(scripted.Requests) < 2 || !strings.Contains(scripted.Requests[1].Prompt, "omittedTechniques.1.name: Too big") ||
+		!strings.Contains(scripted.Requests[1].Prompt, `Current value: \"`+long[:40]) {
+		t.Errorf("the correction does not quote the rejected name:\n%s", retryReason(scripted.Requests[len(scripted.Requests)-1].Prompt))
+	}
+}

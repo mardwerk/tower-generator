@@ -121,7 +121,13 @@ func planDesign(ctx context.Context, prepared Prepared, model Model, repairs int
 				if compact && len(path) >= 3 && path[0] == "upgradeIntents" {
 					path = append([]any{"paths", path[1], "milestones", path[2]}, path[3:]...)
 				}
-				issues = append(issues, s.Issue{Path: path}.PathString()+": "+issue.Message)
+				message := issue.Message
+				// Quoting the rejected text lets the correction find it
+				// without counting array positions.
+				if value, ok := valueAt(response.Output, issue.Path).(string); ok {
+					message += ". Current value: " + s.Stringify(s.SliceUTF16(value, 0, 160))
+				}
+				issues = append(issues, s.Issue{Path: path}.PathString()+": "+message)
 			}
 		}
 		billed := response.Usage
@@ -155,6 +161,29 @@ func failureEvidence(request *Request, plan *DesignPlan, attempts []Attempt) *Fa
 		evidence.Plan = &retained
 	}
 	return evidence
+}
+
+// valueAt follows a validation issue path through decoded model output.
+func valueAt(value any, path []any) any {
+	for _, key := range path {
+		switch k := key.(type) {
+		case string:
+			object, ok := value.(*s.Object)
+			if !ok {
+				return nil
+			}
+			value, _ = object.Get(k)
+		case int:
+			list, ok := value.([]any)
+			if !ok || k < 0 || k >= len(list) {
+				return nil
+			}
+			value = list[k]
+		default:
+			return nil
+		}
+	}
+	return value
 }
 
 func stringList(values []string) []any {

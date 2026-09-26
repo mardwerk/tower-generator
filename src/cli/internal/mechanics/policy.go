@@ -288,7 +288,7 @@ func DesignPolicyIssues(blueprint *Blueprint, definition Definition) []Issue {
 			}
 			signature := policyBehavior(check.build)
 			if previous, ok := check.seen[signature]; ok {
-				issues = append(issues, Issue{fmt.Sprintf("%s.tiers.tier%d", prefix, check.tier), fmt.Sprintf("Resolved tier %d behavior duplicates %s; names and prices do not make a distinct upgrade.", check.tier, previous)})
+				issues = append(issues, Issue{fmt.Sprintf("%s.tiers.tier%d", prefix, check.tier), fmt.Sprintf("Resolved tier %d behavior duplicates %s; names and prices do not make a distinct upgrade. Change what this purchase improves, or by how much, so the resolved attack differs.", check.tier, previous)})
 			} else {
 				check.seen[signature] = path
 			}

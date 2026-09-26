@@ -333,7 +333,64 @@ func validateParsed(blueprint *Blueprint, rules Definition) []Issue {
 		}
 	}
 	if resolvedValuesValid {
+		issues = append(issues, ineffectiveChanges(blueprint, rules, noOp)...)
 		issues = append(issues, DesignPolicyIssues(blueprint, rules)...)
+	}
+	return issues
+}
+
+// ineffectiveChanges reports a single change that alters no legal build
+// containing its purchase, such as setting a stat to the value it already
+// has, even when another change in the same purchase has an effect. Tiers
+// already reported as changing nothing are skipped.
+func ineffectiveChanges(blueprint *Blueprint, rules Definition, reported map[string]bool) []Issue {
+	var issues []Issue
+	builds := AllLegalBuilds(rules)
+	for pathIndex, path := range PathKeys {
+		for tier := 1; tier <= 5; tier++ {
+			key := fmt.Sprintf("paths.%s.tiers.%s", path, TierKeys[tier-1])
+			changes := blueprint.Paths.At(pathIndex).Tiers.At(tier).Changes
+			if reported[key] || len(changes) < 2 {
+				continue
+			}
+			// A statuses entry decodes into several changes of one effect,
+			// which stand or fall together.
+			group := func(i int) string {
+				if changes[i].Kind == "status" {
+					return "status:" + changes[i].Effect
+				}
+				return fmt.Sprint(i)
+			}
+			tested := map[string]bool{}
+			for index := range changes {
+				if tested[group(index)] {
+					continue
+				}
+				tested[group(index)] = true
+				without := *blueprint
+				tiers := &without.Paths.At(pathIndex).Tiers
+				var trimmed []Change
+				for i, change := range changes {
+					if group(i) != group(index) {
+						trimmed = append(trimmed, change)
+					}
+				}
+				if len(trimmed) == 0 {
+					continue
+				}
+				tiers.At(tier).Changes = trimmed
+				effective := false
+				for _, selection := range builds {
+					if selection[pathIndex] >= tier && !sameBehavior(ResolveUnchecked(blueprint, selection), ResolveUnchecked(&without, selection)) {
+						effective = true
+						break
+					}
+				}
+				if !effective {
+					issues = append(issues, Issue{fmt.Sprintf("%s.changes.%d", key, index), "This change has no effect in any legal build containing the purchase, for example a set to the value the stat already has. Remove it or give it a value that changes the attack."})
+				}
+			}
+		}
 	}
 	return issues
 }

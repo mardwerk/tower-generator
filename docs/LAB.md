@@ -34,7 +34,7 @@ Profiles saved by earlier versions lived in `data/runs/library/profiles`; move t
 
 ## Settings
 
-- **Provider.** OpenRouter is the default and uses `openrouter/free` (free models only, no paid fallback). A key is required even for free models: set `OPENROUTER_API_KEY` in `.env` or the environment, or enter it in Settings, where it stays in server memory and never enters an artifact. The top bar shows the key in use, masked (for example `sk-or-v1-abc...xyz`), with the model in its tooltip; Settings adds where the key came from: `.env`, the environment, or Settings. A configured key is not necessarily one OpenRouter accepts. `OPENROUTER_MODEL` in `.env` sets the model; Settings can change it until the server stops. Local Codex is the alternative.
+- **Provider.** OpenRouter is the default and uses `openrouter/free` (free models only, no paid fallback). A key is required even for free models: set `OPENROUTER_API_KEY` in `.env` or the environment, or enter it in Settings, where it stays in server memory and never enters an artifact. The top bar shows the key in use, masked (for example `sk-or-v1-abc...xyz`), with the model in its tooltip; Settings adds where the key came from: `.env`, the environment, or Settings. A configured key is not necessarily one OpenRouter accepts. `OPENROUTER_MODEL` and `OPENROUTER_REASONING` in `.env` set OpenRouter defaults. `CODEX_MODEL` and `CODEX_REASONING` set local Codex defaults. Settings fetches the selected provider's model catalog, shows the available reasoning levels, and lets you change both until the server stops.
 - **Library folder.** Defaults to `data/runs/library`; a folder chosen in Settings is recorded in `data/runs/lab-settings.json`. Both are ignored by Git.
 
 ## Library

@@ -355,7 +355,7 @@ func TestReusedArticleTextPrioritizesAbilities(t *testing.T) {
 		long += fmt.Sprintf("<p>Attack %d: Luffy extends a rubber punch. %s</p>", i, strings.Repeat("Repeated source detail. ", 20))
 	}
 	capped := fandomSource(long+"</div>", mustURL(luffyPage.String()+"/Abilities_and_Powers"), luffyLookup.name, time.Now())
-	if capped == nil || s.UTF16Len(capped.Text) > 16000 || !strings.Contains(capped.Text, "Attack 0") || !strings.Contains(*capped.Origin.Note, "capped at 16000") {
+	if capped == nil || s.UTF16Len(capped.Text) > 24000 || !strings.Contains(capped.Text, "Attack 0") || !strings.Contains(*capped.Origin.Note, "capped at 24000") {
 		t.Errorf("capped %v", capped != nil)
 	}
 }
@@ -374,7 +374,7 @@ func TestCappedAbilityPagesKeepEverySection(t *testing.T) {
 		`<h3>Gear Third</h3><p>Gear Third inflates his bones into giant limbs.</p>` +
 		`<h2>Haki</h2><p>Luffy uses Armament Haki to hit Logia users.</p></div>`
 	document := fandomSource(html, mustURL(luffyPage.String()+"/Abilities_and_Powers"), luffyLookup.name, time.Now())
-	if document == nil || s.UTF16Len(document.Text) > 16000 || !strings.Contains(*document.Origin.Note, "every section in turn") {
+	if document == nil || s.UTF16Len(document.Text) > 24000 || !strings.Contains(*document.Origin.Note, "the section with the least text") {
 		t.Fatalf("document %v", document != nil)
 	}
 	order := []string{"Overview 0:", "Gomu Gomu no Mi", "blood faster", "Gear Second 0:", "giant limbs", "Armament Haki"}
@@ -388,6 +388,11 @@ func TestCappedAbilityPagesKeepEverySection(t *testing.T) {
 	}
 	if strings.Contains(document.Text, "Overview 59:") {
 		t.Error("the overview took the budget of the technique sections")
+	}
+	// Sections share the budget by length, not by passage count: the whole
+	// Gear Second section fits beside the longer overview.
+	if !strings.Contains(document.Text, "Gear Second 19:") {
+		t.Error("a technique section was cut while the overview kept growing")
 	}
 }
 

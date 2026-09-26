@@ -24,7 +24,7 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 		"DartMonkey-400 and SuperMonkey-001, KnockbackModel",
 		"0-0-0", "x-4-x", "1-2-0", "12 early builds", "36 advanced builds",
 		"Private design checks, never printed in the unit", "Unit output.",
-		"a fifth purchase that only raises ordinary damage is a token step",
+		"a substantial damage improvement may qualify",
 		"A second x-5-x Active", "no universal capstone multiplier",
 	} {
 		if !strings.Contains(rules, want) {
@@ -46,7 +46,7 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 		}
 	}
 	definition := profile.MechanicsDefinition
-	if definition.Revision != "2026-09-26-atlas-56.3-v14" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
+	if definition.Revision != "2026-09-26-atlas-56.3-v15" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
 		t.Errorf("Definition %s %q", definition.Revision, definition.Label)
 	}
 	if scale := definition.Profile.ReferenceScale; scale.BaseCost != 200 || scale.BaseDamage != 1 || scale.BaseIntervalSeconds != 0.95 || scale.BaseRange != 32 || scale.BasePierce != 2 ||
@@ -81,13 +81,13 @@ func TestPromptsSeparatePrivateChecksFromOutput(t *testing.T) {
 	}{
 		"plan": {plan, []string{
 			"buyFor, weakness and capstoneValue are private design checks and never appear in the unit description",
-			"Name every purchase by build code", "a purchase that only raises damage is a token step",
+			"Name every purchase by build code", "a substantial improvement of one dimension may qualify",
 			"A second Active at the fifth purchase", "12 early and 36 advanced crosspath builds",
 			"more shots per attack to projectiles, heavier hits to damage",
 		}},
 		"mechanics": {mechanics, []string{
 			"Refer to purchases by build code", "The boost is the only activated ability this Definition expresses",
-			"List in unsupportedMechanics", "a fifth purchase that only raises ordinary damage is a token step",
+			"List in unsupportedMechanics", "a substantial improvement of one dimension may qualify",
 			"No universal capstone multiplier applies", "Role scales from the rules document's btd6-atlas 56.3 references",
 			"Code checks each milestone's improves and unlock in every legal build", "more projectiles do not count",
 			"Tier1 to Tier2 allow 1 to 3 primitive changes total; Tier3 to Tier5 allow up to 5.",

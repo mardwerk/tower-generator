@@ -40,6 +40,13 @@ func (srv *Server) gets() map[string]func() (any, error) {
 
 func (srv *Server) posts() map[string]post {
 	return map[string]post{
+		"models": {run: func(ctx context.Context, body *s.Object) (any, error) {
+			if err := only(body, "provider"); err != nil {
+				return nil, err
+			}
+			name, _ := get(body, "provider").(string)
+			return srv.connection.models(ctx, name)
+		}},
 		"provider": {run: func(_ context.Context, body *s.Object) (any, error) {
 			if srv.busy() {
 				return nil, fail(409, "BUSY", "Wait for the current model stage to finish.")

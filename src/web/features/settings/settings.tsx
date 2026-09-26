@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { KeyRound } from 'lucide-react';
-import type { KeyState, ProviderState } from '../../api/contract.js';
+import type { KeyState, ModelCatalog, ProviderState } from '../../api/contract.js';
 import type { GenerationLibrary } from '../library/library.js';
 import { api } from '../../api/client.js';
 import { Alert } from '../../ui/alert.js';
@@ -51,7 +51,7 @@ export function KeyStatus({ state, onOpen }: { state: ProviderState | null; onOp
         'max-w-[190px] font-mono',
         missing && 'font-sans text-warning hover:text-warning',
       )}
-      title={`${state.model || 'Codex configuration'} via ${
+      title={`${state.model || 'Codex configuration'}${state.reasoning ? ` (${state.reasoning} reasoning)` : ''} via ${
         state.provider === 'openrouter' ? 'OpenRouter' : 'Local Codex'
       }. ${
         key.configured
@@ -81,6 +81,9 @@ export function Settings({
 }) {
   const [provider, setProvider] = useState<ProviderState['provider']>('openrouter');
   const [model, setModel] = useState('');
+  const [reasoning, setReasoning] = useState('');
+  const [models, setModels] = useState<ModelCatalog['models']>([]);
+  const [modelMessage, setModelMessage] = useState('');
   const [imageModel, setImageModel] = useState('');
   const [key, setKey] = useState('');
   const [keyState, setKeyState] = useState<ProviderState['key'] | null>(null);
@@ -90,6 +93,23 @@ export function Settings({
   const [pending, setPending] = useState(true);
   const [directory, setDirectory] = useState(library.directory);
   const [folderMessage, setFolderMessage] = useState('');
+  async function loadModels(name: ProviderState['provider'], reset: boolean) {
+    setModelMessage('Loading models...');
+    try {
+      const catalog = await api<ModelCatalog>('models', { provider: name });
+      setModels(catalog.models);
+      setModelMessage(
+        `${catalog.models.length} models from ${name === 'codex' ? 'Codex' : 'OpenRouter'}.`,
+      );
+      if (reset) {
+        setModel(catalog.defaultModel);
+        setReasoning(catalog.defaultReasoning || (name === 'codex' ? 'medium' : 'none'));
+      }
+    } catch (error) {
+      setModels([]);
+      setModelMessage(error instanceof Error ? error.message : String(error));
+    }
+  }
   useEffect(() => {
     let active = true;
     void api<ProviderState>('provider')
@@ -97,10 +117,12 @@ export function Settings({
         if (active) {
           setProvider(state.provider);
           setModel(state.model);
+          setReasoning(state.reasoning || (state.provider === 'codex' ? 'medium' : 'none'));
           setImageModel(state.images.model);
           setKeyState(state.key);
           setReady(state.ready);
           setMessage(state.message);
+          void loadModels(state.provider, false);
         }
       })
       .catch((error) => {
@@ -123,13 +145,16 @@ export function Settings({
         ...(imageModel.trim() ? { imageModel: imageModel.trim() } : {}),
         ...(key.trim() ? { apiKey: key.trim() } : {}),
         ...(model.trim() ? { model: model.trim() } : {}),
+        ...(reasoning ? { reasoning } : {}),
       });
       setKey('');
       setKeyState(state.key);
       setReady(state.ready);
       setMessage(state.message);
       setModel(state.model);
+      setReasoning(state.reasoning);
       setImageModel(state.images.model);
+      void loadModels(state.provider, false);
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -158,7 +183,10 @@ export function Settings({
             onValueChange={(next) => {
               const value = next as ProviderState['provider'];
               setProvider(value);
-              setModel(value === 'openrouter' ? 'openrouter/free' : '');
+              setModel('');
+              setReasoning('');
+              setModels([]);
+              void loadModels(value, true);
               setKey('');
               setReady(false);
               setMessage(
@@ -206,15 +234,52 @@ export function Settings({
             </Field>
           </>
         }
-        <Disclosure title="Model">
-          <Field label="Model name (optional)">
+        <Disclosure title="Model" defaultOpen>
+          <Field label="Model">
             <Input
+              list="provider-models"
               value={model}
               placeholder={
-                provider === 'openrouter' ? 'openrouter/free' : 'Use Codex configuration'
+                provider === 'openrouter'
+                  ? 'Choose or enter an OpenRouter model'
+                  : 'Choose a Codex model'
               }
-              onChange={(e) => setModel(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setModel(next);
+                const offered = models.find((entry) => entry.id === next);
+                if (offered && !offered.reasoning.includes(reasoning)) {
+                  setReasoning(offered.reasoning[0] || '');
+                }
+              }}
             />
+            <datalist id="provider-models">
+              {models.map((entry) => (
+                <option key={entry.id} value={entry.id} label={entry.name} />
+              ))}
+            </datalist>
+          </Field>
+          <p className="text-xs text-muted-foreground" role="status">
+            {modelMessage}
+          </p>
+          <Field label="Reasoning level">
+            <Select value={reasoning} onValueChange={setReasoning}>
+              <SelectTrigger id="reasoning-select">
+                <SelectValue placeholder="Use provider default" />
+              </SelectTrigger>
+              <SelectContent>
+                {(
+                  models.find((entry) => entry.id === model)?.reasoning ||
+                  (provider === 'codex'
+                    ? ['low', 'medium', 'high', 'xhigh', 'max', 'ultra']
+                    : ['none', 'low', 'medium', 'high'])
+                ).map((level) => (
+                  <SelectItem key={level} value={level}>
+                    {level}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
         </Disclosure>
         <Disclosure title="Image generation">

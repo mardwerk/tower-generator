@@ -37,7 +37,7 @@ Drafting makes a planning call and a mechanics call, each allowed one repair by 
 | `--profiles DIR` | `prepare`, `generate`, `author`, `profiles`, `serve` | Saved Profiles (default `data/profiles`) |
 | `--library DIR` | `library`, `serve` | Library folder (default `data/runs/library`) |
 | `--provider openrouter\|codex` | model commands, `serve` | OpenRouter (default) or an existing Codex login |
-| `--model NAME`, `--reasoning LEVEL`, `--timeout SECONDS` | model commands | Model, reasoning (`low`, `medium`, `high`, plus `none` for OpenRouter) and per-call timeout (OpenRouter 120 s, Codex 600 s) |
+| `--model NAME`, `--reasoning LEVEL`, `--timeout SECONDS` | model commands | Model, reasoning (OpenRouter: `none`, `low`, `medium`, `high`; Codex: `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `ultra`) and per-call timeout (OpenRouter 120 s, Codex 600 s) |
 | `--codex FILE` | model commands | Codex executable |
 | `--choice ID` | `research`, `generate` | Pick a character when the name is ambiguous |
 | `--previous FILE`, `--feedback TEXT` | `prepare`, `author` (request files); `--feedback` also `edit` | Revise an earlier Result |
@@ -76,4 +76,4 @@ Model inputs and raw outputs are recorded only with `--evidence-dir`: each run g
 
 A `draft`, `generate` or `author` run that fails validation after its repairs writes its failure evidence beside `-o`: `-o dart.json` keeps the rejected plans and outputs, their issues, any accepted plan and the source passages the model was given in `dart.failure.json`, and the failed run writes nothing to `dart.json`. Without `-o` the CLI says so; `--evidence-dir` keeps every request and answer as well.
 
-Configuration: existing environment variables win over `.env` in the working directory; command-line options win over both. `.env` is read from the working directory only, as UTF-8 or UTF-16 with a byte-order mark; a line it cannot read is an error that names the line. `serve` prints the model and the OpenRouter key it uses, the key masked, and the `.env` file or variable it came from. `UNIT_DATA_DIR` moves `data/`, and `UNIT_RUNS_DIR` moves `data/runs/`. Credentials never enter artifacts. Agents must follow [OPENROUTER.md](OPENROUTER.md).
+Configuration: existing environment variables win over `.env` in the working directory; command-line options win over both. `CODEX_MODEL` and `CODEX_REASONING` set Codex defaults for the CLI and web app; `OPENROUTER_MODEL` and `OPENROUTER_REASONING` do the same for OpenRouter. `.env` is read from the working directory only, as UTF-8 or UTF-16 with a byte-order mark; a line it cannot read is an error that names the line. `serve` prints the model and the OpenRouter key it uses, the key masked, and the `.env` file or variable it came from. `UNIT_DATA_DIR` moves `data/`, and `UNIT_RUNS_DIR` moves `data/runs/`. Credentials never enter artifacts. Agents must follow [OPENROUTER.md](OPENROUTER.md).

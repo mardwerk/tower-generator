@@ -22,7 +22,7 @@ const wikidataAPI = "https://www.wikidata.org/w/api.php"
 
 // fandomTextLimit caps the text kept from one Fandom page, in UTF-16 code
 // units.
-const fandomTextLimit = 16_000
+const fandomTextLimit = 24_000
 
 type visualLookup struct {
 	name, articleTitle, work, wikidataID string
@@ -535,10 +535,11 @@ func fandomSource(content string, page *url.URL, name string, now time.Time) *un
 	document := parseHTML(content)
 	document.Find(sourceNoise).Remove()
 	root := articleRoot(document)
-	// Passages are grouped by their section. Selection takes the next passage
-	// of every section in turn, technique sections first, so a long overview
-	// cannot use the whole budget before the Devil Fruit, Haki or form
-	// sections are reached. Selected passages keep their page order.
+	// Passages are grouped by their section. The next passage always goes to
+	// the section with the least text so far, technique sections first on a
+	// tie, so neither a long overview nor long physical-ability paragraphs
+	// can use the budget before the Devil Fruit, Haki or form sections are
+	// kept. Selected passages keep their page order.
 	type passage struct {
 		order int
 		text  string
@@ -594,22 +595,31 @@ func fandomSource(content string, page *url.URL, name string, now time.Time) *un
 	})
 	sort.SliceStable(groups, func(i, j int) bool { return groups[i].rank < groups[j].rank })
 	var chosen []passage
+	next := make([]int, len(groups))
+	used := make([]int, len(groups))
 	length, truncated := 0, false
-	for round, more := 0, true; more; round++ {
-		more = false
-		for _, g := range groups {
-			if round >= len(g.passages) {
-				continue
+	for {
+		pick := -1
+		for i, g := range groups {
+			if next[i] < len(g.passages) && (pick < 0 || used[i] < used[pick]) {
+				pick = i
 			}
-			more = true
-			p := g.passages[round]
-			if length+s.UTF16Len(p.text)+2 > fandomTextLimit {
-				truncated = true
-				continue
-			}
-			chosen = append(chosen, p)
-			length += s.UTF16Len(p.text) + 2
 		}
+		if pick < 0 {
+			break
+		}
+		p := groups[pick].passages[next[pick]]
+		size := s.UTF16Len(p.text) + 2
+		if length+size > fandomTextLimit {
+			// The section stops here, so its kept passages stay contiguous.
+			truncated = true
+			next[pick] = len(groups[pick].passages)
+			continue
+		}
+		chosen = append(chosen, p)
+		length += size
+		used[pick] += size
+		next[pick]++
 	}
 	sort.Slice(chosen, func(i, j int) bool { return chosen[i].order < chosen[j].order })
 	selected := make([]string, len(chosen))
@@ -621,7 +631,7 @@ func fandomSource(content string, page *url.URL, name string, now time.Time) *un
 	}
 	note := "Retrieved through the public MediaWiki parse API while gathering character references at " + now.UTC().Format("2006-01-02T15:04:05.000Z") + ". Identity matched through Wikidata and the character page name. Extracted article introduction and available ability sections; navigation, images and reference lists omitted."
 	if truncated {
-		note += fmt.Sprintf(" Text was capped at %d characters, taking passages from every section in turn; this is not exhaustive.", fandomTextLimit)
+		note += fmt.Sprintf(" Text was capped at %d characters, each passage going to the section with the least text so far; this is not exhaustive.", fandomTextLimit)
 	}
 	note += " This fan-maintained secondary source may combine story periods and adaptations; it is not independently verified canon."
 	return &unit.Document{
