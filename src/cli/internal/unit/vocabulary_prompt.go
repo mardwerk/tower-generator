@@ -65,10 +65,11 @@ func VocabularyGuidance(request *Request) []string {
 	}
 	var damageTypes []string
 	for _, t := range v.DamageTypes {
-		text := t.ID + " (" + t.Name + ")"
+		text := t.ID + " (" + t.Name
 		if t.Description != "" {
 			text += ": " + t.Description
 		}
+		text += ")"
 		if len(t.IneffectiveAgainst) > 0 {
 			var against []string
 			for _, id := range t.IneffectiveAgainst {

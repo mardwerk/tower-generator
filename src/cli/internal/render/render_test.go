@@ -44,7 +44,8 @@ func TestMarkdownRendersEveryStage(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, section := range []string{"## Evidence", "## Purchase evidence", "## Generation usage", "dart-monkey-atlas-56-3", "Definition BTD6-inspired Gold and Health starter"} {
+		// Gold totals are exact: 24,615, not 24,620 (reported on #27).
+		for _, section := range []string{"## Evidence", "## Purchase evidence", "## Generation usage", "dart-monkey-atlas-56-3", "Definition BTD6-inspired Gold and Health starter", "T5 total: 24,615 Gold", "| 4-0-0 → 5-0-0 | 15,000 |"} {
 			if !strings.Contains(detailed, section) {
 				t.Errorf("%s details lack %q", test.name, section)
 			}

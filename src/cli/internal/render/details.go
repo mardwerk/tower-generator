@@ -129,6 +129,16 @@ func measured(value any) string {
 	return Escape(s.FormatNumber(toPrecision(number, 4)))
 }
 
+// gold writes a price exactly, as the unit sheet does: rounding 24615 to
+// four significant digits would misstate a total.
+func gold(value any) string {
+	number, ok := value.(float64)
+	if !ok {
+		return "unavailable"
+	}
+	return Escape(price(number))
+}
+
 func describePurchases(view View) []string {
 	if view.DesignEvaluation == nil {
 		return nil
@@ -170,7 +180,7 @@ func describePurchases(view View) []string {
 				}
 				changed = Escape(changed)
 			}
-			lines = append(lines, "| "+joined(field(purchase, "from"), "-")+" → "+joined(field(purchase, "to"), "-")+" | "+measured(field(purchase, "incrementalGold"))+" | "+changed+" |")
+			lines = append(lines, "| "+joined(field(purchase, "from"), "-")+" → "+joined(field(purchase, "to"), "-")+" | "+gold(field(purchase, "incrementalGold"))+" | "+changed+" |")
 		}
 		comparison := field(path, "capstoneComparison")
 		copies := "an undefined number of"
@@ -179,7 +189,7 @@ func describePurchases(view View) []string {
 		}
 		lines = append(lines,
 			"",
-			"T5 total: "+measured(field(comparison, "tier5", "totalGold"))+" "+currency+". The same budget buys "+copies+" pure T4 copies. Extra copies need extra placement space and target access. Range and active uptime do not add across copies.",
+			"T5 total: "+gold(field(comparison, "tier5", "totalGold"))+" "+currency+". The same budget buys "+copies+" pure T4 copies. Extra copies need extra placement space and target access. Range and active uptime do not add across copies.",
 			"",
 		)
 	}

@@ -24,6 +24,8 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 		"DartMonkey-400 and SuperMonkey-001, KnockbackModel",
 		"0-0-0", "Private design checks, never printed in the unit",
 		"a substantial improvement of one dimension may qualify", "no universal capstone multiplier",
+		// Whole-number damage is the Profile's taste, not a mechanic rule.
+		"Keep damage per hit a whole number in every build", "Code accepts fractions",
 	} {
 		if !strings.Contains(rules, want) {
 			t.Errorf("the default rules lack %q", want)
@@ -61,7 +63,7 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 		}
 	}
 	definition := profile.MechanicsDefinition
-	if definition.Revision != "2026-09-26-atlas-56.3-v17" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
+	if definition.Revision != "2026-09-26-atlas-56.3-v18" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
 		t.Errorf("Definition %s %q", definition.Revision, definition.Label)
 	}
 	if scale := definition.Profile.ReferenceScale; scale.BaseCost != 200 || scale.BaseDamage != 1 || scale.BaseIntervalSeconds != 0.95 || scale.BaseRange != 32 || scale.BasePierce != 2 ||
@@ -107,7 +109,7 @@ func TestPromptsSeparatePrivateChecksFromOutput(t *testing.T) {
 			"Refer to purchases by build code", "The boost is the only activated ability this Definition expresses",
 			"List in unsupportedMechanics", "a substantial improvement of one dimension may qualify",
 			"No universal capstone multiplier applies", "Scale references from btd6-atlas capture 56.3",
-			"Darts, blades, spikes and arrows.",
+			"sharp (Sharp: Darts, blades, spikes and arrows.) cannot damage Lead, Frozen; normal (Normal: Blunt blows and plain impacts.);",
 			"Code checks each milestone's improves and unlock in every legal build", "more projectiles do not count",
 			"Tier1 to Tier2 allow 1 to 3 primitive changes total; Tier3 to Tier5 allow up to 5.",
 		}},

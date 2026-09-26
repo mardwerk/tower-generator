@@ -410,10 +410,47 @@ func tradeoffFix(dimension string) string {
 	return "Add a statChanges entry that lowers " + stat + "."
 }
 
+// baseEffectFix names the base attack change that lets a first or second
+// purchase improve an effect instead of adding it.
+func baseEffectFix(dimension string) string {
+	switch dimension {
+	case "splash":
+		return "Give the base attack a splashRadius, with pierce of at least 2, so this purchase raises it."
+	case "follow-up":
+		return "Give the base attack a followUp so this purchase strengthens it."
+	}
+	return "Give the base attack " + dimension + " so this purchase raises its strength or duration."
+}
+
 // PlanIntentIssues reports retained plan promises a blueprint does not implement.
 func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition m.Definition) []m.Issue {
 	if intents == nil {
 		return nil
+	}
+	var order []string
+	found := map[string]m.Issue{}
+	// Under the early-identity policy a first or second purchase cannot add
+	// splash, a follow-up or a status, so its promise to improve one holds
+	// only if the base attack has it (reported on #27: a plan improved splash
+	// at 1-x-x, and the repair moved splash to 3-x-x without pierce).
+	if policy := definition.Profile.DesignPolicy; policy != nil && policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity {
+		base := m.ResolveUnchecked(&blueprint, m.Selection{})
+		for index, path := range m.PathKeys {
+			for tier := 1; tier <= 2; tier++ {
+				for _, dimension := range intents.At(index).At(tier).Improves {
+					addsPattern := dimension == "splash" || dimension == "follow-up" || !corePromises[dimension]
+					if !addsPattern || slices.ContainsFunc(measures(base, path, dimension), func(v float64) bool { return v > 0 }) {
+						continue
+					}
+					id := path + "." + m.TierKeys[tier-1] + ".improved " + dimension
+					order = append(order, id)
+					found[id] = m.Issue{
+						Path:    fmt.Sprintf("paths.%s.tiers.%s.planIntent", path, m.TierKeys[tier-1]),
+						Message: fmt.Sprintf("The retained plan promises improved %s at %s, but the base attack has none, and under the early-identity policy a first or second purchase cannot add it. %s", dimension, BuildCode(index, tier), baseEffectFix(dimension)),
+					}
+				}
+			}
+		}
 	}
 	type pair struct {
 		selection m.Selection
@@ -423,12 +460,11 @@ func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition
 	for _, sel := range m.AllLegalBuilds(definition) {
 		build := m.ResolveUnchecked(&blueprint, sel)
 		if len(m.ResolvedIssues(build, definition, "build", nil)) > 0 {
-			return nil
+			builds = nil
+			break
 		}
 		builds = append(builds, pair{sel, build})
 	}
-	var order []string
-	found := map[string]m.Issue{}
 	for _, entry := range builds {
 		for index, path := range m.PathKeys {
 			tier := entry.selection[index]

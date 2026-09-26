@@ -36,9 +36,10 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 	if !strings.Contains(prompt, `"legalBuilds":[`) || !strings.Contains(prompt, `"code":"3-2-0"`) || strings.Contains(prompt, `"code":"3-3-0"`) || !strings.Contains(prompt, "such as 3-3-0, is illegal") {
 		t.Error("the review prompt lacks the legal build facts")
 	}
-	// A copy bound is context for a capstone, not a verdict, and the draft's
-	// proposals are claims to check, not facts (reported on #27).
-	for _, want := range []string{"A same-budget copy bound is context, not a verdict", "They are the drafting model's claims and can be wrong", "A name taken from the source"} {
+	// A copy bound is context for a capstone, not a verdict, the draft's
+	// proposals are claims to check, not facts, and the period decision is
+	// context, not text the Unit must print (reported on #27).
+	for _, want := range []string{"A same-budget copy bound is context, not a verdict", "They are the drafting model's claims and can be wrong", "A name taken from the source", "not text the Unit must print"} {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("the review prompt lacks %q", want)
 		}

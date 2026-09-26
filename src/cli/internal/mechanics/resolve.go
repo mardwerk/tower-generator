@@ -420,7 +420,7 @@ func ResolvedIssues(build Build, definition Definition, prefix string, blueprint
 			add(path+".stats.splashRadius", "Area delivery requires a positive splash radius.")
 		}
 		if st.SplashRadius > 0 && st.Pierce < 2 {
-			add(path+".stats.splashRadius", "Splash requires pierce of at least 2 because the primary target consumes one target slot.")
+			add(path+".stats.splashRadius", "Splash requires pierce of at least 2 because the primary target consumes one target slot. Raise pierce to at least 2 in the purchase that adds splash or an earlier one on its path, or in the base attack.")
 		}
 	}
 	checkAttack(build.BaseAttack, "baseAttack")
