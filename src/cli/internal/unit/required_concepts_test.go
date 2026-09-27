@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/mardwerk/unit-generator/src/cli/internal/fixture"
+	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
 	"github.com/mardwerk/unit-generator/src/cli/internal/unit"
 )
@@ -194,7 +195,7 @@ func TestRequiredConceptsReachThePromptsAndKeepTheHash(t *testing.T) {
 			`{"build":"x-4-x","name":"Super Monkey Fan Club","changeScope":{"base":["intervalSeconds multiply 0.5"],"boost":["unlocks the Active Ability Fan Club Frenzy"]},` +
 			`"dimensions":[{"dimension":"intervalSeconds lowered","alsoChangedBy":["Spiked Ball","Dart Throw","Triple Throw","Crossbow"]},{"dimension":"Active Ability","alsoChangedBy":[]}]},` +
 			`{"build":"x-5-x","name":"Plasma Monkey Fan Club","changeScope":{"base":[],"boost":["boost damageMultiplier set 2","boost durationSeconds add 5"]},` +
-			`"dimensions":[{"dimension":"boost damageMultiplier set","alsoChangedBy":[]},{"dimension":"boost durationSeconds raised","alsoChangedBy":[]}]}]}]`,
+			`"dimensions":[{"dimension":"boost damageMultiplier raised","alsoChangedBy":[]},{"dimension":"boost durationSeconds raised","alsoChangedBy":[]}]}]}]`,
 		"requiredConcepts lists the concepts the owner requires this character's Unit to adapt",
 		unit.RequiredConceptRule,
 		`"requiredConcepts":[{"concept":"Fan Club"}]`,
@@ -588,6 +589,75 @@ func TestReviewGetsSharedDimensionsAndStatusImmunities(t *testing.T) {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("the review prompt lacks %q", want)
 		}
+	}
+}
+
+// A set change takes the direction its purchase moves the stat on its pure
+// path, so a purchase that sets damage higher and another technique's
+// purchase that adds damage list each other in alsoChangedBy, and a set
+// that lowers damage shares nothing with them (SOL-82-01). The v39 Luffy
+// x-3-x, Gear 4 Punch, adds 2 damage to the base attack's 1; here it sets
+// damage to 5, then to 0.5.
+func TestSetChangesShareTheDirectionTheyResolveTo(t *testing.T) {
+	for _, c := range []struct {
+		damage             float64
+		gear4, gear5Shares string
+	}{
+		{5, `{"dimension":"damage raised","alsoChangedBy":["Gum-Gum Pistol","Gear 3","Gear 5"]}`, `["Gum-Gum Pistol","Gear 3","Gear 4"]`},
+		{0.5, `{"dimension":"damage lowered","alsoChangedBy":[]}`, `["Gum-Gum Pistol","Gear 3"]`},
+	} {
+		checked := luffyV39Checked(t)
+		punch := checked.Draft.Candidate.Blueprint.Paths.At(1).Tiers.At(3)
+		if change := punch.Changes[0]; change.Stat != "damage" || change.Operation != "add" {
+			t.Fatalf("x-3-x's first change is %+v", change)
+		}
+		punch.Changes[0].Operation, punch.Changes[0].Number = "set", c.damage
+		_, context := reviewContext(t, checked)
+		dimensions := map[string]string{}
+		for _, concept := range at(context, "requiredConcepts").([]any) {
+			for _, purchase := range at(concept, "purchases").([]any) {
+				dimensions[at(concept, "name").(string)+" "+at(purchase, "build").(string)] = s.Stringify(at(purchase, "dimensions"))
+			}
+		}
+		if got := dimensions["Gear 4 x-3-x"]; !strings.HasPrefix(got, "["+c.gear4+",") {
+			t.Errorf("damage set %v: Gear 4 x-3-x dimensions %s", c.damage, got)
+		}
+		if got, want := dimensions["Gear 5 x-x-3"], `[{"dimension":"damage raised","alsoChangedBy":`+c.gear5Shares+`}]`; got != want {
+			t.Errorf("damage set %v: Gear 5 x-x-3 dimensions\n got %s\nwant %s", c.damage, got, want)
+		}
+	}
+}
+
+// A version 1 Definition changes slow, burn and stun with stat changes;
+// a capstone that raises stunSeconds or sets slowPercent and slowSeconds
+// lists that status effect once, with the immunities of the vocabulary the
+// Definition implies (SOL-82-01).
+func TestLegacyCapstoneStatusEffects(t *testing.T) {
+	blueprint := burstUnit()
+	stat := func(name, operation string, value float64) m.Change {
+		return m.Change{Kind: "stat", Target: "base", Stat: name, Operation: operation, Number: value}
+	}
+	blueprint.Paths.Path1.Tiers.Tier5.Changes = append(blueprint.Paths.Path1.Tiers.Tier5.Changes, stat("stunSeconds", "add", 0.5))
+	blueprint.Paths.Path3.Tiers.Tier5.Changes = append(blueprint.Paths.Path3.Tiers.Tier5.Changes, stat("slowPercent", "set", 30), stat("slowSeconds", "set", 2))
+	definition := m.DefaultDefinition()
+	if definition.IsV2() {
+		t.Fatal("the Default Definition of the mechanics package is no longer version 1")
+	}
+	if issues := m.ValidateTyped(&blueprint, definition); len(issues) > 0 {
+		t.Fatalf("the hand-built unit is invalid: %v", issues)
+	}
+	terms := definition.Terms()
+	effects := unit.CapstoneStatusEffects(&blueprint, &terms)
+	for key, want := range map[string]string{
+		"path1": `[{"effect":"stun","immune":["blimp","boss"]}]`,
+		"path3": `[{"effect":"slow","immune":["blimp","boss"]}]`,
+	} {
+		if got := s.Stringify(effects[key]); got != want {
+			t.Errorf("%s status effects\n got %s\nwant %s", key, got, want)
+		}
+	}
+	if _, ok := effects["path2"]; ok || len(effects) != 2 {
+		t.Errorf("status effects %v", effects)
 	}
 }
 

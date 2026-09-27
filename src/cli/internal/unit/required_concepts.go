@@ -227,7 +227,7 @@ func reviewRequiredConcepts(plan *DesignPlan, request *Request, blueprint *m.Blu
 			for j, at := range a.tiers {
 				tier := blueprint.Paths.At(at.path).Tiers.At(at.tier)
 				purchases = append(purchases, s.NewObject().Set("build", a.adaptedBy[j]).Set("name", tier.Name).Set("changeScope", ChangeScope(*tier)).
-					Set("dimensions", sharedDimensions(*plan, request, blueprint, a, *tier)))
+					Set("dimensions", sharedDimensions(*plan, request, blueprint, a, at)))
 			}
 			entry.Set("purchases", purchases)
 		}
@@ -253,7 +253,7 @@ func reviewRequiredConcepts(plan *DesignPlan, request *Request, blueprint *m.Blu
 // techniques, by the plan's purchase techniques in path and tier order,
 // whose purchases change that dimension too. A technique the concept's
 // entries or its name name is its own, not another.
-func sharedDimensions(plan DesignPlan, request *Request, blueprint *m.Blueprint, a conceptAdaptation, tier m.Tier) []any {
+func sharedDimensions(plan DesignPlan, request *Request, blueprint *m.Blueprint, a conceptAdaptation, at tierRef) []any {
 	technique := conceptTechnique(a.concept, request)
 	own := func(name string) bool {
 		if namesConcept(name, a.concept, technique) {
@@ -263,8 +263,8 @@ func sharedDimensions(plan DesignPlan, request *Request, blueprint *m.Blueprint,
 	}
 	out := []any{}
 	var seen []string
-	for _, change := range tier.Changes {
-		dimension := changeDimension(change)
+	for _, change := range blueprint.Paths.At(at.path).Tiers.At(at.tier).Changes {
+		dimension := changeDimension(blueprint, at.path, at.tier, change)
 		if slices.Contains(seen, dimension) {
 			continue
 		}
@@ -277,7 +277,9 @@ func sharedDimensions(plan DesignPlan, request *Request, blueprint *m.Blueprint,
 					if name == "" || own(name) || slices.ContainsFunc(others, func(other string) bool { return sameTechnique(other, name) }) {
 						continue
 					}
-					if slices.ContainsFunc(blueprint.Paths.At(pathIndex).Tiers.At(number).Changes, func(other m.Change) bool { return changeDimension(other) == dimension }) {
+					if slices.ContainsFunc(blueprint.Paths.At(pathIndex).Tiers.At(number).Changes, func(other m.Change) bool {
+						return changeDimension(blueprint, pathIndex, number, other) == dimension
+					}) {
 						others = append(others, name)
 					}
 				}

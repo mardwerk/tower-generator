@@ -220,6 +220,22 @@ func legacyVocabulary(rules Rules) Vocabulary {
 	}
 }
 
+// legacyStatusStats map each version 1 status stat to the status effect of
+// the vocabulary a version 1 Definition implies (legacyVocabulary).
+var legacyStatusStats = map[string]string{
+	"slowPercent": "slow", "slowSeconds": "slow",
+	"burnDamagePerSecond": "burn", "burnSeconds": "burn",
+	"stunSeconds": "stun",
+}
+
+// LegacyStatusEffect is the ID of the status effect that a version 1 stat
+// is a field of in the vocabulary Terms implies, such as stun for
+// stunSeconds, and false for a stat that is no status field.
+func LegacyStatusEffect(stat string) (string, bool) {
+	effect, ok := legacyStatusStats[stat]
+	return effect, ok
+}
+
 // ReservedIDs name the Engine's own capabilities and plan promises; status
 // effects and detection traits share those namespaces and cannot use them.
 var ReservedIDs = []string{

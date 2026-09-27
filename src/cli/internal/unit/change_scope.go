@@ -34,14 +34,18 @@ func ChangeScope(tier m.Tier) *s.Object {
 	return s.NewObject().Set("base", base).Set("boost", boost)
 }
 
-// changeDimension is what one typed change changes (#61, SOL-61-20): a stat
-// with the direction the change moves it, as "damage raised" or
-// "intervalSeconds lowered", or "set" when its operation sets it; a status
-// effect; bonus damage against a property; detection; a follow-up; the
-// Active Ability; or another change's kind. Amounts are left out, so two
-// purchases that raise damage by different amounts change one dimension,
-// and a purchase that lengthens the interval does not share a shortened one.
-func changeDimension(c m.Change) string {
+// changeDimension is what one typed change of the purchase at a path's
+// tier changes (#61, SOL-61-20): a stat with the direction the change moves
+// it, as "damage raised" or "intervalSeconds lowered"; a status effect;
+// bonus damage against a property; detection; a follow-up; the Active
+// Ability; or another change's kind. Amounts are left out, so two purchases
+// that raise damage by different amounts change one dimension, and a
+// purchase that lengthens the interval does not share a shortened one. A
+// set takes the direction its purchase resolves on its pure path
+// (setDirection), so a set to a higher damage and an added damage change
+// one dimension (SOL-82-01); a set that moves nothing there, or a boost stat
+// its purchase unlocks, keeps "set".
+func changeDimension(blueprint *m.Blueprint, pathIndex, tier int, c m.Change) string {
 	switch c.Kind {
 	case "stat", "modifyBoost":
 		name := c.Stat
@@ -50,6 +54,9 @@ func changeDimension(c m.Change) string {
 		}
 		switch {
 		case c.Operation == "set":
+			if direction := setDirection(blueprint, pathIndex, tier, c); direction != "" {
+				return name + " " + direction
+			}
 			return name + " set"
 		case c.Operation == "add" && c.Number > 0, c.Operation == "multiply" && c.Number > 1:
 			return name + " raised"
@@ -74,6 +81,43 @@ func changeDimension(c m.Change) string {
 		return "Active Ability"
 	default:
 		return c.Kind
+	}
+}
+
+// setDirection is the direction in which the purchase at a path's tier
+// moves the stat a set change of it sets, on its pure path: "raised" when
+// the stat's resolved value with that path's purchases through the tier
+// alone is higher than through the tier before, "lowered" when lower, and
+// "" when it is equal or, for a boost stat, the path owns no Active Ability
+// before the tier.
+func setDirection(blueprint *m.Blueprint, pathIndex, tier int, c m.Change) string {
+	if blueprint == nil {
+		return ""
+	}
+	value := func(bought int) (float64, bool) {
+		var selection m.Selection
+		selection[pathIndex] = bought
+		build := m.ResolveUnchecked(blueprint, selection)
+		if c.Kind == "stat" {
+			return build.BaseAttack.Stats.Get(c.Stat), true
+		}
+		for _, ability := range build.Abilities {
+			if ability.Path == m.PathKeys[pathIndex] {
+				boost := m.Boost{DurationSeconds: ability.DurationSeconds, CooldownSeconds: ability.CooldownSeconds, DamageMultiplier: ability.DamageMultiplier, IntervalMultiplier: ability.IntervalMultiplier, RangeBonus: ability.RangeBonus}
+				return boost.Get(c.Stat), true
+			}
+		}
+		return 0, false
+	}
+	before, hadBefore := value(tier - 1)
+	after, hasAfter := value(tier)
+	switch {
+	case !hadBefore || !hasAfter || after == before:
+		return ""
+	case after > before:
+		return "raised"
+	default:
+		return "lowered"
 	}
 }
 

@@ -335,8 +335,11 @@ func (v verdictSubjects) context(payoffs map[string]*s.Object, statuses map[stri
 // path's fifth purchase's typed changes change, by its name, with the enemy
 // properties the Definition's vocabulary makes immune to it, by their names
 // (#61, SOL-61-20): the v39 Luffy 5-x-x knockback, which Blimps and Bosses
-// ignore. A path whose fifth purchase changes no status is left out. It is
-// review context: code weighs no target.
+// ignore. A version 1 Definition changes slow, burn and stun with stat
+// changes, such as stunSeconds; each is read as the status effect of the
+// vocabulary it implies (LegacyStatusEffect), with that vocabulary's
+// immunities (SOL-82-01). A path whose fifth purchase changes no status is
+// left out. It is review context: code weighs no target.
 func capstoneStatusEffects(blueprint *m.Blueprint, vocabulary *m.Vocabulary) map[string][]any {
 	out := map[string][]any{}
 	if blueprint == nil || vocabulary == nil {
@@ -346,12 +349,18 @@ func capstoneStatusEffects(blueprint *m.Blueprint, vocabulary *m.Vocabulary) map
 		var seen []string
 		effects := []any{}
 		for _, change := range blueprint.Paths.At(index).Tiers.At(len(m.TierKeys)).Changes {
-			if change.Kind != "status" || slices.Contains(seen, change.Effect) {
+			id := change.Effect
+			if change.Kind == "stat" {
+				id, _ = m.LegacyStatusEffect(change.Stat)
+			} else if change.Kind != "status" {
+				id = ""
+			}
+			if id == "" || slices.Contains(seen, id) {
 				continue
 			}
-			seen = append(seen, change.Effect)
-			name, immune := change.Effect, []string{}
-			if effect, ok := vocabulary.Effect(change.Effect); ok {
+			seen = append(seen, id)
+			name, immune := id, []string{}
+			if effect, ok := vocabulary.Effect(id); ok {
 				if effect.Name != "" {
 					name = effect.Name
 				}
