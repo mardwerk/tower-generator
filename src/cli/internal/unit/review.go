@@ -88,12 +88,12 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		payoffs = CapstonePayoffs(evidence, currency)
 	}
 	comparisons := []any{}
+	var vocabulary *m.Vocabulary
+	if d := request.MechanicsDefinition; d != nil {
+		terms := d.Terms()
+		vocabulary = &terms
+	}
 	if blueprint != nil {
-		var vocabulary *m.Vocabulary
-		if d := request.MechanicsDefinition; d != nil {
-			terms := d.Terms()
-			vocabulary = &terms
-		}
 		comparisons = m.CompareCapstonePurchasesWith(blueprint, vocabulary)
 	}
 	// The raw capstone comparisons are in purchaseEvidence per path; the
@@ -194,7 +194,7 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		Set("abilities", s.FromGoValue(candidate.Abilities)).
 		Set("mechanics", s.FromGoValue(candidate.Mechanics)).
 		Set("unresolvedQuestions", s.FromGoValue(candidate.UnresolvedQuestions)))
-	context.Set("requiredVerdicts", verdicts.context(payoffs))
+	context.Set("requiredVerdicts", verdicts.context(payoffs, capstoneStatusEffects(blueprint, vocabulary)))
 	failed := []Finding{}
 	for _, f := range checked.Findings {
 		if f.Outcome == "fail" {
