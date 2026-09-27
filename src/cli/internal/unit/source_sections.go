@@ -371,11 +371,11 @@ func sourceTechniques(request *Request, legacy bool) []SourceTechnique {
 		if body[i] == "" {
 			continue
 		}
-		signature := signatureCue.MatchString(body[i])
+		// A signature cue marks only the technique it names (signatureName
+		// above), not every candidate the same passage mentions.
 		for _, e := range entries {
 			if namesTechnique(body[i], e.technique.Name) {
 				e.mentions[i] = true
-				e.technique.Signature = e.technique.Signature || signature
 			}
 		}
 	}

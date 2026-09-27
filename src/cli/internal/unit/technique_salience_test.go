@@ -1,6 +1,7 @@
 package unit_test
 
 import (
+	"fmt"
 	"os"
 	"slices"
 	"strings"
@@ -216,5 +217,48 @@ func TestLegacySourceTechniquesVerify(t *testing.T) {
 	}
 	if err := verify(flipped); err == nil {
 		t.Error("an edited salience verifies")
+	}
+}
+
+// A signature cue marks only the technique it names, not another candidate
+// the same passage mentions (SOL-68-01).
+func TestSignatureCueMarksOnlyTheNamedTechnique(t *testing.T) {
+	request := sectionedRequest(t,
+		sourceDocument("character-reference", "His signature attack is the Gum-Gum Pistol, which he also uses in Gear 2."),
+		sourceDocument("character-wiki:onepiece.fandom.com:Monkey_D._Luffy/Abilities_and_Powers", strings.Join([]string{
+			"Devil Fruit\nGear 2\nGear 2 pumps blood faster through his body.",
+		}, "\n\n")),
+	)
+	techniques := techniquesByName(request)
+	if !techniques["Gum-Gum Pistol"].Signature {
+		t.Errorf("Gum-Gum Pistol is not a signature: %+v", techniques["Gum-Gum Pistol"])
+	}
+	if gear2, ok := techniques["Gear 2"]; !ok || gear2.Signature {
+		t.Errorf("Gear 2 took the Pistol's signature cue: %+v", *request.SourceTechniques)
+	}
+}
+
+// A merged candidate keeps the passage that proves its alias even when that
+// passage comes after the passages it keeps per name (SOL-68-01).
+func TestAliasKeepsItsProofPassage(t *testing.T) {
+	var lines []string
+	for i := 0; i < 14; i++ {
+		lines = append(lines, fmt.Sprintf("Haki\nBusoshoku Haki\nBusoshoku Haki hardens his fists, as shown in fight %d.", i))
+		lines = append(lines, fmt.Sprintf("Haki\nArmament Haki\nArmament Haki lets him hit Logia users, as shown in fight %d.", i))
+	}
+	lines = append(lines, "Haki\nNotes\nBusoshoku Haki, also known as Armament Haki, is one power.")
+	request := sectionedRequest(t, sourceDocument("character-wiki:onepiece.fandom.com:Monkey_D._Luffy/Abilities_and_Powers", strings.Join(lines, "\n\n")))
+	merged, ok := techniquesByName(request)["Busoshoku Haki"]
+	if !ok || !slices.Equal(merged.Aliases, []string{"Armament Haki"}) {
+		t.Fatalf("Busoshoku Haki %+v", *request.SourceTechniques)
+	}
+	var proof string
+	for _, span := range unit.AuthorEvidence(&request) {
+		if strings.Contains(span.Text, "also known as") {
+			proof = span.ID
+		}
+	}
+	if proof == "" || !slices.Contains(merged.PassageIDs, proof) {
+		t.Errorf("the proof passage %q is not among %v", proof, merged.PassageIDs)
 	}
 }

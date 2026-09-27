@@ -44,8 +44,8 @@ type sourceCandidate struct {
 }
 
 // aliasPair is two candidates, by position, that one passage names as one
-// technique.
-type aliasPair struct{ a, b int }
+// technique, and that passage's position (proof).
+type aliasPair struct{ a, b, proof int }
 
 // sourceAliases finds the alias pairs the selected passages prove. body is
 // each passage's text after a technique page's title, empty for a page's
@@ -66,14 +66,14 @@ func sourceAliases(request *Request, spans []EvidenceSpan, body []string, lookup
 			}
 			if match := subjectDefinition.FindStringSubmatch(body[i]); owner >= 0 && match != nil {
 				if subject := lookupWords(match[1], lookup, true); subject >= 0 && subject != owner {
-					pairs = append(pairs, aliasPair{owner, subject})
+					pairs = append(pairs, aliasPair{owner, subject, i})
 				}
 			}
 		}
 		for _, match := range alsoCalled.FindAllStringSubmatch(body[i], -1) {
 			a, b := lookupWords(match[1], lookup, false), lookupWords(match[2], lookup, true)
 			if a >= 0 && b >= 0 && a != b {
-				pairs = append(pairs, aliasPair{a, b})
+				pairs = append(pairs, aliasPair{a, b, i})
 			}
 		}
 	}
@@ -144,6 +144,15 @@ func mergeSourceAliases(candidates []*sourceCandidate, pairs []aliasPair) []*sou
 		// the lower position is named first.
 		parent[max(a, b)] = min(a, b)
 	}
+	// Each merged group keeps the passage that proves each of its aliases,
+	// even beyond the passages it keeps per name, so the plan and the
+	// review can see why the names were joined.
+	proofs := map[int][]int{}
+	for _, pair := range pairs {
+		if r := root(pair.a); r == root(pair.b) && !slices.Contains(proofs[r], pair.proof) {
+			proofs[r] = append(proofs[r], pair.proof)
+		}
+	}
 	var out []*sourceCandidate
 	for i, c := range candidates {
 		c.keys = []string{c.key}
@@ -159,6 +168,15 @@ func mergeSourceAliases(candidates []*sourceCandidate, pairs []aliasPair) []*sou
 		group.technique.Signature = group.technique.Signature || c.technique.Signature
 		group.page = group.page || c.page
 		for _, p := range c.passages {
+			if !slices.Contains(group.passages, p) {
+				group.passages = append(group.passages, p)
+			}
+		}
+		sort.Ints(group.passages)
+	}
+	for r, proof := range proofs {
+		group := candidates[r]
+		for _, p := range proof {
 			if !slices.Contains(group.passages, p) {
 				group.passages = append(group.passages, p)
 			}
