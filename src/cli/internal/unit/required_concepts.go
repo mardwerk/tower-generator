@@ -3,6 +3,7 @@ package unit
 import (
 	"fmt"
 	"slices"
+	"strings"
 
 	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
@@ -184,11 +185,12 @@ func requiredConceptsContext(request *Request) []any {
 // the plan's entries named for it, the passages they cite (sourceIds), the
 // source technique it names with its passages, and the purchases whose
 // technique those entries are (adaptedBy), as code found them, each with
-// its name and typed changes by scope (purchases), and whether it is the
-// base attack. The review judges from them which effect identifies the
-// concept and whether a named typed change carries it (#61, SOL-61-16):
-// the v38 Luffy review passed Gear 4 and Gear 5 on damage, attack rate and
-// pierce that every Gear path shares.
+// its name, typed changes by scope and the dimensions they change with the
+// other techniques that change them too (sharedDimensions) (purchases), and
+// whether it is the base attack. The review judges from them which effect
+// identifies the concept and whether a named typed change carries it (#61,
+// SOL-61-16): the v38 Luffy review passed Gear 4 and Gear 5 on damage,
+// attack rate and pierce that every Gear path shares.
 func reviewRequiredConcepts(plan *DesignPlan, request *Request, blueprint *m.Blueprint) []any {
 	out := requiredConceptsContext(request)
 	if plan == nil {
@@ -224,10 +226,64 @@ func reviewRequiredConcepts(plan *DesignPlan, request *Request, blueprint *m.Blu
 			purchases := []any{}
 			for j, at := range a.tiers {
 				tier := blueprint.Paths.At(at.path).Tiers.At(at.tier)
-				purchases = append(purchases, s.NewObject().Set("build", a.adaptedBy[j]).Set("name", tier.Name).Set("changeScope", ChangeScope(*tier)))
+				purchases = append(purchases, s.NewObject().Set("build", a.adaptedBy[j]).Set("name", tier.Name).Set("changeScope", ChangeScope(*tier)).
+					Set("dimensions", sharedDimensions(*plan, request, blueprint, a, *tier)))
 			}
 			entry.Set("purchases", purchases)
 		}
+	}
+	return out
+}
+
+// Shared dimensions (#61, SOL-61-20). The v39 Luffy reviews, at low and
+// medium reasoning, passed Gear 4 on x-3-x's damage and attack rate and
+// Gear 5 on x-x-3's damage, though Gum-Gum Pistol, Gear 3 and the other
+// form's purchases raise damage too, and the rule already said a shared stat
+// cannot alone prove a concept (OPUS-NET-61-25). The review now reads, for
+// each purchase that carries a required concept, each dimension its typed
+// changes change (changeDimension) with the other techniques whose
+// purchases change that dimension too, so it cannot pass on a shared stat
+// without seeing that it is shared. The cue is descriptive: a shared
+// dimension can still carry the concept when its passage makes it the
+// concept's identifying effect (SharedDimensionRule), and code rejects
+// nothing on it.
+
+// sharedDimensions lists each dimension one purchase of a required concept
+// changes, in the order of its typed changes, with alsoChangedBy: the other
+// techniques, by the plan's purchase techniques in path and tier order,
+// whose purchases change that dimension too. A technique the concept's
+// entries or its name name is its own, not another.
+func sharedDimensions(plan DesignPlan, request *Request, blueprint *m.Blueprint, a conceptAdaptation, tier m.Tier) []any {
+	technique := conceptTechnique(a.concept, request)
+	own := func(name string) bool {
+		if namesConcept(name, a.concept, technique) {
+			return true
+		}
+		return slices.ContainsFunc(a.entries, func(index int) bool { return sameTechnique(name, plan.Repertoire[index].Name) })
+	}
+	out := []any{}
+	var seen []string
+	for _, change := range tier.Changes {
+		dimension := changeDimension(change)
+		if slices.Contains(seen, dimension) {
+			continue
+		}
+		seen = append(seen, dimension)
+		others := []string{}
+		if plan.UpgradeIntents != nil {
+			for pathIndex := range m.PathKeys {
+				for number := 1; number <= len(m.TierKeys); number++ {
+					name := strings.TrimSpace(plan.UpgradeIntents.At(pathIndex).At(number).Technique)
+					if name == "" || own(name) || slices.ContainsFunc(others, func(other string) bool { return sameTechnique(other, name) }) {
+						continue
+					}
+					if slices.ContainsFunc(blueprint.Paths.At(pathIndex).Tiers.At(number).Changes, func(other m.Change) bool { return changeDimension(other) == dimension }) {
+						others = append(others, name)
+					}
+				}
+			}
+		}
+		out = append(out, s.NewObject().Set("dimension", dimension).Set("alsoChangedBy", anyStrings(others)))
 	}
 	return out
 }

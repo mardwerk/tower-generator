@@ -277,9 +277,10 @@ func purchaseVerdicts(review SemanticReview, kind purchaseKind) []PurchaseVerdic
 
 // context lists the verdicts the review must give, for requiredVerdicts in
 // the review context. Each fifth purchase carries its payoff numbers
-// (CapstonePayoffs) when the review has purchase evidence, and each
-// proposal what it says it does.
-func (v verdictSubjects) context(payoffs map[string]*s.Object) *s.Object {
+// (CapstonePayoffs) when the review has purchase evidence and the status
+// effects it changes with their immunities (capstoneStatusEffects), and
+// each proposal what it says it does.
+func (v verdictSubjects) context(payoffs map[string]*s.Object, statuses map[string][]any) *s.Object {
 	omissions := []any{}
 	for _, omission := range v.omissions {
 		entry := s.NewObject().Set("technique", omission.Name)
@@ -311,6 +312,9 @@ func (v verdictSubjects) context(payoffs map[string]*s.Object) *s.Object {
 		if payoff, ok := payoffs[purchase.key]; ok {
 			fifth[i].(*s.Object).Set("payoff", payoff)
 		}
+		if effects, ok := statuses[purchase.key]; ok {
+			fifth[i].(*s.Object).Set("statusEffects", effects)
+		}
 	}
 	proposals := []any{}
 	for _, p := range v.proposals {
@@ -325,6 +329,43 @@ func (v verdictSubjects) context(payoffs map[string]*s.Object) *s.Object {
 		out.Set("requiredConcepts", required)
 	}
 	return out.Set("thirdPurchases", purchases(v.thirdPurchases)).Set("fifthPurchases", fifth).Set("proposals", proposals)
+}
+
+// capstoneStatusEffects lists, by path key, each status effect that a
+// path's fifth purchase's typed changes change, by its name, with the enemy
+// properties the Definition's vocabulary makes immune to it, by their names
+// (#61, SOL-61-20): the v39 Luffy 5-x-x knockback, which Blimps and Bosses
+// ignore. A path whose fifth purchase changes no status is left out. It is
+// review context: code weighs no target.
+func capstoneStatusEffects(blueprint *m.Blueprint, vocabulary *m.Vocabulary) map[string][]any {
+	out := map[string][]any{}
+	if blueprint == nil || vocabulary == nil {
+		return out
+	}
+	for index, key := range m.PathKeys {
+		var seen []string
+		effects := []any{}
+		for _, change := range blueprint.Paths.At(index).Tiers.At(len(m.TierKeys)).Changes {
+			if change.Kind != "status" || slices.Contains(seen, change.Effect) {
+				continue
+			}
+			seen = append(seen, change.Effect)
+			name, immune := change.Effect, []string{}
+			if effect, ok := vocabulary.Effect(change.Effect); ok {
+				if effect.Name != "" {
+					name = effect.Name
+				}
+				for _, property := range effect.Immune {
+					immune = append(immune, vocabulary.PropertyName(property))
+				}
+			}
+			effects = append(effects, s.NewObject().Set("effect", name).Set("immune", anyStrings(immune)))
+		}
+		if len(effects) > 0 {
+			out[key] = effects
+		}
+	}
+	return out
 }
 
 // schemaFields narrow the review's verdict fields to exactly its subjects.

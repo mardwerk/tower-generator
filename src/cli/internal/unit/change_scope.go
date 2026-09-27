@@ -34,6 +34,49 @@ func ChangeScope(tier m.Tier) *s.Object {
 	return s.NewObject().Set("base", base).Set("boost", boost)
 }
 
+// changeDimension is what one typed change changes (#61, SOL-61-20): a stat
+// with the direction the change moves it, as "damage raised" or
+// "intervalSeconds lowered", or "set" when its operation sets it; a status
+// effect; bonus damage against a property; detection; a follow-up; the
+// Active Ability; or another change's kind. Amounts are left out, so two
+// purchases that raise damage by different amounts change one dimension,
+// and a purchase that lengthens the interval does not share a shortened one.
+func changeDimension(c m.Change) string {
+	switch c.Kind {
+	case "stat", "modifyBoost":
+		name := c.Stat
+		if c.Kind == "modifyBoost" {
+			name = "boost " + c.Stat
+		}
+		switch {
+		case c.Operation == "set":
+			return name + " set"
+		case c.Operation == "add" && c.Number > 0, c.Operation == "multiply" && c.Number > 1:
+			return name + " raised"
+		case c.Operation == "add" && c.Number < 0, c.Operation == "multiply" && c.Number < 1:
+			return name + " lowered"
+		}
+		return name
+	case "status":
+		return c.Effect
+	case "bonusDamage":
+		return "bonus damage against " + c.Property
+	case "camo":
+		return "camo detection"
+	case "detection":
+		return "detects " + c.Trait
+	case "followUp":
+		if c.Target == "boost" {
+			return "Active Ability follow-up"
+		}
+		return "follow-up"
+	case "unlockBoost":
+		return "Active Ability"
+	default:
+		return c.Kind
+	}
+}
+
 // changeLabel is a short label of one typed change.
 func changeLabel(c m.Change) string {
 	number := s.FormatNumber(c.Number)
