@@ -175,6 +175,7 @@ var (
 				s.F("distinctPathSpecializations", s.Bool()),
 				s.F("distinctFirstUpgrades", s.Bool()),
 				s.F("distinctEarlyBenefits", s.Optional(s.Bool())),
+				s.F("exclusiveEarlyBenefits", s.Optional(s.Bool())),
 				s.F("distinctCapstones", s.Bool()),
 				s.F("preserveEarlyAttackIdentity", s.Optional(s.Bool())),
 				s.F("maxManualAbilityPaths", s.Int().Min(0).Max(3)),

@@ -114,6 +114,8 @@ export interface DesignPolicy {
   distinctPathSpecializations: boolean;
   distinctFirstUpgrades: boolean;
   distinctEarlyBenefits?: boolean;
+  /** Subsumes `distinctEarlyBenefits`; with both set, only this one applies. */
+  exclusiveEarlyBenefits?: boolean;
   distinctCapstones: boolean;
   preserveEarlyAttackIdentity?: boolean;
   /** 0 to 3. */

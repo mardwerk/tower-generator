@@ -15,12 +15,32 @@ func intent(unlock string, improves ...string) unit.UpgradeIntent {
 	return unit.UpgradeIntent{Improves: improves, Unlock: unlock, Technique: "Dart Throw"}
 }
 
-// withEarlyPolicy sets distinctEarlyBenefits and distinctFirstUpgrades.
+// withEarlyPolicy sets distinctEarlyBenefits and distinctFirstUpgrades and
+// clears exclusiveEarlyBenefits, which the Default sets and which subsumes
+// distinctEarlyBenefits (#61).
 func withEarlyPolicy(d m.Definition, benefits *bool, first bool) m.Definition {
 	policy := *d.Profile.DesignPolicy
-	policy.DistinctEarlyBenefits, policy.DistinctFirstUpgrades = benefits, first
+	policy.DistinctEarlyBenefits, policy.DistinctFirstUpgrades, policy.ExclusiveEarlyBenefits = benefits, first, nil
 	d.Profile.DesignPolicy = &policy
 	return d
+}
+
+// multisetPolicy selects distinctEarlyBenefits alone, the early benefits
+// rule of the Default before v29.
+func multisetPolicy(p *m.DesignPolicy) {
+	on := true
+	p.DistinctEarlyBenefits, p.ExclusiveEarlyBenefits = &on, nil
+}
+
+// multisetDraft is the fixture drafted under multisetPolicy.
+func multisetDraft(t *testing.T) unit.Draft {
+	t.Helper()
+	model := &fixture.Model{Outputs: []any{recordedOutput(t, "plan"), recordedOutput(t, "mechanics")}}
+	draft, err := unit.DraftUnit(context.Background(), preparedUnder(t, multisetPolicy), model, fixture.Options())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return draft
 }
 
 func earlyPlanIssues(plan unit.DesignPlan, definition m.Definition) []string {
@@ -44,7 +64,7 @@ func TestEarlyBenefitsPlanCheck(t *testing.T) {
 	plan := *stages.Draft.Run.DesignPlan
 	base := *plan.UpgradeIntents
 	on := true
-	def := unit.DefaultAuthoringDefinition()
+	def := withEarlyPolicy(unit.DefaultAuthoringDefinition(), &on, true)
 	slowed := intent("none", "damage")
 	slowed.Lowers = []string{"attack-rate"}
 	renamed := func(i unit.UpgradeIntent) unit.UpgradeIntent {
@@ -172,7 +192,8 @@ func TestResolvedEarlyBenefits(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	definition := unit.DefaultAuthoringDefinition()
+	on := true
+	definition := withEarlyPolicy(unit.DefaultAuthoringDefinition(), &on, true)
 	resolved := func(p1, p3 [2][]m.Change, d m.Definition) []m.Issue {
 		b := *stages.Draft.Candidate.Blueprint
 		b.Paths.Path1.Tiers.Tier1.Changes, b.Paths.Path1.Tiers.Tier2.Changes = p1[0], p1[1]
@@ -234,10 +255,7 @@ const resolvedEarlyCause = "The retained plan promises attack-rate at x-2-x; the
 // (SOL-33-04). It targets the departing purchase for TargetedTierRepair,
 // and a draft that keeps the match publishes nothing. check reports it too.
 func TestResolvedEarlyBenefitsAreCaughtAndRepaired(t *testing.T) {
-	prepared, err := fixture.Prepare()
-	if err != nil {
-		t.Fatal(err)
-	}
+	prepared := preparedUnder(t, multisetPolicy)
 	zero := 0
 	scripted := &fixture.Model{Outputs: []any{recordedOutput(t, "plan"), earlyMatchMechanics(t)}}
 	if _, err := unit.DraftUnit(context.Background(), prepared, scripted, unit.Options{MaxRepairAttempts: &zero}); err == nil ||
@@ -282,11 +300,7 @@ type checkFailure struct{ rule, action string }
 // path2 the same two early benefits, with or without its retained plan.
 func earlyMatchCheckFailures(t *testing.T, withPlan bool) []checkFailure {
 	t.Helper()
-	stages, err := fixture.Build()
-	if err != nil {
-		t.Fatal(err)
-	}
-	draft := stages.Draft
+	draft := multisetDraft(t)
 	blueprint := *draft.Candidate.Blueprint
 	for tier := 1; tier <= 2; tier++ {
 		p1, p2 := blueprint.Paths.Path1.Tiers.At(tier), blueprint.Paths.Path2.Tiers.At(tier)
@@ -335,10 +349,7 @@ func TestEarlyBenefitsPromptIssueAndRetryAgree(t *testing.T) {
 	if m.EarlyBenefitsRule != rule {
 		t.Fatalf("rule changed: %q", m.EarlyBenefitsRule)
 	}
-	prepared, err := fixture.Prepare()
-	if err != nil {
-		t.Fatal(err)
-	}
+	prepared := preparedUnder(t, multisetPolicy)
 	planPrompt, err := unit.DesignPlanRequest(prepared)
 	if err != nil || !strings.Contains(planPrompt.Prompt, rule) {
 		t.Errorf("plan prompt lacks the rule: %v", err)
@@ -417,7 +428,8 @@ func TestDamageRaiseDoesNotImproveTheFollowUp(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	definition := unit.DefaultAuthoringDefinition()
+	on := true
+	definition := withEarlyPolicy(unit.DefaultAuthoringDefinition(), &on, true)
 	b := *stages.Draft.Candidate.Blueprint
 	b.BaseAttack.FollowUp = &m.FollowUp{Name: "Shockwave", Count: 2, DamageMultiplier: 0.5, Radius: 20}
 	early := [2][]m.Change{{statChange("range", "add", 2)}, {statChange("damage", "add", 1)}}
@@ -451,5 +463,213 @@ func TestDamageRaiseDoesNotImproveTheFollowUp(t *testing.T) {
 	b.Paths.Path3.Tiers.Tier2.Changes = []m.Change{statChange("damage", "add", 1), {Kind: "followUp", Target: "base", FollowUp: &stronger}}
 	if got := unit.EarlyBenefitsIssues(b, &intents, definition); len(got) != 0 {
 		t.Errorf("a kept follow-up promise: %v", got)
+	}
+}
+
+// ---- exclusiveEarlyBenefits ----
+
+func exclusivePlanIssues(plan unit.DesignPlan, definition m.Definition) []string {
+	var found []string
+	for _, issue := range unit.PlanFeasibilityIssues(plan, definition) {
+		if strings.Contains(issue.Message, m.ExclusiveEarlyBenefitsRule) {
+			found = append(found, issue.Path+": "+issue.Message)
+		}
+	}
+	return found
+}
+
+// Under exclusiveEarlyBenefits, on in the Default, nothing one path's first
+// two purchases improve or unlock may be improved or unlocked by another
+// path's first two purchases (#61). A path may repeat its own dimension, as
+// the fixture's middle path attacks faster twice, and later purchases may
+// add another path's dimension, as x-x-3 raises damage and pierce.
+func TestExclusiveEarlyBenefitsPlanCheck(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan := *stages.Draft.Run.DesignPlan
+	base := *plan.UpgradeIntents
+	def := unit.DefaultAuthoringDefinition()
+	on := true
+	lowersPierce := intent("none", "attack-rate")
+	lowersPierce.Lowers = []string{"pierce"}
+	cases := []struct {
+		name       string
+		edit       func(*unit.UpgradeIntents)
+		definition m.Definition
+		want       []string
+	}{
+		{"fixture: each path double-dips its own dimension", func(*unit.UpgradeIntents) {}, def, nil},
+		{"two first purchases add damage", func(i *unit.UpgradeIntents) {
+			i.Path1.Tier1, i.Path2.Tier1 = intent("none", "damage"), intent("none", "damage")
+		}, def, []string{"upgradeIntents.path2.tier1: x-1-x and x-2-x promise damage, which 1-x-x and 2-x-x also promise. " + m.ExclusiveEarlyBenefitsRule +
+			" Redesign x-1-x or x-2-x: move damage to x-3-x or later, or replace it with an improvement or unlock from this path's own technique that no other path's first two purchases promise."}},
+		{"shared across tiers", func(i *unit.UpgradeIntents) { i.Path1.Tier2 = intent("none", "range") }, def,
+			[]string{"upgradeIntents.path3.tier2: x-x-1 and x-x-2 promise range, which 1-x-x and 2-x-x also promise."}},
+		{"the same unlock", func(i *unit.UpgradeIntents) { i.Path1.Tier2 = intent("camo", "pierce") }, def,
+			[]string{"upgradeIntents.path3.tier2: x-x-1 and x-x-2 promise unlock camo, which 1-x-x and 2-x-x also promise."}},
+		{"a later purchase may add it", func(i *unit.UpgradeIntents) { i.Path1.Tier1 = intent("none", "damage") }, def, nil},
+		{"lowers do not count", func(i *unit.UpgradeIntents) { i.Path2.Tier1 = lowersPierce }, def, nil},
+		{"distinct multisets still share", func(i *unit.UpgradeIntents) {
+			i.Path1.Tier1, i.Path1.Tier2 = intent("none", "range"), intent("none", "damage")
+			i.Path3.Tier1, i.Path3.Tier2 = intent("none", "range"), intent("none", "damage", "pierce")
+		}, def, []string{"upgradeIntents.path3.tier2: x-x-1 and x-x-2 promise damage and range, which 1-x-x and 2-x-x also promise."}},
+		{"both fields: the exclusive rule only", func(i *unit.UpgradeIntents) { i.Path1.Tier1 = intent("none", "range") }, func() m.Definition {
+			d := def
+			policy := *d.Profile.DesignPolicy
+			policy.DistinctEarlyBenefits = &on
+			d.Profile.DesignPolicy = &policy
+			return d
+		}(), []string{"upgradeIntents.path3.tier2: x-x-1 and x-x-2 promise range, which 1-x-x and 2-x-x also promise."}},
+		{"policy off", func(i *unit.UpgradeIntents) { i.Path1.Tier1 = intent("none", "range") }, withEarlyPolicy(def, nil, true), nil},
+	}
+	for _, c := range cases {
+		intents := base
+		c.edit(&intents)
+		p := plan
+		p.UpgradeIntents = &intents
+		found := exclusivePlanIssues(p, c.definition)
+		if len(found) != len(c.want) {
+			t.Errorf("%s: issues %v, want %v", c.name, found, c.want)
+			continue
+		}
+		for i, want := range c.want {
+			if !strings.HasPrefix(found[i], want) {
+				t.Errorf("%s: issue %q, want %q", c.name, found[i], want)
+			}
+		}
+		if multiset := earlyPlanIssues(p, c.definition); len(multiset) != 0 {
+			t.Errorf("%s: the subsumed multiset rule ran: %v", c.name, multiset)
+		}
+	}
+}
+
+// The resolved form compares what the pure builds up to each second
+// purchase gain, whatever the amounts.
+func TestExclusiveEarlyBenefitsResolvedCheck(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	definition := unit.DefaultAuthoringDefinition()
+	resolved := func(p1, p3 [2][]m.Change, d m.Definition) []m.Issue {
+		b := *stages.Draft.Candidate.Blueprint
+		b.Paths.Path1.Tiers.Tier1.Changes, b.Paths.Path1.Tiers.Tier2.Changes = p1[0], p1[1]
+		b.Paths.Path3.Tiers.Tier1.Changes, b.Paths.Path3.Tiers.Tier2.Changes = p3[0], p3[1]
+		return unit.EarlyBenefitsIssues(b, nil, d)
+	}
+	pierceTwice := [2][]m.Change{{statChange("pierce", "add", 1)}, {statChange("pierce", "add", 2)}}
+	camo := m.Change{Kind: "detection", Target: "base", Trait: "camo", Bool: true}
+	cases := []struct {
+		name string
+		p3   [2][]m.Change
+		d    m.Definition
+		want string
+	}{
+		{"each path double-dips its own dimension", [2][]m.Change{{statChange("range", "add", 8)}, {statChange("range", "add", 8)}}, definition, ""},
+		{"a distinct unlock beside its own dimension", [2][]m.Change{{statChange("range", "add", 8)}, {statChange("range", "add", 8), camo}}, definition, ""},
+		{"a shared early dimension", [2][]m.Change{{statChange("range", "add", 8)}, {statChange("pierce", "add", 1)}}, definition,
+			"paths.path3.tiers.tier2: Resolved x-x-1 and x-x-2 give pierce, which resolved 1-x-x and 2-x-x also give: 1-x-x gives pierce, 2-x-x gives pierce, x-x-1 gives range and x-x-2 gives pierce. " +
+				m.ExclusiveEarlyBenefitsRule + " Change what x-x-2 or x-x-1 improves or unlocks so it shares nothing with 1-x-x and 2-x-x."},
+		{"a slower interval does not share attack-rate", [2][]m.Change{{statChange("range", "add", 8)}, {statChange("range", "add", 8), statChange("intervalSeconds", "multiply", 1.2)}}, definition, ""},
+		{"policy off", [2][]m.Change{{statChange("pierce", "add", 1)}, {statChange("pierce", "add", 1)}}, withEarlyPolicy(definition, nil, true), ""},
+	}
+	for _, c := range cases {
+		got := resolved(pierceTwice, c.p3, c.d)
+		switch {
+		case c.want == "" && len(got) != 0:
+			t.Errorf("%s: rejected: %v", c.name, got)
+		case c.want != "" && (len(got) != 1 || got[0].Path+": "+got[0].Message != c.want):
+			t.Errorf("%s: issues %v, want %q", c.name, got, c.want)
+		}
+	}
+}
+
+// earlyShareMechanics keeps the fixture plan and adds a pierce raise, which
+// that plan does not promise, to x-2-x: the middle path's early purchases
+// then share pierce with the top path's.
+func earlyShareMechanics(t *testing.T) *s.Object {
+	mech := recordedOutput(t, "mechanics")
+	tier := at(mech, "paths", "path2", "tiers", "tier2").(*s.Object)
+	changes, _ := tier.Get("statChanges")
+	tier.Set("statChanges", append(changes.([]any), s.NewObject().Set("stat", "pierce").Set("operation", "add").Set("value", 1.0)))
+	return mech
+}
+
+const exclusiveEarlyFacts = "Resolved x-1-x and x-2-x give pierce, which resolved 1-x-x and 2-x-x also give: 1-x-x gives pierce, 2-x-x gives pierce, x-1-x gives attack-rate and x-2-x gives attack-rate and pierce."
+
+const exclusiveEarlyCause = "The retained plan does not promise pierce at x-2-x; the resolved purchase gives it, and the other path's first two purchases give it too. Remove that pierce from x-2-x and keep x-2-x's promises."
+
+// The plan prompt, the draft guidance, the plan issue with its full-plan
+// correction and the resolved issue with its targeted repair share one rule
+// sentence, and check reports the resolved issue.
+func TestExclusiveEarlyBenefitsPromptIssueAndRetryAgree(t *testing.T) {
+	prepared, err := fixture.Prepare()
+	if err != nil {
+		t.Fatal(err)
+	}
+	rule := m.ExclusiveEarlyBenefitsRule
+	planPrompt, err := unit.DesignPlanRequest(prepared)
+	if err != nil || !strings.Contains(planPrompt.Prompt, rule) || strings.Contains(planPrompt.Prompt, m.EarlyBenefitsRule) {
+		t.Errorf("the plan prompt does not state exactly the exclusive rule: %v", err)
+	}
+	if guidance := strings.Join(unit.DesignGuidance(&prepared.Request), "\n"); !strings.Contains(guidance, rule) {
+		t.Errorf("draft guidance lacks the rule: %s", guidance)
+	}
+
+	// Plan stage.
+	sharing := recordedOutput(t, "plan")
+	at(sharing, "paths", "path2", "milestones", "tier1").(*s.Object).Set("improves", []any{"pierce"})
+	scripted := &fixture.Model{Outputs: []any{sharing, recordedOutput(t, "plan"), recordedOutput(t, "mechanics")}}
+	if _, err := unit.DraftUnit(context.Background(), prepared, scripted, unit.Options{}); err != nil {
+		t.Fatal(err)
+	}
+	if len(scripted.Requests) != 3 || !strings.Contains(scripted.Requests[1].Prompt, "paths.path2.milestones.tier1: x-1-x and x-2-x promise pierce, which 1-x-x and 2-x-x also promise. "+rule) {
+		t.Errorf("plan correction: %s", retryReason(scripted.Requests[1].Prompt))
+	}
+
+	// Resolved stage.
+	zero := 0
+	scripted = &fixture.Model{Outputs: []any{recordedOutput(t, "plan"), earlyShareMechanics(t)}}
+	if _, err := unit.DraftUnit(context.Background(), prepared, scripted, unit.Options{MaxRepairAttempts: &zero}); err == nil || !strings.Contains(err.Error(), "No invalid Unit was published.") {
+		t.Errorf("published a shared early benefit: %v", err)
+	}
+	want := "paths.path2.tiers.tier2: " + exclusiveEarlyFacts + " " + rule + " " + exclusiveEarlyCause
+	scripted = &fixture.Model{Outputs: []any{recordedOutput(t, "plan"), earlyShareMechanics(t)}}
+	_, _ = unit.DraftUnit(context.Background(), prepared, scripted, unit.Options{})
+	if len(scripted.Requests) != 3 || !strings.Contains(scripted.Requests[2].Prompt, `"violations":["`+want+`"]`) {
+		t.Errorf("targeted repair: %s", retryReason(scripted.Requests[len(scripted.Requests)-1].Prompt))
+	}
+
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	draft := stages.Draft
+	blueprint := *draft.Candidate.Blueprint
+	tier := &blueprint.Paths.Path2.Tiers.Tier2
+	tier.Changes = append(append([]m.Change{}, tier.Changes...), statChange("pierce", "add", 1))
+	if issues := m.ValidateTyped(&blueprint, *draft.Prepared.Request.MechanicsDefinition); len(issues) != 0 {
+		t.Fatalf("the rule reached ValidateTyped, which rendering calls: %v", issues)
+	}
+	if draft.Candidate, err = unit.CompileBlueprint(blueprint, draft.Prepared.Request); err != nil {
+		t.Fatal(err)
+	}
+	if draft.Run.DesignEvaluation, err = unit.EvaluateUnitDesign(blueprint, draft.Run.DesignPlan, *draft.Prepared.Request.MechanicsDefinition); err != nil {
+		t.Fatal(err)
+	}
+	checked, err := unit.CheckDraft(draft)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var failed []string
+	for _, f := range checked.Findings {
+		if f.Outcome == "fail" {
+			failed = append(failed, f.Rule+" "+f.Subject+": "+f.Message)
+		}
+	}
+	if len(failed) != 1 || failed[0] != "exclusive-early-benefits "+want {
+		t.Errorf("check findings: %v", failed)
 	}
 }

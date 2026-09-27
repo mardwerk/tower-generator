@@ -180,12 +180,20 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 		return nil
 	}
 	var issues []m.Issue
-	if definition.Profile.DesignPolicy.RequiresBehaviorChange(3) {
+	// A milestone that names a proposed mechanic passes: it names a
+	// capability beyond larger numbers that the Definition cannot express
+	// yet, which check reports as an unresolved design gap once resolved
+	// when no supported behavior comes with it (#61).
+	for _, tier := range []int{3, 5} {
+		if !definition.Profile.DesignPolicy.RequiresBehaviorChange(tier) {
+			continue
+		}
 		for pathIndex, path := range m.PathKeys {
-			if !addsBehavior(*plan.UpgradeIntents.At(pathIndex).At(3)) {
+			intent := *plan.UpgradeIntents.At(pathIndex).At(tier)
+			if !addsBehavior(intent) && len(intent.ProposedMechanics) == 0 {
 				issues = append(issues, m.Issue{
-					Path:    "upgradeIntents." + path + ".tier3",
-					Message: fmt.Sprintf("%s promises no new behavior or access. %s Promise an unlock other than targeting-change, such as a new delivery, distinct-volley with more than one projectile, splash, a status effect, follow-up, damage-type-change or a detection trait, or promise projectiles while the path fires one projectile.", BuildCode(pathIndex, 3), m.BehaviorChangeRule(3)),
+					Path:    fmt.Sprintf("upgradeIntents.%s.tier%d", path, tier),
+					Message: fmt.Sprintf("%s promises no new behavior or access and names no proposed mechanic. %s Promise an unlock other than targeting-change, such as a new delivery, distinct-volley with more than one projectile, splash, a status effect, follow-up, damage-type-change or a detection trait, promise projectiles while the path fires one projectile, or, only when the Definition cannot express the capability the sources describe, name it in proposedMechanics, which leaves an unresolved design gap until the Definition supports it.", BuildCode(pathIndex, tier), m.BehaviorChangeRule(tier)),
 				})
 			}
 		}
@@ -194,7 +202,12 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 	// promise the same multiset of improvements and unlocks, in any order
 	// (#32): four interval-only upgrades on two paths gave them no distinct
 	// early crosspath value (a Luffy Result on #27). Third purchases stay free.
-	if earlyBenefitsOn(definition) {
+	// exclusiveEarlyBenefits goes further: no benefit of one path's first two
+	// purchases may appear in another's (#61).
+	switch {
+	case exclusiveEarlyOn(definition):
+		issues = append(issues, exclusiveEarlyIssues(plan.UpgradeIntents, definition)...)
+	case earlyBenefitsOn(definition):
 		issues = append(issues, earlyBenefitsIssues(plan.UpgradeIntents)...)
 	}
 	boostTier := definition.Rules.ManualBoostUnlockTier

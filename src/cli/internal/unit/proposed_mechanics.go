@@ -20,6 +20,11 @@ import (
 // purchase.
 const ProposedMechanicRule = "proposed-mechanic"
 
+// ProposedCapabilityRule marks the design gap Finding of a third or fifth
+// purchase that a behavior rule covers and whose only new capability is a
+// proposed mechanic (m.ProposedCapabilityGaps).
+const ProposedCapabilityRule = "proposed-capability"
+
 // bindProposedMechanics keeps each proposed mechanic a milestone names on
 // its purchase: the plan's come first, then those the mechanics stage adds
 // under another name. Names match without regard to case or spacing.

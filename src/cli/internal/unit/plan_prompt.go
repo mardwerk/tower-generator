@@ -25,6 +25,13 @@ const planEarlyIdentity = "At a first or second purchase, promise no unlock exce
 // earlyBenefitsIssues enforces it.
 const planDistinctEarly = m.EarlyBenefitsRule + " For example, range then damage on x-1-x and x-2-x repeats damage then range on x-x-1 and x-x-2. Give one of those paths another improvement or unlock from its own technique. Code rejects a plan that repeats them; a third purchase may still lead with a single stat."
 
+// planExclusiveEarly applies under exclusiveEarlyBenefits; the plan check
+// exclusiveEarlyIssues enforces it.
+const planExclusiveEarly = m.ExclusiveEarlyBenefitsRule + " For example, when 1-x-x adds damage, no first or second purchase of the middle or bottom path adds damage; a second damage purchase belongs on 2-x-x. A path may repeat its own, as x-1-x and x-2-x may both attack faster, and a later purchase may add a little of another path's dimension, as x-3-x may add damage beside a faster attack. Code rejects a plan whose paths share an early benefit."
+
+// planTier5Pinnacle follows the rule under requireTier5BehaviorChange.
+const planTier5Pinnacle = "The fifth purchase is the pinnacle of its path: it adds a distinct capability that makes it worth its price, not only larger numbers. Promise the supported unlock that adds it. Only when the Definition cannot express the capability the sources describe, name it in that milestone's proposedMechanics beside the supported promises that approximate it: code then reports the capstone as an unresolved design gap, because a proposed mechanic is not playable until the Definition supports it. Raising only the Active Ability's damage, rate, duration or frequency is larger numbers, not a pinnacle. Code rejects a plan whose fifth purchase has neither."
+
 // planActiveForm follows the Active Ability rule when some path may have
 // one.
 const planActiveForm = "A targeting choice is not an activation. The Definition's only activated ability is one temporary boost of the purchased attack, unlocked at that purchase and modifiable at the next one. Plan a path's permanent purchases and its Active as one form: both develop it, and the Active amplifies what the path already owns, so never describe an effect a permanent purchase grants as appearing only in the Active. A second Active at the fifth purchase, a ground-targeted strike or a separate Active attack cannot be expressed: make the fifth purchase modify the same boost and name the extra Active as its proposed mechanic, or record it in omittedTechniques."

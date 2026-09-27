@@ -136,6 +136,7 @@ type DesignPolicy struct {
 	DistinctPathSpecializations bool           `json:"distinctPathSpecializations"`
 	DistinctFirstUpgrades       bool           `json:"distinctFirstUpgrades"`
 	DistinctEarlyBenefits       *bool          `json:"distinctEarlyBenefits,omitempty"`
+	ExclusiveEarlyBenefits      *bool          `json:"exclusiveEarlyBenefits,omitempty"`
 	DistinctCapstones           bool           `json:"distinctCapstones"`
 	PreserveEarlyAttackIdentity *bool          `json:"preserveEarlyAttackIdentity,omitempty"`
 	MaxManualAbilityPaths       int            `json:"maxManualAbilityPaths"`

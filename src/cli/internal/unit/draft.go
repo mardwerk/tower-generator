@@ -408,7 +408,7 @@ func blueprintRequest(prepared Prepared, previous any, issues []string, plan Des
 		budget, form, example = draftStatusBudgetV2, draftStatusFormV2, draftExampleV2
 	}
 	budget = fmt.Sprintf(budget, budgetSentence(request))
-	prompt := []string{draftPlan, draftPromises, draftStyle, draftOwnership, draftShape, draftTruth, budget, form, draftArithmetic, draftExtensions, CountArithmeticGuidance}
+	prompt := []string{draftPlan, draftPromises, draftStyle, draftNames, draftOwnership, draftShape, draftTruth, budget, form, draftArithmetic, draftExtensions, CountArithmeticGuidance}
 	if d := request.MechanicsDefinition; d != nil {
 		prompt = append(prompt, BuildShape(*d))
 	}

@@ -13,10 +13,12 @@ import (
 // A Result keeps the full Profile it was made under. Editing the saved
 // Profile, here to turn on distinctEarlyBenefits and requireTier5BehaviorChange,
 // or deleting it, changes neither the Result's design policy nor what
-// CheckDraft finds for its draft (OPUS-NET-33-2 step 6).
+// CheckDraft finds for its draft (OPUS-NET-33-2 step 6). The copy starts
+// from the fixture's Profile, the Default without requireTier5BehaviorChange,
+// whose rule the scripted x-5-x fails.
 func TestResultsKeepTheirProfileSnapshot(t *testing.T) {
 	profiles, _ := OpenProfiles(filepath.Join(t.TempDir(), "profiles"))
-	profile := unit.DefaultProfile()
+	profile := fixture.Profile()
 	profile.ID, profile.Name, profile.Rules.ID = "snapshot-copy", "Snapshot copy", "profile:snapshot-copy"
 	policy := *profile.MechanicsDefinition.Profile.DesignPolicy
 	policy.DistinctEarlyBenefits = nil

@@ -81,19 +81,34 @@ func CheckDraft(input Draft) (Checked, error) {
 				})
 			}
 		}
-		// distinctEarlyBenefits runs with or without a retained plan; the
-		// plan only lets it target the purchase that departs from it.
+		// The early benefits rules run with or without a retained plan; the
+		// plan only lets them target the purchase that departs from it.
 		if len(issues) == 0 && candidate.Blueprint != nil {
 			var intents *UpgradeIntents
 			action := "Make the two paths' resolved early benefits distinct and compile again."
+			if exclusiveEarlyOn(*definition) {
+				action = "Give each path's first two purchases resolved benefits no other path's first two purchases have, and compile again."
+			}
 			if draft.Run.DesignPlan != nil {
 				intents = draft.Run.DesignPlan.UpgradeIntents
 				action = "Make the two paths' resolved early benefits distinct while keeping the retained plan true, and compile again."
+				if exclusiveEarlyOn(*definition) {
+					action = "Give each path's first two purchases resolved benefits no other path's first two purchases have while keeping the retained plan true, and compile again."
+				}
 			}
 			for _, issue := range EarlyBenefitsIssues(*candidate.Blueprint, intents, *definition) {
 				report(checkFinding{
-					Category: "conflict", Outcome: "fail", Subject: issue.Path, Rule: "distinct-early-benefits", Message: issue.Message,
+					Category: "conflict", Outcome: "fail", Subject: issue.Path, Rule: EarlyBenefitsFindingRule(*definition), Message: issue.Message,
 					Action: act(action),
+				})
+			}
+			// A third or fifth purchase whose only new capability is a
+			// proposed mechanic does not fail the behavior rule, but it is not
+			// playable yet: an unresolved design gap (#61).
+			for _, gap := range m.ProposedCapabilityGaps(candidate.Blueprint, *definition) {
+				report(checkFinding{
+					Category: "missing_specification", Outcome: "unresolved", Subject: gap.Path, Rule: ProposedCapabilityRule, Message: gap.Message,
+					Action: act("Add a supported behavior or access to this purchase, or expand the Definition with its proposed mechanic. Until then the purchase has no new capability in play."),
 				})
 			}
 		}

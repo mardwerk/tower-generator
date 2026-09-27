@@ -261,6 +261,42 @@ func toPrecision4(x float64) string {
 	return s.FormatNumber(rounded)
 }
 
+// missesBehavior reports a third or fifth purchase that a behavior rule
+// covers and whose pure build adds no supported behavior or access over the
+// purchase before it.
+func missesBehavior(blueprint *Blueprint, policy *DesignPolicy, pathIndex, tier int) bool {
+	return policy.RequiresBehaviorChange(tier) && !HasBehaviorTransition(pureBuild(blueprint, pathIndex, tier-1), pureBuild(blueprint, pathIndex, tier))
+}
+
+// ProposedCapabilityGaps lists each third or fifth purchase that a behavior
+// rule covers, that adds no supported behavior or access and whose only new
+// capability is a proposed mechanic. No build grants a proposed mechanic, so
+// the purchase adds only larger numbers in play until the Definition
+// supports it: a design gap the caller reports as unresolved, not a
+// failure. It assumes a blueprint whose legal builds resolve.
+func ProposedCapabilityGaps(blueprint *Blueprint, definition Definition) []Issue {
+	policy := definition.Profile.DesignPolicy
+	if policy == nil {
+		return nil
+	}
+	var gaps []Issue
+	for index, path := range PathKeys {
+		for _, tier := range []int{3, 5} {
+			proposed := blueprint.Paths.At(index).Tiers.At(tier).ProposedMechanics
+			if len(proposed) == 0 || !missesBehavior(blueprint, policy, index, tier) {
+				continue
+			}
+			names := make([]string, len(proposed))
+			for i, p := range proposed {
+				names[i] = p.Name
+			}
+			code := BuildCode(index, tier)
+			gaps = append(gaps, Issue{fmt.Sprintf("paths.%s.tiers.tier%d", path, tier), fmt.Sprintf("Resolved %s adds no supported behavior or access over %s. Its new capability, %s, is proposed and not yet playable: until the Definition supports it, no build grants it and %s adds only larger numbers in play. %s", code, BuildCode(index, tier-1), joinAnd(names), code, BehaviorChangeRule(tier))})
+		}
+	}
+	return gaps
+}
+
 // DesignPolicyIssues applies the Definition's optional authoring gates.
 func DesignPolicyIssues(blueprint *Blueprint, definition Definition) []Issue {
 	policy := definition.Profile.DesignPolicy
@@ -287,8 +323,11 @@ func DesignPolicyIssues(blueprint *Blueprint, definition Definition) []Issue {
 		tier4 := pureBuild(blueprint, index, 4)
 		tier5 := pureBuild(blueprint, index, 5)
 		for _, tier := range []int{3, 5} {
-			if policy.RequiresBehaviorChange(tier) && !HasBehaviorTransition(pureBuild(blueprint, index, tier-1), pureBuild(blueprint, index, tier)) {
-				issues = append(issues, Issue{fmt.Sprintf("%s.tiers.tier%d", prefix, tier), fmt.Sprintf("Resolved %s adds no new behavior or access over %s. %s", BuildCode(index, tier), BuildCode(index, tier-1), BehaviorChangeRule(tier))})
+			// A purchase whose only new capability is a proposed mechanic
+			// is a design gap that ProposedCapabilityGaps reports, not a
+			// failure; one with neither fails.
+			if missesBehavior(blueprint, policy, index, tier) && len(branch.Tiers.At(tier).ProposedMechanics) == 0 {
+				issues = append(issues, Issue{fmt.Sprintf("%s.tiers.tier%d", prefix, tier), fmt.Sprintf("Resolved %s adds no new behavior or access over %s and carries no proposed mechanic. %s", BuildCode(index, tier), BuildCode(index, tier-1), BehaviorChangeRule(tier))})
 			}
 		}
 		for _, check := range []struct {

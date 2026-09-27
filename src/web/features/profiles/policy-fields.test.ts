@@ -35,11 +35,12 @@ const defaultPolicy: DesignPolicy = {
   version: '1',
   distinctPathSpecializations: false,
   distinctFirstUpgrades: true,
-  distinctEarlyBenefits: true,
+  exclusiveEarlyBenefits: true,
   distinctCapstones: true,
   preserveEarlyAttackIdentity: true,
   maxManualAbilityPaths: 1,
   manualAbilityPath: 'path2',
+  requireTier5BehaviorChange: true,
   tier5Uniqueness: 'one-per-player-unit-type-and-path',
 };
 
@@ -130,6 +131,7 @@ export const tests: Record<string, () => Promise<void>> = {
         'distinctPathSpecializations',
         'distinctFirstUpgrades',
         'distinctEarlyBenefits',
+        'exclusiveEarlyBenefits',
         'distinctCapstones',
         'preserveEarlyAttackIdentity',
         'requireTier3BehaviorChange',
@@ -182,10 +184,11 @@ export const tests: Record<string, () => Promise<void>> = {
       checked,
       [
         'distinctFirstUpgrades',
-        'distinctEarlyBenefits',
+        'exclusiveEarlyBenefits',
         'distinctCapstones',
         'preserveEarlyAttackIdentity',
         'requireTier3BehaviorChange',
+        'requireTier5BehaviorChange',
       ],
       'checked toggles',
     );
@@ -297,11 +300,12 @@ export const tests: Record<string, () => Promise<void>> = {
       [
         ['Distinct specializations', 'Off'],
         ['Distinct first purchases', 'On'],
-        ['Distinct early benefits', 'On'],
+        ['Distinct early benefits', 'Off'],
+        ['Exclusive early benefits', 'On'],
         ['Distinct capstones', 'On'],
         ['Early attack identity', 'On'],
         ['Behavior at the third purchase', 'Off'],
-        ['Behavior at the fifth purchase', 'Off'],
+        ['Behavior at the fifth purchase', 'On'],
         ['Capstone multiplier', '3'],
         ['Active Ability', 'Middle path only'],
       ],
@@ -371,40 +375,42 @@ export const tests: Record<string, () => Promise<void>> = {
       'saved Active Ability',
     );
   },
-  async 'the early benefits toggle round-trips through profiles/save'() {
-    const api = scriptedProfiles();
-    const form = {
-      id: 'luffy-td',
-      name: 'Luffy rules',
-      task: 'Make a unit.',
-      rules: 'Rules text.',
-      definition: text(defaultPolicy),
-    };
-    const saveWith = async (value: boolean) => {
-      form.definition = writePolicy(
-        form.definition,
-        setPolicyValue(policyOf(form.definition), 'distinctEarlyBenefits', value),
-      );
-      const profile = editedProfile(form);
-      if (typeof profile === 'string') throw new Error(profile);
-      const state = await api.call('profiles/save', { profile });
-      const saved = state.profiles.at(-1)!.profile.mechanicsDefinition;
-      const markup = renderToStaticMarkup(
-        createElement(DesignPolicyEditor, {
-          definition: JSON.stringify(saved, null, 2),
-          issues: {},
-          onChange: () => undefined,
-        }),
-      );
-      const control = /<input[^>]*name="distinctEarlyBenefits"[^>]*>/.exec(markup)?.[0] ?? '';
-      return { policy: saved.profile.designPolicy!, checked: control.includes('checked') };
-    };
-    const off = await saveWith(false);
-    equal('distinctEarlyBenefits' in off.policy, false, 'switched off, the field is removed');
-    equal(off.checked, false, 'the saved Profile shows it off');
-    equal(policyValueText('distinctEarlyBenefits', off.policy), 'Off', 'summary off');
-    const on = await saveWith(true);
-    equal(on.policy.distinctEarlyBenefits, true, 'switched on, the field is saved as true');
-    equal(on.checked, true, 'the saved Profile shows it on');
+  async 'the early benefits toggles round-trip through profiles/save'() {
+    for (const key of ['distinctEarlyBenefits', 'exclusiveEarlyBenefits'] as const) {
+      const api = scriptedProfiles();
+      const form = {
+        id: 'luffy-td',
+        name: 'Luffy rules',
+        task: 'Make a unit.',
+        rules: 'Rules text.',
+        definition: text(defaultPolicy),
+      };
+      const saveWith = async (value: boolean) => {
+        form.definition = writePolicy(
+          form.definition,
+          setPolicyValue(policyOf(form.definition), key, value),
+        );
+        const profile = editedProfile(form);
+        if (typeof profile === 'string') throw new Error(profile);
+        const state = await api.call('profiles/save', { profile });
+        const saved = state.profiles.at(-1)!.profile.mechanicsDefinition;
+        const markup = renderToStaticMarkup(
+          createElement(DesignPolicyEditor, {
+            definition: JSON.stringify(saved, null, 2),
+            issues: {},
+            onChange: () => undefined,
+          }),
+        );
+        const control = new RegExp(`<input[^>]*name="${key}"[^>]*>`).exec(markup)?.[0] ?? '';
+        return { policy: saved.profile.designPolicy!, checked: control.includes('checked') };
+      };
+      const off = await saveWith(false);
+      equal(key in off.policy, false, `${key} switched off, the field is removed`);
+      equal(off.checked, false, `the saved Profile shows ${key} off`);
+      equal(policyValueText(key, off.policy), 'Off', `${key} summary off`);
+      const on = await saveWith(true);
+      equal(on.policy[key], true, `${key} switched on, the field is saved as true`);
+      equal(on.checked, true, `the saved Profile shows ${key} on`);
+    }
   },
 };

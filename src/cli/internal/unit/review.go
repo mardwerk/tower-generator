@@ -175,7 +175,7 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 			statuses += " " + reviewBonusDamage
 		}
 	}
-	prompt := []string{reviewStyle, reviewScope, reviewGrounding, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, fmt.Sprintf(reviewPolicy, inCurrency(currency)), reviewFindings}
+	prompt := []string{reviewStyle, reviewScope, reviewGrounding, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, fmt.Sprintf(reviewPolicy, inCurrency(currency)), reviewProgression, reviewFindings}
 	if context.Has("revision") {
 		prompt = append(prompt, reviewRevisionRule)
 	}

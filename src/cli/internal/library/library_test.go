@@ -358,6 +358,7 @@ func TestEditedDesignPolicySavesAndErrorsNameTheField(t *testing.T) {
 		DistinctPathSpecializations: true,
 		DistinctFirstUpgrades:       false,
 		DistinctEarlyBenefits:       &no,
+		ExclusiveEarlyBenefits:      &no,
 		DistinctCapstones:           false,
 		PreserveEarlyAttackIdentity: &no,
 		MaxManualAbilityPaths:       0,
@@ -380,6 +381,7 @@ func TestEditedDesignPolicySavesAndErrorsNameTheField(t *testing.T) {
 		"maxManualAbilityPaths":       4,
 		"manualAbilityPath":           "path4",
 		"distinctEarlyBenefits":       "yes",
+		"exclusiveEarlyBenefits":      "yes",
 	} {
 		invalid := s.FromGoValue(edited).(*s.Object)
 		policy := invalid

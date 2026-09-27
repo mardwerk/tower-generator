@@ -70,6 +70,11 @@ export const policyFields: Record<PolicyKey, PolicyField> = {
     help: "Two paths' first two purchases together must differ in what they improve or unlock, whatever their order, names, prices or amounts; lowers do not count.",
     control: toggle(true),
   },
+  exclusiveEarlyBenefits: {
+    label: 'Exclusive early benefits',
+    help: "What one path's first two purchases improve or unlock, no other path's first two purchases improve or unlock; a path may repeat its own, and later purchases may improve it. It includes Distinct early benefits.",
+    control: toggle(true),
+  },
   distinctCapstones: {
     label: 'Distinct capstones',
     help: 'The pure 5-0-0, 0-5-0 and 0-0-5 builds differ, ignoring names and prices.',
@@ -82,12 +87,12 @@ export const policyFields: Record<PolicyKey, PolicyField> = {
   },
   requireTier3BehaviorChange: {
     label: 'Behavior at the third purchase',
-    help: 'Every third purchase adds a behavior or access, not only larger numbers.',
+    help: 'Every third purchase adds a supported behavior or access, not only larger numbers. One whose only new capability is a proposed mechanic is reported as a design gap.',
     control: toggle(true),
   },
   requireTier5BehaviorChange: {
     label: 'Behavior at the fifth purchase',
-    help: 'Every fifth purchase adds a behavior or access, not only larger numbers.',
+    help: 'Every fifth purchase adds a supported behavior or access, not only larger numbers. One whose only new capability is a proposed mechanic is reported as a design gap.',
     control: toggle(true),
   },
   minTier5SpecialtyMultiplier: {

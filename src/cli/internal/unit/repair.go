@@ -191,11 +191,21 @@ func TargetedTierRepair(request *Request, previous any, issues []string) (*TierR
 	for _, path := range pathOrder {
 		tiers := targets[path]
 		changesCapstoneBasis := false
-		if policy != nil && (policy.MinTier5SpecialtyMultiplier != nil || policy.RequiresBehaviorChange(5)) {
-			for _, t := range tiers.keys {
-				if t != "tier5" {
-					changesCapstoneBasis = true
-				}
+		// A fifth purchase's behavior change is judged against the pure
+		// fourth purchase, so an earlier tier that adds the same behavior
+		// takes it away; the fifth purchase is rebuilt with it. A proposed
+		// mechanic of the fifth purchase does not exempt it: it grants no
+		// behavior, so losing the supported one would leave a design gap.
+		// Under early identity a first or second purchase can add only
+		// personal detection, so it is left out; a capstone whose only
+		// behavior is that detection trait fails the next check instead.
+		for _, t := range tiers.keys {
+			if t == "tier5" || policy == nil {
+				continue
+			}
+			early := t == "tier1" || t == "tier2"
+			if policy.MinTier5SpecialtyMultiplier != nil || (policy.RequiresBehaviorChange(5) && (!early || !policy.PreservesEarlyIdentity())) {
+				changesCapstoneBasis = true
 			}
 		}
 		tier5 := wireTier(path, "tier5")

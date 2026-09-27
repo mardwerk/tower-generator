@@ -319,7 +319,7 @@ func retained(t *testing.T, stages fixture.Stages, first, correction *s.Object, 
 		t.Fatal(err)
 	}
 	model := &fixture.Model{Outputs: []any{recordedOutput(t, "plan"), recordedOutput(t, "mechanics"), first, correction}}
-	result, err := unit.Author(context.Background(), s.FromGoValue(unit.ApplyProfile(request, unit.DefaultProfile())), model, fixture.Options())
+	result, err := unit.Author(context.Background(), s.FromGoValue(unit.ApplyProfile(request, fixture.Profile())), model, fixture.Options())
 	var failure *unit.ModelError
 	if !errors.As(err, &failure) || failure.Failure == nil || failure.Failure.Stage != "review" || !strings.Contains(failure.Message, id) || len(model.Requests) != 4 || result.ID != "" {
 		t.Errorf("author: %v after %d calls", err, len(model.Requests))
