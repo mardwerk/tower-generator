@@ -230,8 +230,8 @@ func TestDesignPolicyGates(t *testing.T) {
 		blueprint *Blueprint
 		want      string
 	}{
-		"duplicate first upgrades": {same, "Resolved tier 1 behavior duplicates path1"},
-		"manual ability off path2": {moved, "permits a manual ability only on path2"},
+		"duplicate first upgrades": {same, "Resolved x-x-1 behaves exactly like 1-x-x. " + DistinctFirstPurchasesRule},
+		"manual ability off path2": {moved, "Resolved 4-x-x unlocks an Active Ability. Only the middle path may have an Active Ability, first at x-4-x; the other paths stay automatic."},
 	} {
 		var messages []string
 		for _, issue := range ValidateTyped(test.blueprint, definition) {
@@ -247,7 +247,7 @@ func TestDesignPolicyGates(t *testing.T) {
 	for _, issue := range ValidateTyped(blueprint, definition) {
 		messages = append(messages, issue.Path+": "+issue.Message)
 	}
-	if joined := strings.Join(messages, "\n"); !strings.Contains(joined, "paths.path1.tiers.tier5: Tier 5 must improve an established direct-damage specialty metric by at least 3x") {
+	if joined := strings.Join(messages, "\n"); !strings.Contains(joined, "paths.path1.tiers.tier5: Resolved 5-x-x multiplies the direct-damage specialty metrics of 4-x-x by these ratios: direct damage rate 1.5x. "+CapstoneMultiplierRule(3)) {
 		t.Errorf("the optional multiplier gate did not apply:\n%s", joined)
 	}
 }

@@ -12,9 +12,8 @@ import (
 
 // Regressions for #57, on the scripted Dart Monkey: a promise without a
 // source effect is a review cue, an Active-only capstone is compared by its
-// time-averaged rate, and two claims code can check against the plan and
-// purchaseEvidence are corrected like a wrong fact, or, when code cannot read
-// them, kept and marked for review.
+// time-averaged rate, and prose timing and comparison claims are retained
+// with advisory evidence for human review.
 
 // reviewTier is one purchase in the review context's unit.paths.
 func reviewTier(context *s.Object, path, tier int) *s.Object {

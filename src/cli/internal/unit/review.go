@@ -304,7 +304,7 @@ func ReferencePriceFacts(blueprint *m.Blueprint, definition m.Definition) *s.Obj
 		}
 		paths = append(paths, s.NewObject().Set("path", key).Set("prices", prices).Set("equalsReferenceSequence", equal))
 		if equal {
-			position := pathPosition(key)
+			position := m.PathPosition(key)
 			facts = append(facts, fmt.Sprintf("%s path prices (%s to %s) equal the reference sequence %s exactly.",
 				strings.ToUpper(position[:1])+position[1:], BuildCode(index, 1), BuildCode(index, 5), stated))
 		}
@@ -430,9 +430,8 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 	}
 	if err == nil && definition != nil {
 		// A review that cites builds the Definition does not allow, or
-		// resolved values that are wrong, or that faults a purchase for a
-		// later technique or states the opposite of a checked capstone
-		// comparison (review_claims.go), is corrected once, then rejected.
+		// structured resolved values that are wrong, is corrected once,
+		// then rejected if the correction still has invalid citations.
 		// Findings whose citations hold must come back unchanged in every field,
 		// and one whose only fault is notation with only its flagged codes
 		// replaced (keepCheckedFindings).
@@ -460,9 +459,9 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 		var validation *s.Error
 		return Result{}, StageFailure(err, "review", usage, errors.As(err, &validation))
 	}
-	// A timing or comparison claim code found but could not read is not
-	// corrected: its finding is published as written, and an unresolved
-	// Finding asks for it to be checked.
+	// Prose timing and comparison cues cannot prove a false assertion.
+	// Keep the model finding as written and add an unresolved advisory
+	// when the claim needs human review.
 	findings := append(append([]Finding{}, checked.Findings...), review.Findings...)
 	if definition != nil {
 		findings = append(findings, citations.claims.humanReviewFindings(review.Findings, citations.currency)...)

@@ -86,6 +86,43 @@ func addedCapabilities(before, after Attack) []string {
 	return added
 }
 
+// earlyIdentityChanges lists what a first or second purchase changes in the
+// base attack's form, the facts preserveEarlyAttackIdentity rejects: a new
+// capability other than personal detection, a new delivery, targeting or
+// damage type, or a single projectile becoming several.
+func earlyIdentityChanges(before, after Attack, added []string) []string {
+	var capabilities []string
+	for _, capability := range added {
+		switch {
+		case capability == "damage-type-access" || after.DetectsTrait(capability):
+		case capability == "distinct-volley":
+			capabilities = append(capabilities, "a distinct-target volley")
+		case capability == "follow-up":
+			capabilities = append(capabilities, "a follow-up")
+		default:
+			capabilities = append(capabilities, capability)
+		}
+	}
+	var changes []string
+	if len(capabilities) > 0 {
+		changes = append(changes, "adds "+joinAnd(capabilities))
+	}
+	for _, change := range []struct {
+		changed bool
+		fact    string
+	}{
+		{before.Delivery != after.Delivery, "changes delivery"},
+		{before.Targeting != after.Targeting, "changes targeting"},
+		{before.DamageType != after.DamageType, "changes damage type"},
+		{before.Stats.Projectiles == 1 && after.Stats.Projectiles > 1, "fires more than one projectile"},
+	} {
+		if change.changed {
+			changes = append(changes, change.fact)
+		}
+	}
+	return changes
+}
+
 // BonusCapability names the capability group of bonus damage against an
 // enemy property, as the early capability budget counts it.
 func BonusCapability(property string) string { return "bonus damage against " + property }
@@ -354,16 +391,10 @@ func validateParsed(blueprint *Blueprint, rules Definition, authoring bool) []Is
 				if before.DamageType != after.DamageType {
 					added = append(added, "damage-type-access")
 				}
-				preserve := profile.DesignPolicy != nil && profile.DesignPolicy.PreserveEarlyAttackIdentity != nil && *profile.DesignPolicy.PreserveEarlyAttackIdentity
-				// Personal detection stays allowed early; any other new capability is not.
-				nonCamo := false
-				for _, capability := range added {
-					if !after.DetectsTrait(capability) {
-						nonCamo = true
+				if profile.DesignPolicy.PreservesEarlyIdentity() {
+					if changes := earlyIdentityChanges(before, after, added); len(changes) > 0 {
+						add(prefix+".changes", fmt.Sprintf("Resolved %s %s. %s Move these to the third purchase or later.", BuildCode(pathIndex, tier), joinAnd(changes), EarlyIdentityRule(&rules)))
 					}
-				}
-				if preserve && (nonCamo || before.Delivery != after.Delivery || before.Targeting != after.Targeting || (before.Stats.Projectiles == 1 && after.Stats.Projectiles > 1)) {
-					add(prefix+".changes", "T1 and T2 improve the existing basic attack. They cannot introduce a new attack pattern, status, bonus damage or delivery; personal detection and improvements to existing stats remain allowed. Specialize at T3.")
 				}
 				if len(added) > profile.EarlyTierMaxNewCapabilities {
 					add(prefix+".changes", fmt.Sprintf("Early tiers may add at most %d capability group; this adds %s.", profile.EarlyTierMaxNewCapabilities, strings.Join(added, ", ")))

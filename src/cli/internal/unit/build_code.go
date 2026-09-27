@@ -2,7 +2,6 @@ package unit
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
@@ -10,11 +9,7 @@ import (
 
 // BuildCode names a purchase in top-middle-bottom notation: the second path
 // at tier 4 is x-4-x.
-func BuildCode(pathIndex, tier int) string {
-	parts := []string{"x", "x", "x"}
-	parts[pathIndex] = string(rune('0' + tier))
-	return strings.Join(parts, "-")
-}
+func BuildCode(pathIndex, tier int) string { return m.BuildCode(pathIndex, tier) }
 
 // SelectionCode names a concrete build: {3, 1, 0} is 3-1-0.
 func SelectionCode(selection m.Selection) string {
@@ -64,19 +59,4 @@ func BuildShape(d m.Definition) string {
 		text += "; " + strings.Join(illegal, " and ") + " are illegal"
 	}
 	return text + fmt.Sprintf(". Code resolves the %d early and %d advanced crosspath builds; do not output a crosspath tree. A side purchase changes the one attack and, when owned, the boost of that attack.", early, advanced)
-}
-
-// ActivationShape states which path may have the Active Ability and from
-// which purchase, as the Definition's design policy and rules set it.
-func ActivationShape(d m.Definition) string {
-	tier := d.Rules.ManualBoostUnlockTier
-	policy := d.Profile.DesignPolicy
-	switch {
-	case policy != nil && policy.ManualAbilityPath.Present && policy.ManualAbilityPath.Null:
-		return "No path may have a player-activated ability."
-	case policy != nil && policy.ManualAbilityPath.Present:
-		index := slices.Index(m.PathKeys, policy.ManualAbilityPath.Value)
-		return fmt.Sprintf("Only the %s path may have a player-activated ability, first at %s.", pathPosition(policy.ManualAbilityPath.Value), BuildCode(index, tier))
-	}
-	return fmt.Sprintf("A player-activated ability may unlock at a path's %s purchase.", ordinals[tier])
 }

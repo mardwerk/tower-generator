@@ -8,13 +8,8 @@ import (
 	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
 )
 
-// EarlyBenefitsRule states designPolicy.distinctEarlyBenefits once. The plan
-// prompt, the draft guidance and both failures carry it verbatim; each
-// failure adds its path-specific facts around it.
-const EarlyBenefitsRule = "Two paths' first two purchases together must differ in what they improve or unlock, whatever their order, names, prices or amounts; lowers do not count."
-
 // guideEarlyBenefits is the draft and repair guidance under the field.
-const guideEarlyBenefits = EarlyBenefitsRule + " Code compares what each path's resolved first and second purchases improve or unlock, so a change the plan does not promise there can make two paths match."
+const guideEarlyBenefits = m.EarlyBenefitsRule + " Code compares what each path's resolved first and second purchases improve or unlock, so a change the plan does not promise there can make two paths match."
 
 // earlyBenefitsOn reports whether a Definition selects distinctEarlyBenefits.
 func earlyBenefitsOn(definition m.Definition) bool {
@@ -136,7 +131,7 @@ func earlyBenefitsIssues(intents *UpgradeIntents) []m.Issue {
 		issues = append(issues, m.Issue{
 			Path: "upgradeIntents." + path + ".tier2",
 			Message: fmt.Sprintf("%s and %s together promise %s, the same as %s and %s. %s Redesign %s or %s: add or swap an improvement or unlock from this path's own technique, such as %s.",
-				BuildCode(index, 1), BuildCode(index, 2), benefitsText(steps), BuildCode(other, 1), BuildCode(other, 2), EarlyBenefitsRule, BuildCode(index, 2), BuildCode(index, 1), earlySuggestions(steps)),
+				BuildCode(index, 1), BuildCode(index, 2), benefitsText(steps), BuildCode(other, 1), BuildCode(other, 2), m.EarlyBenefitsRule, BuildCode(index, 2), BuildCode(index, 1), earlySuggestions(steps)),
 		})
 	}
 	return issues
@@ -245,7 +240,7 @@ func EarlyBenefitsIssues(blueprint m.Blueprint, intents *UpgradeIntents, definit
 		}
 		issues = append(issues, m.Issue{
 			Path:    fmt.Sprintf("paths.%s.tiers.%s", m.PathKeys[target], m.TierKeys[tier-1]),
-			Message: facts + " " + EarlyBenefitsRule + " " + fix,
+			Message: facts + " " + m.EarlyBenefitsRule + " " + fix,
 		})
 	}
 	return issues

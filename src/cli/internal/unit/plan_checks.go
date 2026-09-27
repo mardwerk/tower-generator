@@ -179,12 +179,12 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 		return nil
 	}
 	var issues []m.Issue
-	if policy := definition.Profile.DesignPolicy; policy != nil && policy.RequireTier3BehaviorChange != nil && *policy.RequireTier3BehaviorChange {
+	if definition.Profile.DesignPolicy.RequiresBehaviorChange(3) {
 		for pathIndex, path := range m.PathKeys {
 			if !addsBehavior(*plan.UpgradeIntents.At(pathIndex).At(3)) {
 				issues = append(issues, m.Issue{
 					Path:    "upgradeIntents." + path + ".tier3",
-					Message: fmt.Sprintf("%s must add a supported behavior or access, not only larger numbers: promise an unlock other than targeting-change, such as a new delivery, distinct-volley with more than one projectile, splash, a status effect, follow-up, damage-type-change or a detection trait, or promise projectiles while the path fires one projectile.", BuildCode(pathIndex, 3)),
+					Message: fmt.Sprintf("%s promises no new behavior or access. %s Promise an unlock other than targeting-change, such as a new delivery, distinct-volley with more than one projectile, splash, a status effect, follow-up, damage-type-change or a detection trait, or promise projectiles while the path fires one projectile.", BuildCode(pathIndex, 3), m.BehaviorChangeRule(3)),
 				})
 			}
 		}
@@ -457,7 +457,7 @@ func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition
 	// splash, a follow-up or a status, so its promise to improve one holds
 	// only if the base attack has it (reported on #27: a plan improved splash
 	// at 1-x-x, and the repair moved splash to 3-x-x without pierce).
-	if policy := definition.Profile.DesignPolicy; policy != nil && policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity {
+	if definition.Profile.DesignPolicy.PreservesEarlyIdentity() {
 		base := m.ResolveUnchecked(&blueprint, m.Selection{})
 		for index, path := range m.PathKeys {
 			for tier := 1; tier <= 2; tier++ {
@@ -470,7 +470,7 @@ func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition
 					order = append(order, id)
 					found[id] = m.Issue{
 						Path:    fmt.Sprintf("paths.%s.tiers.%s.planIntent", path, m.TierKeys[tier-1]),
-						Message: fmt.Sprintf("The retained plan promises improved %s at %s, but the base attack has none, and under the early-identity policy a first or second purchase cannot add it. %s", dimension, BuildCode(index, tier), baseEffectFix(dimension)),
+						Message: fmt.Sprintf("The retained plan promises improved %s at %s, but the base attack has none. %s %s", dimension, BuildCode(index, tier), m.EarlyIdentityRule(&definition), baseEffectFix(dimension)),
 					}
 				}
 			}
