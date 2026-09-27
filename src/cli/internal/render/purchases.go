@@ -23,11 +23,45 @@ type Purchase struct {
 	Code string  `json:"code"`
 	Name string  `json:"name"`
 	Cost float64 `json:"cost"`
+	// Technique is the technique the retained plan maps the purchase to, and
+	// BaseTechnique whether it is the base attack; see unit.PurchaseTechnique.
+	// Both are plan intent, shown apart from the resolved Effects.
+	Technique     string `json:"technique,omitempty"`
+	BaseTechnique bool   `json:"baseTechnique,omitempty"`
 	// Adaptation is the plan's description of how the purchase adapts its
 	// source technique, a claim the review checks; see
 	// unit.PurchaseAdaptation.
-	Adaptation string   `json:"adaptation,omitempty"`
-	Effects    []string `json:"effects"`
+	Adaptation string `json:"adaptation,omitempty"`
+	// NameMentions are other repertoire entries the purchase's name points
+	// to, an advisory flag for review; see unit.PurchaseNameMentions.
+	NameMentions []string `json:"nameMentions,omitempty"`
+	Effects      []string `json:"effects"`
+	// Text is Passage, derived when read, so every view words the purchase
+	// the same way.
+	Text string `json:"text"`
+}
+
+// Passage is the purchase as one passage. With a planned technique it labels
+// the plan's intent apart from the resolved effects: "Plan: adapts Gear 3.
+// {adaptation} Resolved: {effects}". Without one, as for Results made before
+// plans typed techniques, it is the effects alone.
+func (p Purchase) Passage() string {
+	effects := strings.Join(p.Effects, " ")
+	if p.Technique == "" {
+		return strings.TrimSpace(p.Adaptation + " " + effects)
+	}
+	plan := "Plan: adapts " + p.Technique
+	if p.BaseTechnique {
+		plan += " (base attack)"
+	}
+	plan += "."
+	if p.Adaptation != "" {
+		plan += " " + p.Adaptation
+	}
+	if len(p.NameMentions) > 0 {
+		plan += " Review: the name suggests " + joinAnd(p.NameMentions) + ", which the plan does not map to this purchase."
+	}
+	return plan + " Resolved: " + effects
 }
 
 // PathPurchases are a path's five purchases in order.
@@ -600,11 +634,16 @@ func (sh *sheet) purchases() []PathPurchases {
 			var before, after m.Selection
 			before[index], after[index] = tier-1, tier
 			upgrade := path.Tiers.At(tier)
+			technique, base := unit.PurchaseTechnique(sh.plan, index, tier)
 			entry.Purchases = append(entry.Purchases, Purchase{
 				Code: unit.BuildCode(index, tier), Name: upgrade.Name, Cost: upgrade.Cost,
-				Adaptation: unit.PurchaseAdaptation(sh.plan, index, tier),
-				Effects:    sh.purchaseEffects(upgrade.Changes, sh.resolve(before), sh.resolve(after)),
+				Technique: technique, BaseTechnique: base,
+				Adaptation:   unit.PurchaseAdaptation(sh.plan, index, tier),
+				NameMentions: unit.PurchaseNameMentions(sh.plan, index, tier, upgrade.Name),
+				Effects:      sh.purchaseEffects(upgrade.Changes, sh.resolve(before), sh.resolve(after)),
 			})
+			last := &entry.Purchases[len(entry.Purchases)-1]
+			last.Text = last.Passage()
 		}
 		out = append(out, entry)
 	}
