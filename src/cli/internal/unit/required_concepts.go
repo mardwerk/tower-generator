@@ -2,6 +2,7 @@ package unit
 
 import (
 	"fmt"
+	"slices"
 
 	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
@@ -18,7 +19,12 @@ import (
 // names (listsTechnique), is never omitted whole, and is the technique of a
 // purchase that promises what one of its effects is adapted as or carries a
 // proposed mechanic. Whether that purchase carries the concept's central
-// effect is the review's judgment (CoreSpiritRule).
+// effect is the review's judgment (CoreSpiritRule), which it gives as one
+// required-concept verdict per concept (review_verdicts.go, SOL-76-01): a
+// plan can name a purchase and a typed promise while adapting only a
+// peripheral effect. On the checked Unit, a required concept of any rank
+// that only proposed mechanics adapt is an unresolved design gap
+// (checkRequiredConcepts), as a core concept's is.
 
 // MaxRequiredConcepts bounds a Request's required concepts.
 const MaxRequiredConcepts = 8
@@ -189,4 +195,33 @@ func reviewRequiredConcepts(plan *DesignPlan, request *Request) []any {
 		entry.Set("baseAttack", a.base).Set("entries", anyStrings(names)).Set("adaptedBy", anyStrings(a.adaptedBy))
 	}
 	return out
+}
+
+// RequiredConceptFindingRule names the check Finding of a required concept
+// that the Unit embodies only as a proposed mechanic.
+const RequiredConceptFindingRule = "required-concept"
+
+// checkRequiredConcepts reports each required concept of a retained plan
+// that the purchases whose technique its entries are adapt only with
+// proposed mechanics, whatever its rank: an unresolved design gap until the
+// Definition supports the mechanic. A concept that is the base attack, or
+// that a typed change adapts, has none. A concept named for a core entry
+// that checkCoreConcepts already reports as only proposed gets no second
+// Finding. A concept its purchases adapt with neither fails the plan check
+// and is not reported again here.
+func checkRequiredConcepts(blueprint *m.Blueprint, plan *DesignPlan, request Request, report reporter) {
+	if blueprint == nil || plan == nil || plan.UpgradeIntents == nil || len(request.RequiredConcepts) == 0 {
+		return
+	}
+	documents := evidenceDocuments(&request)
+	for _, a := range requiredConceptAdaptations(*plan, &request) {
+		if a.base || len(a.entries) == 0 {
+			continue
+		}
+		e := embodiment(blueprint, plan, a.entries, documents)
+		if !e.onlyProposed() || slices.ContainsFunc(a.entries, func(index int) bool { return coreGap(blueprint, plan, request, index, documents) }) {
+			continue
+		}
+		report(e.onlyProposedFinding("required concept", a.concept.Name, RequiredConceptFindingRule, RequiredConceptRule))
+	}
 }

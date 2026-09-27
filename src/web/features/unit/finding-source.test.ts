@@ -6,6 +6,7 @@ import {
   isReviewVerdict,
   omissionVerdictRule,
   pathIdentityVerdictRule,
+  requiredConceptVerdictRule,
   reviewVerdicts,
 } from './finding-source.js';
 
@@ -14,6 +15,25 @@ function equal(actual: string, expected: string, what: string) {
 }
 
 export const tests: Record<string, () => Promise<void>> = {
+  'a required concept verdict is listed apart, a pass included': async () => {
+    const findings: Pick<Finding, 'method' | 'rule' | 'outcome'>[] = [
+      { method: 'model', rule: requiredConceptVerdictRule, outcome: 'unresolved' },
+      { method: 'model', rule: requiredConceptVerdictRule, outcome: 'pass' },
+      { method: 'deterministic', rule: 'required-concept', outcome: 'unresolved' },
+    ];
+    equal(
+      findings.map((finding) => String(isReviewVerdict(finding))).join(','),
+      'true,true,false',
+      'verdicts',
+    );
+    equal(
+      reviewVerdicts(findings, requiredConceptVerdictRule)
+        .map((finding) => finding.outcome)
+        .join(','),
+      'unresolved,pass',
+      'required concept verdicts',
+    );
+  },
   'a finding code could not read asks for a person': async () => {
     equal(
       findingSource({ method: 'model', rule: 'source-fit' }),

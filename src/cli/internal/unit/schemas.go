@@ -198,6 +198,8 @@ var (
 		s.F("summary", text()),
 		s.F("findings", s.Array(reviewFinding)),
 		s.F("omissionVerdicts", s.Optional(s.Array(omissionVerdictSchema(text(), text())))),
+		// One verdict per required concept, when the Request has any.
+		s.F("requiredConceptVerdicts", s.Optional(s.Array(requiredConceptVerdictSchema(text(), text())))),
 		s.F("thirdPurchaseVerdicts", s.Optional(s.Array(purchaseVerdictSchema(text(), text())))),
 		s.F("fifthPurchaseVerdicts", s.Optional(s.Array(purchaseVerdictSchema(text(), text())))),
 	)

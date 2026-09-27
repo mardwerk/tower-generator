@@ -498,7 +498,7 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 			var corrected SemanticReview
 			if corrected, err = reviewOnce(ctx, checked, model, request, &calls); err == nil {
 				if review, err = keepCheckedFindings(review, corrected, problems); err == nil {
-					review.OmissionVerdicts, review.ThirdPurchaseVerdicts, review.FifthPurchaseVerdicts = first.OmissionVerdicts, first.ThirdPurchaseVerdicts, first.FifthPurchaseVerdicts
+					review.OmissionVerdicts, review.RequiredConceptVerdicts, review.ThirdPurchaseVerdicts, review.FifthPurchaseVerdicts = first.OmissionVerdicts, first.RequiredConceptVerdicts, first.ThirdPurchaseVerdicts, first.FifthPurchaseVerdicts
 					err = rejectedCitations(citations.problems(review))
 				}
 			}

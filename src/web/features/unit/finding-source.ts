@@ -5,6 +5,8 @@ export const humanReviewRule = 'review-claim-unread';
 
 /** The rules of the Findings that record the review's verdict on each whole-technique omission and each path's third and fifth purchase. */
 export const omissionVerdictRule = 'omission-verdict';
+/** The rule of the Findings that record the review's verdict on each Required concept of the Request. */
+export const requiredConceptVerdictRule = 'required-concept-verdict';
 export const pathIdentityVerdictRule = 'path-identity-verdict';
 export const capstoneVerdictRule = 'capstone-verdict';
 
@@ -20,6 +22,7 @@ export function isReviewVerdict(finding: Pick<Finding, 'method' | 'rule'>): bool
   return (
     finding.method === 'model' &&
     (finding.rule === omissionVerdictRule ||
+      finding.rule === requiredConceptVerdictRule ||
       finding.rule === pathIdentityVerdictRule ||
       finding.rule === capstoneVerdictRule)
   );

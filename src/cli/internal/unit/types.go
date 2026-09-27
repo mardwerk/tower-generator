@@ -328,6 +328,9 @@ type Result struct {
 type SemanticReview struct {
 	Summary  string    `json:"summary"`
 	Findings []Finding `json:"findings"`
+	// The verdicts on each required concept of the Request, outside the
+	// findings' limit too; absent when the Request has none.
+	RequiredConceptVerdicts []RequiredConceptVerdict `json:"requiredConceptVerdicts,omitempty"`
 	// The verdicts on each whole-technique omission and each path's third
 	// and fifth purchase, outside the findings' limit (review_verdicts.go).
 	OmissionVerdicts      []OmissionVerdict      `json:"omissionVerdicts,omitempty"`

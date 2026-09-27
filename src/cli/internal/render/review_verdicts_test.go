@@ -86,3 +86,37 @@ func TestResultWithoutVerdictsRenders(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// A Result whose Request has Required concepts lists each required concept
+// verdict in its own section, after the omission verdicts, and a failed one
+// only there (SOL-76-01).
+func TestDetailsListRequiredConceptVerdicts(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	result := stages.Result
+	action := "Adapt the frenzy as a typed change of x-5-x."
+	result.Findings = append(result.Findings, unit.Finding{
+		ID: "verdict.required-concept.1", Method: "model", Category: "coverage", Severity: "error", Outcome: "fail",
+		Subject: "requiredConcepts, Fan Club", Rule: unit.RequiredConceptVerdictRule,
+		Message: "x-4-x and x-5-x carry the Fan Club name but only attack faster; the frenzy that defines Fan Club is on no purchase.", Evidence: []string{}, Action: &action,
+	})
+	text, err := render.Markdown(s.FromGoValue(result), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	section := "### Required concept verdicts\n\nThe model review's verdict on each Required concept of the Request"
+	row := "| fail | requiredConcepts, Fan Club | x-4-x and x-5-x carry the Fan Club name but only attack faster; the frenzy that defines Fan Club is on no purchase. Adapt the frenzy as a typed change of x-5-x. |"
+	for _, want := range []string{section, row} {
+		if !strings.Contains(text, want) {
+			t.Errorf("the details report lacks %q", want)
+		}
+	}
+	if strings.Index(text, section) < strings.Index(text, "### Omission verdicts") || strings.Index(text, section) > strings.Index(text, "### Third purchase verdicts") {
+		t.Error("the required concept verdicts are not between the omission and third purchase verdicts")
+	}
+	if strings.Contains(text, "| fail | model | requiredConcepts, Fan Club") {
+		t.Error("the failed verdict is listed again among the findings")
+	}
+}
