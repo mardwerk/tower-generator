@@ -380,7 +380,11 @@ export const tests: Record<string, () => Promise<void>> = {
     );
   },
   async 'the early benefits and core concepts toggles round-trip through profiles/save'() {
-    for (const key of ['distinctEarlyBenefits', 'exclusiveEarlyBenefits', 'requireCoreConcepts'] as const) {
+    for (const key of [
+      'distinctEarlyBenefits',
+      'exclusiveEarlyBenefits',
+      'requireCoreConcepts',
+    ] as const) {
       const api = scriptedProfiles();
       const form = {
         id: 'luffy-td',
