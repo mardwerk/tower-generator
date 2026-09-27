@@ -127,7 +127,7 @@ func EarlyIdentityRule(d *Definition) string {
 // BehaviorChangeRule states requireTier3BehaviorChange (tier 3) and
 // requireTier5BehaviorChange (tier 5) as HasBehaviorTransition judges them.
 func BehaviorChangeRule(tier int) string {
-	return "The " + ordinals[tier] + " purchase of every path must add a supported behavior or access: a new delivery, a distinct-target volley of more than one projectile, more than one projectile, splash, a status effect, a bounded follow-up, a new damage type or a newly detected trait; larger existing numbers, a targeting change, a new name or a change with no effect do not count."
+	return "The " + ordinals[tier] + " purchase of every path must add a supported behavior or access: a new delivery, a distinct-target volley of more than one projectile, more than one projectile, splash, a status effect, a bounded follow-up, a new damage type, a newly detected trait or new bonus damage against an eligible enemy property; larger existing numbers, a targeting change, a new name or a change with no effect do not count."
 }
 
 // CapstoneMultiplierRule states minTier5SpecialtyMultiplier.
