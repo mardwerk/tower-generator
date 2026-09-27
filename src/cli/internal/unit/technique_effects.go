@@ -34,10 +34,35 @@ func promiseMatches(adapted, promised string) bool {
 // and one retry failed). Plans without effects or techniques predate the
 // fields and are not checked.
 func PlanEffectIssues(plan DesignPlan) []m.Issue {
+	var issues []m.Issue
+	for _, u := range unpromisedAdaptations(plan) {
+		entry := plan.Repertoire[u.entry]
+		issues = append(issues, m.Issue{
+			Path:    u.path(),
+			Message: fmt.Sprintf("%q is adapted as %s, but no purchase that adapts %q promises %s. Promise %s on a purchase whose technique is %q, or leave adaptedAs empty and give the reason the effect is omitted.", entry.Effects[u.effect].Effect, u.promise, entry.Name, u.promise, u.promise, entry.Name),
+		})
+	}
+	return issues
+}
+
+// unpromisedAdaptation is one promise an effect is adapted as that no
+// purchase of its technique promises: repertoire entry, effect and promise.
+type unpromisedAdaptation struct {
+	entry, effect int
+	promise       string
+}
+
+func (u unpromisedAdaptation) path() string {
+	return fmt.Sprintf("repertoire.%d.effects.%d.adaptedAs", u.entry, u.effect)
+}
+
+// unpromisedAdaptations lists what PlanEffectIssues reports, one item per
+// promise.
+func unpromisedAdaptations(plan DesignPlan) []unpromisedAdaptation {
 	if plan.UpgradeIntents == nil {
 		return nil
 	}
-	var issues []m.Issue
+	var out []unpromisedAdaptation
 	for index, entry := range plan.Repertoire {
 		if sameTechnique(entry.Name, plan.Base.Name) {
 			continue
@@ -65,17 +90,13 @@ func PlanEffectIssues(plan DesignPlan) []m.Issue {
 		}
 		for effectIndex, effect := range entry.Effects {
 			for _, id := range effect.AdaptedAs {
-				if slices.ContainsFunc(promised, func(p string) bool { return promiseMatches(id, p) }) {
-					continue
+				if !slices.ContainsFunc(promised, func(p string) bool { return promiseMatches(id, p) }) {
+					out = append(out, unpromisedAdaptation{index, effectIndex, id})
 				}
-				issues = append(issues, m.Issue{
-					Path:    fmt.Sprintf("repertoire.%d.effects.%d.adaptedAs", index, effectIndex),
-					Message: fmt.Sprintf("%q is adapted as %s, but no purchase that adapts %q promises %s. Promise %s on a purchase whose technique is %q, or leave adaptedAs empty and give the reason the effect is omitted.", effect.Effect, id, entry.Name, id, id, entry.Name),
-				})
 			}
 		}
 	}
-	return issues
+	return out
 }
 
 // PromisesWithoutEffect lists what one planned purchase improves or unlocks

@@ -421,12 +421,8 @@ func isDetection(d *m.Definition, id string) bool {
 // DecodeDesignPlan validates a plan's joins and structural choices.
 // Source interpretation remains a review obligation.
 func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
-	expanded, err := ExpandPurchasePlanFor(output, request.MechanicsDefinition)
+	plan, err := parseDesignPlan(output, request)
 	if err != nil {
-		return DesignPlan{}, err
-	}
-	var plan DesignPlan
-	if err := s.ParseInto(DesignPlanAuthoringSchemaFor(request.MechanicsDefinition), expanded, &plan); err != nil {
 		return DesignPlan{}, err
 	}
 	evidence := map[string]EvidenceSpan{}
@@ -552,18 +548,27 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 		issues = append(issues, s.Issue{Code: "custom", Path: []any{"upgradeIntents"}, Message: fmt.Sprintf("The plan promises an Active Ability on %s: %s. %s %s", count, joinWith(positions, "and", ""), activeRule, fix)})
 	}
 	if request.MechanicsDefinition != nil {
-		feasibility := append(PlanFeasibilityIssues(plan, *request.MechanicsDefinition), PlanEffectIssues(plan)...)
+		feasibility := PlanFeasibilityIssues(plan, *request.MechanicsDefinition)
+		// A targeted correction can fix an unpromised adaptedAs and an
+		// unlisted source technique (planCorrections).
+		correctable := PlanEffectIssues(plan)
 		if policy != nil {
 			feasibility = append(feasibility, PlanTechniqueIssues(plan, *request.MechanicsDefinition)...)
-			feasibility = append(feasibility, CoreConceptIssues(plan, request)...)
+			ranking, listing := coreConceptIssues(plan, request)
+			feasibility = append(feasibility, ranking...)
+			correctable = append(correctable, listing...)
 		}
-		for _, issue := range feasibility {
-			var path []any
-			for _, p := range strings.Split(issue.Path, ".") {
-				path = append(path, p)
+		add := func(list []m.Issue, code string) {
+			for _, issue := range list {
+				var path []any
+				for _, p := range strings.Split(issue.Path, ".") {
+					path = append(path, p)
+				}
+				issues = append(issues, s.Issue{Code: code, Path: path, Message: issue.Message})
 			}
-			issues = append(issues, s.Issue{Code: "custom", Path: path, Message: issue.Message})
 		}
+		add(feasibility, "custom")
+		add(correctable, correctableIssue)
 	}
 	if len(issues) > 0 {
 		return DesignPlan{}, &s.Error{Issues: issues}
@@ -598,6 +603,20 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 		return DesignPlan{}, err
 	}
 	return retained, nil
+}
+
+// parseDesignPlan reads plan output against the authoring schema, without
+// the plan checks DecodeDesignPlan adds.
+func parseDesignPlan(output any, request *Request) (DesignPlan, error) {
+	expanded, err := ExpandPurchasePlanFor(output, request.MechanicsDefinition)
+	if err != nil {
+		return DesignPlan{}, err
+	}
+	var plan DesignPlan
+	if err := s.ParseInto(DesignPlanAuthoringSchemaFor(request.MechanicsDefinition), expanded, &plan); err != nil {
+		return DesignPlan{}, err
+	}
+	return plan, nil
 }
 
 // BindDesignPlan binds the plan's labels and citations into mechanics output.

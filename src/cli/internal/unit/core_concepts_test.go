@@ -3,6 +3,7 @@ package unit_test
 import (
 	"context"
 	"encoding/json"
+	"slices"
 	"strings"
 	"testing"
 
@@ -188,6 +189,19 @@ func leftOut(t *testing.T, plan unit.DesignPlan, request unit.Request) string {
 	return ""
 }
 
+// withSalience sets the named source techniques' salience, since the small
+// test articles can give a subtechnique strong salience by section share.
+func withSalience(request unit.Request, salience string, names ...string) unit.Request {
+	techniques := append([]unit.SourceTechnique{}, *request.SourceTechniques...)
+	for i := range techniques {
+		if slices.Contains(names, techniques[i].Name) {
+			techniques[i].Salience = salience
+		}
+	}
+	request.SourceTechniques = &techniques
+	return request
+}
+
 func corePlan(base unit.PlanBase, entries ...unit.PlanRepertoire) unit.DesignPlan {
 	return unit.DesignPlan{Base: base, Repertoire: entries, OmittedTechniques: []unit.PlanOmission{}}
 }
@@ -240,6 +254,7 @@ func TestGenericEntryListsNoSpecificTechnique(t *testing.T) {
 // that mentions the Pistol does not list the Pistol (SOL-67-01).
 func TestCitationListsOnlyAFormsOwnSubtechniques(t *testing.T) {
 	request, ids := luffySections(t)
+	request = withSalience(request, unit.SalienceNormal, "Kong Gun", "Python", "Gum-Gum Pistol")
 	gear4Passage := ids["Gear 4 inflates his muscles with Armament Haki and makes him bounce."]
 	kongGun := ids["Kong Gun: Luffy compresses his fist into his arm and fires it as a giant punch."]
 	python := ids["Python: Luffy bends the path of a punch around a guard."]
@@ -492,5 +507,37 @@ func TestCoreConceptImplementedOrOnlyProposed(t *testing.T) {
 	found = coreFindings(t, unchanged, func(plan *unit.DesignPlan) { omitEffects(plan, "Crossbow") })
 	if len(found) != 1 || found[0].Outcome != "fail" || !strings.Contains(found[0].Message, `No purchase adapts the core concept "Crossbow": x-x-3 `) {
 		t.Errorf("a core concept adapted with neither: %+v", found)
+	}
+}
+
+// A strong subtechnique is listed only by an entry of its own, so a minor
+// form entry that cites it cannot hide it from the major floor (SOL-69-01).
+func TestStrongSubtechniqueNeedsItsOwnEntry(t *testing.T) {
+	request, ids := luffySections(t)
+	request = withSalience(request, unit.SalienceNormal, "Kong Gun", "Gum-Gum Pistol")
+	request = withSalience(request, unit.SalienceStrong, "Python")
+	haki := []unit.PlanRepertoire{
+		{Name: "Armament Haki", Importance: "major", SourceIDs: []string{ids["Armament Haki lets him hit Logia users."]}},
+		{Name: "Observation Haki", Importance: "major", SourceIDs: []string{ids["Observation Haki lets him foresee attacks."]}},
+		{Name: "Supreme King Haki", Importance: "major", SourceIDs: []string{ids["Supreme King Haki knocks out weaker foes."]}},
+	}
+	gear4 := unit.PlanRepertoire{Name: "Gear 4", Importance: "minor", SourceIDs: []string{
+		ids["Gear 4 inflates his muscles with Armament Haki and makes him bounce."],
+		ids["Kong Gun: Luffy compresses his fist into his arm and fires it as a giant punch."],
+		ids["Python: Luffy bends the path of a punch around a guard."],
+	}}
+	got := leftOut(t, corePlan(unit.PlanBase{Name: "Gum-Gum Pistol"}, append(haki, gear4)...), request)
+	if !strings.Contains(got, `"Python"`) || strings.Contains(got, `"Kong Gun"`) || !strings.Contains(got, "a strong technique needs an entry of its own") {
+		t.Errorf("a minor Gear 4 entry lists strong Python by citation:\n%s", got)
+	}
+	python := unit.PlanRepertoire{Name: "Python", Importance: "minor", SourceIDs: []string{ids["Python: Luffy bends the path of a punch around a guard."]}}
+	var floor []string
+	for _, issue := range unit.CoreConceptIssues(corePlan(unit.PlanBase{Name: "Gum-Gum Pistol"}, append(haki, gear4, python)...), &request) {
+		if strings.Contains(issue.Message, "ranked minor") && strings.Contains(issue.Message, `"Python"`) {
+			floor = append(floor, issue.Path)
+		}
+	}
+	if len(floor) != 1 {
+		t.Errorf("Python's own minor entry is not held to the major floor: %v", floor)
 	}
 }

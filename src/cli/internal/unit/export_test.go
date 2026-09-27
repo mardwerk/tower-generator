@@ -13,3 +13,7 @@ func CapstoneOrdering(blueprint *m.Blueprint) []any {
 func LegacySourceTechniques(request *Request) []SourceTechnique {
 	return sourceTechniques(request, true)
 }
+
+// CorrectionItems are the items a targeted plan correction names for a
+// parsed plan.
+func CorrectionItems(plan DesignPlan, request *Request) []any { return correctionItems(plan, request) }

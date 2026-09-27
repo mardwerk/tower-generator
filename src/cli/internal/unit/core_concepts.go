@@ -125,8 +125,15 @@ func coreIssue(path, facts, fix string) m.Issue {
 // prepared before source techniques existed is not checked, and a saved
 // plan is never checked again, so older Results keep their findings.
 func CoreConceptIssues(plan DesignPlan, request *Request) []m.Issue {
+	ranking, listing := coreConceptIssues(plan, request)
+	return append(ranking, listing...)
+}
+
+// coreConceptIssues are CoreConceptIssues apart: the ranking and adaptation
+// issues, and the listing issue that a targeted plan correction can fix.
+func coreConceptIssues(plan DesignPlan, request *Request) (ranking, listing []m.Issue) {
 	if request.MechanicsDefinition == nil || !coreConceptsOn(*request.MechanicsDefinition) || request.SourceTechniques == nil {
-		return nil
+		return nil, nil
 	}
 	var issues []m.Issue
 	var unranked, core []string
@@ -190,19 +197,62 @@ func CoreConceptIssues(plan DesignPlan, request *Request) []m.Issue {
 			}
 		}
 	}
+	issues = append(issues, majorFloorIssues(plan, *request.SourceTechniques)...)
+	return issues, sourceListingIssues(plan, request)
+}
+
+// unlistedSourceTechniques are the source techniques a plan lists nowhere
+// (sourceTechniqueListed).
+func unlistedSourceTechniques(plan DesignPlan, request *Request) []SourceTechnique {
 	techniques := *request.SourceTechniques
 	spans := map[string]EvidenceSpan{}
 	for _, span := range AuthorEvidence(request) {
 		spans[span.ID] = span
 	}
-	var missing []string
+	var missing []SourceTechnique
 	for index, technique := range techniques {
 		if !sourceTechniqueListed(plan, techniques, index, spans) {
-			missing = append(missing, technique.Name)
+			missing = append(missing, technique)
 		}
 	}
-	if len(missing) > 0 {
-		issues = append(issues, coreIssue("repertoire", fmt.Sprintf("The plan leaves out the source %s, which %s neither in the repertoire nor in omittedTechniques.", pluralWord(len(missing), "technique", "techniques")+" "+joinWith(quoted(missing), "and", ""), pluralWord(len(missing), "is", "are")), "Name each in the repertoire, or omit it in omittedTechniques with the exact effect the Definition cannot express; a technique that is a part of a form in the form's own section is also listed by that form's entry citing the passage that names it."))
+	return missing
+}
+
+// sourceListingIssues names the source techniques a plan lists nowhere, in
+// one issue. A targeted plan correction can fix it (planCorrections).
+func sourceListingIssues(plan DesignPlan, request *Request) []m.Issue {
+	var missing []string
+	for _, technique := range unlistedSourceTechniques(plan, request) {
+		missing = append(missing, technique.Name)
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+	return []m.Issue{coreIssue("repertoire", fmt.Sprintf("The plan leaves out the source %s, which %s neither in the repertoire nor in omittedTechniques.", pluralWord(len(missing), "technique", "techniques")+" "+joinWith(quoted(missing), "and", ""), pluralWord(len(missing), "is", "are")), "Name each in the repertoire, or omit it in omittedTechniques with the exact effect the Definition cannot express; a technique that is a part of a form in the form's own section is also listed by that form's entry citing the passage that names it, unless its salience is strong: a strong technique needs an entry of its own.")}
+}
+
+// majorFloorIssues reports each plan entry ranked minor that is named for a
+// source technique of strong salience, or for one of its aliases: strong
+// salience is a major floor, never a core requirement (SOL-61-05). The base
+// attack carries no rank and is not checked.
+func majorFloorIssues(plan DesignPlan, techniques []SourceTechnique) []m.Issue {
+	var issues []m.Issue
+	check := func(path, name, importance string) {
+		if importance != "minor" {
+			return
+		}
+		for _, technique := range techniques {
+			if technique.Salience == SalienceStrong && listsTechnique(name, technique) {
+				issues = append(issues, m.Issue{Path: path, Message: fmt.Sprintf("%q is ranked minor, but it lists the source technique %q, whose salience is strong. %s Rank it major or core.", name, technique.Name, SalienceRule)})
+				return
+			}
+		}
+	}
+	for i, entry := range plan.Repertoire {
+		check(fmt.Sprintf("repertoire.%d.importance", i), entry.Name, entry.Importance)
+	}
+	for i, omission := range plan.OmittedTechniques {
+		check(fmt.Sprintf("omittedTechniques.%d.importance", i), omission.Name, omission.Importance)
 	}
 	return issues
 }
@@ -214,7 +264,8 @@ func CoreConceptIssues(plan DesignPlan, request *Request) []m.Issue {
 // a part of that form inside the form's own section (namesSubtechnique), as
 // a Gear 4 entry citing "Python (…): …" under "Gear 4" lists Python. Citing
 // a passage alone lists nothing: a Pistol entry citing a Gear 4 passage does
-// not list Gear 4.
+// not list Gear 4. A strong technique is listed only by name, so it always has
+// an entry of its own whose rank the major floor checks (SOL-69-01).
 func sourceTechniqueListed(plan DesignPlan, techniques []SourceTechnique, index int, spans map[string]EvidenceSpan) bool {
 	technique := techniques[index]
 	type entry struct {
@@ -234,6 +285,9 @@ func sourceTechniqueListed(plan DesignPlan, techniques []SourceTechnique, index 
 		if listsTechnique(omission.Name, technique) {
 			return true
 		}
+	}
+	if technique.Salience == SalienceStrong {
+		return false
 	}
 	for _, e := range citing {
 		if slices.ContainsFunc(technique.Names(), func(name string) bool { return generalizes(e.name, name) }) {

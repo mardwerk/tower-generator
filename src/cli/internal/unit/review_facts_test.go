@@ -57,7 +57,7 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 		// Each purchased tier carries what the plan says about it and is
 		// judged on its own build code (reported on #27: compression credited
 		// with range at x-x-1 was flagged only in crosspath proposals).
-		`"technique":"Dart Throw","sourceIds":["source1:2","source1:3"],"promises":{"improves":["pierce"],"unlock":"none"},"plannedChange":"1-x-x raises dart pierce by one."}`,
+		`"technique":"Dart Throw","sourceIds":["source1:2","source1:3"],"promises":{"improves":["pierce"],"unlock":"none"},"plannedChange":"1-x-x raises dart pierce by one.","changeScope":{"base":["pierce add 1"],"boost":[]}}`,
 		`"technique":"Spiked Ball","sourceIds":["source1:6"],"promises":{"improves":["damage","pierce","range"],"unlock":"none","lowers":["attack-rate"]},"promisesWithoutEffect":["range"],"adaptation":"Replaces the dart`,
 		"Judge every purchased tier on its own build code, the first and second purchases included",
 		"against the passages its sourceIds cite", "which designPlan does not repeat",
