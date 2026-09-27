@@ -528,14 +528,14 @@ func TestReviewGetsTheNamingEvidenceForSoru(t *testing.T) {
 	}
 }
 
-// luffyV39Checked is the v39 Luffy Result ce07c903 as a checked draft, with
-// Gear 4 and Gear 5 required as its Request required them: its plan and
-// blueprint are those of the checked draft rebuilt from it
-// (ug-acc/data/runs/v39/luffy-b.checked.json, SHA-256 d363ecfb961e45bf),
-// which the low and medium reviews read (OPUS-NET-61-25).
+// luffyV39Checked is the v39 Luffy Result ce07c903, run b, as a checked
+// draft, with Gear 4 and Gear 5 required as its Request required them: its
+// plan and blueprint (testdata/luffy-v39b.*) are those of the checked draft
+// rebuilt from it (ug-acc/data/runs/v39/luffy-b.checked.json, SHA-256
+// d363ecfb961e45bf), which the low and medium reviews read (OPUS-NET-61-25).
 func luffyV39Checked(t *testing.T) unit.Checked {
 	t.Helper()
-	return luffyChecked(t, "v39", unit.Run{ID: "c5711ce1-2f62-4e60-947d-687793356dee", ModelID: "openrouter:openai/gpt-6-luna", StartedAt: "2026-09-27T15:20:04.168Z", CompletedAt: "2026-09-27T15:22:00.725Z"}, "Gear 4", "Gear 5")
+	return luffyChecked(t, "v39b", unit.Run{ID: "c5711ce1-2f62-4e60-947d-687793356dee", ModelID: "openrouter:openai/gpt-6-luna", StartedAt: "2026-09-27T15:20:04.168Z", CompletedAt: "2026-09-27T15:22:00.725Z"}, "Gear 4", "Gear 5")
 }
 
 // Both v39 Luffy reviews, at low and medium reasoning, passed Gear 4 on
