@@ -616,6 +616,20 @@ func parseDesignPlan(output any, request *Request) (DesignPlan, error) {
 	if err := s.ParseInto(DesignPlanAuthoringSchemaFor(request.MechanicsDefinition), expanded, &plan); err != nil {
 		return DesignPlan{}, err
 	}
+	// The base attack's name keeps no build code, and a milestone that
+	// adapts the base attack by that name follows it.
+	if name := NameWithoutBuildCode(plan.Base.Name); name != plan.Base.Name {
+		if plan.UpgradeIntents != nil {
+			for pathIndex := range m.PathKeys {
+				for tier := 1; tier <= len(m.TierKeys); tier++ {
+					if intent := plan.UpgradeIntents.At(pathIndex).At(tier); sameTechnique(intent.Technique, plan.Base.Name) {
+						intent.Technique = name
+					}
+				}
+			}
+		}
+		plan.Base.Name = name
+	}
 	return plan, nil
 }
 
@@ -645,6 +659,16 @@ func BindDesignPlan(output any, plan DesignPlan) any {
 				rationale = branch.BuyFor
 			}
 			path.Set("rationale", rationale)
+			// A purchase name keeps no build code; the sheet shows it.
+			if tiers, ok := field(path, "tiers").(*s.Object); ok {
+				for _, tierKey := range tiers.Keys() {
+					if tier, ok := field(tiers, tierKey).(*s.Object); ok {
+						if name, ok := field(tier, "name").(string); ok {
+							tier.Set("name", NameWithoutBuildCode(name))
+						}
+					}
+				}
+			}
 			if plan.UpgradeIntents != nil {
 				bindProposedMechanics(path, plan.UpgradeIntents.At(index))
 			}
