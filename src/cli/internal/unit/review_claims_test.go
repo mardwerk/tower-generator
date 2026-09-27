@@ -66,16 +66,14 @@ func modelFinding(id, outcome, subject, message, action string) Finding {
 }
 
 // Miss 2 on #57: Sol's review failed x-x-1 for not being Gear 4 Tankman,
-// which its path adapts from x-x-3. The guard states the timing.
-func TestTimingGuardCorrectsAPurchaseFaultedForALaterTechnique(t *testing.T) {
+// which its path adapts from x-x-3. The cue identifies it for human review.
+func TestTimingCueIdentifiesAPurchaseForReview(t *testing.T) {
 	claims := solClaims()
 	wrong, uncertain := claims.timing(modelFinding("model.path3-t1-source-fit", "fail", "x-x-1 Tankman entry purchase", solTimingMessage, solTimingAction))
 	if len(wrong) != 1 || len(uncertain) != 0 {
 		t.Fatalf("wrong %v, uncertain %v", wrong, uncertain)
 	}
-	if got, want := wrong[0].String(), "model.path3-t1-source-fit faults x-x-1 for Gear 4 Tankman, but x-x-1 adapts Gum-Gum Pistol; Gear 4 Tankman starts at x-x-3."; got != want {
-		t.Errorf("correction %q, want %q", got, want)
-	}
+
 }
 
 // Mentioning a later technique is not by itself a false claim (SOL-57-01).
@@ -152,16 +150,13 @@ func TestTimingGuardRetainsAnUnreadClaimForReview(t *testing.T) {
 // Miss 3 on #57: Sol's review said x-5-x's 6.21 gain is smaller than a side
 // purchase's 4.66. The quoted price 180 Gold and "direct" leave one row,
 // 2-x-x at 1-5-0, whose sideGainAtLeastCapstone is false.
-func TestComparisonGuardCorrectsAReversedComparison(t *testing.T) {
+func TestComparisonCueIdentifiesAComparisonForReview(t *testing.T) {
 	claims := solClaims()
 	wrong, uncertain := claims.comparison(modelFinding("model.path2-capstone-price", "fail", "x-5-x Extended Gear 2 Burst", solPriceMessage, solPriceAction), "Gold")
 	if len(wrong) != 1 || len(uncertain) != 0 {
 		t.Fatalf("wrong %v, uncertain %v", wrong, uncertain)
 	}
-	want := "model.path2-capstone-price says the 2-x-x side purchase's 4.66 gain is at least x-5-x's, but sideGainAtLeastCapstone is false for the time-averaged direct damage rate: from 1-5-0 to 2-5-0, 2-x-x adds 4.66 for 180 Gold and x-5-x adds 6.21 for 18000 Gold."
-	if got := wrong[0].String(); got != want {
-		t.Errorf("correction %q, want %q", got, want)
-	}
+
 }
 
 // Quoting a side gain is not by itself a false claim, and a number that

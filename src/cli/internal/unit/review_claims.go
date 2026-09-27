@@ -175,11 +175,7 @@ func faulting(f Finding) bool {
 // timingClaim is a finding that faults an earlier purchase, which adapts the
 // base attack, for a technique its path adapts from a later purchase.
 type timingClaim struct {
-	finding, purchase, technique, later, starts string
-}
-
-func (c timingClaim) String() string {
-	return fmt.Sprintf("%s faults %s for %s, but %s adapts %s; %s starts at %s.", c.finding, c.purchase, c.later, c.purchase, c.technique, c.later, c.starts)
+	purchase, technique, later, starts string
 }
 
 // timingCue is wording that faults a purchase for a technique: it begins,
@@ -265,7 +261,7 @@ func (c reviewClaims) timing(f Finding) (wrong, uncertain []timingClaim) {
 					unclear = true
 				}
 			}
-			claim := timingClaim{finding: f.ID, purchase: code, technique: strings.TrimSpace(plan.UpgradeIntents.At(path).At(tier).Technique), later: technique, starts: BuildCode(path, later)}
+			claim := timingClaim{purchase: code, technique: strings.TrimSpace(plan.UpgradeIntents.At(path).At(tier).Technique), later: technique, starts: BuildCode(path, later)}
 			if fault {
 				wrong = append(wrong, claim)
 			} else if unclear {
@@ -351,30 +347,9 @@ func (c reviewClaims) purchaseNames(text, technique string) bool {
 	return slices.ContainsFunc(c.techniqueWords(technique), func(word string) bool { return containsWords(text, word) })
 }
 
-// comparisonClaim is a side gain a finding quotes, the comparison it
-// matches and what the finding says about it.
+// comparisonClaim retains the evidence for a suspected prose comparison.
 type comparisonClaim struct {
-	finding, quoted string
-	row             comparisonRow
-	saysAtLeast     bool
-	currency        string
-}
-
-func (c comparisonClaim) String() string {
-	says, is := "at least", "false"
-	if !c.saysAtLeast {
-		says, is = "less than", "true"
-	}
-	price := func(value any) string {
-		number, ok := evidenceNumber(value)
-		if !ok {
-			return "an unknown price"
-		}
-		return strings.TrimSpace(s.FormatNumber(number) + " " + c.currency)
-	}
-	return fmt.Sprintf("%s says the %s side purchase's %s gain is %s %s's, but %s is %s for the %s: from %s to %s, %s adds %s for %s and %s adds %s for %s.",
-		c.finding, c.row.side, c.quoted, says, c.row.capstone, SideGainAtLeastCapstone, is, c.row.metric, c.row.from, c.row.to,
-		c.row.side, gainText(c.row.sideGain), price(c.row.sidePrice), c.row.capstone, gainText(c.row.capstoneGain), price(c.row.capstonePrice))
+	row comparisonRow
 }
 
 // gainText writes a gain to two decimals, as the review quotes them.
@@ -501,7 +476,7 @@ func (c reviewClaims) comparison(f Finding, currency string) (wrong []comparison
 		saysAtLeast, readable := c.direction(sentence, number.start, number.end, sides, buildCodePattern.FindAllString(f.Subject, -1))
 		switch {
 		case readable && unique && saysAtLeast != c.rows[sides[0]].atLeast:
-			wrong = append(wrong, comparisonClaim{finding: f.ID, quoted: number.text, row: c.rows[sides[0]], saysAtLeast: saysAtLeast, currency: currency})
+			wrong = append(wrong, comparisonClaim{row: c.rows[sides[0]]})
 		case !faulting(f) || unique && (readable || c.rows[sides[0]].atLeast):
 		case readable && slices.ContainsFunc(sides, func(index int) bool { return c.rows[index].atLeast != saysAtLeast }):
 			uncertain = append(uncertain, fmt.Sprintf("%s quotes %s, which matches more than one gain in the %s comparisons of purchaseEvidence, so code cannot tell which comparison it states the opposite of.", f.ID, number.text, AgainstCapstone))
