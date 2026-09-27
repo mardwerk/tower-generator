@@ -126,6 +126,12 @@ func validateRequest(request Request) error {
 			return errors.New("Prepared requests must retain their mechanics definition evidence. Run prepare again.")
 		}
 	}
+	if request.SourceTechniques != nil {
+		derived := WithSourceTechniques(request).SourceTechniques
+		if s.Stringify(s.FromGoValue(request.SourceTechniques)) != s.Stringify(s.FromGoValue(derived)) {
+			return errors.New("Source techniques must match the request's source passages. Edit the documents, not the derived sourceTechniques, and run prepare again.")
+		}
+	}
 	return nil
 }
 
@@ -210,6 +216,9 @@ func Prepare(value any) (Prepared, error) {
 	if err != nil {
 		return Prepared{}, err
 	}
+	// A request prepared now carries sectioned passages and the source
+	// techniques they name, derived again from its documents.
+	request = WithSourceTechniques(request)
 	if request, err = ParseRequest(s.FromGoValue(request)); err != nil {
 		return Prepared{}, err
 	}

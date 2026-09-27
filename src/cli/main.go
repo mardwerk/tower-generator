@@ -61,6 +61,8 @@ Options:
   --codex FILE             Codex executable (default: codex on PATH)
   --evidence-dir DIR       Keep exact model inputs and raw outputs there
   --choice ID              Pick a character when a name is ambiguous
+  --fandom URL             Character wiki page for research or generate, used
+                           instead of the one the identity lookup finds
   --tiers A,B,C            Purchased tiers for build, e.g. 5,2,0
   --repairs COUNT          Design repair attempts: 0, 1 (default) or 2
   --details                Include evidence and technical details in render

@@ -163,6 +163,8 @@ func TestFailuresLeaveOutputAloneAndNeverOverwrite(t *testing.T) {
 		{"edit", draft},
 		{"draft", draft, "--repairs", "3"},
 		{"research", "Luffy", "--choice", "0"},
+		{"research", "Luffy", "--fandom", "https://evil.test/wiki/Monkey_D._Luffy"},
+		{"check", draft, "--fandom", "https://onepiece.fandom.com/wiki/Monkey_D._Luffy"},
 		{"serve", "extra"},
 		{"check", draft, "--bogus"},
 	} {

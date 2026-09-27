@@ -400,7 +400,7 @@ func (in *invocation) execute(ctx context.Context) (any, error) {
 // lookup researches a name; an ambiguous name lists the choices.
 func (in *invocation) lookup(ctx context.Context, name string) (*research.Sources, error) {
 	fmt.Fprintln(in.stderr, "Finding character sources...")
-	sources, choices, err := in.research.Character(ctx, name, in.choice)
+	sources, choices, err := in.research.Research(ctx, research.Lookup{Name: name, Choice: in.choice, Fandom: in.options.fandom})
 	if err != nil {
 		return nil, err
 	}

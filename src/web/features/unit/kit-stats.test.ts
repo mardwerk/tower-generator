@@ -49,6 +49,61 @@ export const tests: Record<string, () => Promise<void>> = {
     if (!blimp.includes('+1') || !blimp.includes('+4') || blimp.includes('Hardened'))
       throw new Error(`the Blimp row reads ${blimp}`);
   },
+  'a change shows both values and its delta, as the unit sheet words it': async () => {
+    const html = renderToStaticMarkup(
+      createElement(StatValues, {
+        changes: [
+          { key: 'damage', before: 1, after: 2, delta: '+1', improvement: true },
+          {
+            key: 'intervalSeconds',
+            before: 0.95,
+            after: 0.8075,
+            delta: 'attacks 18% faster',
+            improvement: true,
+          },
+        ],
+      }),
+    );
+    const rows = html.split('</li>').slice(0, -1);
+    const damage = row(rows, 'Damage');
+    if (!/1<\/span>.*2<\/span>.*\(\+1\)/.test(damage)) throw new Error(`damage reads ${damage}`);
+    const interval = row(rows, 'Attack interval');
+    if (
+      !interval.includes('0.95 s') ||
+      !interval.includes('0.8075 s') ||
+      !interval.includes('(attacks 18% faster)')
+    )
+      throw new Error(`the interval reads ${interval}`);
+    if (interval.includes('Slower')) throw new Error(`a faster interval reads ${interval}`);
+  },
+  'Active Ability multipliers read as percentages, never ×': async () => {
+    const html = renderToStaticMarkup(
+      createElement(StatValues, {
+        changes: [
+          {
+            key: 'damageMultiplier',
+            before: '+100%',
+            after: '+200%',
+            delta: '+100 percentage points',
+            improvement: true,
+          },
+          { key: 'intervalMultiplier', after: '100% faster' },
+        ],
+      }),
+    );
+    const rows = html.split('</li>').slice(0, -1);
+    const damage = row(rows, 'Active damage bonus');
+    if (
+      !damage.includes('+100%') ||
+      !damage.includes('+200%') ||
+      !damage.includes('(+100 percentage points)')
+    )
+      throw new Error(`the damage bonus reads ${damage}`);
+    if (!row(rows, 'Active attack speed').includes('100% faster'))
+      throw new Error('the attack speed is not a percentage');
+    if (html.includes('×')) throw new Error(`a multiplier reads as ×: ${html}`);
+    equal(statValue('intervalMultiplier', 0.5), '0.5', 'a bare number is not rewritten');
+  },
   'other stats keep their units': async () => {
     equal(statValue('damage', 20), '20', 'damage');
     equal(statValue('intervalSeconds', 0.95), '0.95 s', 'an interval');

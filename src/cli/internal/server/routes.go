@@ -309,7 +309,7 @@ func (srv *Server) profile(body *s.Object) (unit.Profile, error) {
 }
 
 func (srv *Server) lookup(ctx context.Context, body *s.Object, allowed ...string) (*research.Sources, any, error) {
-	if err := only(body, append([]string{"name", "choice"}, allowed...)...); err != nil {
+	if err := only(body, append([]string{"name", "choice", "fandom"}, allowed...)...); err != nil {
 		return nil, nil, err
 	}
 	name, ok := get(body, "name").(string)
@@ -324,7 +324,13 @@ func (srv *Server) lookup(ctx context.Context, body *s.Object, allowed ...string
 		}
 		choice = int(number)
 	}
-	sources, choices, err := srv.config.Research.Character(ctx, name, choice)
+	fandom := ""
+	if value, present := body.Get("fandom"); present && value != nil {
+		if fandom, ok = value.(string); !ok {
+			return nil, nil, errors.New("fandom: expected a character wiki page address")
+		}
+	}
+	sources, choices, err := srv.config.Research.Research(ctx, research.Lookup{Name: name, Choice: choice, Fandom: fandom})
 	if err != nil {
 		return nil, nil, err
 	}

@@ -244,6 +244,8 @@ export interface AuthorRequest {
   mechanicsDefinition?: MechanicsDefinition;
   previous: { resultId: string; draft: UnitCandidate; findings: Finding[] } | null;
   feedback: string | null;
+  /** Derived by prepare; present when the request's passages carry their source section. */
+  sourceTechniques?: { name: string; passageIds: string[]; signature: boolean }[];
 }
 
 export interface PreparedRequest {
@@ -429,7 +431,7 @@ export type InspectedInput =
 export interface FailureEvidence {
   plan?: unknown;
   attempts: { number: number; purpose: string; issues: string[]; output?: unknown }[];
-  sourcePassages: { id: string; documentId: string; text: string }[];
+  sourcePassages: { id: string; documentId: string; section?: string; text: string }[];
 }
 
 export interface LabError {
@@ -486,6 +488,8 @@ export interface StatChange {
   kind?: EffectKind | 'detection' | 'bonusDamage';
   before?: number | string;
   after: number | string;
+  /** What the purchase changes, worded as on the unit sheet: "+1", "attacks 18% faster" or "+100 percentage points". */
+  delta?: string;
   improvement?: boolean;
 }
 

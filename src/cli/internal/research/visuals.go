@@ -26,6 +26,9 @@ const fandomTextLimit = 24_000
 
 type visualLookup struct {
 	name, articleTitle, work, wikidataID string
+	// fandom is a character wiki page the user supplied, used instead of
+	// the identity lookup.
+	fandom *url.URL
 }
 
 // visuals are the images, notes and extra source documents gathered for a
@@ -348,46 +351,158 @@ func (r *Researcher) characterIdentity(ctx context.Context, lookup visualLookup)
 	return "", nil
 }
 
+// generalWikis are Fandom wikis about many works, never a character's own.
+var generalWikis = []string{"hero", "villains", "cosplay", "vsbattles", "powerlisting"}
+
+type claim struct {
+	Mainsnak struct {
+		Datavalue *struct {
+			Value any `json:"value"`
+		} `json:"datavalue"`
+	} `json:"mainsnak"`
+}
+
+type entityClaims struct {
+	Entities map[string]struct {
+		Claims *struct {
+			P6262 []claim `json:"P6262"`
+			P1441 []claim `json:"P1441"`
+		} `json:"claims"`
+	} `json:"entities"`
+}
+
 // fandomPage follows the item's Fandom article ID (P6262) to a character
-// page with the same name, never to general wikis.
-func (r *Researcher) fandomPage(ctx context.Context, id, name string) (*url.URL, error) {
+// page with the same name, never to general wikis. It also returns the
+// works the character is present in (P1441), for the work-wiki fallback.
+func (r *Researcher) fandomPage(ctx context.Context, id, name string) (*url.URL, []string, error) {
 	if !wikidataItem.MatchString(id) {
-		return nil, nil
+		return nil, nil, nil
 	}
-	var data struct {
-		Entities map[string]struct {
-			Claims *struct {
-				P6262 []struct {
-					Mainsnak struct {
-						Datavalue *struct {
-							Value string `json:"value"`
-						} `json:"datavalue"`
-					} `json:"mainsnak"`
-				} `json:"P6262"`
-			} `json:"claims"`
-		} `json:"entities"`
-	}
+	var data entityClaims
 	if err := r.getJSON(ctx, wikidataAPI, url.Values{"format": {"json"}, "action": {"wbgetentities"}, "ids": {id}, "props": {"claims"}}, 3_000_000, &data); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if data.Entities == nil {
-		return nil, errors.New("unreadable identity")
+		return nil, nil, errors.New("unreadable identity")
 	}
 	entity := data.Entities[id]
 	if entity.Claims == nil {
+		return nil, nil, nil
+	}
+	var works []string
+	for _, c := range entity.Claims.P1441 {
+		if c.Mainsnak.Datavalue == nil {
+			continue
+		}
+		if value, ok := c.Mainsnak.Datavalue.Value.(map[string]any); ok {
+			if work, ok := value["id"].(string); ok && wikidataItem.MatchString(work) && !contains(works, work) {
+				works = append(works, work)
+			}
+		}
+	}
+	for _, c := range entity.Claims.P6262 {
+		if c.Mainsnak.Datavalue == nil {
+			continue
+		}
+		value, _ := c.Mainsnak.Datavalue.Value.(string)
+		match := fandomClaim.FindStringSubmatch(value)
+		if match == nil || !sameName(match[2], name) || contains(generalWikis, match[1]) {
+			continue
+		}
+		page, err := url.Parse("https://" + match[1] + ".fandom.com/wiki/" + encodeURIComponent(strings.ReplaceAll(match[2], " ", "_")))
+		return page, works, err
+	}
+	return nil, works, nil
+}
+
+// maxWorks bounds the works whose wikis the fallback reads.
+const maxWorks = 5
+
+// workFandomPage finds the character's page on the wiki of its work when
+// the character has no Fandom article ID. The work's wiki is the one most
+// of the character's works (P1441) link to (P6262); a tie names no wiki.
+// The page must exist under the character's exact name.
+func (r *Researcher) workFandomPage(ctx context.Context, works []string, name string) (*url.URL, error) {
+	if len(works) > maxWorks {
+		works = works[:maxWorks]
+	}
+	if len(works) == 0 {
 		return nil, nil
 	}
-	for _, claim := range entity.Claims.P6262 {
-		if claim.Mainsnak.Datavalue == nil {
-			continue
-		}
-		match := fandomClaim.FindStringSubmatch(claim.Mainsnak.Datavalue.Value)
-		if match == nil || !sameName(match[2], name) || contains([]string{"hero", "villains", "cosplay", "vsbattles", "powerlisting"}, match[1]) {
-			continue
-		}
-		return url.Parse("https://" + match[1] + ".fandom.com/wiki/" + encodeURIComponent(strings.ReplaceAll(match[2], " ", "_")))
+	var data entityClaims
+	if err := r.getJSON(ctx, wikidataAPI, url.Values{"format": {"json"}, "action": {"wbgetentities"}, "ids": {strings.Join(works, "|")}, "props": {"claims"}}, 3_000_000, &data); err != nil {
+		return nil, err
 	}
-	return nil, nil
+	if data.Entities == nil {
+		return nil, errors.New("unreadable works")
+	}
+	var wikis []string
+	count := map[string]int{}
+	for _, work := range works {
+		entity := data.Entities[work]
+		if entity.Claims == nil {
+			continue
+		}
+		linked := map[string]bool{}
+		for _, c := range entity.Claims.P6262 {
+			if c.Mainsnak.Datavalue == nil {
+				continue
+			}
+			value, _ := c.Mainsnak.Datavalue.Value.(string)
+			match := fandomClaim.FindStringSubmatch(value)
+			if match == nil || contains(generalWikis, match[1]) || linked[match[1]] {
+				continue
+			}
+			linked[match[1]] = true
+			if count[match[1]] == 0 {
+				wikis = append(wikis, match[1])
+			}
+			count[match[1]]++
+		}
+	}
+	sort.SliceStable(wikis, func(i, j int) bool { return count[wikis[i]] > count[wikis[j]] })
+	if len(wikis) == 0 || (len(wikis) > 1 && count[wikis[0]] == count[wikis[1]]) {
+		return nil, nil
+	}
+	host := wikis[0] + ".fandom.com"
+	var found struct {
+		Query *struct {
+			Pages []struct {
+				Title     string `json:"title"`
+				Namespace int    `json:"ns"`
+				Missing   bool   `json:"missing"`
+				Invalid   bool   `json:"invalid"`
+			} `json:"pages"`
+		} `json:"query"`
+	}
+	if err := r.getJSON(ctx, "https://"+host+"/api.php", url.Values{
+		"format": {"json"}, "formatversion": {"2"}, "action": {"query"}, "titles": {name}, "redirects": {"1"},
+	}, 1_000_000, &found); err != nil {
+		return nil, err
+	}
+	if found.Query == nil || len(found.Query.Pages) != 1 {
+		return nil, nil
+	}
+	article := found.Query.Pages[0]
+	if article.Missing || article.Invalid || article.Namespace != 0 || !sameName(article.Title, name) {
+		return nil, nil
+	}
+	return url.Parse("https://" + host + "/wiki/" + encodeURIComponent(strings.ReplaceAll(article.Title, " ", "_")))
+}
+
+// FandomPage validates a character wiki page address a user supplies.
+func FandomPage(address string) (*url.URL, error) {
+	page, err := url.Parse(strings.TrimSpace(address))
+	invalid := errors.New("The character wiki page must be an address like https://WIKI.fandom.com/wiki/PAGE.")
+	if err != nil || page.Scheme != "https" || page.User != nil || page.Port() != "" || page.RawQuery != "" || !fandomSite.MatchString(page.Hostname()) {
+		return nil, invalid
+	}
+	title, ok := fandomTitle(page)
+	if !ok || strings.TrimSpace(title) == "" || strings.Contains(title, ":") {
+		return nil, invalid
+	}
+	page.Fragment, page.RawFragment = "", ""
+	return page, nil
 }
 
 // fandomTitle is the decoded article title of a Fandom page URL.
@@ -511,11 +626,24 @@ func attrNumber(node *goquery.Selection, name string) float64 {
 	return n
 }
 
-const sourceNoise = "script, style, iframe, noscript, nav, aside, table, figure, .thumb, .gallery, .gallerybox, .portable-infobox, .navbox, .navibox, .navigation, .wds-global-navigation, .toc, #toc, .mw-editsection, .mw-references-wrap, .references, sup.reference, .reference, .printfooter, .catlinks"
+const sourceNoise = ".article-tabs, script, style, iframe, noscript, nav, aside, table, figure, .thumb, .gallery, .gallerybox, .portable-infobox, .navbox, .navibox, .navigation, .wds-global-navigation, .toc, #toc, .mw-editsection, .mw-references-wrap, .references, sup.reference, .reference, .printfooter, .catlinks"
+
+// ownText is a node's text without the paragraphs and lists nested in it,
+// which are read on their own: a list entry keeps its own text and its
+// children stay separate entries.
+func ownText(node *goquery.Selection) string {
+	if goquery.NodeName(node) != "li" || node.Find("p,ul,ol,dl").Length() == 0 {
+		return clean(node.Text())
+	}
+	own := node.Clone()
+	own.Find("p,ul,ol,dl").Remove()
+	return clean(own.Text())
+}
 
 // fandomSource reuses identity-bound article HTML already fetched for
-// visuals: the introduction and ability sections, capped.
-func fandomSource(content string, page *url.URL, name string, now time.Time) *unit.Document {
+// visuals: the introduction and ability sections, capped. identity says how
+// the page was matched to the character.
+func fandomSource(content string, page *url.URL, name string, now time.Time, identity string) *unit.Document {
 	if !verifiedFandom(page) {
 		return nil
 	}
@@ -535,11 +663,14 @@ func fandomSource(content string, page *url.URL, name string, now time.Time) *un
 	document := parseHTML(content)
 	document.Find(sourceNoise).Remove()
 	root := articleRoot(document)
-	// Passages are grouped by their section. The next passage always goes to
-	// the section with the least text so far, technique sections first on a
-	// tie, so neither a long overview nor long physical-ability paragraphs
-	// can use the budget before the Devil Fruit, Haki or form sections are
-	// kept. Selected passages keep their page order.
+	// Passages are grouped by their section, and sections by rank: power,
+	// form and technique sections first, then other ability sections, then
+	// the introduction, overview and miscellaneous sections. A rank's
+	// sections share the text left by the ranks before it: the next passage
+	// always goes to the section of that rank with the least text so far,
+	// so neither a long overview nor Luck or Artistic Skill can use the
+	// budget before the Devil Fruit, Haki or form sections are kept.
+	// Selected passages keep their page order.
 	type passage struct {
 		order int
 		text  string
@@ -554,17 +685,13 @@ func fandomSource(content string, page *url.URL, name string, now time.Time) *un
 	seen := map[string]bool{}
 	count := 0
 	root.Find("h2,h3,h4,h5,h6,p,li").Each(func(_ int, node *goquery.Selection) {
-		text := clean(node.Text())
-		if text == "" {
-			return
-		}
 		if level := headingLevel(node); level > 0 {
-			headings = pushHeading(headings, level, text)
+			if text := clean(node.Text()); text != "" {
+				headings = pushHeading(headings, level, text)
+			}
 			return
 		}
-		if goquery.NodeName(node) == "li" && node.Find("p,li").Length() > 0 {
-			return
-		}
+		text := ownText(node)
 		if s.UTF16Len(text) < 15 || seen[text] {
 			return
 		}
@@ -575,51 +702,45 @@ func fandomSource(content string, page *url.URL, name string, now time.Time) *un
 			return
 		}
 		seen[text] = true
-		rank := 2
-		switch {
-		case anyHeadingMatches(headings, techniqueHeading):
-			rank = 0
-		case combat:
-			rank = 1
-		}
 		path := headingTexts(headings)
 		key := strings.Join(path, "\n")
 		g := index[key]
 		if g == nil {
-			g = &group{rank: rank}
+			g = &group{rank: unit.SectionRank(path)}
 			index[key] = g
 			groups = append(groups, g)
 		}
 		g.passages = append(g.passages, passage{count, strings.Join(append(path, text), "\n")})
 		count++
 	})
-	sort.SliceStable(groups, func(i, j int) bool { return groups[i].rank < groups[j].rank })
 	var chosen []passage
 	next := make([]int, len(groups))
 	used := make([]int, len(groups))
 	length, truncated := 0, false
-	for {
-		pick := -1
-		for i, g := range groups {
-			if next[i] < len(g.passages) && (pick < 0 || used[i] < used[pick]) {
-				pick = i
+	for rank := unit.PowerSection; rank <= unit.OtherSection; rank++ {
+		for {
+			pick := -1
+			for i, g := range groups {
+				if g.rank == rank && next[i] < len(g.passages) && (pick < 0 || used[i] < used[pick]) {
+					pick = i
+				}
 			}
+			if pick < 0 {
+				break
+			}
+			p := groups[pick].passages[next[pick]]
+			size := s.UTF16Len(p.text) + 2
+			if length+size > fandomTextLimit {
+				// The section stops here, so its kept passages stay contiguous.
+				truncated = true
+				next[pick] = len(groups[pick].passages)
+				continue
+			}
+			chosen = append(chosen, p)
+			length += size
+			used[pick] += size
+			next[pick]++
 		}
-		if pick < 0 {
-			break
-		}
-		p := groups[pick].passages[next[pick]]
-		size := s.UTF16Len(p.text) + 2
-		if length+size > fandomTextLimit {
-			// The section stops here, so its kept passages stay contiguous.
-			truncated = true
-			next[pick] = len(groups[pick].passages)
-			continue
-		}
-		chosen = append(chosen, p)
-		length += size
-		used[pick] += size
-		next[pick]++
 	}
 	sort.Slice(chosen, func(i, j int) bool { return chosen[i].order < chosen[j].order })
 	selected := make([]string, len(chosen))
@@ -629,9 +750,9 @@ func fandomSource(content string, page *url.URL, name string, now time.Time) *un
 	if len(selected) == 0 {
 		return nil
 	}
-	note := "Retrieved through the public MediaWiki parse API while gathering character references at " + now.UTC().Format("2006-01-02T15:04:05.000Z") + ". Identity matched through Wikidata and the character page name. Extracted article introduction and available ability sections; navigation, images and reference lists omitted."
+	note := "Retrieved through the public MediaWiki parse API while gathering character references at " + now.UTC().Format("2006-01-02T15:04:05.000Z") + ". " + identity + " Extracted article introduction and available ability sections; navigation, images and reference lists omitted."
 	if truncated {
-		note += fmt.Sprintf(" Text was capped at %d characters, each passage going to the section with the least text so far; this is not exhaustive.", fandomTextLimit)
+		note += fmt.Sprintf(" Text was capped at %d characters: power, form and technique sections first, then other ability sections, then the introduction, overview and miscellaneous sections, each passage going to the section of its rank with the least text so far; this is not exhaustive.", fandomTextLimit)
 	}
 	note += " This fan-maintained secondary source may combine story periods and adaptations; it is not independently verified canon."
 	return &unit.Document{
@@ -640,27 +761,57 @@ func fandomSource(content string, page *url.URL, name string, now time.Time) *un
 	}
 }
 
-func (r *Researcher) fandomImages(ctx context.Context, lookup visualLookup) (gathered, error) {
+// fandomTarget is the character wiki page to read and how it was matched to
+// the character: the page the user supplied, the Fandom article ID of the
+// character's Wikidata item, or the exact title on its work's wiki.
+func (r *Researcher) fandomTarget(ctx context.Context, lookup visualLookup) (*url.URL, string, []string, error) {
+	if lookup.fandom != nil {
+		return lookup.fandom, "Page supplied explicitly for this character.", nil, nil
+	}
 	id, err := r.characterIdentity(ctx, lookup)
 	if err != nil {
-		return gathered{}, err
+		return nil, "", nil, err
 	}
 	if id == "" {
-		return gathered{notes: []string{"No unique character identity matching the name and source work was found for character-wiki image lookup. Add a character source in Inputs and rules."}}, nil
+		return nil, "", []string{"No unique character identity matching the name and source work was found for character-wiki image lookup. Add a character source in Inputs and rules."}, nil
 	}
-	page, err := r.fandomPage(ctx, id, lookup.name)
+	page, works, err := r.fandomPage(ctx, id, lookup.name)
+	if err != nil {
+		return nil, "", nil, err
+	}
+	if page != nil {
+		return page, "Identity matched through Wikidata and the character page name.", nil, nil
+	}
+	if page, err = r.workFandomPage(ctx, works, lookup.name); err != nil {
+		return nil, "", nil, err
+	}
+	if page != nil {
+		return page, "Identity matched through Wikidata's work of the character and the exact character page name on that work's wiki.", nil, nil
+	}
+	return nil, "", []string{"The character identity has no supported character-specific wiki link. Add a character source in Inputs and rules."}, nil
+}
+
+func (r *Researcher) fandomImages(ctx context.Context, lookup visualLookup) (gathered, error) {
+	page, identity, notes, err := r.fandomTarget(ctx, lookup)
 	if err != nil {
 		return gathered{}, err
 	}
 	if page == nil {
-		return gathered{notes: []string{"The character identity has no supported character-specific wiki link. Add a character source in Inputs and rules."}}, nil
+		return gathered{notes: notes}, nil
+	}
+	// A supplied page names the character by its own title.
+	sourceName := lookup.name
+	if lookup.fandom != nil {
+		if title, ok := fandomTitle(page); ok {
+			sourceName = strings.ReplaceAll(strings.Split(title, "/")[0], "_", " ")
+		}
 	}
 	content, err := r.fandomHTML(ctx, page)
 	if err != nil {
 		return gathered{}, err
 	}
 	images := fandomVisuals(content, page, lookup.name)
-	source := fandomSource(content, page, lookup.name, r.now())
+	source := fandomSource(content, page, sourceName, r.now(), identity)
 	// Follow only links present on this character page: its gallery and
 	// ability subpages. Other characters and guessed paths are not targets.
 	var related []*url.URL
@@ -715,7 +866,7 @@ func (r *Researcher) fandomImages(ctx context.Context, lookup visualLookup) (gat
 				return
 			}
 			subpages[i].images = fandomVisuals(html, target, lookup.name)
-			if document := fandomSource(html, target, lookup.name, r.now()); document != nil {
+			if document := fandomSource(html, target, sourceName, r.now(), identity); document != nil {
 				subpages[i].documents = []unit.Document{*document}
 				subpages[i].techniques = linkedTechniques(html, target, lookup.name)
 			}
@@ -729,7 +880,7 @@ func (r *Researcher) fandomImages(ctx context.Context, lookup visualLookup) (gat
 	if source != nil {
 		candidates = append(candidates, linkedTechniques(content, page, lookup.name)...)
 	}
-	links := selectTechniques(candidates)
+	links := followedTechniques(candidates)
 	techniques := make([]*unit.Document, len(links))
 	missing := make([]bool, len(links))
 	for i, link := range links {
