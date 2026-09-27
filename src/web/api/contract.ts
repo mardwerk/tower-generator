@@ -448,8 +448,8 @@ export interface IconGenerationResponse {
  * One visible difference a purchase makes, from /api/v1/view. Version 2
  * status effects, detection traits and bonus damage come with their
  * vocabulary label, the unit of the number and the kind: the effect kind,
- * 'detection' for a trait or 'bonusDamage' for bonus damage per hit against
- * an enemy property, shown as +N.
+ * 'detection' for a trait or 'bonusDamage' for the additive bonus damage per
+ * hit against an enemy property, shown as +N.
  */
 export interface StatChange {
   key: string;

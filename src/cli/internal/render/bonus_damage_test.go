@@ -69,6 +69,19 @@ func TestBonusDamageRendersOnTheSheet(t *testing.T) {
 	if !strings.Contains(juggernaut, "Raises bonus damage against Hardened enemies from 1 to 4 (+3).") {
 		t.Errorf("4-x-x reads %q", juggernaut)
 	}
+
+	// The bonus is added to every hit unscaled: a follow-up hit takes its
+	// multiple of ordinary damage plus the bonus, and the Active Ability
+	// multiplies ordinary damage only.
+	sheet := render.Purchases(candidate, definition, nil)
+	split := strings.Join(sheet[0].Purchases[4].Effects, " ")
+	if !strings.Contains(split, "take 0.4 times the hit damage (2), plus +4 damage against Hardened enemies, once each") {
+		t.Errorf("5-x-x reads %q", split)
+	}
+	active := strings.Join(sheet[1].Purchases[3].Effects, " ")
+	if !strings.Contains(active, "so the attack deals 1 damage, plus +1 damage against Hardened enemies, every 0.015 s") {
+		t.Errorf("x-4-x reads %q", active)
+	}
 }
 
 // A bonus never overrides an immunity; the sheet says when the damage type

@@ -1,6 +1,7 @@
 package mechanics
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 
@@ -28,8 +29,8 @@ func bonus(property, operation string, value float64) Change {
 
 // bonusStarter is the starter in version 2 form. Its third top purchase is
 // Deadly Precision-like: damage set to 20 and +50 against Hardened; the
-// fifth doubles the bonus. The first two middle purchases add a Blimp bonus
-// and set a Hardened one, so crosspaths combine add, multiply and set.
+// fifth adds another +50. The first two middle purchases add a Blimp bonus
+// and a Hardened one, so crosspaths sum the additions of two paths.
 func bonusStarter(t *testing.T) *Blueprint {
 	t.Helper()
 	var blueprint Blueprint
@@ -38,14 +39,14 @@ func bonusStarter(t *testing.T) *Blueprint {
 	}
 	top := &blueprint.Paths.Path1.Tiers
 	top.Tier3.Changes = append(top.Tier3.Changes, bonus("hardened", "add", 50))
-	top.Tier5.Changes = append(top.Tier5.Changes, bonus("hardened", "multiply", 2))
+	top.Tier5.Changes = append(top.Tier5.Changes, bonus("hardened", "add", 50))
 	middle := &blueprint.Paths.Path2.Tiers
 	middle.Tier1.Changes = append(middle.Tier1.Changes, bonus("blimp", "add", 4))
-	middle.Tier2.Changes = append(middle.Tier2.Changes, bonus("hardened", "set", 10))
+	middle.Tier2.Changes = append(middle.Tier2.Changes, bonus("hardened", "add", 10))
 	return &blueprint
 }
 
-func TestBonusDamageResolvesLikeAStat(t *testing.T) {
+func TestBonusDamageResolvesAsASum(t *testing.T) {
 	blueprint, definition := bonusStarter(t), bonusDefinition("hardened", "blimp")
 	if issues := ValidateTyped(blueprint, definition); len(issues) > 0 {
 		t.Fatalf("the bonus starter is invalid: %v", issues)
@@ -55,10 +56,9 @@ func TestBonusDamageResolvesLikeAStat(t *testing.T) {
 		{3, 0, 0}: `[{"property":"hardened","damage":50}]`,
 		{5, 0, 0}: `[{"property":"hardened","damage":100}]`,
 		{0, 1, 0}: `[{"property":"blimp","damage":4}]`,
-		// A setter replaces the baseline; the top path's addition and
-		// multiplier still apply, and properties are sorted by ID.
+		// Two paths' additions sum, and properties are sorted by ID.
 		{3, 2, 0}: `[{"property":"blimp","damage":4},{"property":"hardened","damage":60}]`,
-		{5, 2, 0}: `[{"property":"blimp","damage":4},{"property":"hardened","damage":120}]`,
+		{5, 2, 0}: `[{"property":"blimp","damage":4},{"property":"hardened","damage":110}]`,
 		{0, 2, 0}: `[{"property":"blimp","damage":4},{"property":"hardened","damage":10}]`,
 	} {
 		attack := ResolveUnchecked(blueprint, selection).BaseAttack
@@ -66,7 +66,8 @@ func TestBonusDamageResolvesLikeAStat(t *testing.T) {
 			t.Errorf("%s resolves bonus damage %s, want %s", label(selection), got, want)
 		}
 	}
-	// The Active Ability multiplies ordinary damage only: 22 × 3, +60.
+	// The Active Ability multiplies ordinary damage only: 22 × 3, +60 added
+	// unscaled.
 	build := ResolveUnchecked(blueprint, Selection{3, 4, 0})
 	if len(build.Abilities) != 1 || build.Abilities[0].BoostedAttack.Bonus("hardened") != 60 || build.Abilities[0].BoostedAttack.Stats.Damage != 66 {
 		t.Errorf("3-4-0 boosted attack %+v", build.Abilities)
@@ -177,6 +178,34 @@ func TestBonusDamageValidation(t *testing.T) {
 	})
 	if strings.Contains(raised, "tier1.changes: T1 and T2") {
 		t.Errorf("raising the base attack's bonus at the first purchase is rejected:\n%s", raised)
+	}
+}
+
+// Bonus damage is an additive +N per hit (SOL-42-01 on #42): a bonusDamage
+// change that multiplies or sets the bonus fails validation at its
+// operation, with a message that says only add applies.
+func TestBonusDamageOnlyAdds(t *testing.T) {
+	definition := bonusDefinition("hardened", "blimp")
+	for _, operation := range []string{"multiply", "set"} {
+		blueprint := bonusStarter(t)
+		blueprint.Paths.Path1.Tiers.Tier5.Changes[len(blueprint.Paths.Path1.Tiers.Tier5.Changes)-1].Operation = operation
+		var found []string
+		for _, issue := range ValidateTyped(blueprint, definition) {
+			found = append(found, issue.Path+": "+issue.Message)
+		}
+		want := `paths.path1.tiers.tier5.changes.` + strconv.Itoa(len(blueprint.Paths.Path1.Tiers.Tier5.Changes)-1) + `.operation: Bonus damage only adds: use operation "add" with a positive value; multiply and set do not apply to bonus damage.`
+		if !strings.Contains(strings.Join(found, "\n"), want) {
+			t.Errorf("%s: want %q in\n%s", operation, want, strings.Join(found, "\n"))
+		}
+		if _, issues := s.Parse(ChangeSchemaV2(nil), bonus("hardened", operation, 2).JSONValue()); len(issues) != 1 || issues[0].PathString() != "operation" {
+			t.Errorf("reading accepts a %s bonus: %v", operation, issues)
+		}
+	}
+	if _, issues := s.Parse(ChangeSchemaV2(nil), bonus("hardened", "add", 2).JSONValue()); len(issues) > 0 {
+		t.Errorf("an added bonus is rejected: %v", issues)
+	}
+	if schema := s.Stringify(s.JSONSchema(ChangeSchemaV2(bonusDefinition("hardened").Vocabulary))); !strings.Contains(schema, `"property":{"type":"string","enum":["hardened"]},"operation":{"type":"string","enum":["add"]}`) {
+		t.Errorf("the change schema offers another bonus operation: %s", schema)
 	}
 }
 

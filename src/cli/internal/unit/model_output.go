@@ -87,10 +87,11 @@ func tierOutputFor(d *m.Definition) *s.ObjectSchema {
 	)...)
 }
 
-// wireBonusSchema is a bonus damage change as models write it: an
-// operation on the bonus per hit against one listed enemy property.
+// wireBonusSchema is a bonus damage change as models write it: a positive
+// value added to the bonus per hit against one listed enemy property. Its
+// operation is always "add".
 func wireBonusSchema(v *m.Vocabulary) *s.ObjectSchema {
-	return s.StrictObject(s.F("property", m.BonusPropertySchema(v)), s.F("operation", m.OperationSchema), s.F("value", s.Number().Positive()))
+	return s.StrictObject(s.F("property", m.BonusPropertySchema(v)), s.F("operation", m.BonusOperationSchema), s.F("value", s.Number().Positive()))
 }
 
 // ModelOutputSchema is the mechanics wire format for a request.

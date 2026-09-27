@@ -273,6 +273,11 @@ func BonusPropertySchema(v *Vocabulary) s.Schema {
 	return vocabularyIDs(v, func(v *Vocabulary) []string { return v.BonusDamageProperties })
 }
 
+// BonusOperationSchema is the one operation a bonusDamage change takes:
+// bonus damage is an additive +N per hit (SOL-42-01 on #42), so multiply
+// and set fail with a message that says so.
+var BonusOperationSchema = s.Enum("add").Message(`Bonus damage only adds: use operation "add" with a positive value; multiply and set do not apply to bonus damage.`)
+
 // DamageBonusSchema is one resolved bonus: a positive damage per hit.
 func DamageBonusSchema(v *Vocabulary) *s.ObjectSchema {
 	return s.StrictObject(s.F("property", BonusPropertySchema(v)), s.F("damage", positive()))
@@ -300,9 +305,9 @@ func AttackSchemaV2(v *Vocabulary) *s.ObjectSchema {
 
 // ChangeSchemaV2 is one typed effect of a version 2 upgrade: core stats,
 // status fields and detection replace the version 1 stats and camo. When
-// the vocabulary lists bonus damage properties, a bonusDamage change adds,
-// multiplies or sets the bonus against one of them, like a stat; its value
-// is always positive.
+// the vocabulary lists bonus damage properties, a bonusDamage change adds
+// a positive value to the bonus against one of them; it never multiplies
+// or sets it.
 func ChangeSchemaV2(v *Vocabulary) s.Schema {
 	variants := []*s.ObjectSchema{
 		s.StrictObject(s.F("kind", lit("stat")), s.F("target", lit("base")), s.F("stat", enum(CoreStatKeys)), s.F("operation", OperationSchema), s.F("value", s.Number())),
@@ -317,7 +322,7 @@ func ChangeSchemaV2(v *Vocabulary) s.Schema {
 		s.StrictObject(s.F("kind", lit("modifyBoost")), s.F("target", lit("base")), s.F("stat", enum(BoostStatKeys)), s.F("operation", OperationSchema), s.F("value", s.Number())),
 	}
 	if HasBonusDamage(v) {
-		variants = append(variants, s.StrictObject(s.F("kind", lit("bonusDamage")), s.F("target", lit("base")), s.F("property", BonusPropertySchema(v)), s.F("operation", OperationSchema), s.F("value", positive())))
+		variants = append(variants, s.StrictObject(s.F("kind", lit("bonusDamage")), s.F("target", lit("base")), s.F("property", BonusPropertySchema(v)), s.F("operation", BonusOperationSchema), s.F("value", positive())))
 	}
 	return s.DiscriminatedUnion("kind", variants...)
 }

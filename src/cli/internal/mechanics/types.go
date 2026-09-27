@@ -464,7 +464,7 @@ func (b *Boost) ptr(key string) *float64 {
 // Change is one typed effect of an upgrade. Kind selects which fields apply:
 // stat and modifyBoost use Stat, Operation and Number; status (version 2)
 // uses Effect, Field, Operation and Number; bonusDamage (version 2) uses
-// Property, Operation and Number; camo uses Bool; detection
+// Property, Operation (always "add") and Number; camo uses Bool; detection
 // (version 2) uses Trait and Bool; delivery, damageType, targeting and
 // distribution use Text; followUp uses FollowUp; unlockBoost uses Boost.
 type Change struct {

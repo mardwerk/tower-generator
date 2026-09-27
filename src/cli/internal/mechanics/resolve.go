@@ -290,35 +290,32 @@ func resolveV2(attack *Attack, changes []Change) {
 	attack.BonusDamage = resolveBonusDamage(attack.BonusDamage, changes)
 }
 
-// resolveBonusDamage resolves each property's bonus damage like a stat,
-// from the base attack's bonus or zero, sorted by property. A bonus that
-// resolves to zero is dropped.
+// resolveBonusDamage resolves each property's bonus damage per hit, sorted
+// by property: the base attack's bonus, or zero, plus the value of every
+// bonusDamage change against it. Bonus damage only adds, so the purchases
+// of two paths sum and a bonus never falls.
 func resolveBonusDamage(initial []DamageBonus, changes []Change) []DamageBonus {
-	base := map[string]float64{}
+	damage := map[string]float64{}
 	var properties []string
-	for _, bonus := range initial {
-		if _, ok := base[bonus.Property]; !ok {
-			properties = append(properties, bonus.Property)
+	note := func(property string, value float64) {
+		if _, ok := damage[property]; !ok {
+			properties = append(properties, property)
 		}
-		base[bonus.Property] = bonus.Damage
+		damage[property] += value
+	}
+	for _, bonus := range initial {
+		note(bonus.Property, bonus.Damage)
 	}
 	for _, c := range changes {
-		if _, ok := base[c.Property]; c.Kind == "bonusDamage" && !ok {
-			base[c.Property] = 0
-			properties = append(properties, c.Property)
+		if c.Kind == "bonusDamage" {
+			note(c.Property, c.Number)
 		}
 	}
 	sort.Strings(properties)
 	var out []DamageBonus
 	for _, property := range properties {
-		var matching []Change
-		for _, c := range changes {
-			if c.Kind == "bonusDamage" && c.Property == property {
-				matching = append(matching, c)
-			}
-		}
-		if damage := calculate(base[property], matching); damage != 0 {
-			out = append(out, DamageBonus{Property: property, Damage: damage})
+		if damage[property] != 0 {
+			out = append(out, DamageBonus{Property: property, Damage: damage[property]})
 		}
 	}
 	return out

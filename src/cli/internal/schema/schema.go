@@ -425,11 +425,20 @@ func (s *LiteralSchema) run(c *ctx, value any, path []any) any {
 	return value
 }
 
-// EnumSchema is z.enum(values).
-type EnumSchema struct{ Values []string }
+// EnumSchema is z.enum(values), optionally with its own error message.
+type EnumSchema struct {
+	Values  []string
+	message string
+}
 
 // Enum returns z.enum(values).
-func Enum(values ...string) *EnumSchema { return &EnumSchema{append([]string(nil), values...)} }
+func Enum(values ...string) *EnumSchema { return &EnumSchema{Values: append([]string(nil), values...)} }
+
+// Message returns a copy that reports a value outside the enum with text
+// instead of the default message, like z.enum(values, {message}).
+func (s *EnumSchema) Message(text string) *EnumSchema {
+	return &EnumSchema{Values: append([]string(nil), s.Values...), message: text}
+}
 
 func (s *EnumSchema) run(c *ctx, value any, path []any) any {
 	str, ok := value.(string)
@@ -439,6 +448,10 @@ func (s *EnumSchema) run(c *ctx, value any, path []any) any {
 				return value
 			}
 		}
+	}
+	if s.message != "" {
+		c.add("invalid_value", path, s.message, true)
+		return value
 	}
 	if len(s.Values) == 1 {
 		c.add("invalid_value", path, "Invalid input: expected "+Stringify(s.Values[0]), true)

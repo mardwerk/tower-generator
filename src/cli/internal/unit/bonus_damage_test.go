@@ -199,6 +199,17 @@ func TestBonusDamageWire(t *testing.T) {
 	if _, err := unit.DecodeBlueprintOutput(mechanics, &request); err == nil {
 		t.Error("a bonus against Blimp decodes under the Default Profile")
 	}
+	// The wire offers only add, and multiply or set fail at the operation.
+	if !strings.Contains(s.Stringify(schema), `"operation":{"type":"string","enum":["add"]}`) {
+		t.Error("the wire offers another bonus damage operation")
+	}
+	for _, operation := range []string{"multiply", "set"} {
+		value.(*s.Object).Set("bonusDamage", []any{s.NewObject().Set("property", "hardened").Set("operation", operation).Set("value", 2.0)})
+		_, err := unit.DecodeBlueprintOutput(mechanics, &request)
+		if err == nil || !strings.Contains(err.Error(), "paths.path1.tiers.tier4.bonusDamage.0.operation") || !strings.Contains(err.Error(), `Bonus damage only adds: use operation "add"`) {
+			t.Errorf("a %s bonus decodes or fails unclearly: %v", operation, err)
+		}
+	}
 	vocabulary := *request.MechanicsDefinition.Vocabulary
 	vocabulary.BonusDamageProperties = nil
 	definition := *request.MechanicsDefinition
