@@ -99,3 +99,21 @@ func TestJavaScriptCompatibleJSON(t *testing.T) {
 		t.Error("UTF-16 length counts surrogate pairs")
 	}
 }
+
+// A number outside one of its bounds reports that bound; other issues,
+// such as a wrong type or a string that is too long, report none.
+func TestNumberBound(t *testing.T) {
+	schema := StrictObject(F("radius", Number().Positive()), F("percent", Number().Max(100)), F("name", String().Max(3)), F("count", Int()))
+	_, issues := Parse(schema, NewObject().Set("radius", 0.0).Set("percent", 150.0).Set("name", "long").Set("count", "two"))
+	if len(issues) != 4 {
+		t.Fatalf("issues %v", issues)
+	}
+	for i, want := range []struct {
+		ok    bool
+		bound Bound
+	}{{true, Bound{"gt", 0}}, {true, Bound{"lte", 100}}, {false, Bound{}}, {false, Bound{}}} {
+		if bound, ok := issues[i].NumberBound(); ok != want.ok || bound != want.bound {
+			t.Errorf("%s: %v %v", issues[i].PathString(), bound, ok)
+		}
+	}
+}

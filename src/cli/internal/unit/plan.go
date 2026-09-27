@@ -552,10 +552,14 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 		// behavior (capstoneCorrections), after the full-plan retry.
 		third, capstone := behaviorChangeIssues(plan, *request.MechanicsDefinition)
 		feasibility := promiseFeasibilityIssues(plan, *request.MechanicsDefinition)
-		// A targeted correction can fix an unpromised adaptedAs and an
-		// unlisted source technique (planCorrections).
+		// A targeted correction can fix an unpromised adaptedAs, an
+		// unlisted source technique and an unused repertoire entry
+		// (planCorrections).
 		correctable := PlanEffectIssues(plan)
 		if policy != nil {
+			// A targeted correction can also fix a repertoire entry
+			// that no purchase adapts.
+			correctable = append(correctable, RepertoireUseIssues(plan, request)...)
 			feasibility = append(feasibility, PlanTechniqueIssues(plan, *request.MechanicsDefinition)...)
 			ranking, listing := coreConceptIssues(plan, request)
 			feasibility = append(feasibility, ranking...)
