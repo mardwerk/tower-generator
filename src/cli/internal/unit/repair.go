@@ -308,9 +308,14 @@ func TargetedTierRepair(request *Request, previous any, issues []string) (*TierR
 	prompt = append(prompt, s.Stringify(s.NewObject().Set("violations", violations)))
 	return &TierRepair{
 		Request: ModelRequest{System: repairSystem, Prompt: strings.Join(prompt, "\n\n"), Schema: ProviderJSONSchema(schema)},
+		// Apply merges a patch whose only schema issues are numbers
+		// outside their bounds as written, so validating the merged
+		// output reports them at their paths together with the
+		// semantic issues (mechanicsIssues); any other schema issue
+		// rejects the patch.
 		Apply: func(patch any) (*s.Object, error) {
 			replacementValue, issues := s.Parse(schema, patch)
-			if len(issues) > 0 {
+			if _, _, ok := numbersInBounds(patch, issues); len(issues) > 0 && !ok {
 				return nil, &s.Error{Issues: issues}
 			}
 			replacement := replacementValue.(*s.Object)

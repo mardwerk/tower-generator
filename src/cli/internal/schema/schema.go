@@ -14,6 +14,25 @@ type Issue struct {
 	Path    []any  `json:"path"`
 	Message string `json:"message"`
 	abort   bool
+	bound   *Bound
+}
+
+// Bound is the numeric bound a number broke: Op is gt, gte, lt or lte and
+// Limit its value, as in Positive (gt 0) or Max(100) (lte 100).
+type Bound struct {
+	Op    string
+	Limit float64
+}
+
+// NumberBound reports the bound of an issue that says only that a finite
+// number lies outside one of its schema's bounds, such as a radius of 0
+// where the schema requires more than 0. The rest of the value parsed, so
+// only that number is wrong.
+func (i Issue) NumberBound() (Bound, bool) {
+	if i.bound == nil {
+		return Bound{}, false
+	}
+	return *i.bound, true
 }
 
 // PathString joins the path with dots, as the TypeScript implementation did.
@@ -358,22 +377,26 @@ func (s *NumberSchema) run(c *ctx, value any, path []any) any {
 			break
 		}
 		limit := FormatNumber(check.limit)
+		broke := func(code, message string) {
+			c.add(code, path, message, false)
+			c.issues[len(c.issues)-1].bound = &Bound{Op: check.op, Limit: check.limit}
+		}
 		switch check.op {
 		case "gt":
 			if !(f > check.limit) {
-				c.add("too_small", path, "Too small: expected number to be >"+limit, false)
+				broke("too_small", "Too small: expected number to be >"+limit)
 			}
 		case "gte":
 			if !(f >= check.limit) {
-				c.add("too_small", path, "Too small: expected number to be >="+limit, false)
+				broke("too_small", "Too small: expected number to be >="+limit)
 			}
 		case "lt":
 			if !(f < check.limit) {
-				c.add("too_big", path, "Too big: expected number to be <"+limit, false)
+				broke("too_big", "Too big: expected number to be <"+limit)
 			}
 		case "lte":
 			if !(f <= check.limit) {
-				c.add("too_big", path, "Too big: expected number to be <="+limit, false)
+				broke("too_big", "Too big: expected number to be <="+limit)
 			}
 		}
 	}
