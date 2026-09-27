@@ -263,9 +263,11 @@ func shot(attack m.Attack) string {
 	return "pulse"
 }
 
-// followUp describes a bounded follow-up of an attack. Its multiplier,
-// shown as a percentage of the hit damage, scales the hit's ordinary damage; the attack's bonus damage is added to
-// each follow-up hit unscaled.
+// followUp describes a bounded follow-up of the supplied attack: the ordinary
+// attack for a base follow-up, and the Active Ability's boosted attack for a
+// boost follow-up. Its multiplier, shown as a percentage of the hit damage,
+// scales that attack's damage; the attack's bonus damage is added to each
+// follow-up hit unscaled.
 func (sh *sheet) followUp(f m.FollowUp, attack m.Attack) string {
 	inherit := "it applies no statuses"
 	if f.InheritStatuses {
@@ -544,11 +546,13 @@ func (sh *sheet) purchaseEffects(changes []m.Change, before, after m.Build) []st
 			}
 		case "followUp":
 			if change.Target == "boost" {
-				name := "the Active Ability"
+				// A boost follow-up scales the boosted hit, so its damage is
+				// worded from the Active's boosted attack, not the ordinary one.
+				name, attack := "the Active Ability", next
 				if ability := newAbilityOrLast(after); ability != nil {
-					name = ability.Name
+					name, attack = ability.Name, ability.BoostedAttack
 				}
-				out = append(out, "While "+name+" is active, adds "+sh.followUp(*change.FollowUp, next)+".")
+				out = append(out, "While "+name+" is active, adds "+sh.followUp(*change.FollowUp, attack)+".")
 			} else if prior.FollowUp != nil {
 				out = append(out, "Replaces "+prior.FollowUp.Name+" with "+sh.followUp(*change.FollowUp, next)+".")
 			} else {
