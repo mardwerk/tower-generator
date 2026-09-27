@@ -17,6 +17,8 @@ import { Disclosure } from '../../ui/disclosure.js';
 import { Field } from '../../ui/field.js';
 import { Input, Textarea } from '../../ui/input.js';
 import { cn } from '../../ui/utils.js';
+import { DesignPolicyEditor, DesignPolicySummary, type PolicyIssues } from './design-policy.js';
+import { policyErrors } from './policy-fields.js';
 
 /** The server lists the bundled Profiles first, then the saved ones from its Profiles folder. */
 export function useProfiles() {
@@ -60,7 +62,7 @@ function unusedId(base: string, profiles: ProfileEntry[]): string {
 }
 
 /** A saved Profile owns its rules document, named after the Profile. */
-function savedRules(id: string, text: string): UnitProfile['rules'] {
+export function savedRules(id: string, text: string): UnitProfile['rules'] {
   return {
     id: `profile:${id}`,
     kind: 'rules',
@@ -117,7 +119,6 @@ function Facts({ profile }: { profile: UnitProfile }) {
   const facts: [string, string][] = [];
   const mechanics = profile.mechanicsDefinition;
   const scale = mechanics.profile.referenceScale;
-  const policy = mechanics.profile.designPolicy;
   facts.push(['Currency', mechanics.profile.currency]);
   if (scale) {
     facts.push([scale.healthResource, `${scale.startingHealth} to start`]);
@@ -132,11 +133,6 @@ function Facts({ profile }: { profile: UnitProfile }) {
     'Changes per upgrade',
     `${mechanics.profile.earlyTierMaxChanges} early, ${mechanics.profile.maxChangesPerTier} later`,
   ]);
-  if (policy)
-    facts.push([
-      'Manual boost',
-      policy.manualAbilityPath ? `${policy.manualAbilityPath} only` : 'not allowed',
-    ]);
   return (
     <dl className="my-4 grid gap-x-6 gap-y-2.5 text-[13px] sm:grid-cols-[max-content_1fr]">
       {facts.map(([term, value]) => (
@@ -254,6 +250,34 @@ function VocabularyFacts({ vocabulary, ceiling }: { vocabulary: Vocabulary; ceil
   );
 }
 
+/** The Profile the editor's fields describe, or the problem that prevents saving it. */
+export function editedProfile(form: {
+  id: string;
+  name: string;
+  task: string;
+  rules: string;
+  definition: string;
+}): UnitProfile | string {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(form.definition);
+  } catch {
+    return 'The mechanics Definition must be valid JSON.';
+  }
+  const id = form.id.trim();
+  // A Profile's contract version follows its Definition's version.
+  const version = (parsed as { version?: unknown } | null)?.version === '2' ? '2' : '1';
+  return {
+    schemaVersion: version,
+    kind: 'profile',
+    id,
+    name: form.name,
+    task: form.task,
+    rules: savedRules(id, form.rules),
+    mechanicsDefinition: parsed,
+  } as UnitProfile;
+}
+
 function ProfileEditor({
   initial,
   isNew,
@@ -273,32 +297,29 @@ function ProfileEditor({
     JSON.stringify(initial.mechanicsDefinition, null, 2),
   );
   const [error, setError] = useState('');
+  const [issues, setIssues] = useState<PolicyIssues>({});
   const [saving, setSaving] = useState(false);
   async function save() {
     setError('');
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(definition);
-    } catch {
-      setError('The mechanics Definition must be valid JSON.');
+    setIssues({});
+    const profile = editedProfile({ id, name, task, rules, definition });
+    if (typeof profile === 'string') {
+      setError(profile);
       return;
     }
-    // A Profile's contract version follows its Definition's version.
-    const version = (parsed as { version?: unknown } | null)?.version === '2' ? '2' : '1';
-    const profile = {
-      schemaVersion: version,
-      kind: 'profile',
-      id: id.trim(),
-      name,
-      task,
-      rules: savedRules(id.trim(), rules),
-      mechanicsDefinition: parsed,
-    } as UnitProfile;
     setSaving(true);
     try {
       await onSave(profile);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : String(reason));
+      // Errors about a design policy field show beside its control; the rest stay here.
+      const { fields, rest } = policyErrors(
+        reason instanceof Error ? reason.message : String(reason),
+      );
+      setIssues(fields);
+      setError(
+        rest.join('\n') ||
+          (Object.keys(fields).length ? 'Fix the design policy fields marked above.' : ''),
+      );
     } finally {
       setSaving(false);
     }
@@ -324,13 +345,24 @@ function ProfileEditor({
         <Field label="Rules text">
           <Textarea rows={10} value={rules} onChange={(e) => setRules(e.target.value)} required />
         </Field>
+        <DesignPolicyEditor
+          definition={definition}
+          issues={issues}
+          onChange={(next, key) => {
+            setDefinition(next);
+            setIssues(({ [key]: _, ...others }) => others);
+          }}
+        />
         <Field label="Mechanics Definition (JSON)">
           <Textarea
             className="font-mono text-xs"
             rows={12}
             spellCheck={false}
             value={definition}
-            onChange={(e) => setDefinition(e.target.value)}
+            onChange={(e) => {
+              setDefinition(e.target.value);
+              setIssues({});
+            }}
           />
         </Field>
         <p className="text-xs text-muted-foreground">
@@ -460,6 +492,9 @@ export function ProfilesView({
               </p>
               <ProgressionGrid progression={shown.progression} />
               <Facts profile={shown.profile} />
+              <DesignPolicySummary
+                policy={shown.profile.mechanicsDefinition.profile.designPolicy}
+              />
               {shown.profile.mechanicsDefinition.vocabulary && (
                 <VocabularyFacts
                   vocabulary={shown.profile.mechanicsDefinition.vocabulary}

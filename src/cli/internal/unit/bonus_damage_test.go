@@ -32,7 +32,7 @@ func TestDefaultProfileListsOnlyHardenedForBonusDamage(t *testing.T) {
 			t.Errorf("%s cannot hurt Hardened", damageType.ID)
 		}
 	}
-	if profile.Rules.ID != "default-td-profile-v22" || profile.MechanicsDefinition.Revision != "2026-09-27-atlas-56.3-v22" {
+	if profile.Rules.ID != "default-td-profile-v22" || profile.MechanicsDefinition.Revision != "2026-09-26-atlas-56.3-v22" {
 		t.Errorf("rules %s, Definition %s", profile.Rules.ID, profile.MechanicsDefinition.Revision)
 	}
 	for _, want := range []string{
