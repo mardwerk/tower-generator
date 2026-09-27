@@ -77,3 +77,48 @@ func PlanEffectIssues(plan DesignPlan) []m.Issue {
 	}
 	return issues
 }
+
+// PromisesWithoutEffect lists what one planned purchase improves or unlocks
+// that no effect of its own technique adapts, matched as PlanEffectIssues
+// matches them (promiseMatches). PlanEffectIssues checks the other
+// direction, and a plan gate on this one would reject nearly every saved
+// Luffy plan and the reference fixture (#57: 81 of 436 promises on technique
+// purchases), so it is review context, not a finding: Sol's x-x-5 promised
+// range from a Gear 4 Tankman entry whose one effect is adapted as damage,
+// attack rate and knockback. A tradeoff in lowers is not credited to the
+// technique and is left out. ok is false for a purchase that adapts the base
+// attack, whose early stat steps are ordinary adaptations the review judges
+// against 0-0-0, and when code cannot tell: the plan predates techniques or
+// effects, or the purchase's technique names no repertoire entry.
+func PromisesWithoutEffect(plan DesignPlan, pathIndex, tier int) (missing []string, ok bool) {
+	if plan.UpgradeIntents == nil {
+		return nil, false
+	}
+	intent := plan.UpgradeIntents.At(pathIndex).At(tier)
+	withEffects := false
+	var entry *PlanRepertoire
+	for index := range plan.Repertoire {
+		withEffects = withEffects || len(plan.Repertoire[index].Effects) > 0
+		if entry == nil && sameTechnique(plan.Repertoire[index].Name, intent.Technique) {
+			entry = &plan.Repertoire[index]
+		}
+	}
+	if strings.TrimSpace(intent.Technique) == "" || entry == nil || !withEffects || sameTechnique(intent.Technique, plan.Base.Name) {
+		return nil, false
+	}
+	promised := append([]string{}, intent.Improves...)
+	if intent.Unlock != "" && intent.Unlock != "none" {
+		promised = append(promised, intent.Unlock)
+	}
+	missing = []string{}
+	for _, promise := range promised {
+		adapted := false
+		for _, effect := range entry.Effects {
+			adapted = adapted || slices.ContainsFunc(effect.AdaptedAs, func(id string) bool { return promiseMatches(id, promise) })
+		}
+		if !adapted && !slices.Contains(missing, promise) {
+			missing = append(missing, promise)
+		}
+	}
+	return missing, true
+}
