@@ -40,10 +40,12 @@ func TestReviewAsksForAVerdictPerOmissionAndThirdPurchase(t *testing.T) {
 		`"proposals":[]}`,
 		"Give at most eight useful findings; the verdicts on omissions, third and fifth purchases and proposed mechanics are apart from them, and the findings go to issues the verdicts do not cover.",
 		"give one verdict on each subject requiredVerdicts lists, and no other",
-		"could adapt the technique's central effect, as the omission rule says, not whether some aspect of it is unsupported",
-		"whether its importance is plausible against the passages its sourceTechnique cites",
+		"its reason names the technique's central effect from the passages its sourceTechnique cites, judges whether a supported typed change or a proposed mechanic on a purchase could adapt that effect, as the omission rule says, not whether a literal detail or another aspect of it is unsupported",
+		"says exactly what the Unit already covers of that effect, naming each purchase by build code with its change as changeScope lists it, and what is still absent",
+		"fail a whole omission whose central effect a typed change or a proposed mechanic could carry",
+		"the core ranking beside it, against the passages its sourceTechnique cites and the character's identity",
 		"comparing it with its own path's first and second purchases and with the other paths' purchases",
-		unit.OmissionRule,
+		unit.OmissionRule + " " + unit.OmittedNameRule,
 	} {
 		if !strings.Contains(request.Prompt, want) {
 			t.Errorf("the review prompt lacks %q", want)

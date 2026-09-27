@@ -528,24 +528,49 @@ func TestReviewGetsTheNamingEvidenceForSoru(t *testing.T) {
 // subject requiredVerdicts lists. It is not a model's judgment.
 func scriptedLuffyV38Review(t *testing.T, checked unit.Checked, required ...any) *s.Object {
 	t.Helper()
+	return scriptedReview(t, checked, nil, required)
+}
+
+// scriptedReview is a scripted review of a checked draft: the given
+// omission verdicts, by technique, and required concept verdicts, a pass on
+// every other omission and on every third and fifth purchase
+// requiredVerdicts lists, and an unresolved verdict on every proposal. A
+// Request without required concepts gets no requiredConceptVerdicts. It is
+// not a model's judgment.
+func scriptedReview(t *testing.T, checked unit.Checked, omissions map[string]*s.Object, required []any) *s.Object {
+	t.Helper()
 	_, context := reviewContext(t, checked)
-	verdicts := at(context, "requiredVerdicts")
-	pass := func(key, field string, subject any) *s.Object {
-		return s.NewObject().Set(key, at(subject, field)).Set("outcome", "pass").Set("reason", "Scripted.").Set("action", nil).Set("evidence", []any{})
+	verdicts := at(context, "requiredVerdicts").(*s.Object)
+	verdict := func(key, field, outcome string, subject any) *s.Object {
+		return s.NewObject().Set(key, at(subject, field)).Set("outcome", outcome).Set("reason", "Scripted.").Set("action", nil).Set("evidence", []any{})
 	}
 	list := func(name, key, field string) []any {
 		out := []any{}
 		for _, subject := range at(verdicts, name).([]any) {
-			out = append(out, pass(key, field, subject))
+			out = append(out, verdict(key, field, "pass", subject))
 		}
 		return out
 	}
-	return s.NewObject().Set("summary", "Scripted review.").Set("findings", []any{}).
-		Set("omissionVerdicts", list("omissions", "technique", "technique")).
-		Set("requiredConceptVerdicts", required).
-		Set("thirdPurchaseVerdicts", list("thirdPurchases", "build", "build")).
+	omitted := []any{}
+	for _, subject := range at(verdicts, "omissions").([]any) {
+		if given, ok := omissions[at(subject, "technique").(string)]; ok {
+			omitted = append(omitted, given)
+		} else {
+			omitted = append(omitted, verdict("technique", "technique", "pass", subject))
+		}
+	}
+	proposals := []any{}
+	for _, subject := range at(verdicts, "proposals").([]any) {
+		proposals = append(proposals, verdict("build", "build", "unresolved", subject).Set("proposal", at(subject, "proposal")))
+	}
+	review := s.NewObject().Set("summary", "Scripted review.").Set("findings", []any{}).
+		Set("omissionVerdicts", omitted)
+	if verdicts.Has("requiredConcepts") {
+		review.Set("requiredConceptVerdicts", required)
+	}
+	return review.Set("thirdPurchaseVerdicts", list("thirdPurchases", "build", "build")).
 		Set("fifthPurchaseVerdicts", list("fifthPurchases", "build", "build")).
-		Set("proposalVerdicts", []any{})
+		Set("proposalVerdicts", proposals)
 }
 
 // A fail verdict on a required form that its purchases carry only with

@@ -20,10 +20,18 @@ func luffyV36Checked(t *testing.T) unit.Checked {
 }
 
 // luffyChecked is a saved Luffy Result of one Default revision as a checked
-// draft: its retained plan and blueprint (testdata/luffy-<revision>.*.json),
-// prepared from the same Sources under the Default with the given required
-// concepts, compiled and evaluated again.
+// draft (savedChecked).
 func luffyChecked(t *testing.T, revision string, run unit.Run, required ...string) unit.Checked {
+	t.Helper()
+	return savedChecked(t, "luffy", revision, run, required...)
+}
+
+// savedChecked is a saved Result of one character and Default revision as a
+// checked draft: its retained plan and blueprint
+// (testdata/<character>-<revision>.*.json), prepared from the same Sources
+// (testdata/<character>.sources.json) under the Default with the given
+// required concepts, compiled and evaluated again.
+func savedChecked(t *testing.T, character, revision string, run unit.Run, required ...string) unit.Checked {
 	t.Helper()
 	decode := func(name string) any {
 		data, err := os.ReadFile("testdata/" + name)
@@ -36,7 +44,7 @@ func luffyChecked(t *testing.T, revision string, run unit.Run, required ...strin
 		}
 		return value
 	}
-	sources, err := research.ParseSources(decode("luffy.sources.json"))
+	sources, err := research.ParseSources(decode(character + ".sources.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,11 +59,11 @@ func luffyChecked(t *testing.T, revision string, run unit.Run, required ...strin
 	}
 	definition := *prepared.Request.MechanicsDefinition
 	var plan unit.DesignPlan
-	if err := s.ParseInto(unit.DesignPlanSchemaV2, decode("luffy-"+revision+".plan.json"), &plan); err != nil {
+	if err := s.ParseInto(unit.DesignPlanSchemaV2, decode(character+"-"+revision+".plan.json"), &plan); err != nil {
 		t.Fatal(err)
 	}
 	var blueprint mechanics.Blueprint
-	if err := s.ParseInto(mechanics.BlueprintSchemaFor(definition), decode("luffy-"+revision+".blueprint.json"), &blueprint); err != nil {
+	if err := s.ParseInto(mechanics.BlueprintSchemaFor(definition), decode(character+"-"+revision+".blueprint.json"), &blueprint); err != nil {
 		t.Fatal(err)
 	}
 	candidate, err := unit.CompileBlueprint(blueprint, prepared.Request)
