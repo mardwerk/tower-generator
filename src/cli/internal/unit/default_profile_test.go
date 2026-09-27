@@ -59,7 +59,7 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 		}
 	}
 	for _, derived := range []string{
-		"Only the middle path may have a player-activated ability, first at x-4-x.",
+		"Only the middle path may have an Active Ability, first at x-4-x; the other paths stay automatic.",
 		"A Unit buys at most 2 paths, and at most 1 of them beyond its second purchase; 3-3-0 and 1-1-1 are illegal. Code resolves the 12 early and 36 advanced crosspath builds",
 	} {
 		if !strings.Contains(plan.Prompt, derived) {
@@ -235,7 +235,7 @@ func TestThirdPurchaseBehaviorIsAnOptInGate(t *testing.T) {
 	if _, err := unit.DecodeDesignPlan(statOnly, &prepared.Request); err != nil {
 		t.Fatalf("the Default Profile rejected a stat-only third purchase: %v", err)
 	}
-	if request, _ := unit.DesignPlanRequest(prepared); strings.Contains(request.Prompt, "This Profile requires the third purchase") {
+	if request, _ := unit.DesignPlanRequest(prepared); strings.Contains(request.Prompt, m.BehaviorChangeRule(3)) {
 		t.Error("the Default Profile's plan prompt requires a third-purchase behavior")
 	}
 	optIn := prepared.Request
@@ -249,7 +249,7 @@ func TestThirdPurchaseBehaviorIsAnOptInGate(t *testing.T) {
 		plan := recordedOutput(t, "plan")
 		at(plan, "paths", "path3", "milestones", "tier3").(*s.Object).Set("improves", []any{"damage", "range"}).Set("unlock", unlock)
 		_, err := unit.DecodeDesignPlan(plan, &optIn)
-		if got := err != nil && strings.Contains(err.Error(), "x-x-3 must add a supported behavior or access"); got != rejected {
+		if got := err != nil && strings.Contains(err.Error(), "x-x-3 promises no new behavior or access. "+m.BehaviorChangeRule(3)); got != rejected {
 			t.Errorf("opt-in, unlock %s: %v", unlock, err)
 		}
 	}
@@ -266,7 +266,7 @@ func TestEarlyPurchasesCannotPromiseProjectiles(t *testing.T) {
 	plan := recordedOutput(t, "plan")
 	at(plan, "paths", "path1", "milestones", "tier2").(*s.Object).Set("improves", []any{"pierce", "projectiles"})
 	_, err = unit.DecodeDesignPlan(plan, &prepared.Request)
-	if err == nil || !strings.Contains(err.Error(), "2-x-x cannot promise projectiles") {
+	if err == nil || !strings.Contains(err.Error(), "2-x-x promises projectiles. "+m.EarlyIdentityRule(prepared.Request.MechanicsDefinition)) {
 		t.Errorf("an early projectiles promise was accepted: %v", err)
 	}
 	schema := s.Stringify(s.JSONSchema(unit.PurchasePlanOutputSchema(&prepared.Request)))
@@ -428,7 +428,7 @@ func TestPlanPromptDerivesTheActiveSlotFromTheDefinition(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(request.Prompt, "Only the bottom path may have a player-activated ability, first at x-x-4.") || strings.Contains(request.Prompt, "middle path may have a player-activated") || strings.Contains(request.Prompt, "middle path's Active Ability") {
+	if !strings.Contains(request.Prompt, "Only the bottom path may have an Active Ability, first at x-x-4; the other paths stay automatic.") || strings.Contains(request.Prompt, "middle path may have an Active Ability") || strings.Contains(request.Prompt, "middle path's Active Ability") {
 		t.Error("the plan prompt does not follow the Definition's manualAbilityPath")
 	}
 }
@@ -487,7 +487,7 @@ func TestPlanPromptKeepsAFormConsistentWithItsActive(t *testing.T) {
 			paragraph = p
 		}
 	}
-	if !strings.HasPrefix(paragraph, "Only the middle path may have a player-activated ability, first at x-4-x.") {
+	if !strings.HasPrefix(paragraph, "Only the middle path may have an Active Ability, first at x-4-x; the other paths stay automatic. A targeting choice is not an activation.") {
 		t.Errorf("the form sentence is outside the Active paragraph: %q", paragraph)
 	}
 }
@@ -497,7 +497,7 @@ func TestPlanPromptAppliesEarlyIdentityOnlyWhenSelected(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	const line = "The first and second purchase preserve the existing attack"
+	line := m.EarlyIdentityRule(prepared.Request.MechanicsDefinition)
 	withPolicy, err := unit.DesignPlanRequest(prepared)
 	if err != nil || !strings.Contains(withPolicy.Prompt, line) {
 		t.Fatalf("early-identity guidance missing: %v", err)
@@ -519,7 +519,7 @@ func TestPlanPromptStatesDistinctEarlyPurchasesOnlyWhenSelected(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	line := unit.EarlyBenefitsRule
+	line := m.EarlyBenefitsRule
 	withPolicy, err := unit.DesignPlanRequest(prepared)
 	if err != nil || !strings.Contains(withPolicy.Prompt, line) {
 		t.Fatalf("distinct early guidance missing: %v", err)
