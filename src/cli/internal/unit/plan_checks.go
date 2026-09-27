@@ -413,8 +413,10 @@ func unlockedIntent(before, after m.Build, intent string, pathIndex, tier int, b
 	case "camo":
 		return !a.Camo && b.Camo
 	case "distinct-volley":
-		// Distinct targets change nothing for a single projectile.
-		return a.Distribution != "distinct-targets" && b.Distribution == "distinct-targets" && b.Stats.Projectiles > 1
+		// Distinct targets change nothing for a single projectile, so an
+		// attack becomes a distinct volley when it first has both, whichever
+		// purchase adds the second (SOL-81-01).
+		return !distinctVolley(a) && distinctVolley(b)
 	case "splash":
 		return a.Stats.SplashRadius == 0 && b.Stats.SplashRadius > 0
 	case "slow":
@@ -585,4 +587,10 @@ func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition
 		out[i] = found[id]
 	}
 	return out
+}
+
+// distinctVolley reports an attack that aims more than one projectile at
+// distinct targets.
+func distinctVolley(a m.Attack) bool {
+	return a.Distribution == "distinct-targets" && a.Stats.Projectiles > 1
 }

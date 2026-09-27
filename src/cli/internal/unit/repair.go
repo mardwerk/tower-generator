@@ -279,33 +279,11 @@ func TargetedTierRepair(request *Request, previous any, issues []string) (*TierR
 	for i, k := range dependent.keys {
 		dependentList[i] = k
 	}
-	context := s.NewObject().
-		Set("character", s.FromGoValue(request.Character)).
-		Set("task", request.Task).
-		Set("constraints", s.FromGoValue(request.Constraints))
-	if request.MechanicsDefinition != nil {
-		context.Set("definition", s.FromGoValue(request.MechanicsDefinition))
-	}
-	context.
-		Set("feedback", nullableString(request.Feedback)).
-		Set("previousFindings", previousFindings(request)).
-		Set("previous", parsed).
-		Set("evidenceSpans", s.FromGoValue(AuthorEvidence(request))).
-		Set("resolvedCapstoneChecks", WireRepairContext(parsed, request)).
+	context := repairContext(request, parsed).
 		Set("dependentCapstones", dependentList).
 		Set("effectSubsetChoices", subsetChoices)
-	violations := make([]any, len(issues))
-	for i, issue := range issues {
-		violations[i] = issue
-	}
-	budget := repairBudget
-	if isV2(request) {
-		budget = repairBudgetV2
-	}
-	prompt := []string{repairScope, s.Stringify(context), budget, CountArithmeticGuidance, repairCapstone, draftPromises}
-	prompt = append(prompt, VocabularyGuidance(request)...)
-	prompt = append(prompt, DesignGuidance(request)...)
-	prompt = append(prompt, s.Stringify(s.NewObject().Set("violations", violations)))
+	prompt := append([]string{repairScope, s.Stringify(context)}, repairGuidance(request)...)
+	prompt = append(prompt, s.Stringify(s.NewObject().Set("violations", stringList(issues))))
 	return &TierRepair{
 		Request: ModelRequest{System: repairSystem, Prompt: strings.Join(prompt, "\n\n"), Schema: ProviderJSONSchema(schema)},
 		// Apply merges a patch whose only schema issues are numbers
@@ -338,6 +316,38 @@ func TargetedTierRepair(request *Request, previous any, issues []string) (*TierR
 			return merged, nil
 		},
 	}, nil
+}
+
+// repairContext is what a tier repair reads besides its scope: the request's
+// character, task, constraints and Definition, the previous output as parsed,
+// the source passages and the resolved capstone checks.
+func repairContext(request *Request, parsed *s.Object) *s.Object {
+	context := s.NewObject().
+		Set("character", s.FromGoValue(request.Character)).
+		Set("task", request.Task).
+		Set("constraints", s.FromGoValue(request.Constraints))
+	if request.MechanicsDefinition != nil {
+		context.Set("definition", s.FromGoValue(request.MechanicsDefinition))
+	}
+	return context.
+		Set("feedback", nullableString(request.Feedback)).
+		Set("previousFindings", previousFindings(request)).
+		Set("previous", parsed).
+		Set("evidenceSpans", s.FromGoValue(AuthorEvidence(request))).
+		Set("resolvedCapstoneChecks", WireRepairContext(parsed, request))
+}
+
+// repairGuidance is the guidance every tier repair follows: the effect
+// budget, count arithmetic, capstone evidence, plan promises, the
+// Definition's vocabulary and its design policy.
+func repairGuidance(request *Request) []string {
+	budget := repairBudget
+	if isV2(request) {
+		budget = repairBudgetV2
+	}
+	guidance := []string{budget, CountArithmeticGuidance, repairCapstone, draftPromises}
+	guidance = append(guidance, VocabularyGuidance(request)...)
+	return append(guidance, DesignGuidance(request)...)
 }
 
 // CapstoneRepairContext is arithmetic evidence for a repair, never an

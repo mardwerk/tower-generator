@@ -48,3 +48,9 @@ func MechanicsIssues(output any, request *Request, plan DesignPlan) ([]string, b
 	}
 	return issues, valid
 }
+
+// LocalRepair is the local repair of a bound mechanics output with these
+// issues, or nil when none applies.
+func LocalRepair(request *Request, previous any, issues []string) (*TierRepair, error) {
+	return localRepairFor(request, previous, issues)
+}
