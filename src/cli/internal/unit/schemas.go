@@ -141,6 +141,7 @@ var (
 			s.F("findings", s.Array(FindingSchema)),
 		))),
 		s.F("feedback", s.Nullable(text())),
+		s.F("sourceTechniques", s.Optional(s.Array(SourceTechniqueSchema))),
 	)
 	PreparedSchema = s.StrictObject(
 		s.F("schemaVersion", version),

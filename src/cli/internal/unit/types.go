@@ -88,6 +88,10 @@ type Request struct {
 	MechanicsDefinition *mechanics.Definition `json:"mechanicsDefinition,omitempty"`
 	Previous            *Previous             `json:"previous"`
 	Feedback            *string               `json:"feedback"`
+	// SourceTechniques is derived by prepare. Its presence marks passages
+	// that carry their source section; a request without it keeps the
+	// earlier passages.
+	SourceTechniques *[]SourceTechnique `json:"sourceTechniques,omitempty"`
 }
 
 // Finding is one check or review result.

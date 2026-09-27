@@ -60,3 +60,58 @@ func TestTechniqueDescriptionsKeepBehaviorAndOmitOtherUsers(t *testing.T) {
 		t.Errorf("bounded %v", bounded != nil)
 	}
 }
+
+func TestPowerSectionsLeadToTheirTechniquePages(t *testing.T) {
+	links := linkedTechniques(escanorHTML, escanorPage, "Escanor")
+	var leads []string
+	for _, link := range links {
+		if link.lead {
+			leads = append(leads, link.title)
+		}
+	}
+	// Sunshine has no attack-family word; the Power Level link to it is not
+	// a lead, and Merlin's bold link sits in Relationships.
+	if strings.Join(leads, ", ") != "Sunshine, Rhitta" || strings.Contains(titles(links), "Merlin") {
+		t.Fatalf("leads %v links %s", leads, titles(links))
+	}
+	followed := followedTechniques(links)
+	if titles(followed) != "Sunshine, Rhitta" || strings.Join(followed[0].headings, " > ") != "Abilities and Equipment > Abilities" {
+		t.Errorf("followed %s", titles(followed))
+	}
+	// A "Further information" link may name a subpage; the deepest sections
+	// come first and at most four pages are followed.
+	luffy := `<div class="mw-parser-output"><h2>Devil Fruit</h2><dl><dd><i>Further information: <a href="/wiki/Gomu_Gomu_no_Mi">Gomu Gomu no Mi</a></i></dd></dl>
+<h3>Gear 2</h3><dl><dd><i>Further information: <a href="/wiki/Gomu_Gomu_no_Mi/Gear_2_Techniques">Gomu Gomu no Mi/Gear 2 Techniques</a></i></dd></dl>
+<h3>Gear 3</h3><dl><dd><i>Further information: <a href="/wiki/Gomu_Gomu_no_Mi/Gear_3_Techniques">Gomu Gomu no Mi/Gear 3 Techniques</a></i></dd></dl>
+<h3>Gear 4</h3><dl><dd><i>Further information: <a href="/wiki/Gomu_Gomu_no_Mi/Gear_4_Techniques">Gomu Gomu no Mi/Gear 4 Techniques</a></i></dd></dl>
+<h3>Gear 5</h3><dl><dd><i>Further information: <a href="/wiki/Gomu_Gomu_no_Mi/Gear_5_Techniques">Gomu Gomu no Mi/Gear 5 Techniques</a></i></dd></dl>
+<p>See <a href="/wiki/Monkey_D._Luffy/History">his history</a> and <a href="/wiki/Other/Subpage">a subpage</a>.</p>
+<h2>Haki</h2><dl><dd><i>Further information: <a href="/wiki/Haki">Haki</a></i></dd></dl></div>`
+	chosen := followedTechniques(linkedTechniques(luffy, mustURL(luffyPage.String()+"/Abilities_and_Powers"), "Monkey D. Luffy"))
+	if got := titles(chosen); got != "Gomu Gomu no Mi/Gear 2 Techniques, Gomu Gomu no Mi/Gear 3 Techniques, Gomu Gomu no Mi/Gear 4 Techniques, Gomu Gomu no Mi/Gear 5 Techniques" {
+		t.Errorf("chosen %s", got)
+	}
+}
+
+func TestTechniquePagesKeepTheCharactersOwnEntries(t *testing.T) {
+	link := followedTechniques(linkedTechniques(escanorHTML, escanorPage, "Escanor"))[0]
+	source := techniqueSource(`<div class="mw-parser-output"><p>Sunshine is one of the four Graces created by the Supreme Deity.</p>
+<h2>Description</h2><h3>Escanor</h3><p>Starting from sunrise, Escanor's power increases and he grows larger.</p>
+<h3>Mael</h3><p>MAEL EXCLUDED: Mael does not undergo any physical change.</p>
+<h2>Techniques</h2><h3>Escanor</h3>
+<ul><li><b>Cruel Sun</b>: Escanor creates a miniature Sun that melts nearby armor.
+<ul><li><b>Pride Flare</b>: Escanor causes his Cruel Sun to flare with intense heat.</li></ul></li></ul>
+<h3>Mael</h3><ul><li><b>Greatest Sun</b>: MAEL EXCLUDED: Mael creates a huge miniature sun.</li></ul>
+<h2>Trivia</h2><p>TRIVIA EXCLUDED: an unrelated trivia item about the anime.</p></div>`, link)
+	if source == nil {
+		t.Fatal("no source")
+	}
+	for _, want := range []string{"Sunshine: Sunshine is one of the four Graces", "Sunshine: Starting from sunrise", "Sunshine: Cruel Sun: Escanor creates a miniature Sun that melts nearby armor.", "Sunshine: Pride Flare: Escanor causes"} {
+		if !strings.Contains(source.Text, want) {
+			t.Errorf("missing %q in %q", want, source.Text)
+		}
+	}
+	if strings.Contains(source.Text, "EXCLUDED") || !strings.Contains(source.Text, "Section: Abilities and Equipment > Abilities") {
+		t.Errorf("text %q", source.Text)
+	}
+}

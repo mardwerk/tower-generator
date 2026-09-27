@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
+	"github.com/mardwerk/unit-generator/src/cli/internal/unit"
 )
 
 var luffyLookup = visualLookup{name: "Monkey D. Luffy", articleTitle: "Monkey D. Luffy", wikidataID: "Q477948"}
@@ -337,7 +339,7 @@ func TestReusedArticleTextPrioritizesAbilities(t *testing.T) {
     <figure><p>IMAGE CAPTION EXCLUDED</p></figure>
     <h2>References</h2><ol class="references"><li>REFERENCE EXCLUDED CONTENT</li></ol>
     <script>UNTRUSTED SCRIPT</script></div>`
-	document := fandomSource(html, luffyPage, luffyLookup.name, time.Now())
+	document := fandomSource(html, luffyPage, luffyLookup.name, time.Now(), wikidataIdentity)
 	if document == nil || !strings.HasPrefix(document.Text, "Luffy is a pirate") || !strings.Contains(document.Text, "stretches his arms to punch") || !strings.Contains(document.Text, "pirate with an elastic body") ||
 		regexp.MustCompile(`EXCLUDED|SCRIPT`).MatchString(document.Text) || document.Origin.Location != luffyPage.String() || !strings.Contains(*document.Origin.Note, "fan-maintained secondary source") {
 		t.Fatalf("document %+v", document)
@@ -346,7 +348,7 @@ func TestReusedArticleTextPrioritizesAbilities(t *testing.T) {
 		page *url.URL
 		name string
 	}{{mustURL(luffyPage.String() + "/Gallery"), luffyLookup.name}, {luffyPage, "Other Character"}, {mustURL("https://evil.test/wiki/Monkey_D._Luffy"), luffyLookup.name}} {
-		if fandomSource(html, c.page, c.name, time.Now()) != nil {
+		if fandomSource(html, c.page, c.name, time.Now(), wikidataIdentity) != nil {
 			t.Errorf("%s %s accepted", c.page, c.name)
 		}
 	}
@@ -354,7 +356,7 @@ func TestReusedArticleTextPrioritizesAbilities(t *testing.T) {
 	for i := range 100 {
 		long += fmt.Sprintf("<p>Attack %d: Luffy extends a rubber punch. %s</p>", i, strings.Repeat("Repeated source detail. ", 20))
 	}
-	capped := fandomSource(long+"</div>", mustURL(luffyPage.String()+"/Abilities_and_Powers"), luffyLookup.name, time.Now())
+	capped := fandomSource(long+"</div>", mustURL(luffyPage.String()+"/Abilities_and_Powers"), luffyLookup.name, time.Now(), wikidataIdentity)
 	if capped == nil || s.UTF16Len(capped.Text) > 24000 || !strings.Contains(capped.Text, "Attack 0") || !strings.Contains(*capped.Origin.Note, "capped at 24000") {
 		t.Errorf("capped %v", capped != nil)
 	}
@@ -373,8 +375,8 @@ func TestCappedAbilityPagesKeepEverySection(t *testing.T) {
 		`<h3>Gear Second</h3><p>Gear Second pumps his blood faster for speed.</p>` + filler("Gear Second", 20) +
 		`<h3>Gear Third</h3><p>Gear Third inflates his bones into giant limbs.</p>` +
 		`<h2>Haki</h2><p>Luffy uses Armament Haki to hit Logia users.</p></div>`
-	document := fandomSource(html, mustURL(luffyPage.String()+"/Abilities_and_Powers"), luffyLookup.name, time.Now())
-	if document == nil || s.UTF16Len(document.Text) > 24000 || !strings.Contains(*document.Origin.Note, "the section with the least text") {
+	document := fandomSource(html, mustURL(luffyPage.String()+"/Abilities_and_Powers"), luffyLookup.name, time.Now(), wikidataIdentity)
+	if document == nil || s.UTF16Len(document.Text) > 24000 || !strings.Contains(*document.Origin.Note, "the section of its rank with the least text") {
 		t.Fatalf("document %v", document != nil)
 	}
 	order := []string{"Overview 0:", "Gomu Gomu no Mi", "blood faster", "Gear Second 0:", "giant limbs", "Armament Haki"}
@@ -459,5 +461,201 @@ func TestTechniqueEnrichmentStaysBounded(t *testing.T) {
 	if len(result.references) == 0 || len(result.documents) != 3 || !strings.Contains(result.documents[0].Text, "cutting water blade") || !strings.Contains(result.documents[0].Text, "Former") ||
 		!strings.Contains(strings.Join(result.notes, " "), "linked technique descriptions were unavailable") {
 		t.Errorf("documents %d %v", len(result.documents), result.notes)
+	}
+}
+
+const wikidataIdentity = "Identity matched through Wikidata and the character page name."
+
+// escanorHTML is shaped like Escanor's character wiki page: his forms are
+// list entries with nested entries, and his magic and axe are bold links.
+const escanorHTML = `<div class="mw-parser-output">
+<p>Escanor is the Lion's Sin of Pride. His Sacred Treasure is the Divine Axe, Rhitta, and his Magical Power is called Sunshine.</p>
+<h2>Personality</h2><p>PERSONALITY EXCLUDED CONTENT about his shyness.</p>
+<h2>Abilities and Equipment</h2><p>Escanor has been described as the strongest member of the Seven Deadly Sins.</p>
+<h3>Abilities</h3>
+<p><b><a href="/wiki/Sunshine" title="Sunshine">Sunshine</a></b>: Escanor's ability is one of duality, weakest at midnight and strongest at noon.</p>
+<ul><li><b>Daytime</b>: Beginning with the rising of the Sun, Escanor grows much taller and radiates intense heat.
+<ul><li><b>Super Slash</b>: Escanor delivers a powerful downwards slash with his axe.</li></ul></li>
+<li><b>Night-time</b>: With the setting of the Sun, Escanor returns to his original, skittish self.</li>
+<li><b>The One</b>: During noon, for one minute he becomes the manifestation of power itself.
+<ul><li><b>The One: Ultimate</b>: Escanor converts his own life force into magic power.</li></ul></li></ul>
+<h3>Weapons</h3>
+<ul><li><b><a href="/wiki/Rhitta" title="Rhitta">Rhitta</a></b>: A giant, ornamental axe that stores the heat Escanor radiates.</li></ul>
+<h3>Power Level</h3><p>Due to his <a href="/wiki/Sunshine" title="Sunshine">power</a>, his power level constantly fluctuates.</p>
+<h2>Relationships</h2><p><b><a href="/wiki/Merlin" title="Merlin">Merlin</a></b>: RELATIONSHIP EXCLUDED CONTENT.</p>
+</div>`
+
+var escanorPage = mustURL("https://nanatsu-no-taizai.fandom.com/wiki/Escanor")
+
+func TestNestedListEntriesKeepTheirOwnText(t *testing.T) {
+	document := fandomSource(escanorHTML, escanorPage, "Escanor", time.Now(), wikidataIdentity)
+	if document == nil {
+		t.Fatal("no document")
+	}
+	passages := strings.Split(document.Text, "\n\n")
+	for _, want := range []string{
+		"Abilities and Equipment\nAbilities\nDaytime: Beginning with the rising of the Sun, Escanor grows much taller and radiates intense heat.",
+		"Abilities and Equipment\nAbilities\nSuper Slash: Escanor delivers a powerful downwards slash with his axe.",
+		"Abilities and Equipment\nAbilities\nNight-time: With the setting of the Sun, Escanor returns to his original, skittish self.",
+		"Abilities and Equipment\nAbilities\nThe One: During noon, for one minute he becomes the manifestation of power itself.",
+		"Abilities and Equipment\nAbilities\nThe One: Ultimate: Escanor converts his own life force into magic power.",
+		"Abilities and Equipment\nWeapons\nRhitta: A giant, ornamental axe that stores the heat Escanor radiates.",
+	} {
+		if !slices.Contains(passages, want) {
+			t.Errorf("missing passage %q in %q", want, passages)
+		}
+	}
+	if strings.Contains(document.Text, "EXCLUDED") {
+		t.Errorf("text %q", document.Text)
+	}
+}
+
+func TestTheCapServesPowerSectionsBeforeMiscellaneousOnes(t *testing.T) {
+	filler := func(topic string, count int) string {
+		out := ""
+		for i := range count {
+			out += fmt.Sprintf("<p>%s %d: %s</p>", topic, i, strings.Repeat("Anecdote from the story. ", 20))
+		}
+		return out
+	}
+	html := `<div class="mw-parser-output"><h2>Miscellaneous Abilities</h2><h3>Luck</h3>` + filler("Luck", 40) +
+		`<h3>Artistic Skill</h3>` + filler("Artistic Skill", 40) +
+		`<h2>Devil Fruit</h2><h3>Gear 4</h3>` + filler("Gear 4", 12) + `<h3>Gear 5</h3>` + filler("Gear 5", 12) +
+		`<h2>Haki</h2><h3>Armament Haki</h3>` + filler("Armament Haki", 12) + `</div>`
+	document := fandomSource(html, mustURL(luffyPage.String()+"/Abilities_and_Powers"), luffyLookup.name, time.Now(), wikidataIdentity)
+	if document == nil || s.UTF16Len(document.Text) > 24000 || !strings.Contains(*document.Origin.Note, "power, form and technique sections first") {
+		t.Fatalf("document %v", document != nil)
+	}
+	for _, want := range []string{"Gear 4 11:", "Gear 5 11:", "Armament Haki 11:", "Luck 0:", "Artistic Skill 0:"} {
+		if !strings.Contains(document.Text, want) {
+			t.Errorf("missing %q", want)
+		}
+	}
+	if strings.Contains(document.Text, "Luck 39:") || strings.Contains(document.Text, "Artistic Skill 39:") {
+		t.Error("miscellaneous sections were not capped")
+	}
+}
+
+// sevenDeadlySinsWikis answers Escanor's identity lookup, which has no
+// Fandom article ID, with the given Fandom links on the works he is
+// present in.
+func sevenDeadlySinsWikis(t *testing.T, works map[string][]string, queries *[]string) func(*http.Request) *http.Response {
+	return func(r *http.Request) *http.Response {
+		query := r.URL.Query()
+		*queries = append(*queries, r.URL.Host+" "+query.Get("action")+" "+query.Get("ids")+query.Get("titles")+query.Get("page"))
+		switch {
+		case r.URL.Host == "en.wikipedia.org":
+			return jsonResponse(200, map[string]any{"query": map[string]any{"pages": []any{}}})
+		case r.URL.Host == "www.wikidata.org" && query.Get("action") == "wbsearchentities":
+			return jsonResponse(200, map[string]any{"search": []any{
+				map[string]any{"id": "Q122925898", "label": "Escanor", "description": "fictional character from The Seven Deadly Sins"},
+				map[string]any{"id": "Q135218481", "label": "Escanor", "description": "work by Girart d'Amiens"},
+			}})
+		case r.URL.Host == "www.wikidata.org" && query.Get("ids") == "Q122925898":
+			var present []any
+			for _, id := range []string{"Q9048543", "Q57606675", "Q105144569"} {
+				present = append(present, map[string]any{"mainsnak": map[string]any{"datavalue": map[string]any{"value": map[string]any{"id": id}}}})
+			}
+			return jsonResponse(200, map[string]any{"entities": map[string]any{"Q122925898": map[string]any{"claims": map[string]any{"P1441": present}}}})
+		case r.URL.Host == "www.wikidata.org":
+			entities := map[string]any{}
+			for _, id := range strings.Split(query.Get("ids"), "|") {
+				var claims []any
+				for _, value := range works[id] {
+					claims = append(claims, map[string]any{"mainsnak": map[string]any{"datavalue": map[string]any{"value": value}}})
+				}
+				entities[id] = map[string]any{"claims": map[string]any{"P6262": claims}}
+			}
+			return jsonResponse(200, map[string]any{"entities": entities})
+		case r.URL.Host == "nanatsu-no-taizai.fandom.com" && query.Get("action") == "query":
+			if query.Get("titles") != "Escanor" {
+				t.Errorf("title query %s", r.URL.RawQuery)
+			}
+			return jsonResponse(200, map[string]any{"query": map[string]any{"pages": []any{map[string]any{"title": "Escanor", "ns": 0}}}})
+		case r.URL.Host == "nanatsu-no-taizai.fandom.com" && query.Get("page") == "Escanor":
+			return parsed(escanorHTML)
+		case r.URL.Host == "nanatsu-no-taizai.fandom.com":
+			return parsed("")
+		}
+		t.Errorf("unexpected %s", r.URL)
+		return notFound()
+	}
+}
+
+var escanorLookup = visualLookup{name: "Escanor", articleTitle: "List of The Seven Deadly Sins characters", work: "The Seven Deadly Sins"}
+
+func TestTheWorkWikiFindsACharacterWithoutAFandomLink(t *testing.T) {
+	var queries []string
+	result, _ := gather(t, escanorLookup, sevenDeadlySinsWikis(t, map[string][]string{
+		"Q9048543":   {"nanatsu-no-taizai:Manga", "kingarthur:The_Seven_Deadly_Sins"},
+		"Q57606675":  {"netflix:The_Seven_Deadly_Sins"},
+		"Q105144569": {"nanatsu-no-taizai:The_Seven_Deadly_Sins:_Grand_Cross"},
+	}, &queries))
+	var wiki *unit.Document
+	for i := range result.documents {
+		if strings.HasPrefix(result.documents[i].ID, "character-wiki:") {
+			wiki = &result.documents[i]
+		}
+	}
+	if wiki == nil || wiki.Origin.Location != escanorPage.String() || !strings.Contains(*wiki.Origin.Note, "exact character page name on that work's wiki") ||
+		!strings.Contains(wiki.Text, "Night-time") {
+		t.Fatalf("documents %+v queries %v", result.documents, queries)
+	}
+	for _, query := range queries {
+		if strings.Contains(query, "kingarthur") || strings.Contains(query, "netflix") {
+			t.Errorf("queried another wiki: %s", query)
+		}
+	}
+}
+
+func TestTiedWorkWikisNameNoPage(t *testing.T) {
+	var queries []string
+	result, _ := gather(t, escanorLookup, sevenDeadlySinsWikis(t, map[string][]string{
+		"Q9048543":  {"kingarthur:The_Seven_Deadly_Sins"},
+		"Q57606675": {"netflix:The_Seven_Deadly_Sins"},
+	}, &queries))
+	if len(result.documents) != 0 || !strings.Contains(strings.Join(result.notes, " "), "no supported character-specific wiki link") {
+		t.Errorf("documents %d notes %v", len(result.documents), result.notes)
+	}
+	for _, query := range queries {
+		if strings.Contains(query, "fandom.com") {
+			t.Errorf("queried a wiki: %s", query)
+		}
+	}
+}
+
+func TestASuppliedFandomPageIsReadWithoutIdentityLookup(t *testing.T) {
+	var queries []string
+	wikis := sevenDeadlySinsWikis(t, nil, &queries)
+	full := sevenDeadlySins()
+	articles := wikipedia(t, []wikiPage{full.with("extract", "A list of characters.")}, []wikiPage{full})
+	r, _ := researcher(func(request *http.Request) *http.Response {
+		if request.URL.Host == "en.wikipedia.org" {
+			return articles(request)
+		}
+		return wikis(request)
+	})
+	sources, _, err := r.Research(context.Background(), Lookup{Name: "Escanor", Fandom: " https://nanatsu-no-taizai.fandom.com/wiki/Escanor#Abilities "})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var wiki *unit.Document
+	for i := range sources.Documents {
+		if strings.HasPrefix(sources.Documents[i].ID, "character-wiki:") {
+			wiki = &sources.Documents[i]
+		}
+	}
+	if wiki == nil || wiki.Origin.Location != escanorPage.String() || !strings.Contains(*wiki.Origin.Note, "Page supplied explicitly") {
+		t.Fatalf("documents %+v", sources.Documents)
+	}
+	for _, query := range queries {
+		if strings.HasPrefix(query, "www.wikidata.org") {
+			t.Errorf("identity lookup %s", query)
+		}
+	}
+	for _, address := range []string{"http://nanatsu-no-taizai.fandom.com/wiki/Escanor", "https://evil.test/wiki/Escanor", "https://nanatsu-no-taizai.fandom.com/wiki/File:Escanor.png", "https://nanatsu-no-taizai.fandom.com/Escanor", "https://nanatsu-no-taizai.fandom.com/wiki/Escanor?action=raw"} {
+		if _, _, err := r.Research(context.Background(), Lookup{Name: "Escanor", Fandom: address}); err == nil || !strings.Contains(err.Error(), "fandom.com/wiki/PAGE") {
+			t.Errorf("%s: %v", address, err)
+		}
 	}
 }
