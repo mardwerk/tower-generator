@@ -75,7 +75,7 @@ func TestBonusDamageRendersOnTheSheet(t *testing.T) {
 	// multiplies ordinary damage only.
 	sheet := render.Purchases(candidate, definition, nil)
 	split := strings.Join(sheet[0].Purchases[4].Effects, " ")
-	if !strings.Contains(split, "take 0.4 times the hit damage (2), plus +4 damage against Hardened enemies, once each") {
+	if !strings.Contains(split, "take 40% of the hit damage (2), plus +4 damage against Hardened enemies, once each") {
 		t.Errorf("5-x-x reads %q", split)
 	}
 	active := strings.Join(sheet[1].Purchases[3].Effects, " ")

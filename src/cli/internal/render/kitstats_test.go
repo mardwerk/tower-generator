@@ -68,8 +68,8 @@ func TestVersion2KitStatsUseTheVocabulary(t *testing.T) {
 		t.Errorf("base effects %s", got)
 	}
 	for key, want := range map[string]string{
-		"path-1:3": `[{"key":"damage","before":3,"after":4,"improvement":true},{"key":"status.poison.magnitude","label":"Poison","unit":"damage/s","kind":"damageOverTime","after":2},{"key":"status.poison.seconds","label":"Poison duration","unit":"s","kind":"damageOverTime","after":4}]`,
-		"path-1:4": `[{"key":"damage","before":4,"after":5,"improvement":true},{"key":"status.poison.magnitude","label":"Poison","unit":"damage/s","kind":"damageOverTime","before":2,"after":3,"improvement":true}]`,
+		"path-1:3": `[{"key":"damage","before":3,"after":4,"delta":"+1","improvement":true},{"key":"status.poison.magnitude","label":"Poison","unit":"damage/s","kind":"damageOverTime","after":2},{"key":"status.poison.seconds","label":"Poison duration","unit":"s","kind":"damageOverTime","after":4}]`,
+		"path-1:4": `[{"key":"damage","before":4,"after":5,"delta":"+1","improvement":true},{"key":"status.poison.magnitude","label":"Poison","unit":"damage/s","kind":"damageOverTime","before":2,"after":3,"delta":"+1 damage/s","improvement":true}]`,
 		"path-3:1": `[{"key":"detects.camo","label":"Camo detection","kind":"detection","before":"No","after":"Yes"}]`,
 	} {
 		if got := s.Stringify(s.FromGoValue(stats.Tiers[key].Changes)); got != want {

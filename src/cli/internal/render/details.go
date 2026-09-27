@@ -63,6 +63,7 @@ func describeUnit(view View) []string {
 		"Limits: "+Escape(attack.Limitations), "",
 		"## Upgrade paths", "",
 	)
+	resolved := resolvedEffects(view)
 	for index, path := range candidate.Paths {
 		lines = append(lines,
 			"### "+Escape(path.Name), "",
@@ -71,11 +72,39 @@ func describeUnit(view View) []string {
 			"| --- | --- | --- | --- |",
 		)
 		for _, tier := range path.Tiers {
-			lines = append(lines, fmt.Sprintf("| %s | %s | %s | %s |", purchaseLabel(len(candidate.Paths), index, tier.Tier), Escape(tier.Name), Escape(tier.Benefit), tier.Status))
+			effect := tier.Benefit
+			if purchase, ok := resolved[TierKey(path.ID, tier.Tier)]; ok {
+				effect = purchase.price + ". " + purchase.effects
+			}
+			lines = append(lines, fmt.Sprintf("| %s | %s | %s | %s |", purchaseLabel(len(candidate.Paths), index, tier.Tier), Escape(tier.Name), Escape(effect), tier.Status))
 		}
 		lines = append(lines, "")
 	}
 	return lines
+}
+
+// resolvedPurchase is one purchase of a typed unit as the unit sheet words
+// it: its build code, price and effects.
+type resolvedPurchase struct{ code, price, effects string }
+
+// resolvedEffects words each purchase of a typed unit as the unit sheet
+// does, keyed by path ID and tier ("path-2:4") as KitStats names paths, so
+// the report shows its changes with their deltas and multipliers as
+// percentages. The tier benefits and ability descriptions stored in the
+// candidate keep their compiled wording, which the review reads; the report
+// shows them only for a unit without valid typed mechanics.
+func resolvedEffects(view View) map[string]resolvedPurchase {
+	sh := newSheet(view.Candidate.Blueprint, view.Prepared.Request.MechanicsDefinition)
+	if sh == nil {
+		return nil
+	}
+	out := map[string]resolvedPurchase{}
+	for index, path := range sh.purchases() {
+		for tier, purchase := range path.Purchases {
+			out[TierKey("path-"+itoa(index+1), tier+1)] = resolvedPurchase{purchase.Code, sh.money(purchase.Cost), strings.Join(purchase.Effects, " ")}
+		}
+	}
+	return out
 }
 
 // field reads a key path from a JSON value; nil when absent.
@@ -254,7 +283,14 @@ func describeAbilities(view View) []string {
 		return nil
 	}
 	lines := []string{"## Abilities", ""}
+	resolved := resolvedEffects(view)
 	for _, ability := range view.Candidate.Abilities {
+		description := ability.Description
+		if ability.PathID != nil && ability.Tier != nil {
+			if purchase, ok := resolved[TierKey(*ability.PathID, *ability.Tier)]; ok {
+				description = "At " + purchase.code + ": " + purchase.effects
+			}
+		}
 		assignment := "No single path assignment"
 		if ability.PathID != nil {
 			tier := "unspecified"
@@ -269,7 +305,7 @@ func describeAbilities(view View) []string {
 		}
 		lines = append(lines,
 			"### "+Escape(ability.Name), "",
-			ability.Status+"; "+ability.Placement+". "+Escape(ability.Description), "",
+			ability.Status+"; "+ability.Placement+". "+Escape(description), "",
 			"Assignment: "+Escape(assignment)+". Prerequisites: "+Escape(prerequisites)+".", "",
 			"Availability: "+Escape(ability.Availability), "",
 			"Delivery: "+Escape(ability.Delivery), "",
