@@ -359,7 +359,7 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 		// Plan checks that hold under any Definition go before the
 		// closing guidance line.
 		last := guidance[len(guidance)-1]
-		gates := []string{planNames}
+		gates := []string{planNames, planUnlockOrder}
 		if len(request.RequiredConcepts) > 0 {
 			gates = append(gates, RequiredConceptRule+" "+planRequiredConcepts+" "+CoreSpiritRule)
 		}
@@ -572,6 +572,12 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 		// And a repertoire name listed twice or also omitted
 		// (plan_contradictions.go).
 		correctable = append(correctable, PlanContradictionIssues(plan, request)...)
+		// And an unlock an earlier purchase of its path already
+		// promises (plan_unlock_order.go), when the later purchase can
+		// promise it as an improvement instead.
+		lateCorrectable, lateOther := UnlockOrderIssues(plan, *request.MechanicsDefinition)
+		correctable = append(correctable, lateCorrectable...)
+		feasibility = append(feasibility, lateOther...)
 		if policy != nil {
 			// A targeted correction can also fix a repertoire entry
 			// that no purchase adapts.
