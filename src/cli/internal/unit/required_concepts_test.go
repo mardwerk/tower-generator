@@ -617,9 +617,10 @@ func TestStatOnlyRequiredFormFailVerdictIsRecorded(t *testing.T) {
 }
 
 // A required concept the base attack adapts cites the base attack's
-// passages, so a pass verdict can name one even without a repertoire entry,
-// and the review is told what to cite, or to give unresolved, when the
-// Request derived no source technique for it (SOL-80-01).
+// passages, so a pass verdict can name one even without a repertoire entry.
+// The review may cite the identifying passage from either the source
+// technique's passages or the concept's sourceIds, and gives unresolved only
+// when neither establishes the effect (SOL-80-01, SOL-80-03).
 func TestBaseAttackRequiredConceptCarriesItsPassages(t *testing.T) {
 	stages, err := fixture.Build()
 	if err != nil {
@@ -640,7 +641,7 @@ func TestBaseAttackRequiredConceptCarriesItsPassages(t *testing.T) {
 		}
 	}
 	for _, want := range []string{
-		"citing it from sourceTechnique.passageIds or, when the Request derived no sourceTechnique for the concept, from its sourceIds, which include the base attack's passages when the base attack adapts it",
+		"citing it from sourceTechnique.passageIds or from its sourceIds, whichever holds the identifying passage, when both exist too; its sourceIds include the base attack's passages when the base attack adapts it",
 		"and unresolved when neither sourceTechnique nor sourceIds supplies a passage that identifies the concept, saying that the supplied sources do not establish its central effect.",
 	} {
 		if !strings.Contains(prompt, want) {
