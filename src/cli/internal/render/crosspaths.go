@@ -163,6 +163,9 @@ func (sh *sheet) attackSummary(attack m.Attack) string {
 	for _, status := range attack.AppliedStatuses() {
 		parts = append(parts, sh.status(status))
 	}
+	for _, bonus := range attack.BonusDamage {
+		parts = append(parts, sh.bonusAgainst(bonus.Damage, bonus.Property))
+	}
 	var detected []string
 	for _, trait := range attack.DetectionTraits() {
 		detected = append(detected, sh.detectionName(trait))
@@ -231,6 +234,22 @@ func (sh *sheet) attackChanges(before, after m.Attack) []string {
 			out = append(out, "loses "+sh.effect(status.Effect).Name)
 		case was.Strength() != now.Strength() || was.Seconds != now.Seconds:
 			out = append(out, sh.status(was)+" → "+sh.status(now))
+		}
+	}
+	properties := map[string]bool{}
+	for _, bonus := range append(append([]m.DamageBonus{}, before.BonusDamage...), after.BonusDamage...) {
+		if properties[bonus.Property] {
+			continue
+		}
+		properties[bonus.Property] = true
+		was, now := before.Bonus(bonus.Property), after.Bonus(bonus.Property)
+		switch {
+		case was == 0:
+			out = append(out, "adds "+sh.bonusAgainst(now, bonus.Property))
+		case now == 0:
+			out = append(out, "loses the bonus against "+sh.vocabulary.PropertyName(bonus.Property))
+		case was != now:
+			out = append(out, fmt.Sprintf("damage against %s +%s → +%s", sh.vocabulary.PropertyName(bonus.Property), decimal(was), decimal(now)))
 		}
 	}
 	switch {

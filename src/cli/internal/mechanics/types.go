@@ -250,7 +250,9 @@ type FollowUp struct {
 
 // Attack is the unit's automatic attack. A version 1 attack has Camo and
 // the slow, burn and stun stats; a version 2 attack has Detects and
-// Statuses instead (both non-nil) and only the core stats.
+// Statuses instead (both non-nil) and only the core stats. A version 2
+// attack may also deal BonusDamage, sorted by property; an attack without
+// any writes no bonusDamage field, so older artifacts read unchanged.
 type Attack struct {
 	Name         string
 	Cost         float64
@@ -261,8 +263,19 @@ type Attack struct {
 	Detects      *[]string
 	Stats        AttackStats
 	Statuses     *[]StatusApplication
+	BonusDamage  []DamageBonus
 	Distribution string
 	FollowUp     *FollowUp
+}
+
+// Bonus is the attack's bonus damage per hit against an enemy property.
+func (a Attack) Bonus(property string) float64 {
+	for _, bonus := range a.BonusDamage {
+		if bonus.Property == property {
+			return bonus.Damage
+		}
+	}
+	return 0
 }
 
 // IsV2 reports a version 2 attack.
@@ -342,6 +355,9 @@ func (a Attack) Clone() Attack {
 		}
 		a.Statuses = &statuses
 	}
+	if a.BonusDamage != nil {
+		a.BonusDamage = append([]DamageBonus{}, a.BonusDamage...)
+	}
 	return a
 }
 
@@ -359,6 +375,9 @@ func (a Attack) JSONValue() any {
 			stats.Set(key, a.Stats.Get(key))
 		}
 		out.Set("detects", detects).Set("stats", stats).Set("statuses", s.FromGoValue(*a.Statuses))
+		if len(a.BonusDamage) > 0 {
+			out.Set("bonusDamage", s.FromGoValue(a.BonusDamage))
+		}
 	} else {
 		out.Set("camo", a.Camo).Set("stats", s.FromGoValue(a.Stats))
 	}
@@ -386,6 +405,7 @@ func (a *Attack) UnmarshalJSON(data []byte) error {
 		Detects      *[]string            `json:"detects"`
 		Stats        AttackStats          `json:"stats"`
 		Statuses     *[]StatusApplication `json:"statuses"`
+		BonusDamage  []DamageBonus        `json:"bonusDamage"`
 		Distribution string               `json:"distribution"`
 		FollowUp     *FollowUp            `json:"followUp"`
 	}
@@ -398,6 +418,9 @@ func (a *Attack) UnmarshalJSON(data []byte) error {
 	}
 	if raw.Statuses != nil {
 		a.Statuses = raw.Statuses
+		if len(raw.BonusDamage) > 0 {
+			a.BonusDamage = raw.BonusDamage
+		}
 		detects := []string{}
 		if raw.Detects != nil {
 			detects = *raw.Detects
@@ -441,7 +464,8 @@ func (b *Boost) ptr(key string) *float64 {
 
 // Change is one typed effect of an upgrade. Kind selects which fields apply:
 // stat and modifyBoost use Stat, Operation and Number; status (version 2)
-// uses Effect, Field, Operation and Number; camo uses Bool; detection
+// uses Effect, Field, Operation and Number; bonusDamage (version 2) uses
+// Property, Operation (always "add") and Number; camo uses Bool; detection
 // (version 2) uses Trait and Bool; delivery, damageType, targeting and
 // distribution use Text; followUp uses FollowUp; unlockBoost uses Boost.
 type Change struct {
@@ -451,6 +475,7 @@ type Change struct {
 	Effect    string
 	Field     string
 	Trait     string
+	Property  string
 	Operation string
 	Number    float64
 	Bool      bool
@@ -467,6 +492,8 @@ func (c Change) JSONValue() any {
 		o.Set("stat", c.Stat).Set("operation", c.Operation).Set("value", c.Number)
 	case "status":
 		o.Set("effect", c.Effect).Set("field", c.Field).Set("operation", c.Operation).Set("value", c.Number)
+	case "bonusDamage":
+		o.Set("property", c.Property).Set("operation", c.Operation).Set("value", c.Number)
 	case "detection":
 		o.Set("trait", c.Trait).Set("value", c.Bool)
 	case "camo":
@@ -493,6 +520,7 @@ func (c *Change) UnmarshalJSON(data []byte) error {
 		Effect    string          `json:"effect"`
 		Field     string          `json:"field"`
 		Trait     string          `json:"trait"`
+		Property  string          `json:"property"`
 		Operation string          `json:"operation"`
 		Value     json.RawMessage `json:"value"`
 		Boost     *Boost          `json:"boost"`
@@ -500,9 +528,9 @@ func (c *Change) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
 	}
-	*c = Change{Kind: raw.Kind, Target: raw.Target, Stat: raw.Stat, Effect: raw.Effect, Field: raw.Field, Trait: raw.Trait, Operation: raw.Operation, Boost: raw.Boost}
+	*c = Change{Kind: raw.Kind, Target: raw.Target, Stat: raw.Stat, Effect: raw.Effect, Field: raw.Field, Trait: raw.Trait, Property: raw.Property, Operation: raw.Operation, Boost: raw.Boost}
 	switch raw.Kind {
-	case "stat", "modifyBoost", "status":
+	case "stat", "modifyBoost", "status", "bonusDamage":
 		return json.Unmarshal(raw.Value, &c.Number)
 	case "camo", "detection":
 		return json.Unmarshal(raw.Value, &c.Bool)

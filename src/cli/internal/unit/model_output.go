@@ -63,11 +63,18 @@ func tierOutputFor(d *m.Definition) *s.ObjectSchema {
 	if len(v.Detection) == 0 {
 		detect = s.Null()
 	}
-	return s.StrictObject(
+	fields := []s.Field{
 		s.F("name", s.String().Min(1).Max(80)),
 		s.F("cost", s.Number().Positive()),
 		s.F("statChanges", s.Array(s.StrictObject(s.F("stat", s.Enum(m.CoreStatKeys...)), s.F("operation", m.OperationSchema), s.F("value", s.Number()))).Max(budget)),
 		s.F("statuses", statuses),
+	}
+	// Only a vocabulary with bonus damage properties offers bonusDamage, so
+	// other Definitions keep their wire format.
+	if len(v.BonusDamageProperties) > 0 {
+		fields = append(fields, s.F("bonusDamage", s.Optional(s.Array(wireBonusSchema(v)).Max(budget))))
+	}
+	return s.StrictObject(append(fields,
 		s.F("detect", detect),
 		s.F("delivery", s.Nullable(m.DeliverySchema)),
 		s.F("damageType", s.Nullable(m.DamageTypeSchemaV2(v))),
@@ -77,7 +84,14 @@ func tierOutputFor(d *m.Definition) *s.ObjectSchema {
 		s.F("activeFollowUp", s.Optional(s.Nullable(m.FollowUpSchema))),
 		s.F("unlockBoost", wireUnlockBoost),
 		s.F("boostChanges", wireBoostChanges),
-	)
+	)...)
+}
+
+// wireBonusSchema is a bonus damage change as models write it: a positive
+// value added to the bonus per hit against one listed enemy property. Its
+// operation is always "add".
+func wireBonusSchema(v *m.Vocabulary) *s.ObjectSchema {
+	return s.StrictObject(s.F("property", m.BonusPropertySchema(v)), s.F("operation", m.BonusOperationSchema), s.F("value", s.Number().Positive()))
 }
 
 // ModelOutputSchema is the mechanics wire format for a request.
@@ -340,7 +354,11 @@ func DecodeForDiagnostics(output any, request *Request) (m.Blueprint, []s.Issue,
 			}
 			stats := len(field(f, "statChanges").([]any))
 			boosts := len(field(f, "boostChanges").([]any))
-			count := stats + boosts + len(selected) + paired
+			bonuses := 0
+			if list, ok := field(f, "bonusDamage").([]any); ok {
+				bonuses = len(list)
+			}
+			count := stats + boosts + bonuses + len(selected) + paired
 			limit := TierEffectLimit(request, tier)
 			if count < 1 || count > limit {
 				names := strings.Join(selected, ", ")
@@ -355,9 +373,13 @@ func DecodeForDiagnostics(output any, request *Request) (m.Blueprint, []s.Issue,
 				if v2 {
 					primitives = "status changes (magnitude and duration count separately)"
 				}
+				bonusText := ""
+				if bonuses > 0 {
+					bonusText = fmt.Sprintf(", %d bonusDamage", bonuses)
+				}
 				budget = append(budget, s.Issue{
 					Code: "custom", Path: []any{"paths", path, "tiers", tier, "statChanges"},
-					Message: fmt.Sprintf("This tier contains %d effects: %d statChanges, %d boostChanges, %d %s and %d nonnull fields (%s). Total must be 1 to %d. %s", count, stats, boosts, paired, primitives, len(selected), names, limit, advice),
+					Message: fmt.Sprintf("This tier contains %d effects: %d statChanges, %d boostChanges%s, %d %s and %d nonnull fields (%s). Total must be 1 to %d. %s", count, stats, boosts, bonusText, paired, primitives, len(selected), names, limit, advice),
 				})
 			}
 		}
@@ -433,6 +455,13 @@ func DecodeForDiagnostics(output any, request *Request) (m.Blueprint, []s.Issue,
 				}
 				if present(t, "detect") {
 					changes = append(changes, s.NewObject().Set("kind", "detection").Set("target", "base").Set("trait", field(t, "detect")).Set("value", true))
+				}
+				if list, ok := field(t, "bonusDamage").([]any); ok {
+					for _, raw := range list {
+						bonus := raw.(*s.Object)
+						changes = append(changes, s.NewObject().Set("kind", "bonusDamage").Set("target", "base").Set("property", field(bonus, "property")).
+							Set("operation", field(bonus, "operation")).Set("value", field(bonus, "value")))
+					}
 				}
 			}
 			simple := func(kind, target, key string) {

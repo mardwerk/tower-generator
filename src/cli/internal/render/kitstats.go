@@ -66,6 +66,7 @@ func Stats(candidate unit.Candidate, definition *mechanics.Definition) *KitStats
 	stats := &KitStats{Base: base.BaseAttack, Tiers: map[string]TierStats{}}
 	if base.BaseAttack.IsV2() {
 		stats.BaseEffects = append(statusChanges(mechanics.Attack{}, base.BaseAttack, &vocabulary), detectionChanges(nil, base.BaseAttack, &vocabulary)...)
+		stats.BaseEffects = append(stats.BaseEffects, bonusChanges(nil, base.BaseAttack, &vocabulary)...)
 	}
 	for index := range mechanics.PathKeys {
 		pathID := "path-" + itoa(index+1)
@@ -120,6 +121,7 @@ func tierChanges(before, after mechanics.ResolvedBuild, vocabulary *mechanics.Vo
 	if v2 {
 		changes = append(changes, statusChanges(priorAttack, nextAttack, vocabulary)...)
 		changes = append(changes, detectionChanges(&priorAttack, nextAttack, vocabulary)...)
+		changes = append(changes, bonusChanges(&priorAttack, nextAttack, vocabulary)...)
 	} else if priorAttack.Camo != nextAttack.Camo {
 		changes = append(changes, StatChange{Key: "camo", Before: yesNo(priorAttack.Camo), After: yesNo(nextAttack.Camo)})
 	}
@@ -260,6 +262,34 @@ func detectionChanges(prior *mechanics.Attack, next mechanics.Attack, vocabulary
 		change := StatChange{Key: "detects." + trait.ID, Label: trait.Name + " detection", Kind: "detection", After: yesNo(after)}
 		if prior != nil {
 			change.Before = yesNo(before)
+		}
+		changes = append(changes, change)
+	}
+	return changes
+}
+
+// BonusDamageKind marks a StatChange of bonus damage against an enemy
+// property; the number is the bonus per hit, shown as +N.
+const BonusDamageKind = "bonusDamage"
+
+// bonusChanges lists how two version 2 attacks differ in bonus damage, in
+// the vocabulary's property order: "Damage against Hardened" +30 → +50. A
+// nil prior lists the base attack's bonuses.
+func bonusChanges(prior *mechanics.Attack, next mechanics.Attack, vocabulary *mechanics.Vocabulary) []StatChange {
+	var changes []StatChange
+	for _, property := range vocabulary.BonusDamageProperties {
+		after := next.Bonus(property)
+		before := 0.0
+		if prior != nil {
+			before = prior.Bonus(property)
+		}
+		if before == after {
+			continue
+		}
+		change := StatChange{Key: "bonusDamage." + property, Label: "Damage against " + vocabulary.PropertyName(property), Kind: BonusDamageKind, After: after}
+		if prior != nil && before != 0 {
+			improvement := after > before
+			change.Before, change.Improvement = before, &improvement
 		}
 		changes = append(changes, change)
 	}

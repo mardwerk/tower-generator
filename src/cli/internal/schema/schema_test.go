@@ -68,6 +68,19 @@ func TestDiscriminatedUnionsAndJSONSchema(t *testing.T) {
 	}
 }
 
+func TestEnumMessageReplacesTheDefault(t *testing.T) {
+	schema := StrictObject(F("operation", Enum("add").Message("Only add applies.")))
+	if _, issues := Parse(schema, NewObject().Set("operation", "set")); issueText(issues) != "operation: Only add applies." {
+		t.Errorf("issues:\n%s", issueText(issues))
+	}
+	if _, issues := Parse(schema, NewObject().Set("operation", "add")); len(issues) > 0 {
+		t.Errorf("add is rejected: %s", issueText(issues))
+	}
+	if got := Stringify(JSONSchema(schema)); !strings.Contains(got, `"operation":{"type":"string","enum":["add"]}`) {
+		t.Errorf("JSON Schema %s", got)
+	}
+}
+
 func TestJavaScriptCompatibleJSON(t *testing.T) {
 	tenth, fifth := 0.1, 0.2
 	for value, want := range map[float64]string{1: "1", tenth + fifth: "0.30000000000000004", 1e21: "1e+21", 1.5e-7: "1.5e-7", math.Copysign(0, -1): "0"} {
