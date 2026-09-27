@@ -172,7 +172,7 @@ var (
 		s.F("designEvaluation", s.Optional(DesignEvaluationSchema)),
 		s.F("attempts", s.Optional(s.Array(s.StrictObject(
 			s.F("number", s.Int().Positive()),
-			s.F("purpose", s.Enum("plan", PlanCorrectionPurpose, CapstoneCorrectionPurpose, "design", "repair")),
+			s.F("purpose", s.Enum("plan", PlanCorrectionPurpose, CapstoneCorrectionPurpose, "design", "repair", LocalRepairPurpose)),
 			s.F("issues", s.Array(text())),
 			s.F("usage", s.Optional(ModelUsageSchema)),
 		)))),

@@ -1,0 +1,469 @@
+{
+  "contract": "purchase-plan-v1",
+  "concept": "Escanor is adapted as a daytime Rhitta wielder whose growing physical power is represented by increasingly forceful axe strikes, controlled heat, and a brief peak-power boost. Sunshine belongs to Escanor, but its power returned to Mael during the New Holy War and was later given back for the Demon King battle; this proposal does not claim it is always available or that a clock is implemented.",
+  "signature": {
+    "name": "Sunshine",
+    "sourceIds": [
+      "source1:6",
+      "source1:7",
+      "source2:19",
+      "source2:21",
+      "source2:22",
+      "source2:27"
+    ],
+    "adaptation": "Escanor's strength, size, and speed rise during the day and reach a brief noon peak. The unit represents that escalation through purchases and one temporary self-boost, not a day-and-night cycle, a real-time clock, or invulnerability."
+  },
+  "repertoire": [
+    {
+      "name": "Rhitta",
+      "importance": "core",
+      "sourceIds": [
+        "source3:8",
+        "source3:14",
+        "source3:15",
+        "source4:16",
+        "source4:47",
+        "source2:26"
+      ],
+      "limitation": "Escanor's axe is heavy and off-balance; its daytime use and controlled heat release are not represented as a time-of-day rule or a separate weapon-recall action.",
+      "effects": [
+        {
+          "effect": "Escanor wields the heavy, head-weighted axe in daytime and can strike with it.",
+          "adaptedAs": [
+            "damage"
+          ],
+          "reason": "The automatic attack is a blunt Rhitta strike; purchases increase its hit strength."
+        },
+        {
+          "effect": "Escanor can store heat in Rhitta and release it precisely on command.",
+          "adaptedAs": [
+            "burn",
+            "active-damage"
+          ],
+          "reason": "The bottom path adapts controlled heat as a permanent burn on qualifying axe hits; the middle path's boost represents a temporary increase to the attack, not a separate stored-heat release."
+        },
+        {
+          "effect": "Escanor's magic-imbued Rhitta slashes burn foes.",
+          "adaptedAs": [
+            "burn"
+          ],
+          "reason": "The bottom path adds a bounded burn status to the automatic attack."
+        }
+      ]
+    },
+    {
+      "name": "Sunshine",
+      "importance": "core",
+      "sourceIds": [
+        "source1:6",
+        "source1:7",
+        "source1:8",
+        "source1:9",
+        "source2:19",
+        "source2:21",
+        "source2:22",
+        "source2:27",
+        "source2:28",
+        "source4:18",
+        "source4:21",
+        "source4:27",
+        "source4:35"
+      ],
+      "limitation": "The actual daily cycle, changing personality and appearance, human bodily damage, and The One's exact one-minute noon condition are not implemented.",
+      "effects": [
+        {
+          "effect": "Sunshine increases Escanor's physical power and size during the day and peaks at noon.",
+          "adaptedAs": [
+            "damage",
+            "attack-rate",
+            "active-damage",
+            "active-attack-rate"
+          ],
+          "reason": "Permanent purchases represent escalating strength and speed; the middle-path boost temporarily amplifies the purchased attack. The literal time cycle and size change are not implemented."
+        },
+        {
+          "effect": "The One is Escanor's peak form and lasts for one minute.",
+          "adaptedAs": [
+            "active-damage",
+            "active-attack-rate"
+          ],
+          "reason": "The middle-path boost is a temporary peak-power approximation. Its duration and cooldown are engine-defined rather than canon timing."
+        }
+      ]
+    },
+    {
+      "name": "Super Slash",
+      "importance": "major",
+      "sourceIds": [
+        "source4:30",
+        "source4:31"
+      ],
+      "limitation": "The described downward axe slash and its distant felt impact are represented as an ordinary hit with increased capacity, not as a separate delivery or a measured shockwave.",
+      "effects": [
+        {
+          "effect": "Escanor delivers a powerful downward axe slash that causes considerable damage felt several meters away.",
+          "adaptedAs": [
+            "damage",
+            "pierce"
+          ],
+          "reason": "The top path strengthens the hit and lets it pass through a limited number of distinct targets; no independent shockwave is claimed."
+        }
+      ]
+    },
+    {
+      "name": "Cruel Sun",
+      "importance": "major",
+      "sourceIds": [
+        "source2:33",
+        "source2:34",
+        "source2:35"
+      ],
+      "limitation": "The miniature sun's independent movement and hand-gesture control are not represented as a separate projectile or delivery.",
+      "effects": [
+        {
+          "effect": "Escanor creates a miniature sun whose heat melts nearby armor, controls it with gestures, and strikes opponents with it as it grows.",
+          "adaptedAs": [
+            "splash"
+          ],
+          "reason": "The bottom path adapts nearby impact coverage as splash on the existing axe attack; its heat is not adapted as burn by a purchase named Cruel Sun, and it does not create or steer a miniature sun."
+        }
+      ]
+    },
+    {
+      "name": "Crazy Prominence",
+      "importance": "major",
+      "sourceIds": [
+        "source2:38",
+        "source2:39"
+      ],
+      "limitation": "The source describes multiple miniature suns exploding on impact; the engine's attack does not support independent spawned suns or their separate flight paths.",
+      "effects": [
+        {
+          "effect": "Escanor produces many miniature suns from his body that explode on impact.",
+          "adaptedAs": [
+            "splash"
+          ],
+          "reason": "The bottom capstone uses splash on the existing attack to represent an impact affecting nearby enemies. The multiple suns and independent deliveries are omitted."
+        }
+      ]
+    },
+    {
+      "name": "The One",
+      "importance": "major",
+      "sourceIds": [
+        "source2:27",
+        "source2:28",
+        "source4:34",
+        "source4:35",
+        "source4:36"
+      ],
+      "limitation": "The exact noon trigger, one-minute duration, and claim of invincibility are not represented.",
+      "effects": [
+        {
+          "effect": "At noon Escanor becomes a brief peak form with greatly increased power.",
+          "adaptedAs": [
+            "active-damage",
+            "active-attack-rate"
+          ],
+          "reason": "The middle path's temporary boost represents a brief peak in the strength and speed of the attack, without asserting invulnerability or a noon trigger."
+        }
+      ]
+    }
+  ],
+  "base": {
+    "name": "Daytime Rhitta Strike",
+    "sourceIds": [
+      "source3:8",
+      "source3:4",
+      "source4:16",
+      "source4:47"
+    ],
+    "behavior": "At 0-0-0, Escanor swings Rhitta at one chosen primary enemy in range for a blunt normal-damage hit. The attack has one projectile and pierce 2, so it can hit at most two distinct enemies along its clear attack path, including the primary; it does not hit an enemy twice in one attack. There is no splash, status, bonus damage, Camo detection, or secondary targeting."
+  },
+  "paths": {
+    "path1": {
+      "name": "Super Slash",
+      "sourceIds": [
+        "source4:30",
+        "source4:31",
+        "source3:4",
+        "source4:47"
+      ],
+      "buyFor": "Choose this path when enemies line up for a forceful axe stroke and a limited number of targets can be reached along the same attack path.",
+      "weakness": "The attack still needs a clear path and reaches only its own range; extra pierce does not create area damage or reach enemies outside the attack path.",
+      "milestones": {
+        "tier1": "1-x-x increases the damage of each ordinary Rhitta hit against its selected primary and any enemy reached by its existing pierce.",
+        "tier2": "2-x-x further increases the damage of each ordinary Rhitta hit, keeping the same blunt delivery and target capacity.",
+        "tier3": "3-x-x adapts Super Slash as a heavier downward Rhitta strike that deals more damage and passes through more distinct enemies on the same clear attack path; it does not create a separate shockwave.",
+        "tier4": "4-x-x makes each Super Slash heavier and able to reach more distinct enemies, but Escanor's slower recovery reduces the ordinary attack rate.",
+        "tier5": "5-x-x adds a brief knockback to enemies hit by the heavy Super Slash when they are eligible for knockback, while increasing its damage; the hit does not push Blimps or Bosses."
+      },
+      "capstoneValue": "The fifth purchase adds bounded displacement to the path's heavy strike, rather than only increasing its numbers. A concentrated upgrade gives the one placed capstone this extra control, while copies of the fourth purchase only provide slower, high-capacity hits.",
+      "crosspaths": [
+        {
+          "path": "path2",
+          "contribution": "Proposed early purchases: x-1-x represents Sunshine's rising physical speed by increasing the ordinary Rhitta attack rate without changing its delivery. x-2-x further increases the ordinary attack rate as Sunshine's power rises, retaining the same single-projectile Rhitta strike."
+        },
+        {
+          "path": "path3",
+          "contribution": "Proposed early purchases: x-x-1 increases the range of Escanor's ordinary Rhitta attack without changing its delivery or target capacity. x-x-2 further increases ordinary attack range while keeping the same single-targeting choice and attack delivery."
+        }
+      ],
+      "referenceExample": "The Profile's scale references inform this proposal; the supplied Definition alone authorizes mechanics."
+    },
+    "path2": {
+      "name": "Sunshine Peak",
+      "sourceIds": [
+        "source1:7",
+        "source2:27",
+        "source2:28",
+        "source4:18",
+        "source4:35"
+      ],
+      "buyFor": "Choose this path when a short, player-triggered attack surge is more useful than permanent area coverage or greater target capacity.",
+      "weakness": "The boost is temporary and does not shorten its cooldown when ordinary attacks become faster; the path does not reproduce The One's exact noon trigger, one-minute duration, or invulnerability.",
+      "milestones": {
+        "tier1": "x-1-x represents Sunshine's rising physical speed by increasing the ordinary Rhitta attack rate without changing its delivery.",
+        "tier2": "x-2-x further increases the ordinary attack rate as Sunshine's power rises, retaining the same single-projectile Rhitta strike.",
+        "tier3": "x-3-x adds permanent damage to the faster ordinary attack, representing Sunshine's increased physical strength while preserving its existing delivery and capacity.",
+        "tier4": "x-4-x unlocks one manual boost of Escanor's purchased Rhitta attack; while it runs, the same attack deals more damage and attacks faster, then returns to its ordinary rate and damage when the engine-defined active window ends.",
+        "tier5": "x-5-x modifies the same manual boost to strengthen its damage and rate and adds a bounded follow-up from each boosted primary hit to distinct eligible secondary enemies; the follow-up is not a second activation and cannot hit the primary again."
+      },
+      "capstoneValue": "The fifth purchase adds a bounded follow-up to the temporary peak, giving the single placed capstone a burst behavior unavailable from additional fourth-purchase copies. The boost remains attached to the purchased Rhitta attack and does not grant invulnerability.",
+      "crosspaths": [
+        {
+          "path": "path1",
+          "contribution": "Proposed early purchases: 1-x-x increases the damage of each ordinary Rhitta hit against its selected primary and any enemy reached by its existing pierce. 2-x-x further increases the damage of each ordinary Rhitta hit, keeping the same blunt delivery and target capacity."
+        },
+        {
+          "path": "path3",
+          "contribution": "Proposed early purchases: x-x-1 increases the range of Escanor's ordinary Rhitta attack without changing its delivery or target capacity. x-x-2 further increases ordinary attack range while keeping the same single-targeting choice and attack delivery."
+        }
+      ],
+      "referenceExample": "The Profile's scale references inform this proposal; the supplied Definition alone authorizes mechanics."
+    },
+    "path3": {
+      "name": "Controlled Solar Heat",
+      "sourceIds": [
+        "source2:26",
+        "source2:33",
+        "source2:34",
+        "source2:35",
+        "source2:36",
+        "source2:37",
+        "source2:38",
+        "source2:39"
+      ],
+      "buyFor": "Choose this path when nearby groups can be reached by impact splash and eligible enemies benefit from sustained heat damage.",
+      "weakness": "Splash remains centered on enemies hit by the ordinary attack, does not extend attack range, and burn refreshes rather than stacking; immune enemies are not excluded by invented damage access.",
+      "milestones": {
+        "tier1": "x-x-1 increases the range of Escanor's ordinary Rhitta attack without changing its delivery or target capacity.",
+        "tier2": "x-x-2 further increases ordinary attack range while keeping the same single-targeting choice and attack delivery.",
+        "tier3": "x-x-3 adapts Cruel Sun's nearby heat as splash damage around the enemy hit by the ordinary attack; the splash does not increase range or hit enemies beyond its defined area.",
+        "tier4": "x-x-4 adds a bounded burn to enemies damaged by the ordinary Rhitta hit and its splash, representing Escanor's heat-imbued axe; a fresh application refreshes the status rather than stacking it.",
+        "tier5": "x-x-5 adapts Crazy Prominence's exploding miniature suns as a wider bounded splash on the existing attack and its existing burn application; it does not spawn independent suns or separate projectiles."
+      },
+      "capstoneValue": "The fifth purchase adds a distinct, bounded area footprint to the heat attack, rather than only raising burn or damage. The single placed capstone can cover more nearby enemies per attack, while extra fourth-purchase copies only add the existing burn.",
+      "crosspaths": [
+        {
+          "path": "path1",
+          "contribution": "Proposed early purchases: 1-x-x increases the damage of each ordinary Rhitta hit against its selected primary and any enemy reached by its existing pierce. 2-x-x further increases the damage of each ordinary Rhitta hit, keeping the same blunt delivery and target capacity."
+        },
+        {
+          "path": "path2",
+          "contribution": "Proposed early purchases: x-1-x represents Sunshine's rising physical speed by increasing the ordinary Rhitta attack rate without changing its delivery. x-2-x further increases the ordinary attack rate as Sunshine's power rises, retaining the same single-projectile Rhitta strike."
+        }
+      ],
+      "referenceExample": "The Profile's scale references inform this proposal; the supplied Definition alone authorizes mechanics."
+    }
+  },
+  "omittedTechniques": [
+    {
+      "name": "Pride Flare",
+      "importance": "major",
+      "reason": "Escanor flares Cruel Sun with heat intense enough to vaporize a sizable lake in an instant. The Definition has no instant-vaporization or lake-scale destruction behavior; ordinary splash and burn can approximate heat but do not carry this technique's defining instantaneous, extreme-scale effect, and no purchase mechanic represents that effect."
+    },
+    {
+      "name": "Final Prominence",
+      "importance": "major",
+      "reason": "The source's defining effect is hurling a gigantic swirling fireball, a distinct thrown delivery. The Definition cannot express a separate attack delivery within the one-attack boost, and the supported boost and splash do not carry that central delivery."
+    },
+    {
+      "name": "Divine Sword Escanor",
+      "importance": "major",
+      "reason": "The technique's defining behavior includes a hand-swipe that destroys Ominous Nebula. The Definition has no dispel or equivalent interaction, and ordinary axe damage does not reproduce that central effect."
+    },
+    {
+      "name": "Divine Spear Escanor",
+      "importance": "major",
+      "reason": "The source describes a forceful finger thrust that pierces an opponent. The Definition's pierce is enemy hit capacity, not penetration, and no supported delivery change produces the technique's central finger-thrust behavior."
+    },
+    {
+      "name": "Daytime",
+      "importance": "major",
+      "reason": "The source's defining behavior is Escanor's changing body and power as the sun rises, including the progression from frail to larger and stronger. A permanent stat purchase sequence does not carry its time-dependent transformation, and the Definition has no clock or transformation mechanic; the plan adapts some increasing strength separately but does not implement Daytime itself."
+    },
+    {
+      "name": "Night-time",
+      "importance": "major",
+      "reason": "Night-time weakness and inability to use magic require a time-of-day state absent from the Definition. A stat reduction without that trigger would not adapt the technique's defining condition."
+    },
+    {
+      "name": "The One: Ultimate",
+      "importance": "major",
+      "reason": "Its defining extension sustains and enhances The One by consuming Escanor's life force and eventually killing him. The Definition has no self-health cost or death behavior, and an ordinary attack boost cannot represent that central sacrifice."
+    },
+    {
+      "name": "Large Spear",
+      "importance": "minor",
+      "reason": "The cited evidence documents a period-specific possession but no attack behavior. There is no source-described combat effect to adapt."
+    },
+    {
+      "name": "Magic Glasses",
+      "importance": "minor",
+      "reason": "The glasses suppress and release Escanor's daytime form through equipment removal. The Definition has no equipment toggle or transformation trigger, and ordinary attack changes would not carry this central interaction."
+    }
+  ],
+  "scopeLimits": [
+    "This is a proposal based only on the selected passages, not an exhaustive repertoire or independent canon verification.",
+    "Sunshine's story-period transfers are retained: Escanor returned it to Mael during the New Holy War, then received it back for the Demon King battle. The plan does not claim continuous availability across every period.",
+    "No real-time sunrise, noon, sunset, or nighttime state is implemented. The One is represented only as a temporary attack boost, not as invulnerability or a guaranteed one-minute form.",
+    "Rhitta recall, its instant stored-heat release as a separate action, the independent miniature suns, and the thrown fireball delivery are not represented as separate attacks.",
+    "All numbers, prices, status magnitudes, status durations, boost windows, cooldowns, and balance outcomes are unspecified proposals for the Definition and playtesting; no execution or balance is claimed."
+  ],
+  "upgradeIntents": {
+    "path1": {
+      "tier1": {
+        "improves": [
+          "damage"
+        ],
+        "unlock": "none",
+        "technique": "Rhitta",
+        "lowers": []
+      },
+      "tier2": {
+        "improves": [
+          "damage"
+        ],
+        "unlock": "none",
+        "technique": "Rhitta",
+        "lowers": []
+      },
+      "tier3": {
+        "improves": [
+          "damage",
+          "pierce"
+        ],
+        "unlock": "none",
+        "technique": "Super Slash",
+        "lowers": []
+      },
+      "tier4": {
+        "improves": [
+          "damage",
+          "pierce"
+        ],
+        "unlock": "none",
+        "technique": "Super Slash",
+        "lowers": [
+          "attack-rate"
+        ]
+      },
+      "tier5": {
+        "improves": [
+          "damage"
+        ],
+        "unlock": "knockback",
+        "technique": "Super Slash",
+        "lowers": []
+      }
+    },
+    "path2": {
+      "tier1": {
+        "improves": [
+          "attack-rate"
+        ],
+        "unlock": "none",
+        "technique": "Sunshine",
+        "lowers": []
+      },
+      "tier2": {
+        "improves": [
+          "attack-rate"
+        ],
+        "unlock": "none",
+        "technique": "Sunshine",
+        "lowers": []
+      },
+      "tier3": {
+        "improves": [
+          "damage"
+        ],
+        "unlock": "none",
+        "technique": "Sunshine",
+        "lowers": []
+      },
+      "tier4": {
+        "improves": [
+          "active-damage",
+          "active-attack-rate"
+        ],
+        "unlock": "manual-boost",
+        "technique": "The One",
+        "lowers": []
+      },
+      "tier5": {
+        "improves": [
+          "active-damage",
+          "active-attack-rate"
+        ],
+        "unlock": "active-follow-up",
+        "technique": "The One",
+        "lowers": []
+      }
+    },
+    "path3": {
+      "tier1": {
+        "improves": [
+          "range"
+        ],
+        "unlock": "none",
+        "technique": "Rhitta",
+        "lowers": []
+      },
+      "tier2": {
+        "improves": [
+          "range"
+        ],
+        "unlock": "none",
+        "technique": "Rhitta",
+        "lowers": []
+      },
+      "tier3": {
+        "improves": [
+          "splash"
+        ],
+        "unlock": "none",
+        "technique": "Cruel Sun",
+        "lowers": []
+      },
+      "tier4": {
+        "improves": [
+          "burn"
+        ],
+        "unlock": "burn",
+        "technique": "Rhitta",
+        "lowers": []
+      },
+      "tier5": {
+        "improves": [
+          "splash",
+          "burn"
+        ],
+        "unlock": "splash",
+        "technique": "Crazy Prominence",
+        "lowers": []
+      }
+    }
+  }
+}
