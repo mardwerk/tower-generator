@@ -174,18 +174,25 @@ func (sh *sheet) attackSummary(attack m.Attack) string {
 		parts = append(parts, "detects "+joinAnd(detected))
 	}
 	if f := attack.FollowUp; f != nil {
-		parts = append(parts, fmt.Sprintf("%s up to %s × %s", f.Name, decimal(f.Count), decimal(st.Damage*f.DamageMultiplier)))
+		parts = append(parts, fmt.Sprintf("%s up to %s %s of %s damage", f.Name, decimal(f.Count), plural(f.Count, "hit", "hits"), decimal(st.Damage*f.DamageMultiplier)))
 	}
 	return strings.Join(parts, "; ")
 }
 
-// attackChanges lists what differs between two resolved attacks.
+// attackChanges lists what differs between two resolved attacks, each
+// number as "damage 1 → 2 (+1)" and the interval with the attack speed it
+// gives: "interval 0.95 s → 0.8075 s (attacks 18% faster)".
 func (sh *sheet) attackChanges(before, after m.Attack) []string {
 	var out []string
 	number := func(label, unitText string, a, b float64) {
-		if a != b {
-			out = append(out, fmt.Sprintf("%s %s%s → %s%s", label, decimal(a), unitText, decimal(b), unitText))
+		if a == b {
+			return
 		}
+		how := delta(a, b, unitText)
+		if label == "interval" {
+			how = attackSpeedChange(a, b)
+		}
+		out = append(out, fmt.Sprintf("%s %s%s → %s%s (%s)", label, decimal(a), unitText, decimal(b), unitText, how))
 	}
 	number("damage", "", before.Stats.Damage, after.Stats.Damage)
 	number("interval", " s", before.Stats.IntervalSeconds, after.Stats.IntervalSeconds)
@@ -233,7 +240,14 @@ func (sh *sheet) attackChanges(before, after m.Attack) []string {
 		case !has:
 			out = append(out, "loses "+sh.effect(status.Effect).Name)
 		case was.Strength() != now.Strength() || was.Seconds != now.Seconds:
-			out = append(out, sh.status(was)+" → "+sh.status(now))
+			var deltas []string
+			if was.Strength() != now.Strength() {
+				deltas = append(deltas, delta(was.Strength(), now.Strength(), magnitudeSuffix(sh.effect(status.Effect))))
+			}
+			if was.Seconds != now.Seconds {
+				deltas = append(deltas, delta(was.Seconds, now.Seconds, " s"))
+			}
+			out = append(out, sh.status(was)+" → "+sh.status(now)+" ("+strings.Join(deltas, ", ")+")")
 		}
 	}
 	properties := map[string]bool{}
@@ -249,7 +263,7 @@ func (sh *sheet) attackChanges(before, after m.Attack) []string {
 		case now == 0:
 			out = append(out, "loses the bonus against "+sh.vocabulary.PropertyName(bonus.Property))
 		case was != now:
-			out = append(out, fmt.Sprintf("damage against %s +%s → +%s", sh.vocabulary.PropertyName(bonus.Property), decimal(was), decimal(now)))
+			out = append(out, fmt.Sprintf("damage against %s +%s → +%s (%s)", sh.vocabulary.PropertyName(bonus.Property), decimal(was), decimal(now), delta(was, now, "")))
 		}
 	}
 	switch {

@@ -174,7 +174,7 @@ func TestUnitSheetUsesBuildCodesAndEveryCrosspath(t *testing.T) {
 		// technique, the plan's description of the adaptation.
 		"## Top path: Juggernaut Line", "**3-x-x Spike-o-pult** (320 Gold). Plan: adapts Spiked Ball. Replaces the dart with a heavier spiked ball that deals more damage, reaches farther and pierces far more enemies, at a slower throw. Resolved: Raises damage from 1 to 2 (+1).",
 		"**1-x-x Sharp Shots** (140 Gold). Plan: adapts Dart Throw (base attack). Resolved: Raises pierce from 2 to 3 (+1).",
-		"**x-4-x Super Monkey Fan Club** (7,200 Gold).", "Adds Fan Club Frenzy, this Unit's Active Ability: for 15 s it multiplies its interval by 0.0625 and adds 8 range",
+		"**x-4-x Super Monkey Fan Club** (7,200 Gold).", "Adds Fan Club Frenzy, this Unit's Active Ability: for 15 s it gives the purchased attack 1500% faster attacks and +8 range",
 		"**x-x-5 Crossbow Master** (21,500 Gold).", "Switches damage from Sharp to Normal.",
 		"### Early builds (12)", "### Advanced builds (36)",
 	} {
@@ -193,7 +193,7 @@ func TestUnitSheetUsesBuildCodesAndEveryCrosspath(t *testing.T) {
 		}
 	}
 	// The side purchase's effect reaches the x-4-x boost window too.
-	if !strings.Contains(unitPart, "| 1-4-0 | 8,280 Gold | 1-x-x: pierce 2 → 3, during Fan Club Frenzy: pierce 2 → 3 |") {
+	if !strings.Contains(unitPart, "| 1-4-0 | 8,280 Gold | 1-x-x: pierce 2 → 3 (+1), during Fan Club Frenzy: pierce 2 → 3 (+1) |") {
 		t.Error("the 1-4-0 row does not show what the boost window receives")
 	}
 	plan := stages.Result.Run.Draft.DesignPlan
@@ -314,7 +314,7 @@ func TestEarlyCrosspathsDoNotRepeatSharedChanges(t *testing.T) {
 			continue
 		}
 		got := s.Stringify(s.FromGoValue(row.Contributions))
-		if !strings.Contains(got, `{"from":"1-x-x","changes":["pierce 2 → 3"]}`) || !strings.Contains(got, `"pierce 2 → 3"`) || !strings.Contains(row.Attack, "pierce 4") {
+		if !strings.Contains(got, `{"from":"1-x-x","changes":["pierce 2 → 3 (+1)"]}`) || !strings.Contains(got, `"pierce 2 → 3 (+1)"`) || !strings.Contains(row.Attack, "pierce 4") {
 			t.Errorf("1-0-1 reports %s, %s", got, row.Attack)
 		}
 		return
@@ -323,8 +323,10 @@ func TestEarlyCrosspathsDoNotRepeatSharedChanges(t *testing.T) {
 }
 
 // Additions apply before multipliers, so an addition under an earlier
-// multiplier raises the value by more than it says; the sentence names the
-// multiplier (seen on #27: "Raises damage from 6 to 18 (+4)").
+// multiplier raises the value by more than it says; the delta is the raise
+// and names the addition and the multiplier as a percentage (seen on #27:
+// "Raises damage from 6 to 18 (+4)"). A multiplier's own delta is a
+// percentage.
 func TestScaledAdditionsNameTheMultiplier(t *testing.T) {
 	stages, err := fixture.Build()
 	if err != nil {
@@ -345,8 +347,9 @@ func TestScaledAdditionsNameTheMultiplier(t *testing.T) {
 		t.Fatal("the edited blueprint is invalid")
 	}
 	effects := strings.Join(purchases[2].Purchases[4].Effects, " ")
-	if !strings.Contains(effects, "(+2, multiplied by the earlier ×2).") || strings.Contains(strings.Join(purchases[2].Purchases[3].Effects, " "), "multiplied by the earlier") {
-		t.Errorf("x-x-4 %v, x-x-5 %s", purchases[2].Purchases[3].Effects, effects)
+	multiplied := strings.Join(purchases[2].Purchases[3].Effects, " ")
+	if !strings.Contains(effects, "Raises damage from 6 to 10 (+4: its +2 scaled by an earlier purchase's +100%).") || !strings.Contains(multiplied, "Raises damage from 3 to 6 (+100%).") || strings.Contains(multiplied, "scaled") {
+		t.Errorf("x-x-4 %s, x-x-5 %s", multiplied, effects)
 	}
 }
 

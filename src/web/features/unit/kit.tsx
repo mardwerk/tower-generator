@@ -174,6 +174,8 @@ export function CharacterSheet({
     abilityIds: string[];
     changes?: StatChange[];
     cost?: number;
+    /** Whether the description is the server's resolved purchase text, which already words its Active Ability. */
+    resolved?: boolean;
   } | null>(null);
   const tierNumbers = [
     ...new Set(candidate?.paths.flatMap((path) => path.tiers.map((tier) => tier.tier))),
@@ -217,7 +219,7 @@ export function CharacterSheet({
                   <Status value={ability.status} />
                   <Status value={ability.placement} />
                 </div>
-                {ability.description !== detail.description && (
+                {ability.description !== detail.description && !detail.resolved && (
                   <p className="my-2">{ability.description}</p>
                 )}
                 <Behavior ability={ability} abilities={abilities} />
@@ -384,6 +386,7 @@ export function CharacterSheet({
                       abilityIds: tier.abilityIds,
                       changes: tierStats?.changes,
                       cost: tierStats?.cost,
+                      resolved: Boolean(purchase),
                     });
                   return (
                     <article

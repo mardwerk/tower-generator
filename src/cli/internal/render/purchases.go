@@ -243,16 +243,16 @@ func shot(attack m.Attack) string {
 	return "pulse"
 }
 
-// followUp describes a bounded follow-up of an attack. Its multiplier
-// scales the hit's ordinary damage; the attack's bonus damage is added to
+// followUp describes a bounded follow-up of an attack. Its multiplier,
+// shown as a percentage of the hit damage, scales the hit's ordinary damage; the attack's bonus damage is added to
 // each follow-up hit unscaled.
 func (sh *sheet) followUp(f m.FollowUp, attack m.Attack) string {
 	inherit := "it applies no statuses"
 	if f.InheritStatuses {
 		inherit = "it applies the attack's purchased statuses"
 	}
-	return fmt.Sprintf("%s: after each volley hits, up to %s other detected %s within %s of the primary impact take %s times the hit damage (%s)%s once each; %s, never recurses and inherits no pierce, splash or volley count",
-		f.Name, decimal(f.Count), plural(f.Count, "enemy", "enemies"), decimal(f.Radius), decimal(f.DamageMultiplier), decimal(attack.Stats.Damage*f.DamageMultiplier), sh.plusBonus(attack), inherit)
+	return fmt.Sprintf("%s: after each volley hits, up to %s other detected %s within %s of the primary impact take %s of the hit damage (%s)%s once each; %s, never recurses and inherits no pierce, splash or volley count",
+		f.Name, decimal(f.Count), plural(f.Count, "enemy", "enemies"), decimal(f.Radius), percentOfDamage(f.DamageMultiplier), decimal(attack.Stats.Damage*f.DamageMultiplier), sh.plusBonus(attack), inherit)
 }
 
 // plusBonus names the bonus damage an attack's damage type can deal, added
@@ -342,43 +342,73 @@ func statUnit(stat string) string {
 	return ""
 }
 
-// operations describes how a purchase's own changes compose: "+1", "×0.85"
-// or "base value set to 20".
-func operations(changes []m.Change) string {
-	var parts []string
+// statHow is the delta of a purchase's change to one stat, written in the
+// parentheses after its values. Additions read as the difference ("+1"),
+// multipliers as a percentage ("+50%") and an attack interval as the attack
+// speed it gives ("attacks 18% faster"). When the delta alone does not show
+// what the purchase's own changes do, it follows them: additions apply
+// before multipliers, so +2 under an earlier purchase's multiplier of 3
+// reads "+6: its +2 scaled by an earlier purchase's +200%".
+func statHow(stat string, changes []m.Change, before, after float64) string {
+	unitText := statUnit(stat)
+	interval := stat == "intervalSeconds"
+	var sets, adds, multiplies []m.Change
+	sum := 0.0
 	for _, change := range changes {
 		switch change.Operation {
 		case "add":
-			sign := "+"
-			if change.Number < 0 {
-				sign = "-"
-			}
-			parts = append(parts, sign+decimal(math.Abs(change.Number)))
+			adds = append(adds, change)
+			sum += change.Number
 		case "multiply":
-			parts = append(parts, "×"+decimal(change.Number))
+			multiplies = append(multiplies, change)
 		default:
-			parts = append(parts, "base value set to "+decimal(change.Number)+"; purchased additions and multipliers still apply")
+			sets = append(sets, change)
 		}
 	}
-	return strings.Join(parts, ", ")
-}
-
-// scaledBy explains additions that an earlier purchase's multiplier scales:
-// additions apply before multipliers, so +4 under an earlier ×3 raises the
-// value by 12.
-func scaledBy(changes []m.Change, difference float64) string {
-	sum := 0.0
-	for _, change := range changes {
-		if change.Operation != "add" {
-			return ""
+	onlyMultiplies := len(sets) == 0 && len(adds) == 0
+	var primary string
+	switch {
+	case interval && onlyMultiplies:
+		primary = attackSpeedChange(before, after)
+	case interval:
+		primary = delta(before, after, unitText)
+		if speed := attackSpeedChange(before, after); speed != "" {
+			primary += ", " + speed
 		}
-		sum += change.Number
+	case onlyMultiplies && before != 0:
+		primary = signedPercent(after/before - 1)
+	default:
+		primary = delta(before, after, unitText)
 	}
-	factor := difference / sum
-	if sum == 0 || factor <= 0 || math.Abs(factor-1) < 1e-9 {
-		return ""
+	if onlyMultiplies {
+		return primary
 	}
-	return ", multiplied by the earlier ×" + decimal(factor)
+	if len(sets) == 0 && len(multiplies) == 0 {
+		factor := (after - before) / sum
+		if sum == 0 || factor <= 0 || math.Abs(factor-1) < 1e-9 {
+			return primary
+		}
+		return primary + ": its " + signedNumber(sum) + unitText + " scaled by an earlier purchase's " + signedPercent(factor-1)
+	}
+	var parts []string
+	for _, change := range sets {
+		parts = append(parts, "sets the base value to "+decimal(change.Number)+unitText)
+	}
+	for _, change := range adds {
+		parts = append(parts, signedNumber(change.Number)+unitText)
+	}
+	for _, change := range multiplies {
+		if interval {
+			parts = append(parts, "attacks "+activeSpeed(change.Number))
+		} else {
+			parts = append(parts, signedPercent(change.Number-1))
+		}
+	}
+	how := primary + ": " + strings.Join(parts, ", then ")
+	if len(sets) > 0 {
+		how += "; purchased additions and multipliers still apply"
+	}
+	return how
 }
 
 // numberChange writes a resolved number's change as a sentence.
@@ -438,7 +468,7 @@ func (sh *sheet) purchaseEffects(changes []m.Change, before, after m.Build) []st
 				label = "pulses per attack"
 			}
 			was, now := prior.Stats.Get(change.Stat), next.Stats.Get(change.Stat)
-			out = append(out, numberChange(label, statUnit(change.Stat), was, now, change.Stat == "intervalSeconds", operations(group)+scaledBy(group, now-was)))
+			out = append(out, numberChange(label, statUnit(change.Stat), was, now, change.Stat == "intervalSeconds", statHow(change.Stat, group, was, now)))
 		case "status":
 			effect := sh.effect(change.Effect)
 			was, had := prior.Status(change.Effect)
@@ -450,10 +480,11 @@ func (sh *sheet) purchaseEffects(changes []m.Change, before, after m.Build) []st
 				out = append(out, "Removes "+effect.Name+".")
 			default:
 				if was.Strength() != now.Strength() {
-					out = append(out, numberChange(effect.Name, magnitudeSuffix(effect), was.Strength(), now.Strength(), false, ""))
+					suffix := magnitudeSuffix(effect)
+					out = append(out, numberChange(effect.Name, suffix, was.Strength(), now.Strength(), false, delta(was.Strength(), now.Strength(), suffix)))
 				}
 				if was.Seconds != now.Seconds {
-					out = append(out, numberChange(effect.Name+" duration", " s", was.Seconds, now.Seconds, false, ""))
+					out = append(out, numberChange(effect.Name+" duration", " s", was.Seconds, now.Seconds, false, delta(was.Seconds, now.Seconds, " s")))
 				}
 			}
 		case "bonusDamage":
@@ -467,7 +498,7 @@ func (sh *sheet) purchaseEffects(changes []m.Change, before, after m.Build) []st
 				}
 				out = append(out, text)
 			} else {
-				out = append(out, numberChange("bonus damage against "+sh.vocabulary.PropertyName(change.Property)+" enemies", "", was, now, false, operations(group)))
+				out = append(out, numberChange("bonus damage against "+sh.vocabulary.PropertyName(change.Property)+" enemies", "", was, now, false, delta(was, now, "")))
 			}
 		case "detection", "camo":
 			trait := change.Trait
@@ -532,40 +563,57 @@ func magnitudeSuffix(effect m.StatusEffect) string {
 	return " " + effect.Magnitude.Unit
 }
 
+// boostChange describes a purchase's change to an owned Active Ability. Its
+// multipliers read as percentages: a damage multiplier of 2 is a +100%
+// damage bonus and an interval multiplier of 0.5 attacks 100% faster, so the
+// delta is in percentage points.
 func boostChange(name, stat string, before, after float64) string {
 	switch stat {
 	case "durationSeconds":
-		return numberChange(name+" duration", " s", before, after, false, "")
+		return numberChange(name+" duration", " s", before, after, false, delta(before, after, " s"))
 	case "cooldownSeconds":
-		return numberChange(name+" recharge", " s", before, after, true, "")
+		return numberChange(name+" recharge", " s", before, after, true, delta(before, after, " s"))
 	case "damageMultiplier":
-		return numberChange(name+"'s damage multiplier", "", before, after, false, "")
+		return percentChange(name+"'s damage bonus", (before-1)*100, (after-1)*100, activeDamage(before), activeDamage(after))
 	case "intervalMultiplier":
-		// A multiplier is lowered, not shortened, even though lower is faster.
-		return numberChange(name+"'s interval multiplier", "", before, after, false, "")
+		return percentChange(name+"'s attack speed", rateChange(1, before)*100, rateChange(1, after)*100, activeSpeed(before), activeSpeed(after))
 	}
-	return numberChange(name+"'s range bonus", "", before, after, false, "")
+	return numberChange(name+"'s range bonus", "", before, after, false, delta(before, after, ""))
+}
+
+// percentChange writes a change between two percentages, shown as before
+// and after text, with its delta in percentage points.
+func percentChange(label string, before, after float64, beforeText, afterText string) string {
+	if before == after {
+		return "Keeps " + label + " at " + afterText + "."
+	}
+	verb := "Raises"
+	if after < before {
+		verb = "Lowers"
+	}
+	return verb + " " + label + " from " + beforeText + " to " + afterText + " (" + pointsDelta(before, after) + ")."
 }
 
 // abilitySentence describes the Active Ability a purchase unlocks: a boost
-// of the purchased attack.
+// of the purchased attack, with its multipliers as percentages.
 func (sh *sheet) abilitySentence(ability m.ResolvedAbility) string {
 	boosted := ability.BoostedAttack.Stats
 	var effects []string
 	if ability.DamageMultiplier != 1 {
-		effects = append(effects, "multiplies the purchased attack's damage by "+decimal(ability.DamageMultiplier))
+		effects = append(effects, activeDamage(ability.DamageMultiplier)+" damage")
 	}
 	if ability.IntervalMultiplier != 1 {
-		effects = append(effects, "multiplies its interval by "+decimal(ability.IntervalMultiplier))
+		effects = append(effects, activeSpeed(ability.IntervalMultiplier)+" attacks")
 	}
 	if ability.RangeBonus != 0 {
-		effects = append(effects, "adds "+decimal(ability.RangeBonus)+" range")
+		effects = append(effects, signedNumber(ability.RangeBonus)+" range")
 	}
+	boost := "gives the purchased attack " + joinAnd(effects)
 	if len(effects) == 0 {
-		effects = append(effects, "leaves the purchased attack unchanged")
+		boost = "leaves the purchased attack unchanged"
 	}
 	return fmt.Sprintf("Adds %s, this Unit's Active Ability: for %s s it %s, so the attack deals %s damage%s every %s s at range %s. It is ready on purchase, recharges %s s after activation and cannot reactivate while active; it grants no separate attack.",
-		ability.Name, decimal(ability.DurationSeconds), joinAnd(effects),
+		ability.Name, decimal(ability.DurationSeconds), boost,
 		decimal(boosted.Damage), sh.plusBonus(ability.BoostedAttack), decimal(boosted.IntervalSeconds), decimal(boosted.Range), decimal(ability.CooldownSeconds))
 }
 
