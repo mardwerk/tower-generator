@@ -48,9 +48,15 @@ export const statLabels = {
 } as const;
 export type StatKey = keyof typeof statLabels;
 
-export function statValue(key: StatKey, value: string | number, unit?: string): string {
+export function statValue(
+  key: StatKey,
+  value: string | number,
+  unit?: string,
+  kind?: StatChange['kind'],
+): string {
   if (typeof value === 'string') return value;
   const number = Number(value.toFixed(4)).toString();
+  if (kind === 'bonusDamage') return `+${number}`;
   if (unit === 's') return `${number} s`;
   if (unit === 'percent') return `${number}%`;
   if (unit) return `${number} ${unit}`;
@@ -96,6 +102,7 @@ const kindIcons: Record<NonNullable<StatChange['kind']>, LucideIcon> = {
   knockback: ChevronsLeft,
   custom: Sparkles,
   detection: Eye,
+  bonusDamage: Sword,
 };
 export function Cost({ value, currency }: { value: number; currency: string }) {
   return (
@@ -130,14 +137,14 @@ export function StatValues({ changes }: { changes: StatChange[] }) {
                 <>
                   <span className="text-destructive">
                     <span className="sr-only">Previous: </span>
-                    {statValue(key, change.before, change.unit)}
+                    {statValue(key, change.before, change.unit, change.kind)}
                   </span>
                   <ArrowRight className="size-3" aria-hidden="true" />
                 </>
               )}
               <span className={cn(change.before !== undefined && 'text-success')}>
                 <span className="sr-only">{change.before === undefined ? '' : 'New: '}</span>
-                {statValue(key, change.after, change.unit)}
+                {statValue(key, change.after, change.unit, change.kind)}
               </span>
             </span>
             {(change.key === 'intervalSeconds' || change.key === 'intervalMultiplier') &&

@@ -246,9 +246,17 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 
 // ---- plan intent ----
 
-func measures(build m.Build, path string, dimension string) []float64 {
+func measures(build m.Build, path string, dimension string, definition m.Definition) []float64 {
 	attack := build.BaseAttack
 	st := attack.Stats
+	if dimension == BonusDamagePromise {
+		// One reading per listed property, in the vocabulary's order.
+		var out []float64
+		for _, property := range definition.Terms().BonusDamageProperties {
+			out = append(out, attack.Bonus(property))
+		}
+		return out
+	}
 	if attack.IsV2() && !corePromises[dimension] {
 		status, _ := attack.Status(dimension)
 		return []float64{status.Strength(), status.Seconds}
@@ -337,6 +345,14 @@ func hasAbility(build m.Build, path string, withFollowUp bool) bool {
 func unlockedIntent(before, after m.Build, intent string, pathIndex, tier int, blueprint *m.Blueprint, definition m.Definition) bool {
 	a, b := before.BaseAttack, after.BaseAttack
 	path := m.PathKeys[pathIndex]
+	if intent == BonusDamagePromise {
+		for _, bonus := range b.BonusDamage {
+			if a.Bonus(bonus.Property) == 0 {
+				return true
+			}
+		}
+		return false
+	}
 	if b.IsV2() && !coreUnlocks[intent] {
 		if !a.DetectsTrait(intent) && b.DetectsTrait(intent) {
 			return true
@@ -401,6 +417,8 @@ func promiseFix(dimension string) string {
 		return "Raise the boost's durationSeconds in boostChanges."
 	case "active-frequency":
 		return "Lower the boost's cooldownSeconds in boostChanges."
+	case BonusDamagePromise:
+		return "Add a bonusDamage entry that raises the bonus damage against an enemy property the vocabulary lists in bonusDamageProperties."
 	}
 	return "Raise the status effect's magnitude or seconds in statuses."
 }
@@ -422,6 +440,8 @@ func baseEffectFix(dimension string) string {
 		return "Give the base attack a splashRadius, with pierce of at least 2, so this purchase raises it."
 	case "follow-up":
 		return "Give the base attack a followUp so this purchase strengthens it."
+	case BonusDamagePromise:
+		return "Give the base attack bonusDamage so this purchase raises it, or promise the unlock bonus-damage from the third purchase on."
 	}
 	return "Give the base attack " + dimension + " so this purchase raises its strength or duration."
 }
@@ -443,7 +463,7 @@ func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition
 			for tier := 1; tier <= 2; tier++ {
 				for _, dimension := range intents.At(index).At(tier).Improves {
 					addsPattern := dimension == "splash" || dimension == "follow-up" || !corePromises[dimension]
-					if !addsPattern || slices.ContainsFunc(measures(base, path, dimension), func(v float64) bool { return v > 0 }) {
+					if !addsPattern || slices.ContainsFunc(measures(base, path, dimension, definition), func(v float64) bool { return v > 0 }) {
 						continue
 					}
 					id := path + "." + m.TierKeys[tier-1] + ".improved " + dimension
@@ -492,9 +512,9 @@ func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition
 				}
 			}
 			for _, dimension := range intent.Improves {
-				prior := measures(before, path, dimension)
+				prior := measures(before, path, dimension, definition)
 				improved := false
-				for metric, value := range measures(entry.build, path, dimension) {
+				for metric, value := range measures(entry.build, path, dimension, definition) {
 					if value > prior[metric] {
 						improved = true
 					}
@@ -504,9 +524,9 @@ func PlanIntentIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition
 				}
 			}
 			for _, dimension := range intent.Lowers {
-				prior := measures(before, path, dimension)
+				prior := measures(before, path, dimension, definition)
 				lowered := false
-				for metric, value := range measures(entry.build, path, dimension) {
+				for metric, value := range measures(entry.build, path, dimension, definition) {
 					if value < prior[metric] {
 						lowered = true
 					}

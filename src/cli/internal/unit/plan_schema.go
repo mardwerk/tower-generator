@@ -166,8 +166,10 @@ func upgradeIntentsSchema(intent s.Schema) *s.ObjectSchema {
 }
 
 // Plan promises of a version 2 Definition: the core dimensions, each status
-// effect as an improvement and an unlock, and each detection trait as an
-// unlock. They replace version 1's slow, burn, stun and camo.
+// effect as an improvement and an unlock, each detection trait as an unlock
+// and, when the vocabulary lists bonus damage properties, bonus-damage as an
+// improvement and an unlock. They replace version 1's slow, burn, stun and
+// camo.
 var (
 	coreImprovements  = []string{"damage", "attack-rate", "range", "pierce", "projectiles", "splash"}
 	boostImprovements = []string{"follow-up", "active-damage", "active-attack-rate", "active-duration", "active-frequency"}
@@ -182,8 +184,16 @@ func ImprovementsFor(d *mechanics.Definition) []string {
 	for _, effect := range d.Vocabulary.StatusEffects {
 		out = append(out, effect.ID)
 	}
+	if len(d.Vocabulary.BonusDamageProperties) > 0 {
+		out = append(out, BonusDamagePromise)
+	}
 	return append(out, boostImprovements...)
 }
+
+// BonusDamagePromise is the promise of bonus damage against an enemy
+// property: as an improvement some property's bonus rises, as an unlock
+// the attack gains a bonus against a property it had none against.
+const BonusDamagePromise = "bonus-damage"
 
 // UnlocksFor lists the unlocks a Definition's plans may promise.
 func UnlocksFor(d *mechanics.Definition) []string {
@@ -197,6 +207,9 @@ func UnlocksFor(d *mechanics.Definition) []string {
 	out = append(out, "distinct-volley", "splash")
 	for _, effect := range d.Vocabulary.StatusEffects {
 		out = append(out, effect.ID)
+	}
+	if len(d.Vocabulary.BonusDamageProperties) > 0 {
+		out = append(out, BonusDamagePromise)
 	}
 	return append(out, "delivery-change", "damage-type-change", "targeting-change")
 }

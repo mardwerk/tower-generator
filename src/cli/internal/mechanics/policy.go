@@ -3,6 +3,7 @@ package mechanics
 import (
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -159,7 +160,13 @@ func attackBehavior(attack Attack) []any {
 		for _, stat := range CoreStatKeys {
 			out = append(out, attack.Stats.Get(stat))
 		}
-		return append(out, s.FromGoValue(attack.AppliedStatuses()))
+		out = append(out, s.FromGoValue(attack.AppliedStatuses()))
+		// Only an attack with bonus damage lists it, so earlier attacks keep
+		// their behavior value.
+		if len(attack.BonusDamage) > 0 {
+			out = append(out, s.FromGoValue(attack.BonusDamage))
+		}
+		return out
 	}
 	out := []any{attack.Delivery, attack.DamageType, attack.Targeting, attack.Camo, distribution, follow}
 	for _, stat := range StatKeys {
@@ -208,6 +215,13 @@ func HasBehaviorTransition(before, after Build) bool {
 	if b.IsV2() {
 		for _, status := range b.AppliedStatuses() {
 			if _, ok := a.Status(status.Effect); !ok {
+				return true
+			}
+		}
+		// Bonus damage against a new enemy property is new access, like a
+		// new status.
+		for _, bonus := range b.BonusDamage {
+			if a.Bonus(bonus.Property) == 0 {
 				return true
 			}
 		}
@@ -371,7 +385,37 @@ func DesignPolicyIssues(blueprint *Blueprint, definition Definition) []Issue {
 
 func finite(x float64) bool { return !math.IsNaN(x) && !math.IsInf(x, 0) }
 
+// BonusMetric names the direct damage rate against an enemy property that
+// accepts bonus damage, such as "direct damage rate against Hardened".
+func BonusMetric(vocabulary *Vocabulary, property string) string {
+	return "direct damage rate against " + vocabulary.PropertyName(property)
+}
+
+// directDamageAgainst is the direct damage rate against one enemy with a
+// property: every primary hit adds the attack's bonus against it. An enemy
+// the damage type cannot hurt takes nothing, and a damage-over-time effect
+// it is immune to adds nothing.
+func directDamageAgainst(attack Attack, vocabulary *Vocabulary, property string) float64 {
+	if !vocabulary.CanDamage(attack.DamageType, property) {
+		return 0
+	}
+	st := attack.Stats
+	count := st.Projectiles
+	if attack.Distribution == "distinct-targets" {
+		count = 1
+	}
+	total := ((st.Damage + attack.Bonus(property)) * count) / st.IntervalSeconds
+	for _, status := range attack.AppliedStatuses() {
+		if effect, ok := vocabulary.Effect(status.Effect); ok && effect.Kind == KindDamageOverTime && !slices.Contains(effect.Immune, property) {
+			total += Sustained(effect, status, st.IntervalSeconds)
+		}
+	}
+	return total
+}
+
 // PurchaseMetricsWith measures a build with its Definition's vocabulary.
+// After the specialty metrics it lists the direct damage rate against each
+// property that accepts bonus damage; the other metrics ignore bonus damage.
 func PurchaseMetricsWith(build Build, vocabulary *Vocabulary) *s.Object {
 	out := s.NewObject()
 	parts := []string{"direct-damage", "group-damage", "control", "range", "attack-speed"}
@@ -386,6 +430,15 @@ func PurchaseMetricsWith(build Build, vocabulary *Vocabulary) *s.Object {
 				out.Set(key, f)
 			} else {
 				out.Set(key, nil)
+			}
+		}
+	}
+	if vocabulary != nil && build.BaseAttack.IsV2() {
+		for _, property := range vocabulary.BonusDamageProperties {
+			if f := directDamageAgainst(build.BaseAttack, vocabulary, property); finite(f) {
+				out.Set(BonusMetric(vocabulary, property), f)
+			} else {
+				out.Set(BonusMetric(vocabulary, property), nil)
 			}
 		}
 	}

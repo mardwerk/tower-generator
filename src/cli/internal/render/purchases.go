@@ -138,6 +138,30 @@ func (sh *sheet) status(status m.StatusApplication) string {
 	return text
 }
 
+// bonusAgainst names bonus damage against a property: "+50 damage against
+// Hardened enemies".
+func (sh *sheet) bonusAgainst(damage float64, property string) string {
+	return "+" + decimal(damage) + " damage against " + sh.vocabulary.PropertyName(property) + " enemies"
+}
+
+// bonusSentence says what an attack's bonus damage adds to each hit, with
+// the resulting damage per hit: "Each hit deals +50 damage against Hardened
+// enemies (70 per hit)." A bonus the damage type cannot deal says so.
+func (sh *sheet) bonusSentence(attack m.Attack) string {
+	var parts []string
+	for _, bonus := range attack.BonusDamage {
+		text := sh.bonusAgainst(bonus.Damage, bonus.Property) + " (" + decimal(attack.Stats.Damage+bonus.Damage) + " per hit)"
+		if !sh.vocabulary.CanDamage(attack.DamageType, bonus.Property) {
+			text = sh.bonusAgainst(bonus.Damage, bonus.Property) + ", which its " + sh.damageTypeName(attack.DamageType) + " damage cannot deal"
+		}
+		parts = append(parts, text)
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return "Each hit deals " + joinAnd(parts) + "."
+}
+
 func (sh *sheet) detectionName(trait string) string {
 	return termName(trait, sh.vocabulary.Detection)
 }
@@ -185,14 +209,32 @@ func shot(attack m.Attack) string {
 	return "pulse"
 }
 
-// followUp describes a bounded follow-up of an attack.
-func (sh *sheet) followUp(f m.FollowUp, damage float64) string {
+// followUp describes a bounded follow-up of an attack. Its multiplier
+// scales the hit's ordinary damage; the attack's bonus damage is added to
+// each follow-up hit unscaled.
+func (sh *sheet) followUp(f m.FollowUp, attack m.Attack) string {
 	inherit := "it applies no statuses"
 	if f.InheritStatuses {
 		inherit = "it applies the attack's purchased statuses"
 	}
-	return fmt.Sprintf("%s: after each volley hits, up to %s other detected %s within %s of the primary impact take %s times the hit damage (%s) once each; %s, never recurses and inherits no pierce, splash or volley count",
-		f.Name, decimal(f.Count), plural(f.Count, "enemy", "enemies"), decimal(f.Radius), decimal(f.DamageMultiplier), decimal(damage*f.DamageMultiplier), inherit)
+	return fmt.Sprintf("%s: after each volley hits, up to %s other detected %s within %s of the primary impact take %s times the hit damage (%s)%s once each; %s, never recurses and inherits no pierce, splash or volley count",
+		f.Name, decimal(f.Count), plural(f.Count, "enemy", "enemies"), decimal(f.Radius), decimal(f.DamageMultiplier), decimal(attack.Stats.Damage*f.DamageMultiplier), sh.plusBonus(attack), inherit)
+}
+
+// plusBonus names the bonus damage an attack's damage type can deal, added
+// to a hit whose ordinary damage a multiplier scales: ", plus +50 damage
+// against Hardened enemies". It is empty without such a bonus.
+func (sh *sheet) plusBonus(attack m.Attack) string {
+	var parts []string
+	for _, bonus := range attack.BonusDamage {
+		if sh.vocabulary.CanDamage(attack.DamageType, bonus.Property) {
+			parts = append(parts, sh.bonusAgainst(bonus.Damage, bonus.Property))
+		}
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return ", plus " + joinAnd(parts) + ","
 }
 
 // attackSentences describe a whole resolved attack, as the base Unit has it.
@@ -222,8 +264,11 @@ func (sh *sheet) attackSentences(attack m.Attack) []string {
 	if len(statuses) > 0 {
 		out = append(out, "Each hit applies "+joinAnd(statuses)+".")
 	}
+	if bonus := sh.bonusSentence(attack); bonus != "" {
+		out = append(out, bonus)
+	}
 	if attack.FollowUp != nil {
-		out = append(out, capitalized(sh.followUp(*attack.FollowUp, st.Damage))+".")
+		out = append(out, capitalized(sh.followUp(*attack.FollowUp, attack))+".")
 	}
 	var detected []string
 	for _, trait := range sh.vocabulary.Detection {
@@ -339,6 +384,8 @@ func (sh *sheet) purchaseEffects(changes []m.Change, before, after m.Build) []st
 			key = change.Kind + "." + change.Effect
 		case "detection":
 			key = change.Kind + "." + change.Trait
+		case "bonusDamage":
+			key = change.Kind + "." + change.Property
 		}
 		if _, ok := groups[key]; !ok {
 			order = append(order, key)
@@ -375,6 +422,19 @@ func (sh *sheet) purchaseEffects(changes []m.Change, before, after m.Build) []st
 					out = append(out, numberChange(effect.Name+" duration", " s", was.Seconds, now.Seconds, false, ""))
 				}
 			}
+		case "bonusDamage":
+			// Bonus damage only adds, so a purchase either adds a bonus
+			// against a property or raises the one the attack has.
+			was, now := prior.Bonus(change.Property), next.Bonus(change.Property)
+			if was == 0 {
+				text := fmt.Sprintf("Adds %s (%s to %s per hit).", sh.bonusAgainst(now, change.Property), decimal(next.Stats.Damage), decimal(next.Stats.Damage+now))
+				if !sh.vocabulary.CanDamage(next.DamageType, change.Property) {
+					text = fmt.Sprintf("Adds %s, which its %s damage cannot deal.", sh.bonusAgainst(now, change.Property), sh.damageTypeName(next.DamageType))
+				}
+				out = append(out, text)
+			} else {
+				out = append(out, numberChange("bonus damage against "+sh.vocabulary.PropertyName(change.Property)+" enemies", "", was, now, false, operations(group)))
+			}
 		case "detection", "camo":
 			trait := change.Trait
 			if change.Kind == "camo" {
@@ -403,11 +463,11 @@ func (sh *sheet) purchaseEffects(changes []m.Change, before, after m.Build) []st
 				if ability := newAbilityOrLast(after); ability != nil {
 					name = ability.Name
 				}
-				out = append(out, "While "+name+" is active, adds "+sh.followUp(*change.FollowUp, next.Stats.Damage)+".")
+				out = append(out, "While "+name+" is active, adds "+sh.followUp(*change.FollowUp, next)+".")
 			} else if prior.FollowUp != nil {
-				out = append(out, "Replaces "+prior.FollowUp.Name+" with "+sh.followUp(*change.FollowUp, next.Stats.Damage)+".")
+				out = append(out, "Replaces "+prior.FollowUp.Name+" with "+sh.followUp(*change.FollowUp, next)+".")
 			} else {
-				out = append(out, "Adds "+sh.followUp(*change.FollowUp, next.Stats.Damage)+".")
+				out = append(out, "Adds "+sh.followUp(*change.FollowUp, next)+".")
 			}
 		case "unlockBoost":
 			if ability := newAbility(before, after); ability != nil {
@@ -470,9 +530,9 @@ func (sh *sheet) abilitySentence(ability m.ResolvedAbility) string {
 	if len(effects) == 0 {
 		effects = append(effects, "leaves the purchased attack unchanged")
 	}
-	return fmt.Sprintf("Adds %s, this Unit's Active Ability: for %s s it %s, so the attack deals %s damage every %s s at range %s. It is ready on purchase, recharges %s s after activation and cannot reactivate while active; it grants no separate attack.",
+	return fmt.Sprintf("Adds %s, this Unit's Active Ability: for %s s it %s, so the attack deals %s damage%s every %s s at range %s. It is ready on purchase, recharges %s s after activation and cannot reactivate while active; it grants no separate attack.",
 		ability.Name, decimal(ability.DurationSeconds), joinAnd(effects),
-		decimal(boosted.Damage), decimal(boosted.IntervalSeconds), decimal(boosted.Range), decimal(ability.CooldownSeconds))
+		decimal(boosted.Damage), sh.plusBonus(ability.BoostedAttack), decimal(boosted.IntervalSeconds), decimal(boosted.Range), decimal(ability.CooldownSeconds))
 }
 
 func newAbility(before, after m.Build) *m.ResolvedAbility {

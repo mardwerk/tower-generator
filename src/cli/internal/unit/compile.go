@@ -70,6 +70,9 @@ func attackDescription(attack m.Attack, vocabulary *m.Vocabulary) string {
 		for _, status := range attack.AppliedStatuses() {
 			effects = append(effects, statusText(status, vocabulary))
 		}
+		for _, bonus := range attack.BonusDamage {
+			effects = append(effects, bonusText(bonus.Damage, bonus.Property, vocabulary))
+		}
 	} else {
 		if st.SlowPercent != 0 && !math.IsNaN(st.SlowPercent) {
 			effects = append(effects, fmt.Sprintf("%s%% slow for %s s", num(st.SlowPercent), num(st.SlowSeconds)))
@@ -85,6 +88,16 @@ func attackDescription(attack m.Attack, vocabulary *m.Vocabulary) string {
 		effects = append(effects, followUpDescription(*attack.FollowUp, attack.IsV2()))
 	}
 	return strings.Join(effects, "; ") + "."
+}
+
+// bonusText names bonus damage against a property: "+50 damage per hit
+// against Hardened enemies".
+func bonusText(damage float64, property string, vocabulary *m.Vocabulary) string {
+	name := property
+	if vocabulary != nil {
+		name = vocabulary.PropertyName(property)
+	}
+	return "+" + num(damage) + " damage per hit against " + name + " enemies"
 }
 
 // effectOf is a status effect's vocabulary entry, or a bare one named by ID.
@@ -183,6 +196,8 @@ func changeDescriptions(changes []m.Change, before, after m.ResolvedBuild, vocab
 			key = c.Kind + "." + c.Effect + "." + c.Field
 		case "detection":
 			key = c.Kind + "." + c.Trait
+		case "bonusDamage":
+			key = c.Kind + "." + c.Property
 		}
 		if _, ok := groups[key]; !ok {
 			order = append(order, key)
@@ -195,7 +210,7 @@ func changeDescriptions(changes []m.Change, before, after m.ResolvedBuild, vocab
 		change := group[len(group)-1]
 		var effects []string
 		for _, entry := range group {
-			if entry.Kind == "stat" || entry.Kind == "modifyBoost" || entry.Kind == "status" {
+			if entry.Kind == "stat" || entry.Kind == "modifyBoost" || entry.Kind == "status" || entry.Kind == "bonusDamage" {
 				effects = append(effects, operationDescription(entry))
 			}
 		}
@@ -216,6 +231,12 @@ func changeDescriptions(changes []m.Change, before, after m.ResolvedBuild, vocab
 			} else {
 				out = append(out, fmt.Sprintf("%s duration (s) %s to %s (%s)", effect.Name, num(prior.Seconds), num(next.Seconds), joined))
 			}
+		case "bonusDamage":
+			name := change.Property
+			if vocabulary != nil {
+				name = vocabulary.PropertyName(change.Property)
+			}
+			out = append(out, fmt.Sprintf("bonus damage against %s enemies %s to %s (%s)", name, num(before.BaseAttack.Bonus(change.Property)), num(after.BaseAttack.Bonus(change.Property)), joined))
 		case "detection":
 			var terms []m.Term
 			if vocabulary != nil {
@@ -344,6 +365,15 @@ func statusSummary(base, after m.Attack, vocabulary *m.Vocabulary) (gains, losse
 	var terms []m.Term
 	if vocabulary != nil {
 		terms = vocabulary.Detection
+	}
+	for _, bonus := range after.BonusDamage {
+		if bonus.Damage > base.Bonus(bonus.Property) {
+			name := bonus.Property
+			if vocabulary != nil {
+				name = vocabulary.PropertyName(bonus.Property)
+			}
+			gains = append(gains, "bonus damage against "+name+" enemies")
+		}
 	}
 	for _, trait := range after.DetectionTraits() {
 		if !base.DetectsTrait(trait) {

@@ -3,6 +3,7 @@ package unit
 import (
 	"fmt"
 	"math"
+	"strings"
 
 	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
@@ -168,7 +169,37 @@ func statusChanges(before, after m.Attack) []any {
 			changes = append(changes, fmt.Sprintf("%s seconds: %s → %s", effect, s.FormatNumber(prior.Seconds), s.FormatNumber(next.Seconds)))
 		}
 	}
+	properties := map[string]bool{}
+	for _, bonus := range append(append([]m.DamageBonus{}, before.BonusDamage...), after.BonusDamage...) {
+		if properties[bonus.Property] {
+			continue
+		}
+		properties[bonus.Property] = true
+		if prior, next := before.Bonus(bonus.Property), after.Bonus(bonus.Property); prior != next {
+			changes = append(changes, fmt.Sprintf("bonusDamage %s: %s → %s", bonus.Property, s.FormatNumber(prior), s.FormatNumber(next)))
+		}
+	}
 	return changes
+}
+
+// bonusLimitation states what the direct damage rates against bonus damage
+// properties measure; empty without such properties.
+func bonusLimitation(vocabulary m.Vocabulary) []any {
+	if len(vocabulary.BonusDamageProperties) == 0 {
+		return nil
+	}
+	var names []string
+	for _, property := range vocabulary.BonusDamageProperties {
+		names = append(names, m.BonusMetric(&vocabulary, property))
+	}
+	const others = " Every other rate, the capstone copy bounds and the design policy ignore bonus damage."
+	if len(names) == 1 {
+		return []any{names[0] + " adds the attack's bonus damage against that property to every primary hit on one enemy with it, and is zero when the damage type cannot hurt it." + others}
+	}
+	// Each property's reading takes only its own bonus, so a Hardened bonus
+	// never shows in the Blimp rate.
+	listed := strings.Join(names[:len(names)-1], ", ") + " and " + names[len(names)-1]
+	return []any{"Each of " + listed + " counts only its own property's bonus damage: it adds that bonus to every primary hit on one enemy with the property, and is zero when the damage type cannot hurt it." + others}
 }
 
 // EvaluateUnitDesign computes analytical purchase evidence for valid mechanics.
@@ -240,13 +271,13 @@ func EvaluateUnitDesign(input m.Blueprint, plan *DesignPlan, definition m.Defini
 		Set("scope", "analytical-not-simulation").
 		Set("sourceClaims", sourceClaims).
 		Set("paths", paths).
-		Set("limitations", []any{
+		Set("limitations", append([]any{
 			"Source and purchase claims are retained author proposals, not independently verified conclusions.",
 			"Deltas measure resolved capacities under ideal target access. They do not establish combat outcomes, player preference or balance.",
 			"Null metrics and deltas are unavailable because their calculation has no finite numeric result.",
 			"A missing active metric is zero before its unlock. Active peaks are not sustained output; range and duty fraction are not additive across copies.",
 			"No text interpretation or automatic quality score is applied. Scope limits and omitted techniques remain explicit for independent review.",
-		})
+		}, bonusLimitation(vocabulary)...))
 	out, issues := s.Parse(DesignEvaluationSchema, evaluation)
 	if len(issues) > 0 {
 		return nil, &s.Error{Issues: issues}

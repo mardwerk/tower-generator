@@ -111,13 +111,17 @@ func ActiveAbilityRule(d *Definition) string {
 }
 
 // EarlyIdentityRule states preserveEarlyAttackIdentity as the plan schema,
-// the plan checks and the resolved check enforce it.
+// the plan checks and the resolved check enforce it. A Definition with bonus
+// damage names it too: an early purchase may raise an existing bonus but not
+// add one.
 func EarlyIdentityRule(d *Definition) string {
-	detection := "personal detection"
+	detection, bonus := "personal detection", ""
 	if d == nil || !d.IsV2() {
 		detection = "personal Camo detection"
+	} else if len(d.Vocabulary.BonusDamageProperties) > 0 {
+		bonus = "bonus damage, "
 	}
-	return "The first and second purchase of each path keep the base attack's form: they add no new status, splash, follow-up or distinct-target volley, change no delivery, targeting or damage type, and keep a single-projectile attack single. Improving existing stats and effects and adding " + detection + " remain allowed."
+	return "The first and second purchase of each path keep the base attack's form: they add no new status, " + bonus + "splash, follow-up or distinct-target volley, change no delivery, targeting or damage type, and keep a single-projectile attack single. Improving existing stats and effects and adding " + detection + " remain allowed."
 }
 
 // BehaviorChangeRule states requireTier3BehaviorChange (tier 3) and

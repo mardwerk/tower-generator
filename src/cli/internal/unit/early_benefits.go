@@ -150,8 +150,8 @@ func resolvedStep(blueprint *m.Blueprint, definition m.Definition, pathIndex, ti
 		if strings.HasPrefix(d, "active-") {
 			continue
 		}
-		prior := measures(b, path, d)
-		for i, v := range measures(a, path, d) {
+		prior := measures(b, path, d, definition)
+		for i, v := range measures(a, path, d, definition) {
 			if i < len(prior) && v > prior[i] {
 				step.improves = append(step.improves, d)
 				break

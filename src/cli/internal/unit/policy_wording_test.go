@@ -62,6 +62,10 @@ func TestPolicyRuleSentencesArePinned(t *testing.T) {
 		d.Profile.DesignPolicy = &policy
 		return &d
 	}
+	noBonus := unit.DefaultAuthoringDefinition()
+	vocabulary := *noBonus.Vocabulary
+	vocabulary.BonusDamageProperties = nil
+	noBonus.Vocabulary = &vocabulary
 	absent, none := m.NullableString{}, m.NullableString{Present: true, Null: true}
 	middle, bottom := m.NullableString{Present: true, Value: "path2"}, m.NullableString{Present: true, Value: "path3"}
 	for _, pin := range []struct{ name, got, want string }{
@@ -69,7 +73,8 @@ func TestPolicyRuleSentencesArePinned(t *testing.T) {
 		{"first purchases", m.DistinctFirstPurchasesRule, "No two first purchases (1-x-x, x-1-x, x-x-1) may produce the same resolved attack. Names, prices and different arithmetic expressions do not make identical effects different."},
 		{"capstones", m.DistinctCapstonesRule, "Pure 5-0-0, 0-5-0 and 0-0-5 builds must differ mechanically even after ignoring names and costs."},
 		{"early benefits", m.EarlyBenefitsRule, "Two paths' first two purchases together must differ in what they improve or unlock, whatever their order, names, prices or amounts; lowers do not count."},
-		{"early identity", m.EarlyIdentityRule(&v2), "The first and second purchase of each path keep the base attack's form: they add no new status, splash, follow-up or distinct-target volley, change no delivery, targeting or damage type, and keep a single-projectile attack single. Improving existing stats and effects and adding personal detection remain allowed."},
+		{"early identity", m.EarlyIdentityRule(&v2), "The first and second purchase of each path keep the base attack's form: they add no new status, bonus damage, splash, follow-up or distinct-target volley, change no delivery, targeting or damage type, and keep a single-projectile attack single. Improving existing stats and effects and adding personal detection remain allowed."},
+		{"early identity, no bonus damage", m.EarlyIdentityRule(&noBonus), "The first and second purchase of each path keep the base attack's form: they add no new status, splash, follow-up or distinct-target volley, change no delivery, targeting or damage type, and keep a single-projectile attack single. Improving existing stats and effects and adding personal detection remain allowed."},
 		{"early identity, version 1", m.EarlyIdentityRule(&v1), "The first and second purchase of each path keep the base attack's form: they add no new status, splash, follow-up or distinct-target volley, change no delivery, targeting or damage type, and keep a single-projectile attack single. Improving existing stats and effects and adding personal Camo detection remain allowed."},
 		{"third purchase", m.BehaviorChangeRule(3), "The third purchase of every path must add a supported behavior or access: a new delivery, a distinct-target volley of more than one projectile, more than one projectile, splash, a status effect, a bounded follow-up, a new damage type or a newly detected trait; larger existing numbers, a targeting change, a new name or a change with no effect do not count."},
 		{"fifth purchase", m.BehaviorChangeRule(5), "The fifth purchase of every path must add a supported behavior or access: a new delivery, a distinct-target volley of more than one projectile, more than one projectile, splash, a status effect, a bounded follow-up, a new damage type or a newly detected trait; larger existing numbers, a targeting change, a new name or a change with no effect do not count."},

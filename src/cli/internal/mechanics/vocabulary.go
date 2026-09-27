@@ -86,13 +86,60 @@ type StatusEffect struct {
 
 // Vocabulary is the game vocabulary a version 2 Definition declares: what
 // enemies can be, which damage types, targeting modes and detection exist,
-// and which status effects attacks may apply.
+// and which status effects attacks may apply. BonusDamageProperties lists the
+// enemy properties an attack may deal bonus damage against; without it no
+// attack deals bonus damage.
 type Vocabulary struct {
-	EnemyProperties []Term         `json:"enemyProperties"`
-	DamageTypes     []DamageType   `json:"damageTypes"`
-	Targeting       []Term         `json:"targeting"`
-	Detection       []Term         `json:"detection"`
-	StatusEffects   []StatusEffect `json:"statusEffects"`
+	EnemyProperties       []Term         `json:"enemyProperties"`
+	BonusDamageProperties []string       `json:"bonusDamageProperties,omitempty"`
+	DamageTypes           []DamageType   `json:"damageTypes"`
+	Targeting             []Term         `json:"targeting"`
+	Detection             []Term         `json:"detection"`
+	StatusEffects         []StatusEffect `json:"statusEffects"`
+}
+
+// DamageBonus is bonus damage an attack deals per hit to enemies with an
+// enemy property, on top of its damage. A hit its damage type cannot deal
+// deals no bonus either.
+type DamageBonus struct {
+	Property string  `json:"property"`
+	Damage   float64 `json:"damage"`
+}
+
+// AllowsBonusDamage reports whether attacks may deal bonus damage against
+// an enemy property.
+func (v *Vocabulary) AllowsBonusDamage(property string) bool {
+	for _, id := range v.BonusDamageProperties {
+		if id == property {
+			return true
+		}
+	}
+	return false
+}
+
+// PropertyName is an enemy property's name, or its ID.
+func (v *Vocabulary) PropertyName(id string) string {
+	for _, term := range v.EnemyProperties {
+		if term.ID == id && term.Name != "" {
+			return term.Name
+		}
+	}
+	return id
+}
+
+// CanDamage reports whether a damage type can hurt an enemy with a
+// property; an immune enemy takes no damage, bonus damage included.
+func (v *Vocabulary) CanDamage(damageType, property string) bool {
+	kind, ok := v.DamageType(damageType)
+	if !ok {
+		return true
+	}
+	for _, id := range kind.IneffectiveAgainst {
+		if id == property {
+			return false
+		}
+	}
+	return true
 }
 
 // StatusApplication is a status effect an attack applies. Magnitude is
@@ -179,7 +226,7 @@ var ReservedIDs = []string{
 	"none", "damage", "attack-rate", "range", "pierce", "projectiles", "splash", "follow-up",
 	"active-damage", "active-attack-rate", "active-duration", "active-frequency", "manual-boost",
 	"active-follow-up", "distinct-volley", "delivery-change", "damage-type-change",
-	"targeting-change", "damage-type-access",
+	"targeting-change", "damage-type-access", "bonus-damage",
 }
 
 // UpgradeDefinition turns a version 1 Definition into the equivalent
@@ -223,6 +270,7 @@ func termSchema() *s.ObjectSchema {
 // cross-references.
 var VocabularySchema = s.StrictObject(
 	s.F("enemyProperties", s.Array(termSchema()).Max(32)),
+	s.F("bonusDamageProperties", s.Optional(s.Array(vocabularyID).Max(32))),
 	s.F("damageTypes", s.Array(termSchema().Extend(s.F("ineffectiveAgainst", s.Array(vocabularyID).Max(32)))).Min(1).Max(16)),
 	s.F("targeting", s.Array(termSchema()).Min(1).Max(16)),
 	s.F("detection", s.Array(termSchema()).Max(8)),
@@ -306,6 +354,14 @@ func VocabularyIssues(v Vocabulary) []Issue {
 	}
 	for i, damageType := range v.DamageTypes {
 		known(fmt.Sprintf("damageTypes.%d.ineffectiveAgainst", i), damageType.IneffectiveAgainst)
+	}
+	known("bonusDamageProperties", v.BonusDamageProperties)
+	listed := map[string]bool{}
+	for i, id := range v.BonusDamageProperties {
+		if listed[id] {
+			add(fmt.Sprintf("bonusDamageProperties.%d", i), id+" is already listed.")
+		}
+		listed[id] = true
 	}
 	names := map[string]string{}
 	for _, effect := range v.StatusEffects {

@@ -372,12 +372,13 @@ func earlyIdentityAllowed(d *m.Definition, unlock string) bool {
 }
 
 // earlyIdentityBreaking reports an unlock that changes a T1/T2 attack's
-// identity: a new status, attack pattern, delivery, targeting or damage type.
+// identity: a new status, bonus damage, attack pattern, delivery, targeting
+// or damage type.
 func earlyIdentityBreaking(d *m.Definition, unlock string) bool {
 	if d == nil || !d.IsV2() {
 		return earlyIdentityBlocked[unlock]
 	}
-	if _, ok := d.Vocabulary.Effect(unlock); ok {
+	if _, ok := d.Vocabulary.Effect(unlock); ok || unlock == BonusDamagePromise {
 		return true
 	}
 	return earlyIdentityBlocked[unlock] && unlock != "slow" && unlock != "burn" && unlock != "stun"

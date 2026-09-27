@@ -333,7 +333,8 @@ func TestAccessChangesAreBehaviorTransitions(t *testing.T) {
 	// A distribution change with one projectile is no improvement at all.
 	single := Build{BaseAttack: base.BaseAttack.Clone()}
 	single.BaseAttack.Distribution = "distinct-targets"
-	if hasBenefit(base, single) {
+	vocabulary := DefaultDefinition().Terms()
+	if hasBenefit(base, single, &vocabulary) {
 		t.Error("a one-projectile distinct volley counted as an improvement")
 	}
 }
