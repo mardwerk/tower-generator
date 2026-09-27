@@ -14,13 +14,13 @@ This excerpt is from a real run, not a mock-up. Profile: the bundled Default Pro
 >
 > *Top path: Spiked Ball*
 >
-> **3-x-x Spike-o-pult** (320 Gold). Raises damage from 1 to 2 (+1). Raises pierce from 5 to 18 (+13). Raises range from 32 to 36.8 (+4.8). Lengthens the attack interval from 0.95 s to 1.15 s (+0.2).
+> **3-x-x Spike-o-pult** (320 Gold). Raises damage from 1 to 2 (+1). Raises pierce from 5 to 18 (+13). Raises range from 32 to 36.8 (+4.8). Lengthens the attack interval from 0.95 s to 1.15 s (+0.2 s, attacks 17% slower).
 >
-> **5-x-x Ultra-Juggernaut** (15,000 Gold). Raises damage from 2 to 5 (+3). Raises pierce from 60 to 210 (+150). Adds Split Balls: after each volley hits, up to 12 other detected enemies within 12 of the primary impact take 0.4 times the hit damage (2) once each; it applies no statuses, never recurses and inherits no pierce, splash or volley count.
+> **5-x-x Ultra-Juggernaut** (15,000 Gold). Raises damage from 2 to 5 (+3). Raises pierce from 60 to 210 (+150). Adds Split Balls: after each volley hits, up to 12 other detected enemies within 12 of the primary impact take 40% of the hit damage (2) once each; it applies no statuses, never recurses and inherits no pierce, splash or volley count.
 >
 > *Middle path: Quick Shots*
 >
-> **x-4-x Super Monkey Fan Club** (6,000 Gold). Shortens the attack interval from 0.4784 s to 0.2392 s (×0.5). Adds Super Monkey Surge, this Unit's Active Ability: for 15 s it multiplies its interval by 0.0625, so the attack deals 1 damage every 0.015 s at range 32. It is ready on purchase, recharges 50 s after activation and cannot reactivate while active; it grants no separate attack.
+> **x-4-x Super Monkey Fan Club** (6,000 Gold). Shortens the attack interval from 0.4784 s to 0.2392 s (attacks 100% faster). Adds Super Monkey Surge, this Unit's Active Ability: for 15 s it gives the purchased attack 1500% faster attacks, so the attack deals 1 damage every 0.015 s at range 32. It is ready on purchase, recharges 50 s after activation and cannot reactivate while active; it grants no separate attack.
 >
 > *Bottom path: Crossbow*
 >
@@ -28,7 +28,7 @@ This excerpt is from a real run, not a mock-up. Profile: the bundled Default Pro
 >
 > *Crosspaths: 12 early and 36 advanced builds, for example*
 >
-> **1-4-0** (7,080 Gold). Added by the other path: 1-x-x: pierce 2 → 3, during Super Monkey Surge: pierce 2 → 3. Resulting attack: 3 projectiles every 0.2392 s, 1 Sharp damage, pierce 3, range 32. Active Ability: Super Monkey Surge for 15 s every 50 s: 3 projectiles every 0.015 s, 1 Sharp damage, pierce 3, range 32.
+> **1-4-0** (7,080 Gold). Added by the other path: 1-x-x: pierce 2 → 3 (+1), during Super Monkey Surge: pierce 2 → 3 (+1). Resulting attack: 3 projectiles every 0.2392 s, 1 Sharp damage, pierce 3, range 32. Active Ability: Super Monkey Surge for 15 s every 50 s: 3 projectiles every 0.015 s, 1 Sharp damage, pierce 3, range 32.
 
 Every number comes from resolving the typed mechanics, and the crosspath lines are computed, not written by the model. In the same run the model review reported three concerns, all on the middle path: the fifth purchase's pierce applies outside the boost, the boost borrows a factor the source gives to allied towers, and one x-5-x does not beat several x-4-x copies. Three prices also differ from the source (x-4-x 7,200, x-5-x 45,000, x-x-5 21,500 Gold). A [revision](data/reference/captures/dart-monkey.revision.md) restored them and x-x-5's pierce 8 without touching the other purchases or crosspaths; because that run's Definition allowed four changes per purchase, x-x-5 lost its +2 damage in exchange; the Default Profile now allows five. What that run's Definition could not express (rebounds, knockback, critical shots, allied transformations) is reported as unsupported mechanics in the diagnostics (`render --details`), not granted by any build.
 
