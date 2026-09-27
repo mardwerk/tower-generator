@@ -548,7 +548,10 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 		issues = append(issues, s.Issue{Code: "custom", Path: []any{"upgradeIntents"}, Message: fmt.Sprintf("The plan promises an Active Ability on %s: %s. %s %s", count, joinWith(positions, "and", ""), activeRule, fix)})
 	}
 	if request.MechanicsDefinition != nil {
-		feasibility := PlanFeasibilityIssues(plan, *request.MechanicsDefinition)
+		// A capstone correction can fix a fifth purchase with no new
+		// behavior (capstoneCorrections), after the full-plan retry.
+		third, capstone := behaviorChangeIssues(plan, *request.MechanicsDefinition)
+		feasibility := promiseFeasibilityIssues(plan, *request.MechanicsDefinition)
 		// A targeted correction can fix an unpromised adaptedAs and an
 		// unlisted source technique (planCorrections).
 		correctable := PlanEffectIssues(plan)
@@ -567,6 +570,8 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 				issues = append(issues, s.Issue{Code: code, Path: path, Message: issue.Message})
 			}
 		}
+		add(third, "custom")
+		add(capstone, capstoneIssue)
 		add(feasibility, "custom")
 		add(correctable, correctableIssue)
 	}

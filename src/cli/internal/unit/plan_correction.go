@@ -45,21 +45,35 @@ func planCorrections(output any, request *Request) []any {
 	if err != nil {
 		return nil
 	}
-	return correctionItems(plan, request)
+	return correctionItems(plan, request, nil)
 }
 
-// correctionItems are planCorrections of a parsed plan.
-func correctionItems(plan DesignPlan, request *Request) []any {
+// correctionItems are planCorrections of a parsed plan. With open paths, a
+// capstone correction's, the only milestones the correction may change are
+// those paths' fifth purchases, so an unpromised adaptedAs may gain its
+// promise only on one of them.
+func correctionItems(plan DesignPlan, request *Request, open []int) []any {
 	items := []any{}
 	for _, u := range unpromisedAdaptations(plan) {
 		entry := plan.Repertoire[u.entry]
+		remove := fmt.Sprintf("Remove %s from this adaptedAs and say in the effect's reason why it is not adapted.", u.promise)
+		allowed := []any{
+			fmt.Sprintf("Promise %s on a milestone whose technique is %q, in its improves, unlock or lowers as the promise requires, and keep that milestone's other promises.", u.promise, entry.Name),
+			remove,
+		}
+		if open != nil {
+			allowed = []any{}
+			for _, index := range open {
+				if sameTechnique(plan.UpgradeIntents.At(index).At(5).Technique, entry.Name) {
+					allowed = append(allowed, fmt.Sprintf("Promise %s on %s, the fifth purchase this correction changes, whose technique is %q, as the promise requires.", u.promise, BuildCode(index, 5), entry.Name))
+				}
+			}
+			allowed = append(allowed, remove)
+		}
 		items = append(items, s.NewObject().
 			Set("path", u.path()).
 			Set("problem", fmt.Sprintf("The effect %q of %q is adapted as %s, but no milestone whose technique is %q promises %s.", entry.Effects[u.effect].Effect, entry.Name, u.promise, entry.Name, u.promise)).
-			Set("allowed", []any{
-				fmt.Sprintf("Promise %s on a milestone whose technique is %q, in its improves, unlock or lowers as the promise requires, and keep that milestone's other promises.", u.promise, entry.Name),
-				fmt.Sprintf("Remove %s from this adaptedAs and say in the effect's reason why it is not adapted.", u.promise),
-			}))
+			Set("allowed", allowed))
 	}
 	if request.SourceTechniques != nil && request.MechanicsDefinition != nil && coreConceptsOn(*request.MechanicsDefinition) {
 		for _, technique := range unlistedSourceTechniques(plan, request) {
