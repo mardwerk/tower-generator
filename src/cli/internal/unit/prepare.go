@@ -127,8 +127,8 @@ func validateRequest(request Request) error {
 		}
 	}
 	if request.SourceTechniques != nil {
-		derived := WithSourceTechniques(request).SourceTechniques
-		if s.Stringify(s.FromGoValue(request.SourceTechniques)) != s.Stringify(s.FromGoValue(derived)) {
+		derived := verifiedSourceTechniques(request)
+		if s.Stringify(s.FromGoValue(*request.SourceTechniques)) != s.Stringify(s.FromGoValue(derived)) {
 			return errors.New("Source techniques must match the request's source passages. Edit the documents, not the derived sourceTechniques, and run prepare again.")
 		}
 	}
