@@ -104,8 +104,8 @@ export function DesignPolicyEditor({
     <fieldset className="my-3 min-w-0 rounded-lg border border-border px-4 pt-1 pb-3">
       <legend className="px-1 text-sm font-semibold">Design policy</legend>
       <p className="text-xs text-muted-foreground">
-        The Engine checks these rules and states them to the model. Editing them rewrites the
-        Definition's <code>profile.designPolicy</code> below.
+        The Engine checks these rules during generation. Editing them rewrites the Definition's{' '}
+        <code>profile.designPolicy</code> below.
       </p>
       {body()}
     </fieldset>
