@@ -190,8 +190,17 @@ function effectStacking(effect: StatusEffect): string {
   return text;
 }
 
-/** A version 2 Definition's status effects, damage types, targeting and detection. */
-function VocabularyFacts({ vocabulary, ceiling }: { vocabulary: Vocabulary; ceiling: number }) {
+/**
+ * A version 2 Definition's status effects, damage types, targeting, detection,
+ * enemy properties and the properties that accept bonus damage.
+ */
+export function VocabularyFacts({
+  vocabulary,
+  ceiling,
+}: {
+  vocabulary: Vocabulary;
+  ceiling: number;
+}) {
   const properties = vocabulary.enemyProperties;
   const damageTypes = vocabulary.damageTypes.map((type) =>
     type.ineffectiveAgainst.length

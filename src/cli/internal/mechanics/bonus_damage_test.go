@@ -1,6 +1,7 @@
 package mechanics
 
 import (
+	"math"
 	"strconv"
 	"strings"
 	"testing"
@@ -260,6 +261,23 @@ func TestBonusDamageMetrics(t *testing.T) {
 	direct, _ := metrics.Get("direct damage rate")
 	if against != 72.0 || direct != 22.0 {
 		t.Errorf("3-0-0 direct %v, against Hardened %v; want 22 and 72", direct, against)
+	}
+	// With Hardened and Blimp listed, each rate counts only its own
+	// property's bonus: 3-2-0 has +60 against Hardened and +4 against Blimp,
+	// and 3-0-0's Blimp rate is its ordinary direct rate.
+	both := bonusDefinition("hardened", "blimp").Terms()
+	metrics = PurchaseMetricsWith(ResolveUnchecked(blueprint, Selection{3, 0, 0}), &both)
+	if blimp, _ := metrics.Get("direct damage rate against Blimp"); blimp != 22.0 {
+		t.Errorf("3-0-0 against Blimp %v; want 22", blimp)
+	}
+	build := ResolveUnchecked(blueprint, Selection{3, 2, 0})
+	metrics = PurchaseMetricsWith(build, &both)
+	direct, _ = metrics.Get("direct damage rate")
+	hardened, _ := metrics.Get("direct damage rate against Hardened")
+	blimp, _ := metrics.Get("direct damage rate against Blimp")
+	perHit := build.BaseAttack.Stats.Projectiles / build.BaseAttack.Stats.IntervalSeconds
+	if math.Abs(hardened.(float64)-direct.(float64)-60*perHit) > 1e-9 || math.Abs(blimp.(float64)-direct.(float64)-4*perHit) > 1e-9 {
+		t.Errorf("3-2-0 direct %v, against Hardened %v, against Blimp %v", direct, hardened, blimp)
 	}
 	before := ResolveUnchecked(blueprint, Selection{2, 0, 0})
 	after := ResolveUnchecked(blueprint, Selection{3, 0, 0})

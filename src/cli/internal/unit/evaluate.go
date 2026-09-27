@@ -192,7 +192,14 @@ func bonusLimitation(vocabulary m.Vocabulary) []any {
 	for _, property := range vocabulary.BonusDamageProperties {
 		names = append(names, m.BonusMetric(&vocabulary, property))
 	}
-	return []any{strings.Join(names, ", ") + " adds the attack's bonus damage to every primary hit on one enemy with that property, and is zero when the damage type cannot hurt it. Every other rate, the capstone copy bounds and the design policy ignore bonus damage."}
+	const others = " Every other rate, the capstone copy bounds and the design policy ignore bonus damage."
+	if len(names) == 1 {
+		return []any{names[0] + " adds the attack's bonus damage against that property to every primary hit on one enemy with it, and is zero when the damage type cannot hurt it." + others}
+	}
+	// Each property's reading takes only its own bonus, so a Hardened bonus
+	// never shows in the Blimp rate.
+	listed := strings.Join(names[:len(names)-1], ", ") + " and " + names[len(names)-1]
+	return []any{"Each of " + listed + " counts only its own property's bonus damage: it adds that bonus to every primary hit on one enemy with the property, and is zero when the damage type cannot hurt it." + others}
 }
 
 // EvaluateUnitDesign computes analytical purchase evidence for valid mechanics.

@@ -17,9 +17,9 @@ func floatPtr(v float64) *float64 { return &v }
 // BTD6-inspired design policy and a version 2 vocabulary. The vocabulary
 // names the base scale's slow, burn, stun, damage types, targeting and Camo
 // detection, so it behaves exactly as the version 1 starter, and adds
-// Knockback and the Hardened enemy property, the only property attacks may
-// deal bonus damage against. Its scale and the rules document's references
-// come from btd6-atlas capture 56.3.
+// Knockback and the Hardened enemy property. Attacks may deal bonus damage
+// against Hardened and against Blimp, two separate properties. Its scale and
+// the rules document's references come from btd6-atlas capture 56.3.
 func DefaultAuthoringDefinition() mechanics.Definition {
 	d := mechanics.DefaultDefinition()
 	d.Label = "BTD6-inspired Gold and Health starter, btd6-atlas 56.3 scale"
@@ -42,14 +42,16 @@ func DefaultAuthoringDefinition() mechanics.Definition {
 	d = mechanics.UpgradeDefinition(d)
 	d.Revision = defaultAuthoringRevision
 	describeVocabulary(d.Vocabulary)
-	// Hardened adapts BTD6 Ceramic, whose class bonuses (Deadly Precision's
-	// +50, Juggernaut's +3) are DamageModifierForTagModel entries; see the
-	// rules document's scale references. It stands before Blimp and Boss,
-	// and it alone accepts bonus damage: a Blimp is not Hardened.
+	// Hardened adapts BTD6 Ceramic and Blimp the MOAB-class Moabs tag; both
+	// tags' class bonuses (Deadly Precision's +50 to Ceramic, Bionic
+	// Boomerang's +1 and MOAB Press's +4 to Moabs) are additive
+	// DamageModifierForTagModel entries. Hardened stands before Blimp and
+	// Boss. The two stay separate properties, as the atlas tags are: a
+	// Blimp is not Hardened, and each takes only its own bonus (SOL-42-02).
 	properties := d.Vocabulary.EnemyProperties
 	at := slices.IndexFunc(properties, func(term mechanics.Term) bool { return term.ID == "blimp" })
 	d.Vocabulary.EnemyProperties = slices.Insert(properties, at, mechanics.Term{ID: "hardened", Name: defaultHardened[0], Description: defaultHardened[1]})
-	d.Vocabulary.BonusDamageProperties = []string{"hardened"}
+	d.Vocabulary.BonusDamageProperties = []string{"hardened", "blimp"}
 	// Knockback follows the atlas KnockbackModel of Juggernaut and Super
 	// Monkey's Knockback; see the rules document's scale references.
 	d.Vocabulary.StatusEffects = append(d.Vocabulary.StatusEffects, mechanics.StatusEffect{
@@ -89,12 +91,12 @@ var defaultEnemyProperties = map[string][2]string{
 	"purple": {"Purple", "Resists energy damage."},
 	"black":  {"Black", "Resists explosive damage."},
 	"zebra":  {"Zebra", "Resists explosive damage."},
-	"blimp":  {"Blimp", "Large armored carrier; ignores slow, stun and knockback."},
+	"blimp":  {"Blimp", "Large armored carrier; ignores slow, stun and knockback. Attacks may deal bonus damage against it; it is not Hardened."},
 	"boss":   {"Boss", "Boss enemy; ignores slow, stun and knockback."},
 }
 
 // defaultHardened names the Default Profile's Hardened enemy property.
-var defaultHardened = [2]string{"Hardened", "A tough, many-layered enemy, adapted from Ceramic; the Consumer sets its health. Attacks may deal bonus damage against it."}
+var defaultHardened = [2]string{"Hardened", "A tough, many-layered enemy, adapted from Ceramic; the Consumer sets its health. Attacks may deal bonus damage against it; it is not a Blimp."}
 
 // defaultDamageTypes name each damage type and the attacks it suits.
 var defaultDamageTypes = map[string][2]string{

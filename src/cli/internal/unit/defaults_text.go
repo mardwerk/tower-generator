@@ -20,7 +20,7 @@ var defaultRulesSections = []string{
 
 	"Private design checks, never printed in the unit: why a player buys each path, which weakness remains, why a player buys the capstone rather than more fourth-purchase copies (concentration, reach, access or the single placement, not only raw throughput).",
 
-	"Scale references from " + atlasCapture + ". Prices are Medium incremental purchases; files are under game-data/Towers and game-data/Upgrades. Damage per second assumes a target always in range and ignores enemy-class bonuses unless stated. This Profile adapts a bonus against Ceramic as bonus damage against Hardened; bonuses against MOAB-class, Fortified, Lead or other classes have no counterpart here.",
+	"Scale references from " + atlasCapture + ". Prices are Medium incremental purchases; files are under game-data/Towers and game-data/Upgrades. Damage per second assumes a target always in range and ignores enemy-class bonuses unless stated. This Profile adapts a bonus against Ceramic as bonus damage against Hardened and a bonus against MOAB-class enemies, such as Bionic Boomerang's +1, as bonus damage against Blimp. The two are separate properties: a Blimp is not Hardened, and a bonus against one never applies to the other. Bonuses against Fortified, Lead or other classes have no counterpart here.",
 
 	"Dart Monkey 0-0-0 (DartMonkey.json): 200 Gold; one dart every 0.95 s at range 32, 1 sharp damage, pierce 2; no Camo detection; sharp damage cannot hurt Lead or Frozen. 1.05 damage per second on one target; one throw deals at most 2 damage in total.",
 
@@ -50,8 +50,8 @@ var defaultRulesSections = []string{
 // defaultRulesText is the bundled rules document text.
 var defaultRulesText = strings.Join(defaultRulesSections, "\n\n")
 
-const defaultRulesID = "default-td-profile-v22"
-const defaultRulesLocation = "mardwerk-unit:default-td-profile:v22"
+const defaultRulesID = "default-td-profile-v23"
+const defaultRulesLocation = "mardwerk-unit:default-td-profile:v23"
 const defaultRulesNote = "Bundled starter preset. Edit or replace it in Inputs and rules before preparing a custom Request."
 const defaultProfileName = "BTD6-inspired (default)"
-const defaultAuthoringRevision = "2026-09-26-atlas-56.3-v22"
+const defaultAuthoringRevision = "2026-09-27-atlas-56.3-v23"

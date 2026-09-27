@@ -70,7 +70,7 @@ func attackFacts(attack m.Attack) *s.Object {
 		facts.Set("statuses", s.FromGoValue(statuses))
 	}
 	// Bonus damage per hit by enemy property, so a finding can cite
-	// attack.bonusDamage.hardened.
+	// attack.bonusDamage.hardened or attack.bonusDamage.blimp.
 	if len(attack.BonusDamage) > 0 {
 		bonuses := s.NewObject()
 		for _, bonus := range attack.BonusDamage {
