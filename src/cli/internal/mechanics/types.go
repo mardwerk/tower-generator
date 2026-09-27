@@ -144,6 +144,7 @@ type DesignPolicy struct {
 	MinTier5SpecialtyMultiplier *float64       `json:"minTier5SpecialtyMultiplier,omitempty"`
 	RequireTier3BehaviorChange  *bool          `json:"requireTier3BehaviorChange,omitempty"`
 	RequireTier5BehaviorChange  *bool          `json:"requireTier5BehaviorChange,omitempty"`
+	RequireCoreConcepts         *bool          `json:"requireCoreConcepts,omitempty"`
 	Tier5Uniqueness             string         `json:"tier5Uniqueness"`
 }
 

@@ -31,6 +31,13 @@ const EarlyBenefitsRule = "Two paths' first two purchases together must differ i
 // have the same early benefits.
 const ExclusiveEarlyBenefitsRule = "No dimension or capability that one path's first two purchases improve or unlock may be improved or unlocked by another path's first two purchases, whatever their order, names, prices or amounts; a path may repeat its own, any path's third to fifth purchases may improve it, and lowers do not count."
 
+// CoreConceptsRule states requireCoreConcepts. Code checks the ranking,
+// that every source technique is listed, that a purchase names each core
+// entry as its technique, and whether a typed change or only a proposed
+// mechanic adapts it; whether that purchase fulfils the concept is the
+// review's judgment.
+const CoreConceptsRule = "Rank every repertoire entry and every omitted technique core, major or minor, and list every source technique in the repertoire or in omittedTechniques; one to three entries are core, the concepts without which the character would not feel canonical, and each core entry is the base attack or the technique of at least one purchase that adapts its central effect with a typed change, and is never omitted whole, only in named aspects; a core entry adapted only by a proposed mechanic is an unresolved design gap, because a proposal grants no behavior, and the Unit embodies it only once the Definition supports that mechanic."
+
 // NoDefinitionActiveAbilityRule stands for ActiveAbilityRule when a request
 // carries no Definition.
 const NoDefinitionActiveAbilityRule = "An Active Ability exists only where the Definition allows one."
@@ -84,6 +91,11 @@ func (p *DesignPolicy) PreservesEarlyIdentity() bool {
 // ExcludesSharedEarlyBenefits reports whether exclusiveEarlyBenefits is on.
 func (p *DesignPolicy) ExcludesSharedEarlyBenefits() bool {
 	return p != nil && p.ExclusiveEarlyBenefits != nil && *p.ExclusiveEarlyBenefits
+}
+
+// RequiresCoreConcepts reports whether requireCoreConcepts is on.
+func (p *DesignPolicy) RequiresCoreConcepts() bool {
+	return p != nil && p.RequireCoreConcepts != nil && *p.RequireCoreConcepts
 }
 
 // RequiresBehaviorChange reports whether the policy requires the third or

@@ -126,6 +126,8 @@ export interface DesignPolicy {
   minTier5SpecialtyMultiplier?: number;
   requireTier3BehaviorChange?: boolean;
   requireTier5BehaviorChange?: boolean;
+  /** Core concepts ranked in the plan and adapted on purchases. */
+  requireCoreConcepts?: boolean;
   tier5Uniqueness: 'one-per-player-unit-type-and-path';
 }
 

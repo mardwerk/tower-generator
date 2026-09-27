@@ -39,6 +39,7 @@ func DefaultAuthoringDefinition() mechanics.Definition {
 		MaxManualAbilityPaths:       1,
 		ManualAbilityPath:           mechanics.NullableString{Present: true, Value: "path2"},
 		RequireTier5BehaviorChange:  boolPtr(true),
+		RequireCoreConcepts:         boolPtr(true),
 		Tier5Uniqueness:             "one-per-player-unit-type-and-path",
 	}
 	d = mechanics.UpgradeDefinition(d)

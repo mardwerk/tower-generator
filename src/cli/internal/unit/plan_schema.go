@@ -43,10 +43,10 @@ var (
 		s.F("contract", s.Optional(s.Literal("purchase-plan-v1"))),
 		s.F("concept", planText()),
 		s.F("signature", s.StrictObject(s.F("name", planText().Max(80)), s.F("sourceIds", planSourceIDs), s.F("adaptation", planText()))),
-		s.F("repertoire", repertoireOf(s.Optional(planEffects))),
+		s.F("repertoire", repertoireOf(s.Optional(planEffects), s.Optional(importanceRank))),
 		s.F("base", s.StrictObject(s.F("name", planText().Max(80)), s.F("sourceIds", planSourceIDs), s.F("behavior", planText()))),
 		s.F("paths", s.StrictObject(s.F("path1", planBranch), s.F("path2", planBranch), s.F("path3", planBranch))),
-		s.F("omittedTechniques", s.Array(s.StrictObject(s.F("name", planText().Max(80)), s.F("reason", planText()))).Max(12)),
+		s.F("omittedTechniques", omissionsOf(s.Optional(importanceRank))),
 		s.F("scopeLimits", s.Array(planText()).Max(24)),
 		s.F("upgradeIntents", s.Optional(UpgradeIntentsSchema)),
 	)
@@ -71,14 +71,42 @@ var (
 		s.F("reason", planText().Max(300)),
 	)
 	planEffects        = s.Array(planEffect).Max(6)
-	authoredRepertoire = repertoireOf(s.Array(planEffect).Min(1).Max(6))
+	authoredRepertoire = repertoireOf(s.Array(planEffect).Min(1).Max(6), s.Optional(importanceRank))
 )
 
-// repertoireOf is the repertoire with the given effects field.
-func repertoireOf(effects s.Schema) *s.ArraySchema {
-	return s.Array(s.StrictObject(
-		s.F("name", planText().Max(80)), s.F("sourceIds", planSourceIDs), s.F("limitation", planText()), s.F("effects", effects),
-	)).Min(1).Max(32)
+// Importance ranks a repertoire entry or an omitted technique for the
+// character: core for the one to three concepts without which it would not
+// feel canonical, then major and minor. Under requireCoreConcepts the plan
+// ranks every entry (CoreConceptIssues); plans made before the ranking have
+// none.
+var (
+	Importance     = []string{"core", "major", "minor"}
+	importanceRank = s.Enum(Importance...)
+)
+
+// maxOmittedTechniques bounds omittedTechniques. It matches the most source
+// techniques a request lists, since each must be in the repertoire or here.
+const maxOmittedTechniques = maxSourceTechniques
+
+// repertoireOf is the repertoire with the given effects and importance
+// fields; a nil importance leaves the field out.
+func repertoireOf(effects, importance s.Schema) *s.ArraySchema {
+	fields := []s.Field{s.F("name", planText().Max(80))}
+	if importance != nil {
+		fields = append(fields, s.F("importance", importance))
+	}
+	fields = append(fields, s.F("sourceIds", planSourceIDs), s.F("limitation", planText()), s.F("effects", effects))
+	return s.Array(s.StrictObject(fields...)).Min(1).Max(32)
+}
+
+// omissionsOf is omittedTechniques with the given importance field; a nil
+// importance leaves the field out.
+func omissionsOf(importance s.Schema) *s.ArraySchema {
+	fields := []s.Field{s.F("name", planText().Max(80))}
+	if importance != nil {
+		fields = append(fields, s.F("importance", importance))
+	}
+	return s.Array(s.StrictObject(append(fields, s.F("reason", planText()))...)).Max(maxOmittedTechniques)
 }
 
 // DesignPlanAuthoringSchemaFor is the authoring schema under a Definition.

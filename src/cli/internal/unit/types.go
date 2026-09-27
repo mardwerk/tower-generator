@@ -352,7 +352,10 @@ type PlanSignature struct {
 
 // PlanRepertoire is one planned technique.
 type PlanRepertoire struct {
-	Name       string   `json:"name"`
+	Name string `json:"name"`
+	// Importance ranks the technique core, major or minor for this
+	// character; plans made before the ranking have none.
+	Importance string   `json:"importance,omitempty"`
 	SourceIDs  []string `json:"sourceIds"`
 	Limitation string   `json:"limitation"`
 	// Effects are what the cited passages describe the technique doing, each
@@ -418,10 +421,12 @@ type PlanPaths struct {
 // At returns branch i (0–2).
 func (p *PlanPaths) At(i int) *PlanBranch { return [...]*PlanBranch{&p.Path1, &p.Path2, &p.Path3}[i] }
 
-// PlanOmission is a technique deliberately left out.
+// PlanOmission is a technique deliberately left out. Importance ranks it as
+// PlanRepertoire.Importance does; a core technique is never omitted whole.
 type PlanOmission struct {
-	Name   string `json:"name"`
-	Reason string `json:"reason"`
+	Name       string `json:"name"`
+	Importance string `json:"importance,omitempty"`
+	Reason     string `json:"reason"`
 }
 
 // UpgradeIntent is a typed promise for one milestone.

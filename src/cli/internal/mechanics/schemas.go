@@ -183,6 +183,7 @@ var (
 				s.F("minTier5SpecialtyMultiplier", s.Optional(s.Number().Gt(1).Max(20))),
 				s.F("requireTier3BehaviorChange", s.Optional(s.Bool())),
 				s.F("requireTier5BehaviorChange", s.Optional(s.Bool())),
+				s.F("requireCoreConcepts", s.Optional(s.Bool())),
 				s.F("tier5Uniqueness", lit("one-per-player-unit-type-and-path")),
 			))),
 			s.F("referenceScale", s.Optional(s.StrictObject(

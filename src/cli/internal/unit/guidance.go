@@ -50,5 +50,8 @@ func DesignGuidance(request *Request) []string {
 	if policy.RequiresBehaviorChange(5) {
 		out = append(out, m.BehaviorChangeRule(5)+" "+guideTier5Promise)
 	}
+	if coreConceptsOn(*definition) {
+		out = append(out, guideCoreConcepts)
+	}
 	return append(out, guideDistinctPaths, guideNames, guidePrices)
 }

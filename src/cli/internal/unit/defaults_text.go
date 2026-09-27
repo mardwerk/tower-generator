@@ -52,8 +52,8 @@ var defaultRulesSections = []string{
 // defaultRulesText is the bundled rules document text.
 var defaultRulesText = strings.Join(defaultRulesSections, "\n\n")
 
-const defaultRulesID = "default-td-profile-v29"
-const defaultRulesLocation = "mardwerk-unit:default-td-profile:v29"
+const defaultRulesID = "default-td-profile-v30"
+const defaultRulesLocation = "mardwerk-unit:default-td-profile:v30"
 const defaultRulesNote = "Bundled starter preset. Edit or replace it in Inputs and rules before preparing a custom Request."
 const defaultProfileName = "BTD6-inspired (default)"
-const defaultAuthoringRevision = "2026-09-27-atlas-56.3-v29"
+const defaultAuthoringRevision = "2026-09-27-atlas-56.3-v30"

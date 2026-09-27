@@ -41,6 +41,7 @@ const defaultPolicy: DesignPolicy = {
   maxManualAbilityPaths: 1,
   manualAbilityPath: 'path2',
   requireTier5BehaviorChange: true,
+  requireCoreConcepts: true,
   tier5Uniqueness: 'one-per-player-unit-type-and-path',
 };
 
@@ -136,6 +137,7 @@ export const tests: Record<string, () => Promise<void>> = {
         'preserveEarlyAttackIdentity',
         'requireTier3BehaviorChange',
         'requireTier5BehaviorChange',
+        'requireCoreConcepts',
         'minTier5SpecialtyMultiplier',
         'manualAbilityPath',
         'maxManualAbilityPaths',
@@ -189,6 +191,7 @@ export const tests: Record<string, () => Promise<void>> = {
         'preserveEarlyAttackIdentity',
         'requireTier3BehaviorChange',
         'requireTier5BehaviorChange',
+        'requireCoreConcepts',
       ],
       'checked toggles',
     );
@@ -306,6 +309,7 @@ export const tests: Record<string, () => Promise<void>> = {
         ['Early attack identity', 'On'],
         ['Behavior at the third purchase', 'Off'],
         ['Behavior at the fifth purchase', 'On'],
+        ['Core concepts', 'On'],
         ['Capstone multiplier', '3'],
         ['Active Ability', 'Middle path only'],
       ],
@@ -375,8 +379,12 @@ export const tests: Record<string, () => Promise<void>> = {
       'saved Active Ability',
     );
   },
-  async 'the early benefits toggles round-trip through profiles/save'() {
-    for (const key of ['distinctEarlyBenefits', 'exclusiveEarlyBenefits'] as const) {
+  async 'the early benefits and core concepts toggles round-trip through profiles/save'() {
+    for (const key of [
+      'distinctEarlyBenefits',
+      'exclusiveEarlyBenefits',
+      'requireCoreConcepts',
+    ] as const) {
       const api = scriptedProfiles();
       const form = {
         id: 'luffy-td',

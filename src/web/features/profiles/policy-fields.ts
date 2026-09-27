@@ -95,6 +95,11 @@ export const policyFields: Record<PolicyKey, PolicyField> = {
     help: 'Every fifth purchase adds a supported behavior or access, not only larger numbers. One whose only new capability is a proposed mechanic is reported as a design gap.',
     control: toggle(true),
   },
+  requireCoreConcepts: {
+    label: 'Core concepts',
+    help: "The plan ranks the character's techniques core, major or minor and lists every source technique; each of the one to three core concepts is adapted on a purchase with a typed change, never omitted whole. One only proposed is reported as a design gap.",
+    control: toggle(true),
+  },
   minTier5SpecialtyMultiplier: {
     label: 'Capstone multiplier',
     help: "The fifth purchase multiplies its path's specialty metric over the fourth by at least this much.",
