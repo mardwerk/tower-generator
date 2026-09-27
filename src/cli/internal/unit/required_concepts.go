@@ -205,6 +205,16 @@ func reviewRequiredConcepts(plan *DesignPlan, request *Request, blueprint *m.Blu
 				}
 			}
 		}
+		// A concept the base attack adapts cites the base attack's
+		// passages, so a pass can name one even without a repertoire entry
+		// (SOL-80-01).
+		if a.base {
+			for _, id := range plan.Base.SourceIDs {
+				if !slices.Contains(sources, id) {
+					sources = append(sources, id)
+				}
+			}
+		}
 		entry.Set("baseAttack", a.base).Set("entries", anyStrings(names)).Set("sourceIds", anyStrings(sources))
 		if technique := conceptTechnique(a.concept, request); technique != nil {
 			entry.Set("sourceTechnique", s.NewObject().Set("name", technique.Name).Set("passageIds", anyStrings(technique.PassageIDs)))

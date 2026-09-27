@@ -3,6 +3,7 @@ package unit_test
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 
@@ -611,6 +612,39 @@ func TestStatOnlyRequiredFormFailVerdictIsRecorded(t *testing.T) {
 		if f.ID != want.id || f.Subject != want.subject || f.Outcome != "fail" || f.Severity != "error" || f.Method != "model" ||
 			f.Action == nil || !strings.Contains(*f.Action, want.build) || !strings.Contains(f.Message, "identifies") {
 			t.Errorf("verdict %d: %+v", i, f)
+		}
+	}
+}
+
+// A required concept the base attack adapts cites the base attack's
+// passages, so a pass verdict can name one even without a repertoire entry,
+// and the review is told what to cite, or to give unresolved, when the
+// Request derived no source technique for it (SOL-80-01).
+func TestBaseAttackRequiredConceptCarriesItsPassages(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	checked := stages.Checked
+	base := checked.Draft.Run.DesignPlan.Base
+	checked.Draft.Prepared.Request.RequiredConcepts = []unit.RequiredConcept{{Name: base.Name}}
+	prompt, context := reviewContext(t, checked)
+	concept := at(context, "requiredConcepts").([]any)[0].(*s.Object)
+	if value, _ := concept.Get("baseAttack"); value != true {
+		t.Fatalf("%s is not the base attack: %s", base.Name, s.Stringify(concept))
+	}
+	ids, _ := concept.Get("sourceIds")
+	for _, id := range base.SourceIDs {
+		if !slices.Contains(ids.([]any), any(id)) {
+			t.Errorf("the base concept's sourceIds %v lack the base attack's %s", ids, id)
+		}
+	}
+	for _, want := range []string{
+		"citing it from sourceTechnique.passageIds or, when the Request derived no sourceTechnique for the concept, from its sourceIds, which include the base attack's passages when the base attack adapts it",
+		"and unresolved when neither sourceTechnique nor sourceIds supplies a passage that identifies the concept, saying that the supplied sources do not establish its central effect.",
+	} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("the review prompt lacks %q", want)
 		}
 	}
 }
