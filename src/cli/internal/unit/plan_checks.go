@@ -179,7 +179,18 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 	if plan.UpgradeIntents == nil {
 		return nil
 	}
-	var issues []m.Issue
+	third, fifth := behaviorChangeIssues(plan, definition)
+	return append(append(third, fifth...), promiseFeasibilityIssues(plan, definition)...)
+}
+
+// behaviorChangeIssues are the plan issues of requireTier3BehaviorChange
+// and requireTier5BehaviorChange, third and fifth purchases apart: a
+// fifth purchase's issue alone can be fixed by a capstone correction
+// (capstone_correction.go).
+func behaviorChangeIssues(plan DesignPlan, definition m.Definition) (third, fifth []m.Issue) {
+	if plan.UpgradeIntents == nil {
+		return nil, nil
+	}
 	// A milestone that names a proposed mechanic passes: it names a
 	// capability beyond larger numbers that the Definition cannot express
 	// yet, which check reports as an unresolved design gap once resolved
@@ -191,13 +202,28 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 		for pathIndex, path := range m.PathKeys {
 			intent := *plan.UpgradeIntents.At(pathIndex).At(tier)
 			if !addsBehavior(intent) && len(intent.ProposedMechanics) == 0 {
-				issues = append(issues, m.Issue{
+				issue := m.Issue{
 					Path:    fmt.Sprintf("upgradeIntents.%s.tier%d", path, tier),
 					Message: fmt.Sprintf("%s promises no new behavior or access and names no proposed mechanic. %s Promise an unlock other than targeting-change, such as a new delivery, distinct-volley with more than one projectile, splash, a status effect, follow-up, damage-type-change or a detection trait, promise projectiles while the path fires one projectile, or, only when the Definition cannot express the capability the sources describe, name it in proposedMechanics, which leaves an unresolved design gap until the Definition supports it.", BuildCode(pathIndex, tier), m.BehaviorChangeRule(tier)),
-				})
+				}
+				if tier == 5 {
+					fifth = append(fifth, issue)
+				} else {
+					third = append(third, issue)
+				}
 			}
 		}
 	}
+	return third, fifth
+}
+
+// promiseFeasibilityIssues are PlanFeasibilityIssues apart from the
+// behavior rules.
+func promiseFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
+	if plan.UpgradeIntents == nil {
+		return nil
+	}
+	var issues []m.Issue
 	// Under distinctEarlyBenefits two paths' first two purchases may not
 	// promise the same multiset of improvements and unlocks, in any order
 	// (#32): four interval-only upgrades on two paths gave them no distinct
