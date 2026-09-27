@@ -6,6 +6,7 @@ import {
   isReviewVerdict,
   omissionVerdictRule,
   pathIdentityVerdictRule,
+  proposalVerdictRule,
   reviewVerdicts,
 } from './finding-source.js';
 
@@ -38,10 +39,11 @@ export const tests: Record<string, () => Promise<void>> = {
       { method: 'model', rule: pathIdentityVerdictRule, outcome: 'pass' },
       { method: 'model', rule: 'source-fit', outcome: 'fail' },
       { method: 'model', rule: capstoneVerdictRule, outcome: 'unresolved' },
+      { method: 'model', rule: proposalVerdictRule, outcome: 'fail' },
     ];
     equal(
       findings.map((finding) => String(isReviewVerdict(finding))).join(','),
-      'false,true,true,false,true',
+      'false,true,true,false,true,true',
       'verdicts',
     );
     equal(
@@ -64,6 +66,13 @@ export const tests: Record<string, () => Promise<void>> = {
         .join(','),
       'unresolved',
       'fifth purchase verdicts',
+    );
+    equal(
+      reviewVerdicts(findings, proposalVerdictRule)
+        .map((finding) => finding.outcome)
+        .join(','),
+      'fail',
+      'proposal verdicts',
     );
   },
 };

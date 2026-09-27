@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
 )
 
 // The v34 Luffy review (OPUS-NET-61-13) spent five of its eight free-form
@@ -85,5 +87,37 @@ func TestVerdictRepeatNeedsSubjectOutcomeAndSameReason(t *testing.T) {
 	}
 	if got, want := strings.Join(kept, ","), "model.negated,model.paraphrase,model.capstone-price,model.capstone-pass,model.two-capstones"; got != want {
 		t.Errorf("kept %s, want %s", got, want)
+	}
+}
+
+// A free-form finding repeats a proposal verdict only when it names the
+// purchase and the proposal, has the verdict's outcome and gives its reason
+// word for word.
+func TestProposalVerdictRepeat(t *testing.T) {
+	subject := proposalSubject{
+		purchaseSubject: purchaseSubject{path: 2, build: "x-x-4", name: "Python Continuous Stretch", key: "path3"},
+		tier:            4,
+		proposal:        m.ProposedMechanic{Name: "Continuous momentum"},
+	}
+	subjects := verdictSubjects{proposals: []proposalSubject{subject}}
+	reason := "Continuous momentum names a state with no effect a player could see."
+	review := SemanticReview{ProposalVerdicts: []ProposalVerdict{{Build: "x-x-4", Proposal: "Continuous momentum", Outcome: "fail", Reason: reason}}}
+	finding := func(id, subject, outcome, message string) Finding {
+		return Finding{ID: id, Method: "model", Subject: subject, Outcome: outcome, Message: message}
+	}
+	var kept []string
+	for _, f := range subjects.withoutRepeats(review, []Finding{
+		finding("model.repeat", "x-x-4 Python Continuous Stretch: Continuous momentum", "fail", reason+"."),
+		finding("model.purchase", "x-x-4 Python Continuous Stretch", "fail", reason),
+		finding("model.other", "x-x-4: Continuous momentum", "fail", "Its price does not fit."),
+		finding("model.outcome", "path3, x-x-4: Continuous momentum", "unresolved", reason),
+	}) {
+		kept = append(kept, f.ID)
+	}
+	if got := strings.Join(kept, ","); got != "model.purchase,model.other,model.outcome" {
+		t.Errorf("kept %s", got)
+	}
+	if f := subjects.findings(review); len(f) != 1 || f[0].ID != "verdict.proposal.path3.tier4.1" || f[0].Subject != "path3, x-x-4 Python Continuous Stretch: Continuous momentum" || f[0].Rule != ProposalVerdictRule || f[0].Severity != "error" {
+		t.Errorf("recorded %+v", f)
 	}
 }

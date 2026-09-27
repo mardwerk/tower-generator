@@ -11,6 +11,7 @@ import {
   isReviewVerdict,
   omissionVerdictRule,
   pathIdentityVerdictRule,
+  proposalVerdictRule,
   reviewVerdicts,
 } from './finding-source.js';
 import { Badge, badgeVariants } from '../../ui/badge.js';
@@ -665,7 +666,13 @@ export function CharacterSheet({
               findings={findings}
               rule={capstoneVerdictRule}
               title="Fifth purchase verdicts"
-              description="The model review's verdict on each path's fifth purchase: whether it is its path's pinnacle, judged with the other two fifth purchases and its path's identity, and a distinct play reason when two fifth purchases buy the same capability kind."
+              description="The model review's verdict on each path's fifth purchase: whether it is its path's pinnacle, judged with the other two fifth purchases and its path's identity, a distinct play reason when two fifth purchases buy the same capability kind, and whether its gains fit its price beside cheaper side purchases."
+            />
+            <VerdictSection
+              findings={findings}
+              rule={proposalVerdictRule}
+              title="Proposal verdicts"
+              description="The model review's verdict on each proposed mechanic of a purchase: unresolved when it is a coherent, source-fitting capability a player could see, a Design gap until the Definition supports it; fail when it restates a supported change of its purchase, has no effect a player could see, is lore or conflicts with the Definition."
             />
             {[...failures, ...unresolved, ...unchecked]
               .filter((f) => !isReviewVerdict(f))

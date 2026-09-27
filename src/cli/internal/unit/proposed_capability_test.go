@@ -85,7 +85,10 @@ func TestProposedOnlyCapstoneIsADesignGap(t *testing.T) {
 	at(plan, "paths", "path2", "milestones", "tier5").(*s.Object).Set("proposedMechanics", []any{plasmaTransformation()})
 	split := s.NewObject().Set("name", "Split").Set("effect", "When the ball's pierce runs out it splits into twelve smaller balls that each hit one more enemy.").Set("sourceIds", []any{"source1:8"})
 	at(plan, "paths", "path1", "milestones", "tier5").(*s.Object).Set("proposedMechanics", []any{split})
-	model := &fixture.Model{Outputs: []any{plan, recordedOutput(t, "mechanics"), recordedOutput(t, "review")}}
+	review := withProposalVerdicts(recordedOutput(t, "review"),
+		proposalVerdict{"5-x-x", "Split", "unresolved", "Splitting into smaller balls fits the Juggernaut ball and is a capability no typed change of 5-x-x has."},
+		proposalVerdict{"x-5-x", "Plasma transformation", "unresolved", "Transforming allied Units is a coherent, source-backed capability the Definition cannot express."})
+	model := &fixture.Model{Outputs: []any{plan, recordedOutput(t, "mechanics"), review}}
 	draft, err := unit.DraftUnit(context.Background(), prepared, model, fixture.Options())
 	if err != nil {
 		t.Fatalf("draft: %v", err)
