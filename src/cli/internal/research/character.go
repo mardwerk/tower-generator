@@ -84,11 +84,26 @@ type heading struct {
 	name  string
 }
 
+// Entry ranks, best first: a heading that equals the query, a heading close
+// to it, then a prose entry's declared name or alias.
+const (
+	exactHeading = iota
+	closeHeading
+	proseEntry
+)
+
+// exampleList marks a parenthetical that lists examples, such as "(e.g.,
+// Meliodas, Merlin and Escanor)", rather than a character's aliases.
+var exampleList = regexp.MustCompile(`(?i)^\s*(?:e\.\s?g\.|i\.\s?e\.|(?:such as|including|see)\b)`)
+
 // characterEntry accepts a named entry inside a characters section, never a
-// passing mention.
+// passing mention. A heading that equals the query wins over a close
+// heading, and a heading over a prose entry, so a cast introduction that
+// lists names as examples cannot stand in for the character's own section.
 func characterEntry(p page, query []string) (reference, bool) {
 	lines := strings.Split(p.Extract, "\n")
 	var headings []heading
+	best, bestRank := reference{}, -1
 	for index, line := range lines {
 		match := sectionHeading.FindStringSubmatch(line)
 		if match != nil && match[1] != match[3] {
@@ -119,16 +134,26 @@ func characterEntry(p page, query []string) (reference, bool) {
 		} else {
 			for _, part := range sharedEntry.Split(line, -1) {
 				if m := namedEntry.FindStringSubmatch(part); m != nil {
-					names = append(names, named{strings.TrimSpace(m[1]), aliasSeparator.Split(m[2], -1)})
+					entry := named{name: strings.TrimSpace(m[1])}
+					if !exampleList.MatchString(m[2]) {
+						entry.aliases = aliasSeparator.Split(m[2], -1)
+					}
+					names = append(names, entry)
 				}
 			}
 		}
-		name := ""
+		name, rank := "", -1
 		for _, entry := range names {
 			for _, alias := range append([]string{entry.name}, entry.aliases...) {
 				tokens := words(alias, 1)
 				if containsAll(tokens, query) && len(tokens) <= len(query)+2 {
-					name = entry.name
+					name, rank = entry.name, proseEntry
+					if match != nil {
+						rank = closeHeading
+						if strings.Join(tokens, " ") == strings.Join(query, " ") {
+							rank = exactHeading
+						}
+					}
 					break
 				}
 			}
@@ -136,7 +161,7 @@ func characterEntry(p page, query []string) (reference, bool) {
 				break
 			}
 		}
-		if name == "" {
+		if name == "" || (bestRank >= 0 && rank >= bestRank) {
 			continue
 		}
 		end := index + 1
@@ -161,9 +186,12 @@ func characterEntry(p page, query []string) (reference, bool) {
 		}
 		entry := p
 		entry.Extract = extract
-		return reference{page: entry, name: name, section: section}, true
+		best, bestRank = reference{page: entry, name: name, section: section}, rank
+		if rank == exactHeading {
+			break
+		}
 	}
-	return reference{}, false
+	return best, bestRank >= 0
 }
 
 // pages queries the Wikipedia API.
@@ -206,9 +234,33 @@ func (r *Researcher) pages(ctx context.Context, parameters url.Values) ([]page, 
 	return payload.Query.Pages, nil
 }
 
+// Lookup names the character to research. Choice selects one of the
+// previous choices by page ID. Fandom, when set, is the character's page on
+// its work's Fandom wiki, read instead of the one the identity lookup finds.
+type Lookup struct {
+	Name   string
+	Choice int
+	Fandom string
+}
+
 // Character resolves a name into Sources, or into choices when the name is
 // ambiguous. A choice selects one of the previous choices by page ID.
 func (r *Researcher) Character(ctx context.Context, name string, choice int) (*Sources, []Choice, error) {
+	return r.Research(ctx, Lookup{Name: name, Choice: choice})
+}
+
+// Research resolves a lookup into Sources, or into choices when the name is
+// ambiguous.
+func (r *Researcher) Research(ctx context.Context, lookup Lookup) (*Sources, []Choice, error) {
+	name, choice := lookup.Name, lookup.Choice
+	var fandom *url.URL
+	if strings.TrimSpace(lookup.Fandom) != "" {
+		page, err := FandomPage(lookup.Fandom)
+		if err != nil {
+			return nil, nil, err
+		}
+		fandom = page
+	}
 	query := strings.TrimSpace(name)
 	if query == "" || s.UTF16Len(query) > 120 {
 		return nil, nil, errors.New("Enter a character name of at most 120 characters.")
@@ -330,15 +382,15 @@ func (r *Researcher) Character(ctx context.Context, name string, choice int) (*S
 	}
 	sourceURL := "https://en.wikipedia.org/wiki/" + encodeURIComponent(strings.ReplaceAll(full.Title, " ", "_"))
 	work := full.work()
-	lookup := visualLookup{name: selected.name, articleTitle: full.Title}
+	visual := visualLookup{name: selected.name, articleTitle: full.Title, fandom: fandom}
 	if selected.section != "" {
 		sourceURL += "#" + encodeURIComponent(strings.ReplaceAll(selected.section, " ", "_"))
 		work = listTitle.ReplaceAllString(full.Title, "$1")
 	} else if id, ok := full.PageProps["wikibase_item"].(string); ok {
-		lookup.wikidataID = id
+		visual.wikidataID = id
 	}
-	lookup.work = work
-	visuals, err := r.gatherVisuals(ctx, lookup)
+	visual.work = work
+	visuals, err := r.gatherVisuals(ctx, visual)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -585,6 +585,12 @@ func TestResearchReturnsReusableSources(t *testing.T) {
 	if at(prepared, "request", "character", "name") != "Monkey D. Luffy" {
 		t.Error("sources did not prepare")
 	}
+	if at(prepared, "request", "sourceTechniques") == nil {
+		t.Error("the prepared request has no source techniques")
+	}
+	if status, body := h.call("POST", "research", map[string]any{"name": "Luffy", "fandom": "https://evil.test/wiki/Luffy"}, nil); status != 400 || !strings.Contains(s.Stringify(body), "fandom.com/wiki/PAGE") {
+		t.Errorf("fandom page %d %s", status, s.Stringify(body))
+	}
 	legacy := h.post("character", map[string]any{"name": "Luffy"})
 	if kind, _ := legacy.Get("kind"); kind != "prepared" {
 		t.Errorf("character %v", kind)

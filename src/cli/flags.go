@@ -11,6 +11,7 @@ import (
 // options are the parsed flags. Flags may appear anywhere.
 type options struct {
 	output, profile, profiles, library, previous, feedback string
+	fandom                                                 string
 	provider, model, reasoning, codex, evidenceDir         string
 	timeout                                                time.Duration
 	choice, port                                           int
@@ -23,7 +24,7 @@ type options struct {
 var valued = map[string]bool{
 	"output": true, "profile": true, "profiles": true, "library": true, "previous": true, "feedback": true,
 	"provider": true, "model": true, "reasoning": true, "timeout": true, "codex": true, "evidence-dir": true,
-	"choice": true, "tiers": true, "repairs": true, "port": true,
+	"choice": true, "tiers": true, "repairs": true, "port": true, "fandom": true,
 }
 
 var switches = map[string]bool{"details": true, "help": true}
@@ -76,6 +77,7 @@ func parse(args []string) ([]string, options, error) {
 	o.previous, o.feedback, o.provider, o.model = values["previous"], values["feedback"], values["provider"], values["model"]
 	o.reasoning, o.codex, o.evidenceDir, o.tiers = values["reasoning"], values["codex"], values["evidence-dir"], values["tiers"]
 	o.details, o.help = o.set["details"], o.set["help"]
+	o.fandom = values["fandom"]
 	if value, ok := values["timeout"]; ok {
 		seconds, err := strconv.ParseFloat(value, 64)
 		if err != nil || seconds <= 0 || seconds*1000 > 2_147_483_647 {
@@ -110,9 +112,9 @@ func parse(args []string) ([]string, options, error) {
 // allowed lists, per command, the options it accepts beyond --output
 // and --help.
 var allowed = map[string][]string{
-	"research":   {"choice"},
+	"research":   {"choice", "fandom"},
 	"prepare":    {"profile", "profiles", "previous", "feedback"},
-	"generate":   {"profile", "profiles", "choice", "provider", "model", "reasoning", "timeout", "codex", "evidence-dir", "repairs"},
+	"generate":   {"profile", "profiles", "choice", "fandom", "provider", "model", "reasoning", "timeout", "codex", "evidence-dir", "repairs"},
 	"author":     {"profile", "profiles", "previous", "feedback", "provider", "model", "reasoning", "timeout", "codex", "evidence-dir", "repairs"},
 	"edit":       {"feedback", "provider", "model", "reasoning", "timeout", "codex", "evidence-dir", "repairs"},
 	"draft":      {"provider", "model", "reasoning", "timeout", "codex", "evidence-dir", "repairs"},

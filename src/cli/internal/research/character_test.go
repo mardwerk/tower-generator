@@ -320,3 +320,57 @@ func TestExtendRefreshesWithoutDuplicates(t *testing.T) {
 		t.Error("Sources of another character were merged")
 	}
 }
+
+// sevenDeadlySins is shaped like the Wikipedia list whose cast introduction
+// names Escanor among examples of Arthurian references, before his own
+// section.
+func sevenDeadlySins() wikiPage {
+	return pageOf(20, "List of The Seven Deadly Sins characters", strings.Join([]string{
+		"The Seven Deadly Sins manga series features a cast of characters created by Nakaba Suzuki. The story references various traditions, including Christianity (e.g., the Seven Deadly Sins, the Ten Commandments) and Arthurian legend (e.g., Meliodas, Diane, Ban, Harlequin, Gowther, Merlin and Escanor). This is frequently done in ironic or contradictory ways.",
+		"In accordance with the medieval theme, many of The Seven Deadly Sins are depicted as knights.",
+		"== Seven Deadly Sins ==",
+		"=== Meliodas ===",
+		"Voiced by: Yuki Kaji (Japanese); Bryce Papenbrook (English)",
+		"Meliodas is the captain of the Seven Deadly Sins and wields UNRELATED_FULL_COUNTER.",
+		"==== Escanor ====",
+		"Voiced by: Tomokazu Sugita (Japanese); Kyle Hebert (English)",
+		"Escanor is a member of the Seven Deadly Sins who bears the Lion Sin of Pride. He possesses Sunshine, which enhances his physique during the day before he becomes The One at noon.",
+		"== Holy Knights ==",
+		"Other knights have UNRELATED_KNIGHT_POWER.",
+	}, "\n"), "", 1).with("pageprops", map[string]any{"wikibase-shortdesc": ""})
+}
+
+func TestAHeadingNamedForTheCharacterWinsOverAnExampleList(t *testing.T) {
+	full := sevenDeadlySins()
+	handle := wikipedia(t, []wikiPage{full.with("extract", "A list of characters.")}, []wikiPage{full})
+	sources, choices, err := lookup(t, handle, "Escanor", 0)
+	if err != nil || choices != nil {
+		t.Fatalf("lookup: %v %v", choices, err)
+	}
+	primary := sources.Documents[0]
+	if sources.Character.Name != "Escanor" || sources.Character.Work != "The Seven Deadly Sins" ||
+		!strings.Contains(primary.Text, "possesses Sunshine") || regexp.MustCompile(`Arthurian|UNRELATED|Meliodas is`).MatchString(primary.Text) ||
+		!strings.HasSuffix(primary.Origin.Location, "#Escanor") {
+		t.Errorf("sources %+v %q %s", sources.Character, primary.Text, primary.Origin.Location)
+	}
+	// A name that appears only in an example list is no entry at all.
+	if _, _, err := lookup(t, handle, "Merlin", 0); err == nil || !strings.Contains(err.Error(), "No matching character reference") {
+		t.Errorf("Merlin: %v", err)
+	}
+}
+
+func TestAnExactHeadingWinsOverACloseOne(t *testing.T) {
+	full := pageOf(21, "List of Example characters", strings.Join([]string{
+		"Characters of Example.",
+		"== Main ==",
+		"=== Escanor the Elder ===",
+		"Escanor the Elder is UNRELATED_ELDER and carries a lantern through the night.",
+		"=== Escanor ===",
+		"Escanor carries a giant axe and grows stronger with the sun.",
+	}, "\n"), "", 1)
+	handle := wikipedia(t, []wikiPage{full.with("extract", "A list.")}, []wikiPage{full})
+	sources, _, err := lookup(t, handle, "Escanor", 0)
+	if err != nil || sources.Character.Name != "Escanor" || strings.Contains(sources.Documents[0].Text, "UNRELATED") {
+		t.Fatalf("sources %v %v", sources, err)
+	}
+}
