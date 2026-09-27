@@ -16,6 +16,15 @@ import (
 // Default, compiled and evaluated again (OPUS-NET-61-16).
 func luffyV36Checked(t *testing.T) unit.Checked {
 	t.Helper()
+	return luffyChecked(t, "v36", unit.Run{ID: "706999ee-b344-4be1-85be-4e171b78007f", ModelID: "openai/gpt-6-luna", StartedAt: "2026-09-27T13:35:00Z", CompletedAt: "2026-09-27T13:38:00Z"})
+}
+
+// luffyChecked is a saved Luffy Result of one Default revision as a checked
+// draft: its retained plan and blueprint (testdata/luffy-<revision>.*.json),
+// prepared from the same Sources under the Default with the given required
+// concepts, compiled and evaluated again.
+func luffyChecked(t *testing.T, revision string, run unit.Run, required ...string) unit.Checked {
+	t.Helper()
 	decode := func(name string) any {
 		data, err := os.ReadFile("testdata/" + name)
 		if err != nil {
@@ -35,13 +44,18 @@ func luffyV36Checked(t *testing.T) unit.Checked {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(required) > 0 {
+		if prepared, err = unit.Prepare(s.FromGoValue(requiring(prepared.Request, required...))); err != nil {
+			t.Fatal(err)
+		}
+	}
 	definition := *prepared.Request.MechanicsDefinition
 	var plan unit.DesignPlan
-	if err := s.ParseInto(unit.DesignPlanSchemaV2, decode("luffy-v36.plan.json"), &plan); err != nil {
+	if err := s.ParseInto(unit.DesignPlanSchemaV2, decode("luffy-"+revision+".plan.json"), &plan); err != nil {
 		t.Fatal(err)
 	}
 	var blueprint mechanics.Blueprint
-	if err := s.ParseInto(mechanics.BlueprintSchemaFor(definition), decode("luffy-v36.blueprint.json"), &blueprint); err != nil {
+	if err := s.ParseInto(mechanics.BlueprintSchemaFor(definition), decode("luffy-"+revision+".blueprint.json"), &blueprint); err != nil {
 		t.Fatal(err)
 	}
 	candidate, err := unit.CompileBlueprint(blueprint, prepared.Request)
@@ -52,10 +66,8 @@ func luffyV36Checked(t *testing.T) unit.Checked {
 	if err != nil {
 		t.Fatal(err)
 	}
-	draft := unit.Draft{
-		SchemaVersion: prepared.SchemaVersion, Kind: "draft", Prepared: prepared, Candidate: candidate,
-		Run: unit.Run{ID: "706999ee-b344-4be1-85be-4e171b78007f", ModelID: "openai/gpt-6-luna", StartedAt: "2026-09-27T13:35:00Z", CompletedAt: "2026-09-27T13:38:00Z", DesignPlan: &plan, DesignEvaluation: evaluation},
-	}
+	run.DesignPlan, run.DesignEvaluation = &plan, evaluation
+	draft := unit.Draft{SchemaVersion: prepared.SchemaVersion, Kind: "draft", Prepared: prepared, Candidate: candidate, Run: run}
 	checked, err := unit.CheckDraft(draft)
 	if err != nil {
 		t.Fatal(err)
