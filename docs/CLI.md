@@ -26,7 +26,7 @@ go build -o mardwerk-unit ./src/cli
 | `library [list]`, `library save FILE`, `library load ID`, `library delete ID...`, `library migrate` | the local library, arranged as `WORK/CHARACTER/CHARACTER.STAGE.ID.json` ([LAB.md](LAB.md#library)); `migrate` moves records saved before that layout | none |
 | `serve` | the local web app ([LAB.md](LAB.md)) | per request |
 
-Drafting makes a planning call and a mechanics call, each allowed one repair by default (`--repairs 0|1|2`).
+Drafting makes a planning call and a mechanics call, each allowed one repair by default (`--repairs 0|1|2`). When the last mechanics repair leaves only undelivered plan promises of one purchase, one more call repairs that purchase alone, unless the budget is 0 ([architecture](ARCHITECTURE.md#generation-route)).
 
 ## Options
 

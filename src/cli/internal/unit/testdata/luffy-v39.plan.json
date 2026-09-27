@@ -1,0 +1,454 @@
+{
+  "contract": "purchase-plan-v1",
+  "concept": "A proposed Monkey D. Luffy Tower Defense unit: a rubber-bodied fighter whose stretched punches anchor the automatic attack, with separate paths for Gear 3's enlarged impact, Gear 4's powered attack and temporary boost, and Gear 5's broad, malleable strikes. This adapts selected supplied passages, which are secondary-source evidence rather than independent canon verification.",
+  "signature": {
+    "name": "Gum-Gum Pistol",
+    "sourceIds": [
+      "source1:7",
+      "source1:64"
+    ],
+    "adaptation": "Luffy stretches and slingshots a punch at a distant opponent. The unit translates that signature action into a single-target, normal-damage automatic punch; all numbers and Tower Defense behavior are proposals."
+  },
+  "repertoire": [
+    {
+      "name": "Gum-Gum Pistol",
+      "importance": "core",
+      "sourceIds": [
+        "source1:7",
+        "source1:64"
+      ],
+      "limitation": "The evidence describes a stretched punch, not a volley, area attack, status effect, or attack that bypasses obstacles.",
+      "effects": [
+        {
+          "effect": "Luffy stretches and slingshots a punch at an opponent from a distance.",
+          "adaptedAs": [
+            "range"
+          ],
+          "reason": "The base attack represents a long-reaching punch with a proposed range increase; it remains one normal-damage projectile and does not bypass obstructions."
+        }
+      ]
+    },
+    {
+      "name": "Gear 3",
+      "importance": "major",
+      "sourceIds": [
+        "source1:67",
+        "source3:9",
+        "source3:22",
+        "source3:36",
+        "source7:37",
+        "source7:38",
+        "source7:39"
+      ],
+      "limitation": "Earlier shrinkage after Gear 3 is described as an initial drawback; the supplied evidence says Luffy later outgrew Gear drawbacks through improved control. Neither shrinkage nor that later exception is simulated.",
+      "effects": [
+        {
+          "effect": "Luffy inflates the bones in a body part to enlarge it and increase its strength; Gear 3 attacks can cause large-scale damage.",
+          "adaptedAs": [
+            "damage",
+            "splash"
+          ],
+          "reason": "The top path represents a heavier enlarged-limb punch with a slower interval and a small splash around its primary target. Splash is a proposed Tower Defense interpretation of large-scale impact, not a literal canon radius."
+        }
+      ]
+    },
+    {
+      "name": "Gear 4",
+      "importance": "core",
+      "sourceIds": [
+        "source4:9",
+        "source4:10",
+        "source4:13",
+        "source4:17",
+        "source4:18",
+        "source7:42",
+        "source7:46",
+        "source7:47",
+        "source7:48",
+        "source7:51",
+        "source7:52"
+      ],
+      "limitation": "The unit does not simulate Haki depletion, defensive properties, separate Gear 4 forms, or transforming limbs. The chosen path represents powered attacks, with an Active that boosts the attack already purchased.",
+      "effects": [
+        {
+          "effect": "Gear 4 is a transformation using Luffy's rubber body and Haki, with variations that enhance defense, speed, or power; Snakeman attacks can redirect and accelerate.",
+          "adaptedAs": [
+            "damage",
+            "attack-rate",
+            "active-damage",
+            "active-attack-rate"
+          ],
+          "reason": "Middle-path purchases permanently improve Luffy's automatic punch and unlock a temporary boost to that same attack. Redirection, homing, and defensive benefits are not represented."
+        }
+      ]
+    },
+    {
+      "name": "Gear 5",
+      "importance": "core",
+      "sourceIds": [
+        "source5:9",
+        "source5:12",
+        "source5:18",
+        "source5:28",
+        "source7:53",
+        "source7:54",
+        "source7:55"
+      ],
+      "limitation": "The unit does not reproduce unrestricted imagination, environmental transformation, stretching other living things, or deflecting a particular named attack. Its bounded splash is only a combat adaptation of Luffy's heightened bodily flexibility and power.",
+      "effects": [
+        {
+          "effect": "Gear 5 is Luffy's awakened form, strengthening his rubbery body and giving it heightened freedom and flexibility.",
+          "adaptedAs": [
+            "damage",
+            "splash"
+          ],
+          "reason": "The bottom path develops stronger automatic punches and ends with a bounded splash strike. This does not claim unrestricted reality alteration or a particular environmental effect."
+        }
+      ]
+    }
+  ],
+  "base": {
+    "name": "Gum-Gum Pistol",
+    "sourceIds": [
+      "source1:7",
+      "source1:64",
+      "source7:7"
+    ],
+    "behavior": "At 0-0-0, Luffy stretches and slingshots one fist at the player-selected target in range along a clear path. The attack deals proposed normal damage once per attack and can hit only that primary target; there is no splash, follow-up, status, or repeat hit. The base has no separate secondary-target capacity."
+  },
+  "paths": {
+    "path1": {
+      "name": "Gear 3 enlarged impact",
+      "sourceIds": [
+        "source1:67",
+        "source3:9",
+        "source3:22",
+        "source3:36",
+        "source7:37",
+        "source7:38"
+      ],
+      "buyFor": "Choose this path when enemies close together make a larger, slower impact and bounded area coverage preferable to rapid single-target attacks.",
+      "weakness": "The heavier attack fires less often, and its small splash does not grant additional range or a larger hit capacity for the primary projectile. It cannot hit through obstructions, and no shrinkage drawback is modeled.",
+      "milestones": {
+        "tier1": "1-x-x adds damage to each normal Gum-Gum Pistol hit while keeping its stretched-fist delivery and single-target behavior.",
+        "tier2": "2-x-x extends the range of the same single-target stretched punch without changing its damage or delivery.",
+        "tier3": "3-x-x adapts Gear 3 by replacing the ordinary punch with a slower, heavier enlarged-limb punch that deals splash damage to a small group around the primary target. The player's target choice remains primary, and splash targets are secondary; the primary and secondary hit capacities are separate and do not permit hitting an enemy twice in one attack.",
+        "tier4": "4-x-x strengthens the Gear 3 punch and its existing splash against enemies around the selected primary target; it does not extend range or permit repeat hits.",
+        "tier5": "5-x-x makes each Gear 3 impact stronger and its existing splash broader, and adds brief knockback to eligible enemies hit by the primary or splash. Each enemy can be hit only once by the attack; Blimp and Boss enemies ignore knockback."
+      },
+      "capstoneValue": "The fifth purchase adds knockback to the Gear 3 impact as well as improving its area and damage. A single concentrated purchase therefore adds control to this path's group-impact identity; additional fourth-purchase copies do not gain that new capability.",
+      "crosspaths": [
+        {
+          "path": "path2",
+          "contribution": "Proposed early purchases: x-1-x increases the automatic Gum-Gum Pistol attack rate while retaining one stretched punch against the selected target. x-2-x further increases the same automatic attack rate without adding projectiles or changing its single-target delivery."
+        },
+        {
+          "path": "path3",
+          "contribution": "Proposed early purchases: x-x-1 increases the single projectile's primary hit capacity, allowing it to hit more distinct eligible enemies in its path when targets are present; it does not add splash or repeat hits. x-x-2 further increases that single projectile's primary hit capacity, allowing it to pass through and hit more distinct eligible enemies without adding splash, another projectile, or repeat hits."
+        }
+      ],
+      "referenceExample": "The Profile's scale references inform this proposal; the supplied Definition alone authorizes mechanics."
+    },
+    "path2": {
+      "name": "Gear 4 powered attack",
+      "sourceIds": [
+        "source4:9",
+        "source4:10",
+        "source4:17",
+        "source4:18",
+        "source7:42",
+        "source7:47",
+        "source7:48",
+        "source7:51",
+        "source7:52"
+      ],
+      "buyFor": "Choose this path when a flexible single-target punch and a player-timed burst against a priority enemy are more valuable than passive area coverage.",
+      "weakness": "Its automatic attack is single-target and still needs a clear path. Its temporary boost cannot be used again while active, and faster automatic attacks do not reduce its cooldown. This adaptation does not reproduce Haki depletion or Gear 4's defensive aspects.",
+      "milestones": {
+        "tier1": "x-1-x increases the automatic Gum-Gum Pistol attack rate while retaining one stretched punch against the selected target.",
+        "tier2": "x-2-x further increases the same automatic attack rate without adding projectiles or changing its single-target delivery.",
+        "tier3": "x-3-x adapts Gear 4 by adding damage to each automatic stretched punch, representing a powered Gear 4 blow without claiming a transformation, Haki interaction, or defense effect.",
+        "tier4": "x-4-x unlocks one player-activated temporary boost of the Gear 4 punch already owned, increasing that attack's damage and rate for the boost's duration; it does not create a separate attack or change the automatic attack outside the boost.",
+        "tier5": "x-5-x strengthens the same temporary boost and adds a bounded follow-up to each boosted primary hit: it strikes one distinct eligible secondary enemy, never the primary again, and does not recursively chain. The follow-up is part of the existing boost, not a second Active; its damage is the same normal attack damage and it inherits purchased attack effects."
+      },
+      "capstoneValue": "The fifth purchase makes the path's existing Gear 4 boost reach one distinct secondary enemy with a bounded follow-up. That changes the boosted attack's target capacity in a way that another fourth-purchase copy cannot.",
+      "crosspaths": [
+        {
+          "path": "path1",
+          "contribution": "Proposed early purchases: 1-x-x adds damage to each normal Gum-Gum Pistol hit while keeping its stretched-fist delivery and single-target behavior. 2-x-x extends the range of the same single-target stretched punch without changing its damage or delivery."
+        },
+        {
+          "path": "path3",
+          "contribution": "Proposed early purchases: x-x-1 increases the single projectile's primary hit capacity, allowing it to hit more distinct eligible enemies in its path when targets are present; it does not add splash or repeat hits. x-x-2 further increases that single projectile's primary hit capacity, allowing it to pass through and hit more distinct eligible enemies without adding splash, another projectile, or repeat hits."
+        }
+      ],
+      "referenceExample": "The Profile's scale references inform this proposal; the supplied Definition alone authorizes mechanics."
+    },
+    "path3": {
+      "name": "Gear 5 flexible impact",
+      "sourceIds": [
+        "source5:9",
+        "source5:12",
+        "source5:18",
+        "source5:28",
+        "source7:53",
+        "source7:54",
+        "source7:55"
+      ],
+      "buyFor": "Choose this path when the aim is to develop a powerful, flexible punch into a bounded group hit rather than prioritize the middle path's temporary boost or the top path's heavier, slower impact.",
+      "weakness": "Gear 5's full freedom and environmental effects are not implemented. The group hit remains bounded, targets enemies around the primary only, and does not bypass a clear-path requirement or extend range.",
+      "milestones": {
+        "tier1": "x-x-1 increases the single projectile's primary hit capacity, allowing it to hit more distinct eligible enemies in its path when targets are present; it does not add splash or repeat hits.",
+        "tier2": "x-x-2 further increases that single projectile's primary hit capacity, allowing it to pass through and hit more distinct eligible enemies without adding splash, another projectile, or repeat hits.",
+        "tier3": "x-x-3 adapts Gear 5 by adding damage to each automatic punch, representing the awakened form's enhanced bodily strength without claiming unrestricted imagination or environmental transformation.",
+        "tier4": "x-x-4 strengthens the Gear 5 punch and increases its existing primary-path hit capacity, hitting distinct enemies along the projectile's path without adding a second projectile.",
+        "tier5": "x-x-5 adds a bounded splash impact around the selected primary target to the stronger Gear 5 punch. The primary and splash use separate hit capacity, secondary targets are not retargeted as primaries, and no enemy is hit twice by that attack."
+      },
+      "capstoneValue": "The fifth purchase adds bounded splash to Gear 5's already strengthened, higher-capacity punch. It adds area access unavailable from further fourth-purchase copies, while retaining this path's distinct automatic-attack identity.",
+      "crosspaths": [
+        {
+          "path": "path1",
+          "contribution": "Proposed early purchases: 1-x-x adds damage to each normal Gum-Gum Pistol hit while keeping its stretched-fist delivery and single-target behavior. 2-x-x extends the range of the same single-target stretched punch without changing its damage or delivery."
+        },
+        {
+          "path": "path2",
+          "contribution": "Proposed early purchases: x-1-x increases the automatic Gum-Gum Pistol attack rate while retaining one stretched punch against the selected target. x-2-x further increases the same automatic attack rate without adding projectiles or changing its single-target delivery."
+        }
+      ],
+      "referenceExample": "The Profile's scale references inform this proposal; the supplied Definition alone authorizes mechanics."
+    }
+  },
+  "omittedTechniques": [
+    {
+      "name": "Gear 2",
+      "importance": "major",
+      "reason": "Gear 2 increases Luffy's speed and mobility, and its Jet Pistol is a faster, more powerful Pistol that can propel its recipient. No purchase in this plan adapts Gear 2; the middle path adapts Gear 4 instead, so Gear 2 is deliberately omitted rather than claimed as part of that path."
+    },
+    {
+      "name": "Soru",
+      "importance": "minor",
+      "reason": "Luffy uses Gear 2 to move at disappearing speeds, but the supplied passages do not give a Tower Defense-compatible movement or repositioning action; attack-rate adaptation belongs to the selected Gear 2 entry, not a claim that this unit moves."
+    },
+    {
+      "name": "Gomu Gomu no Jet Pistol",
+      "importance": "major",
+      "reason": "This is a specific Gear 2 version of the Pistol, with an invisible-speed punch that can propel its recipient. Those effects are not represented by a purchase in this plan."
+    },
+    {
+      "name": "Gomu Gomu no Jet Stamp",
+      "importance": "minor",
+      "reason": "The supplied passage identifies it as a Gear 2 version of Stamp but provides no additional behavior that can be faithfully distinguished in this unit plan."
+    },
+    {
+      "name": "Gomu Gomu no Jet Bazooka",
+      "importance": "minor",
+      "reason": "The supplied passage identifies it as a Gear 2 version of Bazooka but provides no additional behavior that can be faithfully distinguished in this unit plan."
+    },
+    {
+      "name": "Hone Fusen",
+      "importance": "minor",
+      "reason": "The supplied evidence describes a defensive inflated body and ricocheting bullets. This unit has no incoming-attack defense or projectile-return mechanic, and those are not part of its selected attack repertoire."
+    },
+    {
+      "name": "Gomu Gomu no Gigant Pistol",
+      "importance": "major",
+      "reason": "The supplied passage identifies this as the Gear 3 version of Pistol, whose enlarged, strengthened limb effect is represented by the selected Gear 3 path rather than as a separate purchase technique."
+    },
+    {
+      "name": "Gomu Gomu no Rocket",
+      "importance": "minor",
+      "reason": "The supplied passage describes Luffy launching himself to address reduced movement in Gear 3. The stationary Tower Defense unit has no self-launch movement mechanic."
+    },
+    {
+      "name": "Gomu Gomu no Gigant Axe",
+      "importance": "minor",
+      "reason": "The supplied passage identifies it as a Gear 3 attack and notes large destructive force. The selected Gear 3 path represents enlarged-limb impact, but the supplied evidence does not support a distinct axe delivery or its separate attack behavior in this unit."
+    },
+    {
+      "name": "Kin'niku Fusen",
+      "importance": "minor",
+      "reason": "This Gear 4 form's enlarged muscular body and enhanced durability are not expressible as an attack purchase without adding an unsupported defense mechanic."
+    },
+    {
+      "name": "Python",
+      "importance": "major",
+      "reason": "Python redirects and accelerates a continuing punch, but the Definition does not express trajectory redirection, homing, or bypassing the interval between attacks. The Gear 4 entry adapts only supported power and speed aspects; it does not claim Python's distinctive behavior."
+    },
+    {
+      "name": "Supreme King Haki",
+      "importance": "major",
+      "reason": "The evidence describes knocking out weak-willed opponents and later infusing attacks to increase power. The Definition has no eligibility for willpower-based targeting or a Haki-specific mechanic; the unit does not claim either effect."
+    },
+    {
+      "name": "Observation Haki",
+      "importance": "minor",
+      "reason": "Sensing presence, intent, and short-term future is not equivalent to Camo detection or a listed targeting capability. The unit does not claim hidden-enemy detection, prediction, or dodging."
+    },
+    {
+      "name": "Armament Haki",
+      "importance": "major",
+      "reason": "The supplied passages describe attack enhancement and the ability to contact and damage otherwise intangible opponents, but the Definition supplies no corresponding enemy property or Haki damage type. The Gear 4 adaptation represents enhanced ordinary punch damage only and does not claim that special access."
+    },
+    {
+      "name": "Atama Buso",
+      "importance": "minor",
+      "reason": "This is a hardening of Luffy's forehead in preparation for a different attack. The plan adapts punches, not a headbutt, and the Definition has no Haki hardening interaction."
+    },
+    {
+      "name": "Gear 2 Buso",
+      "importance": "minor",
+      "reason": "This combines Gear 2 with a hardened, apparently ignited fist. The supplied evidence does not make a flame status necessary to Gear 2's selected speed and force effects, and this plan does not add a separate Gear 2 Buso purchase."
+    },
+    {
+      "name": "Afro Luffy",
+      "importance": "minor",
+      "reason": "The supplied passage presents the claimed increase in power as possibly joking or playing along, so it does not establish a reliable combat effect to adapt."
+    },
+    {
+      "name": "Nightmare Luffy",
+      "importance": "major",
+      "reason": "This situational form combines shadows inside Luffy, their strength and skills, and a limited duration. The Definition has no absorbed-ally or combined-skills mechanic; ordinary strength or speed alone would not represent that identifying effect."
+    }
+  ],
+  "scopeLimits": [
+    "This plan uses selected evidence from a bounded set and does not claim exhaustive coverage of Luffy's attacks, forms, or story periods.",
+    "The supplied evidence spans different story periods. Gear 3, Gear 4, and Gear 5 are represented as proposed purchases, not as simultaneous canon states or a claim that every period-specific ability is currently available.",
+    "All costs, attack statistics, ranges, capacities, status durations, and Active timing are design proposals; no prices or numerical balance are asserted here.",
+    "The stationary unit's attack requires a clear path. The plan does not implement Luffy's defense, swimming limitation, environmental awakening effects, unrestricted imagination, Haki-based access to otherwise intangible enemies, or transformations' bodily drawbacks and recovery."
+  ],
+  "upgradeIntents": {
+    "path1": {
+      "tier1": {
+        "improves": [
+          "damage"
+        ],
+        "unlock": "none",
+        "technique": "Gum-Gum Pistol",
+        "lowers": []
+      },
+      "tier2": {
+        "improves": [
+          "range"
+        ],
+        "unlock": "none",
+        "technique": "Gum-Gum Pistol",
+        "lowers": []
+      },
+      "tier3": {
+        "improves": [
+          "damage"
+        ],
+        "unlock": "splash",
+        "technique": "Gear 3",
+        "lowers": [
+          "attack-rate"
+        ]
+      },
+      "tier4": {
+        "improves": [
+          "damage",
+          "splash"
+        ],
+        "unlock": "none",
+        "technique": "Gear 3",
+        "lowers": []
+      },
+      "tier5": {
+        "improves": [
+          "damage",
+          "splash"
+        ],
+        "unlock": "knockback",
+        "technique": "Gear 3",
+        "lowers": []
+      }
+    },
+    "path2": {
+      "tier1": {
+        "improves": [
+          "attack-rate"
+        ],
+        "unlock": "none",
+        "technique": "Gum-Gum Pistol",
+        "lowers": []
+      },
+      "tier2": {
+        "improves": [
+          "attack-rate"
+        ],
+        "unlock": "none",
+        "technique": "Gum-Gum Pistol",
+        "lowers": []
+      },
+      "tier3": {
+        "improves": [
+          "damage"
+        ],
+        "unlock": "none",
+        "technique": "Gear 4",
+        "lowers": []
+      },
+      "tier4": {
+        "improves": [
+          "active-damage",
+          "active-attack-rate"
+        ],
+        "unlock": "manual-boost",
+        "technique": "Gear 4",
+        "lowers": []
+      },
+      "tier5": {
+        "improves": [
+          "active-damage",
+          "active-attack-rate"
+        ],
+        "unlock": "follow-up",
+        "technique": "Gear 4",
+        "lowers": []
+      }
+    },
+    "path3": {
+      "tier1": {
+        "improves": [
+          "pierce"
+        ],
+        "unlock": "none",
+        "technique": "Gum-Gum Pistol",
+        "lowers": []
+      },
+      "tier2": {
+        "improves": [
+          "pierce"
+        ],
+        "unlock": "none",
+        "technique": "Gum-Gum Pistol",
+        "lowers": []
+      },
+      "tier3": {
+        "improves": [
+          "damage"
+        ],
+        "unlock": "none",
+        "technique": "Gear 5",
+        "lowers": []
+      },
+      "tier4": {
+        "improves": [
+          "damage",
+          "pierce"
+        ],
+        "unlock": "none",
+        "technique": "Gear 5",
+        "lowers": []
+      },
+      "tier5": {
+        "improves": [
+          "damage"
+        ],
+        "unlock": "splash",
+        "technique": "Gear 5",
+        "lowers": []
+      }
+    }
+  }
+}

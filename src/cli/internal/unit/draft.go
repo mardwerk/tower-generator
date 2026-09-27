@@ -278,33 +278,28 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 		failure := StageFailure(err, "draft", totalUsage(attempts), invalid)
 		return &ModelError{Message: failure.Message, Usage: totalUsage(attempts), Failure: failure.Failure, Cause: failure, Evidence: failureEvidence(request, &plan, attempts)}
 	}
-	for attempt := 0; attempt <= repairs; attempt++ {
+	// mechanicsAttempt makes one mechanics call, merges a repair's patch,
+	// validates the whole blueprint and records the attempt. It returns
+	// the draft when every check passes.
+	lastValid := false
+	mechanicsAttempt := func(purpose string, repair *TierRepair) (*Draft, error) {
 		if err := cancelled(ctx, attempts); err != nil {
-			return Draft{}, err
-		}
-		purpose := "design"
-		if attempt > 0 {
-			purpose = "repair"
-		}
-		var repair *TierRepair
-		if attempt > 0 {
-			if repair, err = TargetedTierRepair(request, previous, issues); err != nil {
-				return Draft{}, fail(err, nil, false, purpose)
-			}
+			return nil, err
 		}
 		var call ModelRequest
+		var err error
 		if repair != nil {
 			call = repair.Request
 			call.Prompt += "\n\nPreserve the retained character plan while correcting these tiers. Do not trade its branch purpose for easier arithmetic: " + s.Stringify(MechanicsPlan(plan))
 		} else if call, err = blueprintRequest(prepared, previous, issues, plan); err != nil {
-			return Draft{}, fail(err, nil, false, purpose)
+			return nil, fail(err, nil, false, purpose)
 		}
 		response, err := model.Generate(ctx, call)
 		if err == nil && ctx.Err() != nil {
 			err = ctx.Err()
 		}
 		if err != nil {
-			return Draft{}, fail(err, response.Usage, false, purpose)
+			return nil, fail(err, response.Usage, false, purpose)
 		}
 		usage := response.Usage
 		authored := response.Output
@@ -325,18 +320,19 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 		} else if errors.As(decodeErr, &validation) {
 			issues = issueStrings(validation.Issues)
 		}
+		lastValid = valid
 		if decodeErr != nil && validation == nil {
-			return Draft{}, fail(decodeErr, usage, false, purpose)
+			return nil, fail(decodeErr, usage, false, purpose)
 		}
 		var draft *Draft
 		if valid && len(issues) == 0 {
 			candidate, err := CompileBlueprint(blueprint, *request)
 			if err != nil {
-				return Draft{}, fail(err, usage, false, purpose)
+				return nil, fail(err, usage, false, purpose)
 			}
 			evaluation, err := EvaluateUnitDesign(blueprint, &plan, definition)
 			if err != nil {
-				return Draft{}, fail(err, usage, false, purpose)
+				return nil, fail(err, usage, false, purpose)
 			}
 			planCopy := plan
 			d := Draft{
@@ -345,11 +341,11 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 			}
 			value := s.FromGoValue(d)
 			if err := s.ParseInto(Versioned(value, DraftSchema, DraftSchemaV2), value, &d); err != nil {
-				return Draft{}, fail(err, usage, true, purpose)
+				return nil, fail(err, usage, true, purpose)
 			}
 			checked, err := CheckDraft(d)
 			if err != nil {
-				return Draft{}, fail(err, usage, false, purpose)
+				return nil, fail(err, usage, false, purpose)
 			}
 			issues = []string{}
 			for _, f := range checked.Findings {
@@ -364,14 +360,47 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 			attempt.Output = authored
 		}
 		attempts = append(attempts, attempt)
-		if draft != nil && len(issues) == 0 {
-			all := append([]Attempt(nil), attempts...)
-			for i := range all {
-				all[i].Output = nil
+		if draft == nil || len(issues) > 0 {
+			return nil, nil
+		}
+		all := append([]Attempt(nil), attempts...)
+		for i := range all {
+			all[i].Output = nil
+		}
+		draft.Run.Attempts = &all
+		draft.Run.Usage = totalUsage(attempts)
+		return draft, nil
+	}
+	for attempt := 0; attempt <= repairs; attempt++ {
+		purpose := "design"
+		var repair *TierRepair
+		if attempt > 0 {
+			purpose = "repair"
+			if err := cancelled(ctx, attempts); err != nil {
+				return Draft{}, err
 			}
-			draft.Run.Attempts = &all
-			draft.Run.Usage = totalUsage(attempts)
-			return *draft, nil
+			if repair, err = TargetedTierRepair(request, previous, issues); err != nil {
+				return Draft{}, fail(err, nil, false, purpose)
+			}
+		}
+		draft, err := mechanicsAttempt(purpose, repair)
+		if err != nil || draft != nil {
+			return derefDraft(draft), err
+		}
+	}
+	// One local repair when the last repair leaves only undelivered
+	// promises of one purchase (local_repair.go, SOL-61-19). It needs a
+	// repair budget, uses none and is sent at most once.
+	if repairs > 0 && lastValid {
+		local, err := localRepairFor(request, previous, issues)
+		if err != nil {
+			return Draft{}, fail(err, nil, false, LocalRepairPurpose)
+		}
+		if local != nil {
+			draft, err := mechanicsAttempt(LocalRepairPurpose, local)
+			if err != nil || draft != nil {
+				return derefDraft(draft), err
+			}
 		}
 	}
 	designAttempts := 0
@@ -382,6 +411,14 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 	}
 	message := fmt.Sprintf("The draft still failed mechanics checks after %d attempts. %s No invalid Unit was published.", designAttempts, failureSummary(issues))
 	return Draft{}, &ModelError{Message: message, Usage: totalUsage(attempts), Failure: &Failure{Code: CodeOutputInvalid, Stage: "draft", Message: message}, Evidence: failureEvidence(request, &plan, attempts)}
+}
+
+// derefDraft is the draft a mechanics attempt returned, or none.
+func derefDraft(draft *Draft) Draft {
+	if draft == nil {
+		return Draft{}
+	}
+	return *draft
 }
 
 func blueprintRequest(prepared Prepared, previous any, issues []string, plan DesignPlan) (ModelRequest, error) {
