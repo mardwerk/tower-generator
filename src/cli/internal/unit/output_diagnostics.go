@@ -3,6 +3,8 @@ package unit
 import (
 	"errors"
 	"slices"
+	"strconv"
+	"strings"
 
 	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
@@ -19,9 +21,11 @@ import (
 // one of its bounds (s.Issue.NumberBound), the rest of the output parsed, so
 // code still runs the semantic checks: on a copy in which each such number
 // is moved into its bound, to the limit of an inclusive bound and one past
-// the limit of an exclusive one, so a radius of 0 reads as 1. The attempt
-// still fails on its schema issues, each of which says what value the other
-// checks read, and the repair receives every issue together. The copy is
+// the limit of an exclusive one, only so the rest decodes. Semantic issues
+// about a purchase with such a number, or a build that owns it, are
+// dropped, so nothing is judged from a value the model did not write
+// (SOL-61-11). The attempt still fails on its schema issues, and the repair
+// receives every issue together. The copy is
 // diagnostic only: code never publishes, records or repairs it, the repair
 // sees the output as the model wrote it, and final validation is as strict
 // as before. Partial decoding of other schema failures, such as a missing
@@ -121,11 +125,68 @@ func schemaFailureIssues(output any, request *Request, plan DesignPlan, validati
 	if err != nil {
 		return issues
 	}
-	issues = []string{}
-	for i, issue := range outputIssues {
-		issues = append(issues, issue.PathString()+": "+issue.Message+". The other checks read it as "+s.FormatNumber(clamped[i].value)+".")
+	// The copy in bounds only lets the rest decode. No semantic issue may
+	// judge a purchase whose value was out of bounds, or a build that owns
+	// it, so no issue is invented from a value the model did not write
+	// (SOL-61-11); the base attack is in every build, so a number out of
+	// bounds there leaves only the schema issues.
+	var invalid []tierRef
+	for _, c := range clamped {
+		ref, ok := tierOf(c.path)
+		if !ok {
+			return issues
+		}
+		invalid = append(invalid, ref)
 	}
-	return append(issues, semanticIssues(blueprint, budget, request, plan)...)
+	issues = []string{}
+	for _, issue := range outputIssues {
+		issues = append(issues, issue.PathString()+": "+issue.Message+". The other checks ran on every purchase and build that does not include this value.")
+	}
+	for _, issue := range semanticIssues(blueprint, budget, request, plan) {
+		if !touchesTier(issue, invalid) {
+			issues = append(issues, issue)
+		}
+	}
+	return issues
+}
+
+// tierRef is one purchase, by path index (0 to 2) and tier (1 to 5).
+type tierRef struct{ path, tier int }
+
+// tierOf finds the purchase an output path lies in, as in
+// paths.path2.tiers.tier5.activeFollowUp.radius. A path outside a purchase,
+// such as the base attack, has none.
+func tierOf(path []any) (tierRef, bool) {
+	if len(path) < 4 || path[0] != "paths" || path[2] != "tiers" {
+		return tierRef{}, false
+	}
+	pathKey, _ := path[1].(string)
+	tierKey, _ := path[3].(string)
+	p := slices.Index(m.PathKeys[:], pathKey)
+	t := slices.Index(m.TierKeys[:], tierKey)
+	if p < 0 || t < 0 {
+		return tierRef{}, false
+	}
+	return tierRef{p, t + 1}, true
+}
+
+// touchesTier reports an issue about one of the purchases, or about a legal
+// build that owns one of them, as builds.1-5-0 owns x-5-x.
+func touchesTier(issue string, tiers []tierRef) bool {
+	for _, ref := range tiers {
+		if strings.HasPrefix(issue, "paths."+m.PathKeys[ref.path]+".tiers."+m.TierKeys[ref.tier-1]) {
+			return true
+		}
+		if rest, ok := strings.CutPrefix(issue, "builds."); ok {
+			code, _, _ := strings.Cut(rest, ".")
+			if parts := strings.Split(code, "-"); len(parts) == 3 {
+				if n, err := strconv.Atoi(parts[ref.path]); err == nil && n >= ref.tier {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 // semanticIssues are the checks of a blueprint that passed the output

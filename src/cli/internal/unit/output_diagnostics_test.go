@@ -66,7 +66,7 @@ func TestSchemaErrorKeepsSemanticIssues(t *testing.T) {
 	if valid {
 		t.Fatal("an output with a radius of 0 passed its schema")
 	}
-	if len(issues) != 1+len(escanorSplash) || issues[0] != escanorRadius+". The other checks read it as 1." {
+	if len(issues) != 1+len(escanorSplash) || issues[0] != escanorRadius+". The other checks ran on every purchase and build that does not include this value." {
 		t.Fatalf("issues: %q", issues)
 	}
 	for i, build := range escanorSplash {
@@ -191,7 +191,7 @@ func TestRepairPatchWithNumberOutOfBounds(t *testing.T) {
 		t.Fatalf("a patch with a radius of 0: %v", err)
 	}
 	issues, ok := unit.MechanicsIssues(merged, &prepared.Request, plan)
-	if ok || len(issues) != 1+len(escanorSplash) || issues[0] != escanorRadius+". The other checks read it as 1." {
+	if ok || len(issues) != 1+len(escanorSplash) || issues[0] != escanorRadius+". The other checks ran on every purchase and build that does not include this value." {
 		t.Errorf("the merged repair's issues: %q", issues)
 	}
 	at(tier, "activeFollowUp").(*s.Object).Delete("inheritStatuses")
