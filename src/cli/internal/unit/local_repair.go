@@ -100,7 +100,7 @@ func localRepairFor(request *Request, previous any, issues []string) (*TierRepai
 				continue
 			}
 			selection[pathIndex] = tier - 1
-			if unlockBlocked(m.ResolveUnchecked(&blueprint, selection).BaseAttack, promise.dimension) {
+			if unlockBlocked(m.ResolveUnchecked(&blueprint, selection), promise.dimension, pathIndex, tier, &blueprint, definition) {
 				return nil, nil
 			}
 		}
@@ -153,28 +153,44 @@ func localRepairFor(request *Request, previous any, issues []string) (*TierRepai
 	}, nil
 }
 
-// unlockBlocked reports that an attack already has what an unlock adds, so
-// no change of the next purchase can unlock it (unlockedIntent).
-func unlockBlocked(attack m.Attack, intent string) bool {
-	if attack.IsV2() && !coreUnlocks[intent] && intent != BonusDamagePromise {
-		_, had := attack.Status(intent)
-		return had && attack.DetectsTrait(intent)
+// unlockBlocked reports that no change of the purchase at tier can satisfy
+// an unlock promise, because the build before it already has the capability
+// the unlock adds, with the same presence semantics as unlockedIntent
+// (SOL-81-01): a v2 status or detected trait the attack already has, a
+// follow-up, a distinct volley of more than one projectile, splash, a slow,
+// burn or stun, Camo, this path's Active Ability, or an earlier active
+// follow-up on this path. A manual boost can only unlock at the Definition's
+// unlock tier. Bonus damage, delivery, damage type and targeting changes are
+// never blocked, since the next purchase can always change them.
+func unlockBlocked(before m.Build, intent string, pathIndex, tier int, blueprint *m.Blueprint, definition m.Definition) bool {
+	a := before.BaseAttack
+	path := m.PathKeys[pathIndex]
+	if intent == BonusDamagePromise {
+		return false
+	}
+	if a.IsV2() && !coreUnlocks[intent] {
+		_, had := a.Status(intent)
+		return had || a.DetectsTrait(intent)
 	}
 	switch intent {
+	case "manual-boost":
+		return tier != definition.Rules.ManualBoostUnlockTier || hasAbility(before, path, false)
+	case "active-follow-up":
+		return hasActiveFollowUp(blueprint, pathIndex, tier-1)
 	case "follow-up":
-		return attack.FollowUp != nil
+		return a.FollowUp != nil
 	case "distinct-volley":
-		return attack.Distribution == "distinct-targets"
+		return distinctVolley(a)
 	case "splash":
-		return attack.Stats.SplashRadius > 0
+		return a.Stats.SplashRadius > 0
 	case "camo":
-		return attack.Camo
+		return a.Camo
 	case "slow":
-		return attack.Stats.SlowPercent > 0
+		return a.Stats.SlowPercent > 0
 	case "burn":
-		return attack.Stats.BurnDamagePerSecond > 0
+		return a.Stats.BurnDamagePerSecond > 0
 	case "stun":
-		return attack.Stats.StunSeconds > 0
+		return a.Stats.StunSeconds > 0
 	}
 	return false
 }
