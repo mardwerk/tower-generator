@@ -11,7 +11,7 @@ import (
 )
 
 // A Result keeps the full Profile it was made under. Editing the saved
-// Profile, here to turn on distinctEarlyBenefits and requireTier5BehaviorChange,
+// Profile, here to turn on distinctEarlyBenefits and requireTier3BehaviorChange,
 // or deleting it, changes neither the Result's design policy nor what
 // CheckDraft finds for its draft (OPUS-NET-33-2 step 6).
 func TestResultsKeepTheirProfileSnapshot(t *testing.T) {
@@ -89,7 +89,7 @@ func TestResultsKeepTheirProfileSnapshot(t *testing.T) {
 	edited := saved
 	yes := true
 	editedPolicy := *saved.MechanicsDefinition.Profile.DesignPolicy
-	editedPolicy.DistinctEarlyBenefits, editedPolicy.RequireTier5BehaviorChange = &yes, &yes
+	editedPolicy.DistinctEarlyBenefits, editedPolicy.RequireTier3BehaviorChange = &yes, &yes
 	edited.MechanicsDefinition.Profile.DesignPolicy = &editedPolicy
 	if _, err := profiles.Save(s.FromGoValue(edited)); err != nil {
 		t.Fatal(err)

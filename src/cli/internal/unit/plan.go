@@ -347,14 +347,20 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 		if policy.PreservesEarlyIdentity() {
 			gates = append(gates, m.EarlyIdentityRule(d)+" "+planEarlyIdentity)
 		}
+		if exclusiveEarlyOn(*d) {
+			gates = append(gates, planExclusiveEarly)
+		}
 		if earlyBenefitsOn(*d) {
 			gates = append(gates, planDistinctEarly)
+		}
+		if pathIdentityOn(*d) {
+			gates = append(gates, m.PathIdentityRule+" "+planPathIdentity)
 		}
 		if policy.RequiresBehaviorChange(3) {
 			gates = append(gates, m.BehaviorChangeRule(3)+" "+planTier3Behavior)
 		}
 		if policy.RequiresBehaviorChange(5) {
-			gates = append(gates, m.BehaviorChangeRule(5))
+			gates = append(gates, m.BehaviorChangeRule(5)+" "+planTier5Pinnacle)
 		}
 		last := guidance[len(guidance)-1]
 		guidance = append(append(append([]string{}, guidance[:len(guidance)-1]...), gates...), last)

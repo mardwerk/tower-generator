@@ -358,12 +358,14 @@ func TestEditedDesignPolicySavesAndErrorsNameTheField(t *testing.T) {
 		DistinctPathSpecializations: true,
 		DistinctFirstUpgrades:       false,
 		DistinctEarlyBenefits:       &no,
+		ExclusiveEarlyBenefits:      &no,
 		DistinctCapstones:           false,
 		PreserveEarlyAttackIdentity: &no,
 		MaxManualAbilityPaths:       0,
 		ManualAbilityPath:           mechanics.NullableString{Present: true, Null: true},
 		MinTier5SpecialtyMultiplier: &multiplier,
 		RequireTier3BehaviorChange:  &yes,
+		RequireTier3PathIdentity:    &no,
 		RequireTier5BehaviorChange:  &yes,
 		Tier5Uniqueness:             "one-per-player-unit-type-and-path",
 	}
@@ -380,6 +382,8 @@ func TestEditedDesignPolicySavesAndErrorsNameTheField(t *testing.T) {
 		"maxManualAbilityPaths":       4,
 		"manualAbilityPath":           "path4",
 		"distinctEarlyBenefits":       "yes",
+		"exclusiveEarlyBenefits":      "yes",
+		"requireTier3PathIdentity":    1,
 	} {
 		invalid := s.FromGoValue(edited).(*s.Object)
 		policy := invalid

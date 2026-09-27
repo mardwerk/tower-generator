@@ -35,6 +35,9 @@ func DesignGuidance(request *Request) []string {
 		capstones = m.DistinctCapstonesRule
 	}
 	out = append(out, "Distinct purchases: "+first+" "+capstones+" Strengthen the purchased branch rather than granting the other branches. A high-tier generalist can still be classified basic_dps; classification is not a power or quality grade.")
+	if exclusiveEarlyOn(*definition) {
+		out = append(out, guideExclusiveEarly)
+	}
 	if earlyBenefitsOn(*definition) {
 		out = append(out, guideEarlyBenefits)
 	}
@@ -44,8 +47,11 @@ func DesignGuidance(request *Request) []string {
 	if policy.RequiresBehaviorChange(3) {
 		out = append(out, m.BehaviorChangeRule(3)+" "+guideTier3Promise)
 	}
+	if pathIdentityOn(*definition) {
+		out = append(out, guidePathIdentity)
+	}
 	if policy.RequiresBehaviorChange(5) {
-		out = append(out, m.BehaviorChangeRule(5))
+		out = append(out, m.BehaviorChangeRule(5)+" "+guideTier5Promise)
 	}
 	return append(out, guideDistinctPaths, guideNames, guidePrices)
 }

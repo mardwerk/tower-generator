@@ -67,7 +67,7 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 		}
 	}
 	definition := profile.MechanicsDefinition
-	if definition.Revision != "2026-09-27-atlas-56.3-v26" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
+	if definition.Revision != "2026-09-27-atlas-56.3-v27" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
 		t.Errorf("Definition %s %q", definition.Revision, definition.Label)
 	}
 	if scale := definition.Profile.ReferenceScale; scale.BaseCost != 200 || scale.BaseDamage != 1 || scale.BaseIntervalSeconds != 0.95 || scale.BaseRange != 32 || scale.BasePierce != 2 ||
@@ -144,9 +144,11 @@ func TestPromptsSeparatePrivateChecksFromOutput(t *testing.T) {
 	}
 }
 
-// Code does not judge payoff: a fourth or fifth purchase that promises one
-// dimension passes the plan check, and the review judges it from the
-// resolved purchase evidence (decided on #27). Impossible promises still fail.
+// Code does not judge payoff: a fourth purchase that promises one dimension
+// passes the plan check, and the review judges it from the resolved purchase
+// evidence (decided on #27). A fifth purchase needs a distinct capability
+// under requireTier5BehaviorChange, which a proposed mechanic meets (#61);
+// its size is still the review's judgment. Impossible promises still fail.
 func TestPlansLeavePayoffToTheReview(t *testing.T) {
 	prepared, err := fixture.Prepare()
 	if err != nil {
@@ -160,8 +162,18 @@ func TestPlansLeavePayoffToTheReview(t *testing.T) {
 	}
 	// 4-x-x no longer changes the damage type, so Spiked Ball omits Frozen access.
 	repertoireEffect(plan, 0, 2).Set("adaptedAs", []any{})
+	_, err = unit.DecodeDesignPlan(plan, &prepared.Request)
+	for _, code := range []string{"5-x-x", "x-x-5"} {
+		if err == nil || !strings.Contains(err.Error(), code+" promises no new behavior or access and names no proposed mechanic. "+m.BehaviorChangeRule(5)) {
+			t.Errorf("a %s that only raises damage was accepted: %v", code, err)
+		}
+	}
+	split := s.NewObject().Set("name", "Split").Set("effect", "When the ball's pierce runs out it splits into twelve smaller balls that each hit one more enemy.").Set("sourceIds", []any{"source1:8"})
+	critical := s.NewObject().Set("name", "Critical bolt").Set("effect", "Every fifth bolt deals ten times its damage.").Set("sourceIds", []any{"source1:18"})
+	at(plan, "paths", "path1", "milestones", "tier5").(*s.Object).Set("proposedMechanics", []any{split})
+	at(plan, "paths", "path3", "milestones", "tier5").(*s.Object).Set("proposedMechanics", []any{critical})
 	if _, err := unit.DecodeDesignPlan(plan, &prepared.Request); err != nil {
-		t.Fatalf("single-dimension fourth and fifth purchases were rejected: %v", err)
+		t.Fatalf("single-dimension fourth purchases and fifth purchases with a proposed mechanic were rejected: %v", err)
 	}
 	at(plan, "paths", "path3", "milestones", "tier5").(*s.Object).Set("improves", []any{"damage", "active-damage"})
 	if _, err := unit.DecodeDesignPlan(plan, &prepared.Request); err == nil || !strings.Contains(err.Error(), "same-path manual-boost") {
@@ -249,7 +261,7 @@ func TestThirdPurchaseBehaviorIsAnOptInGate(t *testing.T) {
 		plan := recordedOutput(t, "plan")
 		at(plan, "paths", "path3", "milestones", "tier3").(*s.Object).Set("improves", []any{"damage", "range"}).Set("unlock", unlock)
 		_, err := unit.DecodeDesignPlan(plan, &optIn)
-		if got := err != nil && strings.Contains(err.Error(), "x-x-3 promises no new behavior or access. "+m.BehaviorChangeRule(3)); got != rejected {
+		if got := err != nil && strings.Contains(err.Error(), "x-x-3 promises no new behavior or access and names no proposed mechanic. "+m.BehaviorChangeRule(3)); got != rejected {
 			t.Errorf("opt-in, unlock %s: %v", unlock, err)
 		}
 	}
@@ -276,8 +288,10 @@ func TestEarlyPurchasesCannotPromiseProjectiles(t *testing.T) {
 }
 
 // A coherent stat-led path is allowed: code does not require a behavior or
-// access on every path, and the review judges its third purchase and
-// capstone (decided on #27).
+// access at every purchase, and the review judges its third purchase and
+// capstone (decided on #27). Its third purchase needs a benefit of its own
+// and its capstone a distinct capability, which may be a proposed mechanic
+// (#61).
 func TestAStatLedPathIsAllowed(t *testing.T) {
 	prepared, err := fixture.Prepare()
 	if err != nil {
@@ -287,6 +301,8 @@ func TestAStatLedPathIsAllowed(t *testing.T) {
 	for _, tier := range []string{"tier2", "tier5"} {
 		at(plan, "paths", "path3", "milestones", tier).(*s.Object).Set("unlock", "none")
 	}
+	critical := s.NewObject().Set("name", "Critical bolt").Set("effect", "Every fifth bolt deals ten times its damage.").Set("sourceIds", []any{"source1:18"})
+	at(plan, "paths", "path3", "milestones", "tier5").(*s.Object).Set("proposedMechanics", []any{critical})
 	if _, err := unit.DecodeDesignPlan(plan, &prepared.Request); err != nil {
 		t.Errorf("a stat-led bottom path was rejected: %v", err)
 	}
@@ -514,24 +530,40 @@ func TestPlanPromptAppliesEarlyIdentityOnlyWhenSelected(t *testing.T) {
 	}
 }
 
+// The Default states exclusiveEarlyBenefits, which subsumes
+// distinctEarlyBenefits (#61); each rule is stated only under its field, and
+// with both set only the exclusive one.
 func TestPlanPromptStatesDistinctEarlyPurchasesOnlyWhenSelected(t *testing.T) {
-	prepared, err := fixture.Prepare()
-	if err != nil {
-		t.Fatal(err)
-	}
-	line := m.EarlyBenefitsRule
-	withPolicy, err := unit.DesignPlanRequest(prepared)
-	if err != nil || !strings.Contains(withPolicy.Prompt, line) {
-		t.Fatalf("distinct early guidance missing: %v", err)
-	}
-	definition := *prepared.Request.MechanicsDefinition
-	policy := *definition.Profile.DesignPolicy
-	policy.DistinctEarlyBenefits = nil
-	definition.Profile.DesignPolicy = &policy
-	prepared.Request.MechanicsDefinition = &definition
-	withoutPolicy, err := unit.DesignPlanRequest(prepared)
-	if err != nil || strings.Contains(withoutPolicy.Prompt, line) {
-		t.Fatalf("distinct early guidance remained after disabling the policy: %v", err)
+	on := true
+	for _, state := range []struct {
+		name                string
+		distinct, exclusive *bool
+		want                string
+	}{
+		{"the Default", nil, &on, m.ExclusiveEarlyBenefitsRule},
+		{"both set", &on, &on, m.ExclusiveEarlyBenefitsRule},
+		{"distinct only", &on, nil, m.EarlyBenefitsRule},
+		{"neither", nil, nil, ""},
+	} {
+		prepared, err := fixture.Prepare()
+		if err != nil {
+			t.Fatal(err)
+		}
+		definition := *prepared.Request.MechanicsDefinition
+		policy := *definition.Profile.DesignPolicy
+		policy.DistinctEarlyBenefits, policy.ExclusiveEarlyBenefits = state.distinct, state.exclusive
+		definition.Profile.DesignPolicy = &policy
+		prepared.Request.MechanicsDefinition = &definition
+		request, err := unit.DesignPlanRequest(prepared)
+		if err != nil {
+			t.Fatal(err)
+		}
+		guidance := strings.Join(unit.DesignGuidance(&prepared.Request), "\n")
+		for _, rule := range []string{m.EarlyBenefitsRule, m.ExclusiveEarlyBenefitsRule} {
+			if want := rule == state.want; strings.Contains(request.Prompt, rule) != want || strings.Contains(guidance, rule) != want {
+				t.Errorf("%s: the plan prompt or guidance states %q: %v", state.name, rule, !want)
+			}
+		}
 	}
 }
 

@@ -307,7 +307,7 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 			for _, issue := range PlanIntentIssues(blueprint, plan.UpgradeIntents, definition) {
 				issues = append(issues, issue.Path+": "+issue.Message)
 			}
-			for _, issue := range EarlyBenefitsIssues(blueprint, plan.UpgradeIntents, definition) {
+			for _, issue := range append(EarlyBenefitsIssues(blueprint, plan.UpgradeIntents, definition), PathIdentityIssues(blueprint, plan.UpgradeIntents, definition)...) {
 				issues = append(issues, issue.Path+": "+issue.Message)
 			}
 		}
@@ -408,7 +408,7 @@ func blueprintRequest(prepared Prepared, previous any, issues []string, plan Des
 		budget, form, example = draftStatusBudgetV2, draftStatusFormV2, draftExampleV2
 	}
 	budget = fmt.Sprintf(budget, budgetSentence(request))
-	prompt := []string{draftPlan, draftPromises, draftStyle, draftOwnership, draftShape, draftTruth, budget, form, draftArithmetic, draftExtensions, CountArithmeticGuidance}
+	prompt := []string{draftPlan, draftPromises, draftStyle, draftNames, draftOwnership, draftShape, draftTruth, budget, form, draftArithmetic, draftExtensions, CountArithmeticGuidance}
 	if d := request.MechanicsDefinition; d != nil {
 		prompt = append(prompt, BuildShape(*d))
 	}

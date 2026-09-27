@@ -32,11 +32,14 @@ func DefaultAuthoringDefinition() mechanics.Definition {
 		Version:                     "1",
 		DistinctPathSpecializations: false,
 		DistinctFirstUpgrades:       true,
-		DistinctEarlyBenefits:       boolPtr(true),
+		// exclusiveEarlyBenefits subsumes distinctEarlyBenefits (#61).
+		ExclusiveEarlyBenefits:      boolPtr(true),
 		DistinctCapstones:           true,
 		PreserveEarlyAttackIdentity: boolPtr(true),
 		MaxManualAbilityPaths:       1,
 		ManualAbilityPath:           mechanics.NullableString{Present: true, Value: "path2"},
+		RequireTier3PathIdentity:    boolPtr(true),
+		RequireTier5BehaviorChange:  boolPtr(true),
 		Tier5Uniqueness:             "one-per-player-unit-type-and-path",
 	}
 	d = mechanics.UpgradeDefinition(d)

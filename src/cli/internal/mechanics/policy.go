@@ -287,8 +287,11 @@ func DesignPolicyIssues(blueprint *Blueprint, definition Definition) []Issue {
 		tier4 := pureBuild(blueprint, index, 4)
 		tier5 := pureBuild(blueprint, index, 5)
 		for _, tier := range []int{3, 5} {
-			if policy.RequiresBehaviorChange(tier) && !HasBehaviorTransition(pureBuild(blueprint, index, tier-1), pureBuild(blueprint, index, tier)) {
-				issues = append(issues, Issue{fmt.Sprintf("%s.tiers.tier%d", prefix, tier), fmt.Sprintf("Resolved %s adds no new behavior or access over %s. %s", BuildCode(index, tier), BuildCode(index, tier-1), BehaviorChangeRule(tier))})
+			// A proposed mechanic of the purchase meets the rule: it is a
+			// capability beyond larger numbers that the Definition cannot
+			// express yet, and the review judges whether it fits.
+			if policy.RequiresBehaviorChange(tier) && len(branch.Tiers.At(tier).ProposedMechanics) == 0 && !HasBehaviorTransition(pureBuild(blueprint, index, tier-1), pureBuild(blueprint, index, tier)) {
+				issues = append(issues, Issue{fmt.Sprintf("%s.tiers.tier%d", prefix, tier), fmt.Sprintf("Resolved %s adds no new behavior or access over %s and carries no proposed mechanic. %s", BuildCode(index, tier), BuildCode(index, tier-1), BehaviorChangeRule(tier))})
 			}
 		}
 		for _, check := range []struct {

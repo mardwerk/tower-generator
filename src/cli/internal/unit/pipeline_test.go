@@ -34,6 +34,38 @@ func recordedOutput(t *testing.T, name string) *s.Object {
 	return value.(*s.Object)
 }
 
+// preparedUnder prepares the fixture request under the Default Profile
+// with an edited design policy.
+func preparedUnder(t *testing.T, edit func(*mechanics.DesignPolicy)) unit.Prepared {
+	t.Helper()
+	request, err := fixture.Request()
+	if err != nil {
+		t.Fatal(err)
+	}
+	profile := unit.DefaultProfile()
+	policy := *profile.MechanicsDefinition.Profile.DesignPolicy
+	edit(&policy)
+	profile.MechanicsDefinition.Profile.DesignPolicy = &policy
+	prepared, err := unit.Prepare(s.FromGoValue(unit.ApplyProfile(request, profile)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return prepared
+}
+
+// planWithoutProposals is the fixture plan output without its proposed
+// mechanics.
+func planWithoutProposals(t *testing.T) *s.Object {
+	t.Helper()
+	plan := recordedOutput(t, "plan")
+	for _, path := range mechanics.PathKeys {
+		for _, tier := range mechanics.TierKeys {
+			at(plan, "paths", path, "milestones", tier).(*s.Object).Delete("proposedMechanics")
+		}
+	}
+	return plan
+}
+
 // retryReason is the part of a retry prompt that names the rejected output's issues.
 func retryReason(prompt string) string {
 	for _, marker := range []string{"\"violations\"", "\"issues\"", "\"findings\"", "Correct the"} {
@@ -121,7 +153,8 @@ func TestScriptedPipelineRunsEveryStage(t *testing.T) {
 }
 
 // An over-budget tier gets a targeted repair: the model picks one effect
-// subset and code keeps every other tier as authored.
+// subset and code keeps every other tier as authored. The extra effects stay
+// on the top path's own early dimensions, so exclusiveEarlyBenefits holds.
 func TestTargetedRepairKeepsOtherTiers(t *testing.T) {
 	prepared, err := fixture.Prepare()
 	if err != nil {
@@ -132,8 +165,8 @@ func TestTargetedRepairKeepsOtherTiers(t *testing.T) {
 	tier1.Set("statChanges", []any{
 		s.NewObject().Set("stat", "pierce").Set("operation", "add").Set("value", 1.0),
 		s.NewObject().Set("stat", "damage").Set("operation", "add").Set("value", 1.0),
-		s.NewObject().Set("stat", "range").Set("operation", "add").Set("value", 2.0),
-		s.NewObject().Set("stat", "intervalSeconds").Set("operation", "multiply").Set("value", 0.9),
+		s.NewObject().Set("stat", "pierce").Set("operation", "multiply").Set("value", 2.0),
+		s.NewObject().Set("stat", "damage").Set("operation", "multiply").Set("value", 2.0),
 	})
 	repair := s.NewObject().Set("paths", s.NewObject().Set("path1", s.NewObject().Set("tiers", s.NewObject().Set("tier1", s.NewObject().Set("choice", "option-1")))))
 	model := &fixture.Model{Outputs: []any{recordedOutput(t, "plan"), mechanicsOutput, repair}}

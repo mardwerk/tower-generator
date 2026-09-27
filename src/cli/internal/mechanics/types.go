@@ -136,12 +136,14 @@ type DesignPolicy struct {
 	DistinctPathSpecializations bool           `json:"distinctPathSpecializations"`
 	DistinctFirstUpgrades       bool           `json:"distinctFirstUpgrades"`
 	DistinctEarlyBenefits       *bool          `json:"distinctEarlyBenefits,omitempty"`
+	ExclusiveEarlyBenefits      *bool          `json:"exclusiveEarlyBenefits,omitempty"`
 	DistinctCapstones           bool           `json:"distinctCapstones"`
 	PreserveEarlyAttackIdentity *bool          `json:"preserveEarlyAttackIdentity,omitempty"`
 	MaxManualAbilityPaths       int            `json:"maxManualAbilityPaths"`
 	ManualAbilityPath           NullableString `json:"manualAbilityPath,omitempty"`
 	MinTier5SpecialtyMultiplier *float64       `json:"minTier5SpecialtyMultiplier,omitempty"`
 	RequireTier3BehaviorChange  *bool          `json:"requireTier3BehaviorChange,omitempty"`
+	RequireTier3PathIdentity    *bool          `json:"requireTier3PathIdentity,omitempty"`
 	RequireTier5BehaviorChange  *bool          `json:"requireTier5BehaviorChange,omitempty"`
 	Tier5Uniqueness             string         `json:"tier5Uniqueness"`
 }

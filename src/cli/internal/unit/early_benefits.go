@@ -11,10 +11,33 @@ import (
 // guideEarlyBenefits is the draft and repair guidance under the field.
 const guideEarlyBenefits = m.EarlyBenefitsRule + " Code compares what each path's resolved first and second purchases improve or unlock, so a change the plan does not promise there can make two paths match."
 
-// earlyBenefitsOn reports whether a Definition selects distinctEarlyBenefits.
+// guideExclusiveEarly is the draft and repair guidance under
+// exclusiveEarlyBenefits.
+const guideExclusiveEarly = m.ExclusiveEarlyBenefitsRule + " Code compares what each path's resolved first and second purchases improve or unlock, so a change the plan does not promise there can make two paths share one."
+
+// earlyBenefitsOn reports whether a Definition selects distinctEarlyBenefits
+// and not exclusiveEarlyBenefits, which subsumes it: early benefits that
+// share nothing differ. With both set only the exclusive rule applies.
 func earlyBenefitsOn(definition m.Definition) bool {
 	policy := definition.Profile.DesignPolicy
-	return policy != nil && policy.DistinctEarlyBenefits != nil && *policy.DistinctEarlyBenefits
+	return policy != nil && policy.DistinctEarlyBenefits != nil && *policy.DistinctEarlyBenefits && !policy.ExcludesSharedEarlyBenefits()
+}
+
+// exclusiveEarlyOn reports whether a Definition selects exclusiveEarlyBenefits.
+func exclusiveEarlyOn(definition m.Definition) bool {
+	return definition.Profile.DesignPolicy.ExcludesSharedEarlyBenefits()
+}
+
+// EarlyBenefitsFindingRule names the check Finding of the early benefits
+// rule a Definition selects, or "" when it selects none.
+func EarlyBenefitsFindingRule(definition m.Definition) string {
+	switch {
+	case exclusiveEarlyOn(definition):
+		return "exclusive-early-benefits"
+	case earlyBenefitsOn(definition):
+		return "distinct-early-benefits"
+	}
+	return ""
 }
 
 // earlyStep is one early purchase: the dimensions it improves and the
@@ -194,6 +217,9 @@ func stepDifference(a, b earlyStep) []string {
 // PlanIntentIssues in drafting and check, never in ValidateTyped, which
 // rendering also calls. intents may be nil for a draft without a plan.
 func EarlyBenefitsIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition m.Definition) []m.Issue {
+	if exclusiveEarlyOn(definition) {
+		return exclusiveEarlyResolvedIssues(blueprint, intents, definition)
+	}
 	if !earlyBenefitsOn(definition) {
 		return nil
 	}
@@ -242,6 +268,159 @@ func EarlyBenefitsIssues(blueprint m.Blueprint, intents *UpgradeIntents, definit
 			Path:    fmt.Sprintf("paths.%s.tiers.%s", m.PathKeys[target], m.TierKeys[tier-1]),
 			Message: facts + " " + m.EarlyBenefitsRule + " " + fix,
 		})
+	}
+	return issues
+}
+
+// ---- exclusiveEarlyBenefits ----
+
+// earlySet is a path's first two steps taken together as benefits.
+func earlySet(steps [2]earlyStep, definition m.Definition) benefitSet {
+	out := stepBenefits(steps[0], definition)
+	out.addAll(stepBenefits(steps[1], definition))
+	return out
+}
+
+// sharedKeys lists the benefits two sets have in common.
+func sharedKeys(a, b benefitSet) []string {
+	var out []string
+	for _, key := range a.keys() {
+		if _, ok := b[key]; ok {
+			out = append(out, key)
+		}
+	}
+	return out
+}
+
+// sharingTier is the later of a path's first two steps that has one of the
+// shared benefits.
+func sharingTier(steps [2]earlyStep, keys []string, definition m.Definition) int {
+	second := stepBenefits(steps[1], definition)
+	for _, key := range keys {
+		if _, ok := second[key]; ok {
+			return 2
+		}
+	}
+	return 1
+}
+
+// exclusiveSuggestions names improvements no path's first two purchases
+// have, then personal detection when no path unlocks detection early, as a
+// ", such as" clause; empty when every one is taken.
+func exclusiveSuggestions(sets [3]benefitSet, definition m.Definition) string {
+	used := benefitSet{}
+	for _, set := range sets {
+		used.addAll(set)
+	}
+	var out []string
+	for _, c := range []string{"damage", "pierce", "range", "attack-rate"} {
+		if _, taken := used[c]; !taken && len(out) < 2 {
+			out = append(out, c)
+		}
+	}
+	detects := false
+	for _, key := range used.keys() {
+		trait := strings.TrimPrefix(key, "unlock ")
+		if trait != key && (trait == "camo" || (definition.IsV2() && isDetection(&definition, trait))) {
+			detects = true
+		}
+	}
+	if !detects {
+		out = append(out, "personal detection")
+	}
+	if len(out) == 0 {
+		return ""
+	}
+	return ", such as " + joinWith(out, "or", "")
+}
+
+// exclusiveEarlyIssues is the plan form of exclusiveEarlyBenefits: a
+// benefit that one path's first two milestones promise may not be promised
+// by another path's first two milestones. The later path in build-code
+// order gets the issue, at the milestone that promises the shared benefit.
+func exclusiveEarlyIssues(intents *UpgradeIntents, definition m.Definition) []m.Issue {
+	var steps [3][2]earlyStep
+	var sets [3]benefitSet
+	for index := range m.PathKeys {
+		p := intents.At(index)
+		steps[index] = [2]earlyStep{plannedStep(*p.At(1)), plannedStep(*p.At(2))}
+		sets[index] = earlySet(steps[index], definition)
+	}
+	var issues []m.Issue
+	for index, path := range m.PathKeys {
+		for other := 0; other < index; other++ {
+			keys := sharedKeys(sets[index], sets[other])
+			if len(keys) == 0 {
+				continue
+			}
+			shared := sets[index].text(keys)
+			tier := sharingTier(steps[index], keys, definition)
+			pronoun := "it"
+			if len(keys) > 1 {
+				pronoun = "them"
+			}
+			issues = append(issues, m.Issue{
+				Path: fmt.Sprintf("upgradeIntents.%s.tier%d", path, tier),
+				Message: fmt.Sprintf("%s and %s promise %s, which %s and %s also promise. %s Redesign %s or %s: move %s to %s or later, or replace %s with an improvement or unlock from this path's own technique that no other path's first two purchases promise%s.",
+					BuildCode(index, 1), BuildCode(index, 2), shared, BuildCode(other, 1), BuildCode(other, 2), m.ExclusiveEarlyBenefitsRule,
+					BuildCode(index, tier), BuildCode(index, 3-tier), shared, BuildCode(index, 3), pronoun, exclusiveSuggestions(sets, definition)),
+			})
+		}
+	}
+	return issues
+}
+
+// exclusiveEarlyResolvedIssues is the resolved form of exclusiveEarlyBenefits.
+// It compares the pure builds up to each path's second purchase with the
+// promise check's measures and targets the purchase that departs from the
+// retained plan by giving a shared benefit the plan does not promise there,
+// so TargetedTierRepair rebuilds that tier.
+func exclusiveEarlyResolvedIssues(blueprint m.Blueprint, intents *UpgradeIntents, definition m.Definition) []m.Issue {
+	var resolved [3][2]earlyStep
+	var sets [3]benefitSet
+	for index := range m.PathKeys {
+		resolved[index] = [2]earlyStep{resolvedStep(&blueprint, definition, index, 1), resolvedStep(&blueprint, definition, index, 2)}
+		sets[index] = earlySet(resolved[index], definition)
+	}
+	var issues []m.Issue
+	for index := range m.PathKeys {
+		for other := 0; other < index; other++ {
+			keys := sharedKeys(sets[index], sets[other])
+			if len(keys) == 0 {
+				continue
+			}
+			shared := sets[index].text(keys)
+			facts := fmt.Sprintf("Resolved %s and %s give %s, which resolved %s and %s also give: %s gives %s, %s gives %s, %s gives %s and %s gives %s.",
+				BuildCode(index, 1), BuildCode(index, 2), shared, BuildCode(other, 1), BuildCode(other, 2),
+				BuildCode(other, 1), resolved[other][0].text(), BuildCode(other, 2), resolved[other][1].text(),
+				BuildCode(index, 1), resolved[index][0].text(), BuildCode(index, 2), resolved[index][1].text())
+			target, tier := index, sharingTier(resolved[index], keys, definition)
+			fix := fmt.Sprintf("Change what %s or %s improves or unlocks so it shares nothing with %s and %s.", BuildCode(index, tier), BuildCode(index, 3-tier), BuildCode(other, 1), BuildCode(other, 2))
+			if intents != nil {
+			search:
+				for _, candidate := range []int{index, other} {
+					for t := 2; t >= 1; t-- {
+						actual := stepBenefits(resolved[candidate][t-1], definition)
+						planned := stepBenefits(plannedStep(*intents.At(candidate).At(t)), definition)
+						for _, key := range keys {
+							_, gives := actual[key]
+							_, promised := planned[key]
+							if !gives || promised {
+								continue
+							}
+							target, tier = candidate, t
+							code := BuildCode(candidate, t)
+							fix = fmt.Sprintf("The retained plan does not promise %s at %s; the resolved purchase gives it, and the other path's first two purchases give it too. Remove that %s from %s and keep %s's promises.", actual[key], code, actual[key], code, code)
+							break search
+						}
+					}
+				}
+			}
+			issues = append(issues, m.Issue{
+				Path:    fmt.Sprintf("paths.%s.tiers.%s", m.PathKeys[target], m.TierKeys[tier-1]),
+				Message: facts + " " + m.ExclusiveEarlyBenefitsRule + " " + fix,
+			})
+		}
 	}
 	return issues
 }

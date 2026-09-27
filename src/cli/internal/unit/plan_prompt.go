@@ -25,6 +25,17 @@ const planEarlyIdentity = "At a first or second purchase, promise no unlock exce
 // earlyBenefitsIssues enforces it.
 const planDistinctEarly = m.EarlyBenefitsRule + " For example, range then damage on x-1-x and x-2-x repeats damage then range on x-x-1 and x-x-2. Give one of those paths another improvement or unlock from its own technique. Code rejects a plan that repeats them; a third purchase may still lead with a single stat."
 
+// planExclusiveEarly applies under exclusiveEarlyBenefits; the plan check
+// exclusiveEarlyIssues enforces it.
+const planExclusiveEarly = m.ExclusiveEarlyBenefitsRule + " For example, when 1-x-x adds damage, no first or second purchase of the middle or bottom path adds damage; a second damage purchase belongs on 2-x-x. A path may repeat its own, as x-1-x and x-2-x may both attack faster, and a later purchase may add a little of another path's dimension, as x-3-x may add damage beside a faster attack. Code rejects a plan whose paths share an early benefit."
+
+// planPathIdentity follows the rule under requireTier3PathIdentity; the plan
+// check pathIdentityIssues enforces it.
+const planPathIdentity = "The third purchase defines the path, or at least distinguishes it, and the fourth develops that identity. The identity can be simple, such as the only path whose attack fires more than one projectile, or a new form, such as a creature that adds its own attacks. Promise at the third purchase something from this path's own technique that no milestone of the other two paths promises: an improvement, an unlock or a proposed mechanic. It may add larger numbers beside it. Code rejects a plan whose third purchase only promises what the other paths' purchases promise."
+
+// planTier5Pinnacle follows the rule under requireTier5BehaviorChange.
+const planTier5Pinnacle = "The fifth purchase is the pinnacle of its path: it adds a distinct capability that makes it worth its price, not only larger numbers. Promise the unlock that adds it, or, when the Definition cannot express it, name it in that milestone's proposedMechanics beside the supported promises that approximate it. Raising only the Active Ability's damage, rate, duration or frequency is larger numbers, not a pinnacle. Code rejects a plan without one."
+
 // planActiveForm follows the Active Ability rule when some path may have
 // one.
 const planActiveForm = "A targeting choice is not an activation. The Definition's only activated ability is one temporary boost of the purchased attack, unlocked at that purchase and modifiable at the next one. Plan a path's permanent purchases and its Active as one form: both develop it, and the Active amplifies what the path already owns, so never describe an effect a permanent purchase grants as appearing only in the Active. A second Active at the fifth purchase, a ground-targeted strike or a separate Active attack cannot be expressed: make the fifth purchase modify the same boost and name the extra Active as its proposed mechanic, or record it in omittedTechniques."
