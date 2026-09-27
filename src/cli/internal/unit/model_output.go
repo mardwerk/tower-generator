@@ -132,12 +132,7 @@ func ModelOutputSchema(request *Request) (*s.ObjectSchema, error) {
 		unlockTier, modifyTier = definition.Rules.ManualBoostUnlockTier, definition.Rules.ManualBoostModifyTier
 	}
 	sourcedPath := func(key string) s.Schema {
-		maxPaths := 1
-		if policy != nil {
-			maxPaths = policy.MaxManualAbilityPaths
-		}
-		allowsBoost := maxPaths > 0 && (policy == nil || !policy.ManualAbilityPath.Present ||
-			(!policy.ManualAbilityPath.Null && policy.ManualAbilityPath.Value == key))
+		allowsBoost := m.ActiveAbilityAllowed(policy, key)
 		atTier := func(tier int) s.Schema {
 			active := s.Optional(s.Null())
 			if allowsBoost && tier >= unlockTier {

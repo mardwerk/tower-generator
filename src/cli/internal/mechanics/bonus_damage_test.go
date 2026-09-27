@@ -170,7 +170,7 @@ func TestBonusDamageValidation(t *testing.T) {
 	early := issuesOf(func(b *Blueprint) {
 		b.Paths.Path1.Tiers.Tier1.Changes = append(b.Paths.Path1.Tiers.Tier1.Changes, bonus("hardened", "add", 5))
 	})
-	if !strings.Contains(early, "paths.path1.tiers.tier1.changes: T1 and T2 improve the existing basic attack. They cannot introduce a new attack pattern, status, bonus damage or delivery") {
+	if !strings.Contains(early, "paths.path1.tiers.tier1.changes: Resolved 1-x-x adds bonus damage against hardened. The first and second purchase of each path keep the base attack's form: they add no new status, bonus damage, splash") {
 		t.Errorf("a first-purchase bonus is not rejected:\n%s", early)
 	}
 	raised := issuesOf(func(b *Blueprint) {

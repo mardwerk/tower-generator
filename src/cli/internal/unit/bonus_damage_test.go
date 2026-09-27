@@ -41,7 +41,7 @@ func TestDefaultProfileListsHardenedAndBlimpForBonusDamage(t *testing.T) {
 			}
 		}
 	}
-	if profile.Rules.ID != "default-td-profile-v23" || profile.MechanicsDefinition.Revision != "2026-09-27-atlas-56.3-v23" {
+	if profile.Rules.ID != "default-td-profile-v24" || profile.MechanicsDefinition.Revision != "2026-09-27-atlas-56.3-v24" {
 		t.Errorf("rules %s, Definition %s", profile.Rules.ID, profile.MechanicsDefinition.Revision)
 	}
 	for _, want := range []string{
@@ -290,7 +290,7 @@ func TestBonusDamagePromise(t *testing.T) {
 	value, _ = value.(*s.Object).Get("tier1")
 	value.(*s.Object).Set("unlock", unit.BonusDamagePromise)
 	_, err = unit.DecodeDesignPlan(early, &prepared.Request)
-	if err == nil || !strings.Contains(err.Error(), "1-x-x must preserve the existing attack identity: the first and second purchase of a path add no new status, bonus damage, attack pattern") {
+	if err == nil || !strings.Contains(err.Error(), "1-x-x promises to unlock bonus-damage. The first and second purchase of each path keep the base attack's form: they add no new status, bonus damage, splash") {
 		t.Errorf("a first-purchase bonus-damage unlock is not rejected: %v", err)
 	}
 }
