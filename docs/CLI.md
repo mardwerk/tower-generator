@@ -10,7 +10,7 @@ go build -o mardwerk-unit ./src/cli
 
 | Command | Input → output | Model calls |
 | --- | --- | --- |
-| `research NAME` | Character name → Sources (identity, retrieved documents, source images) | none (network lookup) |
+| `research NAME` | Character name → Sources (identity, retrieved documents, source images); [what it reads](ARCHITECTURE.md#sources-and-passages) | none (network lookup) |
 | `prepare INPUT` | Sources (under `--profile`) or a request file → prepared request with its input hash | none (URLs are fetched) |
 | `generate NAME\|SOURCES` | `research` if given a name, then `prepare` + `draft` + `check` → checked artifact | 2–6 |
 | `author INPUT` | Sources or a request file → `prepare` + `draft` + `check` + `review` → Result | 3–7 |
@@ -40,6 +40,7 @@ Drafting makes a planning call and a mechanics call, each allowed one repair by 
 | `--model NAME`, `--reasoning LEVEL`, `--timeout SECONDS` | model commands | Model, reasoning (OpenRouter: `none`, `low`, `medium`, `high`; Codex: `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `ultra`) and per-call timeout (OpenRouter 120 s, Codex 600 s) |
 | `--codex FILE` | model commands | Codex executable |
 | `--choice ID` | `research`, `generate` | Pick a character when the name is ambiguous |
+| `--fandom URL` | `research`, `generate` | The character's page on its work's Fandom wiki (`https://WIKI.fandom.com/wiki/PAGE`), read instead of the page the identity lookup finds; use it when research finds no character wiki page |
 | `--previous FILE`, `--feedback TEXT` | `prepare`, `author` (request files); `--feedback` also `edit` | Revise an earlier Result |
 | `--repairs 0\|1\|2` | `draft`, `generate`, `author`, `edit` | Repair budget per model stage |
 | `--evidence-dir DIR` | `draft`, `generate`, `author`, `edit`, `review` | Keep exact model inputs and raw outputs |
@@ -51,6 +52,7 @@ Drafting makes a planning call and a mechanics call, each allowed one repair by 
 
 ```sh
 mardwerk-unit research "Monkey D. Luffy" -o data/runs/luffy.sources.json
+mardwerk-unit research "Escanor" --fandom https://nanatsu-no-taizai.fandom.com/wiki/Escanor -o data/runs/escanor.sources.json
 mardwerk-unit generate data/runs/luffy.sources.json -o data/runs/luffy.json
 mardwerk-unit generate data/runs/luffy.sources.json --profile my-copy -o data/runs/luffy-mine.json
 mardwerk-unit review data/runs/luffy.json -o data/runs/luffy-reviewed.json

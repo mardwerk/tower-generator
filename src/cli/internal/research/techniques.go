@@ -22,9 +22,13 @@ type techniqueLink struct {
 	context   string
 	headings  []string
 	family    string
+	// lead marks the page a power section names as its own: the bold term
+	// an entry starts with, or a "Further information" or "Main article"
+	// link.
+	lead bool
 }
 
-const techniqueNoise = "script,style,iframe,noscript,nav,aside,table,figure,.thumb,.gallery,.portable-infobox,.navbox,.navibox,.navigation,.toc,#toc,.mw-editsection,.mw-references-wrap,.references,.reference,.printfooter,.catlinks"
+const techniqueNoise = ".article-tabs,script,style,iframe,noscript,nav,aside,table,figure,.thumb,.gallery,.portable-infobox,.navbox,.navibox,.navigation,.toc,#toc,.mw-editsection,.mw-references-wrap,.references,.reference,.printfooter,.catlinks"
 
 var (
 	attackFamilies = []struct {
@@ -37,10 +41,14 @@ var (
 		{"energy", regexp.MustCompile(`(?i)\b(beam|lightning|thunder|bolt)\b`)},
 		{"freezing", regexp.MustCompile(`(?i)\b(ice|frost|freezing)\b`)},
 	}
-	combatSection    = regexp.MustCompile(`(?i)\b(abilities|powers|skills|techniques|combat|arts|magic)\b`)
-	excludedSection  = regexp.MustCompile(`(?i)\b(subordinates?|analy[sz]ed|equipment|references|navigation|trivia|gallery)\b`)
+	combatSection   = regexp.MustCompile(`(?i)\b(abilities|powers|skills|techniques|combat|arts|magic)\b`)
+	excludedSection = regexp.MustCompile(`(?i)\b(subordinates?|analy[sz]ed|references|navigation|trivia|gallery)\b`)
+	// equipmentSection excludes an equipment section, unless its heading
+	// also names abilities, as in "Abilities and Equipment".
+	equipmentSection = regexp.MustCompile(`(?i)\bequipment\b`)
+	mainArticle      = regexp.MustCompile(`(?i)^(?:further information|main articles?|main page)\s*:`)
 	fandomHost       = regexp.MustCompile(`^[a-z0-9-]+\.fandom\.com$`)
-	descriptionPart  = regexp.MustCompile(`(?i)\b(abilities|powers|usage|effects|description)\b`)
+	descriptionPart  = regexp.MustCompile(`(?i)\b(abilities|powers|usage|effects|description|techniques?)\b`)
 	unrelatedSection = regexp.MustCompile(`(?i)\b(users|trivia|references|navigation|related|gallery)\b`)
 )
 
@@ -53,27 +61,50 @@ func family(title string) string {
 	return ""
 }
 
+// excluded reports a section whose links are never followed.
+func excluded(headings []section) bool {
+	for _, h := range headings {
+		if excludedSection.MatchString(h.text) || (equipmentSection.MatchString(h.text) && !combatSection.MatchString(h.text)) {
+			return true
+		}
+	}
+	return false
+}
+
 // linkedTechniques lists technique links observed in the combat sections of
-// an identity-checked character page.
+// an identity-checked character page: links whose title names an attack
+// family, and the lead links of power and ability sections, whatever their
+// title.
 func linkedTechniques(content string, page *url.URL, character string) []techniqueLink {
 	document := parseHTML(content)
 	document.Find(techniqueNoise).Remove()
 	root := articleRoot(document)
 	var headings []section
 	var links []techniqueLink
+	ability := false
+	if title, ok := fandomTitle(page); ok {
+		if _, suffix, found := strings.Cut(title, "/"); found {
+			ability = abilityPage.MatchString(suffix)
+		}
+	}
 	root.Find("h2,h3,h4,h5,h6,a[href]").Each(func(_ int, node *goquery.Selection) {
 		if level := headingLevel(node); level > 0 {
 			headings = pushHeading(headings, level, clean(node.Text()))
 			return
 		}
-		if !anyHeadingMatches(headings, combatSection) || anyHeadingMatches(headings, excludedSection) {
+		path := headingTexts(headings)
+		power := unit.SectionRank(path) != unit.OtherSection
+		if !(power || anyHeadingMatches(headings, combatSection) || (ability && len(headings) > 0)) || excluded(headings) {
 			return
 		}
-		context := clean(node.Closest("li,p").Text())
+		context := clean(node.Closest("li,p,dd").Text())
 		linkText := clean(node.Text())
 		if context == "" || s.UTF16Len(context) > 800 || linkText == "" || s.UTF16Len(linkText) > 80 {
 			return
 		}
+		hatnote := mainArticle.MatchString(context)
+		bold := node.ParentsFiltered("b,strong").Length() > 0 && strings.HasPrefix(context, linkText)
+		lead := power && (hatnote || bold)
 		href, _ := node.Attr("href")
 		target, err := page.Parse(href)
 		if err != nil || target.Scheme != "https" || target.Hostname() != page.Hostname() || !fandomHost.MatchString(target.Hostname()) ||
@@ -85,22 +116,54 @@ func linkedTechniques(content string, page *url.URL, character string) []techniq
 			return
 		}
 		title = strings.ReplaceAll(title, "_", " ")
-		if title == "" || strings.ContainsAny(title, ":/") || strings.EqualFold(title, character) {
+		// Only a main-article link may name a subpage, and never one of the
+		// character's own pages.
+		if title == "" || strings.Contains(title, ":") || (strings.Contains(title, "/") && !hatnote) ||
+			strings.EqualFold(title, character) || sameName(strings.Split(title, "/")[0], character) {
 			return
 		}
 		behavior := family(title)
-		if behavior == "" {
+		if behavior == "" && !lead {
 			return
 		}
 		target.Fragment, target.RawFragment = "", ""
-		for _, existing := range links {
+		for i, existing := range links {
 			if existing.url.String() == target.String() {
+				links[i].lead = links[i].lead || lead
 				return
 			}
 		}
-		links = append(links, techniqueLink{target, page.String(), character, title, linkText, context, headingTexts(headings), behavior})
+		links = append(links, techniqueLink{target, page.String(), character, title, linkText, context, path, behavior, lead})
 	})
 	return links
+}
+
+// maxTechniquePages bounds the technique pages followed for one character.
+const maxTechniquePages = 4
+
+// followedTechniques chooses the technique pages to read: lead links first,
+// those of the most specific sections before their parents' and otherwise
+// in page order, then the attack-family choice of selectTechniques, at most
+// maxTechniquePages in all.
+func followedTechniques(links []techniqueLink) []techniqueLink {
+	var leads []techniqueLink
+	for _, link := range links {
+		if link.lead {
+			leads = append(leads, link)
+		}
+	}
+	sort.SliceStable(leads, func(i, j int) bool { return len(leads[i].headings) > len(leads[j].headings) })
+	var out []techniqueLink
+	for _, link := range append(leads, selectTechniques(links)...) {
+		duplicate := false
+		for _, chosen := range out {
+			duplicate = duplicate || chosen.url.String() == link.url.String()
+		}
+		if !duplicate && len(out) < maxTechniquePages {
+			out = append(out, link)
+		}
+	}
+	return out
 }
 
 // selectTechniques prefers two distinct attack families without following
@@ -116,7 +179,12 @@ func selectTechniques(links []techniqueLink) []techniqueLink {
 		}
 		return n
 	}
-	sorted := append([]techniqueLink{}, links...)
+	var sorted []techniqueLink
+	for _, link := range links {
+		if link.family != "" {
+			sorted = append(sorted, link)
+		}
+	}
 	sort.SliceStable(sorted, func(i, j int) bool {
 		if priority[sorted[i].family] != priority[sorted[j].family] {
 			return priority[sorted[i].family] < priority[sorted[j].family]
@@ -142,22 +210,70 @@ func selectTechniques(links []techniqueLink) []techniqueLink {
 	return selected
 }
 
-// techniqueSource extracts a technique page's introduction and description
-// prose, keeping the parent page's ownership and period context.
+// otherUsers marks, in page order, the headings of a technique page that
+// another user's subsection owns: where a section splits by user and one
+// subsection is named for the character, its siblings named for others are
+// skipped.
+func otherUsers(root *goquery.Selection, character string) []bool {
+	type node struct {
+		level, parent int
+		named         bool
+	}
+	var nodes []node
+	var stack []int
+	root.Find("h2,h3,h4,h5,h6").Each(func(_ int, heading *goquery.Selection) {
+		level := headingLevel(heading)
+		for len(stack) > 0 && nodes[stack[len(stack)-1]].level >= level {
+			stack = stack[:len(stack)-1]
+		}
+		parent := -1
+		if len(stack) > 0 {
+			parent = stack[len(stack)-1]
+		}
+		nodes = append(nodes, node{level, parent, namesCharacter(clean(heading.Text()), character)})
+		stack = append(stack, len(nodes)-1)
+	})
+	skip := make([]bool, len(nodes))
+	for i, n := range nodes {
+		if n.named {
+			continue
+		}
+		for j, sibling := range nodes {
+			if j != i && sibling.named && sibling.parent == n.parent && sibling.level == n.level {
+				skip[i] = true
+				break
+			}
+		}
+	}
+	return skip
+}
+
+// techniqueSource extracts a technique page's introduction, description and
+// technique entries, keeping the parent page's ownership and period
+// context. Where the page splits a section by user, only the character's
+// own subsection is read.
 func techniqueSource(content string, link techniqueLink) *unit.Document {
 	document := parseHTML(content)
 	document.Find(techniqueNoise).Remove()
 	root := articleRoot(document)
+	skip := otherUsers(root, link.character)
 	var headings []section
+	var skipped []bool
 	var passages []string
-	length := 0
-	root.Find("h2,h3,h4,h5,h6,p").Each(func(_ int, node *goquery.Selection) {
-		text := clean(node.Text())
+	length, count := 0, 0
+	root.Find("h2,h3,h4,h5,h6,p,li").Each(func(_ int, node *goquery.Selection) {
 		if level := headingLevel(node); level > 0 {
-			headings = pushHeading(headings, level, text)
+			other := count < len(skip) && skip[count]
+			count++
+			for len(headings) > 0 && headings[len(headings)-1].level >= level {
+				headings, skipped = headings[:len(headings)-1], skipped[:len(skipped)-1]
+			}
+			headings = append(headings, section{level, clean(node.Text())})
+			skipped = append(skipped, other || (len(skipped) > 0 && skipped[len(skipped)-1]))
 			return
 		}
-		if len(headings) > 0 && (!anyHeadingMatches(headings, descriptionPart) || anyHeadingMatches(headings, unrelatedSection)) {
+		text := ownText(node)
+		if len(headings) > 0 && (skipped[len(skipped)-1] || !anyHeadingMatches(headings, descriptionPart) || anyHeadingMatches(headings, unrelatedSection)) {
 			return
 		}
 		size := s.UTF16Len(text)
@@ -175,7 +291,7 @@ func techniqueSource(content string, link techniqueLink) *unit.Document {
 	for i, text := range passages {
 		quoted[i] = link.title + ": " + text
 	}
-	note := "Retrieved through the public MediaWiki parse API from an observed combat-section link on " + link.parent + ". Parent section: " + section + ". Introduction and ability-description prose only, capped at 4000 characters; navigation and user lists omitted. Fan-maintained secondary source, not independently verified canon. Ownership and story-period limits remain those of the parent article."
+	note := "Retrieved through the public MediaWiki parse API from an observed combat-section link on " + link.parent + ". Parent section: " + section + ". Introduction, description and technique entries only, capped at 4000 characters; where the page splits a section by user, only this character's subsection; navigation and user lists omitted. Fan-maintained secondary source, not independently verified canon. Ownership and story-period limits remain those of the parent article."
 	return &unit.Document{
 		ID:   "character-technique:" + link.url.Hostname() + ":" + encodeURIComponent(link.title),
 		Kind: "source",

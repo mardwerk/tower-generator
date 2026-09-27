@@ -15,7 +15,7 @@ When you change the client, rebuild it with `pnpm build` (Node.js 22 or newer) a
 
 ## Generate a unit
 
-Enter a character name and select Generate. The Profile dropdown below the name, beside Inputs and rules and Import, picks the rules; the BTD6-inspired default is preselected. The server looks the character up on Wikipedia (with Wikidata and Fandom for text and images) and asks you to choose when the name is ambiguous. It saves the found Sources to your library, prepares them under the Profile, then drafts, checks and reviews the unit. Missing sources produce an error, never invented canon.
+Enter a character name and select Generate. The Profile dropdown below the name, beside Inputs and rules and Import, picks the rules; the BTD6-inspired default is preselected. The server looks the character up on Wikipedia (with Wikidata and Fandom for text and images) and asks you to choose when the name is ambiguous ([what research reads](ARCHITECTURE.md#sources-and-passages)). It saves the found Sources to your library, prepares them under the Profile, then drafts, checks and reviews the unit. Missing sources produce an error, never invented canon.
 
 - Starting a generation clears the name field and hides earlier failed or stopped runs from the activity bar; their revisions stay available.
 - A generation that fails its checks after the repair attempts shows **Download failure evidence** below the error: the rejected plans and outputs with their issues, the accepted plan if there was one and the source passages the model was given, so the failure can be read without generating again.
