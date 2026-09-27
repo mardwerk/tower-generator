@@ -18,6 +18,7 @@ import { visualReferencesOf } from './visual-references.js';
 import { api } from '../../api/client.js';
 import { buildCode, tierStatKey, type StatChange, type UnitView } from '../../api/contract.js';
 import { Cost, StatValues } from './kit-stats.js';
+import { PurchasePlan, splitAbilities } from './purchase-plan.js';
 
 /**
  * Resolved stats, purchase sentences, crosspath builds and revision notes come
@@ -180,14 +181,11 @@ export function CharacterSheet({
   const assigned = new Set(
     candidate?.paths.flatMap((path) => path.tiers.flatMap((tier) => tier.abilityIds)),
   );
-  // A unit sheet shows what the unit does; reserved and omitted techniques
-  // stay with the mechanic proposals below it.
-  const remaining =
-    candidate?.abilities.filter(
-      (ability) =>
-        !assigned.has(ability.id) &&
-        !(unitView?.purchases && ['reserved', 'omitted'].includes(ability.placement)),
-    ) ?? [];
+  const { reserved, remaining } = splitAbilities(
+    candidate?.abilities ?? [],
+    assigned,
+    Boolean(unitView?.purchases),
+  );
   const openReport = () => {
     setReportOpen(true);
     requestAnimationFrame(() => {
@@ -379,14 +377,10 @@ export function CharacterSheet({
                   const purchase = purchases?.[pathIndex]?.purchases.find(
                     (entry) => entry.code === code,
                   );
-                  const effects = purchase?.effects;
-                  const adaptation = purchase?.adaptation;
                   const openTier = () =>
                     setDetail({
                       title: `${code} ${tier.name}`,
-                      description: effects
-                        ? [adaptation, ...effects].filter(Boolean).join(' ')
-                        : tier.benefit,
+                      description: purchase ? purchase.text : tier.benefit,
                       abilityIds: tier.abilityIds,
                       changes: tierStats?.changes,
                       cost: tierStats?.cost,
@@ -422,11 +416,14 @@ export function CharacterSheet({
                           <h4 className="font-semibold">{tier.name}</h4>
                           {tier.status !== 'proposed' && <Status value={tier.status} />}
                         </div>
-                        {adaptation && (
-                          <p className="mt-1 text-[13px] text-muted-foreground">{adaptation}</p>
-                        )}
+                        <PurchasePlan purchase={purchase} />
                         {tierStats ? (
                           <>
+                            {purchase?.technique && (
+                              <p className="mt-2 text-[11px] font-medium text-muted-foreground uppercase">
+                                Resolved
+                              </p>
+                            )}
                             <Cost value={tierStats.cost} currency={currency} />
                             <StatValues changes={tierStats.changes} />
                           </>
@@ -517,6 +514,21 @@ export function CharacterSheet({
                 </article>
               ))}
             </section>
+          )}
+          {reserved.length > 0 && (
+            <Disclosure
+              title={`Reserved techniques, not granted by any build (${reserved.length})`}
+            >
+              {reserved.map((ability) => (
+                <article className="my-4 text-[13px]" key={ability.id}>
+                  <div className={entryHeading}>
+                    <h4 className="font-semibold">{ability.name}</h4>
+                    <Status value={ability.placement} />
+                  </div>
+                  <p className="my-2">{ability.description}</p>
+                </article>
+              ))}
+            </Disclosure>
           )}
           {candidate.mechanics.length > 0 && (
             <Disclosure

@@ -68,11 +68,7 @@ func (sh *sheet) pathSections() []string {
 	for _, path := range sh.purchases() {
 		lines = append(lines, "## "+path.Position+" path: "+Escape(path.Name), "")
 		for _, purchase := range path.Purchases {
-			text := strings.Join(purchase.Effects, " ")
-			if purchase.Adaptation != "" {
-				text = purchase.Adaptation + " " + text
-			}
-			lines = append(lines, "**"+purchase.Code+" "+Escape(purchase.Name)+"** ("+sh.money(purchase.Cost)+"). "+Escape(text), "")
+			lines = append(lines, "**"+purchase.Code+" "+Escape(purchase.Name)+"** ("+sh.money(purchase.Cost)+"). "+Escape(purchase.Text), "")
 		}
 	}
 	return lines

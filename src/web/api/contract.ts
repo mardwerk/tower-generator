@@ -500,9 +500,17 @@ export interface Purchase {
   code: string;
   name: string;
   cost: number;
+  /** The technique the retained plan maps the purchase to: plan intent, shown apart from the resolved effects; absent for plans without typed techniques. */
+  technique?: string;
+  /** Whether that technique is the base attack. */
+  baseTechnique?: boolean;
   /** The plan's description of how the purchase adapts its source technique, a claim the review checks; absent for base-attack purchases. */
   adaptation?: string;
+  /** Other repertoire entries the purchase's name points to: an advisory flag for review, never a remap. */
+  nameMentions?: string[];
   effects: string[];
+  /** The purchase as one passage, labeling plan intent apart from resolved effects. */
+  text: string;
 }
 
 export interface PathPurchases {
