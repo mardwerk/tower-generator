@@ -6,9 +6,11 @@ import (
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
 )
 
-// Targeted plan correction (#61, SOL-61-05). Two plan failures have a
-// known, local fix: a source technique the plan lists nowhere, and an
-// effect adapted as a promise that no purchase of its technique makes.
+// Targeted plan correction (#61, SOL-61-05). Three plan failures have a
+// known, local fix: a source technique the plan lists nowhere, an effect
+// adapted as a promise that no purchase of its technique makes, and a
+// repertoire entry that neither the base attack nor any purchase adapts
+// (RepertoireUseRule, SOL-61-10).
 // Escanor's v30 plans failed on these after the full-plan retry (escanor-m
 // in OPUS-NET-61-6). When a plan attempt fails on these alone, the next
 // call is a correction that names each failed item and the corrections it
@@ -38,8 +40,10 @@ func onlyCorrectable(issues []s.Issue) bool {
 
 // planCorrections lists each failed item of a plan output that a targeted
 // correction can fix, with what it may do about it: a source technique
-// listed nowhere is listed with a rank, and an unpromised adaptedAs gains
-// the promise on a purchase of that technique or loses that adaptedAs.
+// listed nowhere is listed with a rank, an unpromised adaptedAs gains the
+// promise on a purchase of that technique or loses that adaptedAs, and an
+// unused repertoire entry moves to omittedTechniques with its reason or
+// becomes a purchase's technique.
 func planCorrections(output any, request *Request) []any {
 	plan, err := parseDesignPlan(output, request)
 	if err != nil {
@@ -51,7 +55,7 @@ func planCorrections(output any, request *Request) []any {
 // correctionItems are planCorrections of a parsed plan. With open paths, a
 // capstone correction's, the only milestones the correction may change are
 // those paths' fifth purchases, so an unpromised adaptedAs may gain its
-// promise only on one of them.
+// promise, and an unused entry become the technique, only on one of them.
 func correctionItems(plan DesignPlan, request *Request, open []int) []any {
 	items := []any{}
 	for _, u := range unpromisedAdaptations(plan) {
@@ -74,6 +78,34 @@ func correctionItems(plan DesignPlan, request *Request, open []int) []any {
 			Set("path", u.path()).
 			Set("problem", fmt.Sprintf("The effect %q of %q is adapted as %s, but no milestone whose technique is %q promises %s.", entry.Effects[u.effect].Effect, entry.Name, u.promise, entry.Name, u.promise)).
 			Set("allowed", allowed))
+	}
+	if d := request.MechanicsDefinition; d != nil && d.Profile.DesignPolicy != nil {
+		for _, index := range unusedRepertoireEntries(plan, request) {
+			entry := plan.Repertoire[index]
+			rank := ""
+			if entry.Importance != "" {
+				rank = ", ranked " + entry.Importance + " as it is now"
+			}
+			problem := fmt.Sprintf("The repertoire entry %q is neither the base attack nor the technique of any milestone.", entry.Name)
+			omit := fmt.Sprintf("Move it from the repertoire to omittedTechniques by the name %q%s, with a reason that names the specific behavior the Definition cannot express. %s", entry.Name, rank, OmissionRule)
+			drop := ""
+			if alsoOmitted(plan, entry) {
+				problem = fmt.Sprintf("The repertoire entry %q is neither the base attack nor the technique of any milestone, and omittedTechniques omits it too.", entry.Name)
+				omit = fmt.Sprintf("Remove it from the repertoire and keep its entry in omittedTechniques, whose reason names the specific behavior the Definition cannot express. %s", OmissionRule)
+				drop = ", and remove it from omittedTechniques"
+			}
+			allowed := []any{omit}
+			if open == nil {
+				allowed = append(allowed, fmt.Sprintf("Name %q as the technique of a milestone that adapts what it does, promising there what its effects are adapted as, and keep each path's own technique%s.", entry.Name, drop))
+			}
+			for _, pathIndex := range open {
+				allowed = append(allowed, fmt.Sprintf("Name %q as the technique of %s, the fifth purchase this correction changes, when that purchase adapts what it does, promising there what its effects are adapted as%s.", entry.Name, BuildCode(pathIndex, 5), drop))
+			}
+			items = append(items, s.NewObject().
+				Set("path", fmt.Sprintf("repertoire.%d", index)).
+				Set("problem", problem+" "+RepertoireUseRule).
+				Set("allowed", allowed))
+		}
 	}
 	if request.SourceTechniques != nil && request.MechanicsDefinition != nil && coreConceptsOn(*request.MechanicsDefinition) {
 		for _, technique := range unlistedSourceTechniques(plan, request) {

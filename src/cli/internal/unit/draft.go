@@ -315,38 +315,21 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 			authored = merged
 		}
 		var blueprint m.Blueprint
-		var budget []s.Issue
-		if decodeErr == nil {
-			previous = BindDesignPlan(authored, plan)
-			blueprint, budget, decodeErr = DecodeForDiagnostics(previous, request)
-		}
+		valid := false
 		var validation *s.Error
-		if decodeErr != nil && !errors.As(decodeErr, &validation) {
+		if decodeErr == nil {
+			// A schema failure still gets the semantic checks when it
+			// is only numbers outside their bounds (mechanicsIssues).
+			previous = BindDesignPlan(authored, plan)
+			blueprint, issues, valid, decodeErr = mechanicsIssues(previous, request, plan)
+		} else if errors.As(decodeErr, &validation) {
+			issues = issueStrings(validation.Issues)
+		}
+		if decodeErr != nil && validation == nil {
 			return Draft{}, fail(decodeErr, usage, false, purpose)
 		}
-		if validation != nil {
-			issues = issueStrings(validation.Issues)
-		} else {
-			budgetPaths := map[string]bool{}
-			for _, issue := range budget {
-				budgetPaths[s.Issue{Path: issue.Path[:len(issue.Path)-1]}.PathString()+".changes"] = true
-			}
-			issues = issueStrings(budget)
-			for _, issue := range ValidateBlueprintRequest(blueprint, *request) {
-				if budgetPaths[issue.Path] && (issue.Message == "Exceeds the Definition change budget." || issue.Message == "Tier must contain at least one effect.") {
-					continue
-				}
-				issues = append(issues, issue.Path+": "+issue.Message)
-			}
-			for _, issue := range PlanIntentIssues(blueprint, plan.UpgradeIntents, definition) {
-				issues = append(issues, issue.Path+": "+issue.Message)
-			}
-			for _, issue := range EarlyBenefitsIssues(blueprint, plan.UpgradeIntents, definition) {
-				issues = append(issues, issue.Path+": "+issue.Message)
-			}
-		}
 		var draft *Draft
-		if validation == nil && len(issues) == 0 {
+		if valid && len(issues) == 0 {
 			candidate, err := CompileBlueprint(blueprint, *request)
 			if err != nil {
 				return Draft{}, fail(err, usage, false, purpose)

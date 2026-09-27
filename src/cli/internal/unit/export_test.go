@@ -37,3 +37,14 @@ func CapstoneCorrection(output any, request *Request) (prompt string, merge func
 	correction, ok := capstoneCorrectionFor(output, request, validation.Issues)
 	return correction.prompt, func(corrected any) any { return correction.merge(output, corrected) }, ok
 }
+
+// MechanicsIssues lists every issue of one mechanics output bound to its
+// plan, as a design or repair attempt reports them, and whether the output
+// passed its schema.
+func MechanicsIssues(output any, request *Request, plan DesignPlan) ([]string, bool) {
+	_, issues, valid, err := mechanicsIssues(BindDesignPlan(output, plan), request, plan)
+	if err != nil {
+		return []string{err.Error()}, false
+	}
+	return issues, valid
+}

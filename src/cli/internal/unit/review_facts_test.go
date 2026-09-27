@@ -68,7 +68,7 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 		// no purchase names was skipped while the review was told code had
 		// checked every adapted promise).
 		`"adaptedBy":["3-x-x","4-x-x","5-x-x"]}`, `"adaptedBy":["x-4-x","x-5-x"]}`,
-		"Code checks no entry whose adaptedBy is empty: fail a nonempty adaptedAs there",
+		"An entry whose adaptedBy is empty and that is not named like the base attack adapts nothing, and code checks none of its adaptedAs: fail it on its repertoire entry",
 		"except for an entry named like the base attack: judge that entry's adaptations against 0-0-0"} {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("the review prompt lacks %q", want)
