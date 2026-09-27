@@ -22,9 +22,8 @@ func reviewTier(context *s.Object, path, tier int) *s.Object {
 }
 
 // Fix 1: each purchase whose technique is a repertoire entry lists the
-// promises no effect of that technique adapts. 4-x-x promises attack-rate
-// from Spiked Ball, whose effects adapt damage, pierce and a damage type
-// change.
+// promises no effect of that technique adapts. 3-x-x promises range from
+// Spiked Ball, whose effects adapt damage, pierce and a damage type change.
 func TestReviewTiersListPromisesWithoutEffect(t *testing.T) {
 	stages, err := fixture.Build()
 	if err != nil {
@@ -35,8 +34,7 @@ func TestReviewTiersListPromisesWithoutEffect(t *testing.T) {
 		path, tier int
 		want       any
 	}{
-		{0, 4, []any{"attack-rate"}},
-		{0, 3, []any{}},
+		{0, 3, []any{"range"}},
 		{2, 3, []any{}},
 		{1, 5, []any{"active-damage", "active-duration"}},
 		// A purchase that adapts the base attack has no cue.

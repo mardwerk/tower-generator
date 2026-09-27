@@ -67,7 +67,7 @@ func TestDefaultProfileCitesThePinnedAtlasCapture(t *testing.T) {
 		}
 	}
 	definition := profile.MechanicsDefinition
-	if definition.Revision != "2026-09-27-atlas-56.3-v28" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
+	if definition.Revision != "2026-09-27-atlas-56.3-v30" || !strings.Contains(definition.Label, "btd6-atlas 56.3") || definition.Profile.MaxChangesPerTier != 5 {
 		t.Errorf("Definition %s %q", definition.Revision, definition.Label)
 	}
 	if scale := definition.Profile.ReferenceScale; scale.BaseCost != 200 || scale.BaseDamage != 1 || scale.BaseIntervalSeconds != 0.95 || scale.BaseRange != 32 || scale.BasePierce != 2 ||
@@ -146,14 +146,14 @@ func TestPromptsSeparatePrivateChecksFromOutput(t *testing.T) {
 
 // Code does not judge payoff: a fourth purchase that promises one dimension
 // passes the plan check, and the review judges it from the resolved purchase
-// evidence (decided on #27). A fifth purchase needs a distinct capability
-// under requireTier5BehaviorChange, which a proposed mechanic meets (#61);
-// its size is still the review's judgment. Impossible promises still fail.
+// evidence (decided on #27). Under the Default's requireTier5BehaviorChange
+// a fifth purchase that only raises damage is rejected, and one whose new
+// capability is a proposed mechanic passes the plan check, to be reported as
+// a design gap once resolved (#61); its size is still the review's
+// judgment. Impossible promises still fail.
 func TestPlansLeavePayoffToTheReview(t *testing.T) {
-	prepared, err := fixture.Prepare()
-	if err != nil {
-		t.Fatal(err)
-	}
+	yes := true
+	prepared := withPolicy(t, func(p *m.DesignPolicy) { p.RequireTier5BehaviorChange = &yes })
 	plan := recordedOutput(t, "plan")
 	for _, path := range []string{"path1", "path3"} {
 		for _, tier := range []string{"tier4", "tier5"} {
@@ -162,7 +162,7 @@ func TestPlansLeavePayoffToTheReview(t *testing.T) {
 	}
 	// 4-x-x no longer changes the damage type, so Spiked Ball omits Frozen access.
 	repertoireEffect(plan, 0, 2).Set("adaptedAs", []any{})
-	_, err = unit.DecodeDesignPlan(plan, &prepared.Request)
+	_, err := unit.DecodeDesignPlan(plan, &prepared.Request)
 	for _, code := range []string{"5-x-x", "x-x-5"} {
 		if err == nil || !strings.Contains(err.Error(), code+" promises no new behavior or access and names no proposed mechanic. "+m.BehaviorChangeRule(5)) {
 			t.Errorf("a %s that only raises damage was accepted: %v", code, err)
@@ -172,8 +172,10 @@ func TestPlansLeavePayoffToTheReview(t *testing.T) {
 	critical := s.NewObject().Set("name", "Critical bolt").Set("effect", "Every fifth bolt deals ten times its damage.").Set("sourceIds", []any{"source1:18"})
 	at(plan, "paths", "path1", "milestones", "tier5").(*s.Object).Set("proposedMechanics", []any{split})
 	at(plan, "paths", "path3", "milestones", "tier5").(*s.Object).Set("proposedMechanics", []any{critical})
+	// The scripted x-5-x only raises its Active Ability's numbers.
+	at(plan, "paths", "path2", "milestones", "tier5").(*s.Object).Set("proposedMechanics", []any{plasmaTransformation()})
 	if _, err := unit.DecodeDesignPlan(plan, &prepared.Request); err != nil {
-		t.Fatalf("single-dimension fourth purchases and fifth purchases with a proposed mechanic were rejected: %v", err)
+		t.Fatalf("single-dimension fourth purchases and fifth purchases with a proposed capability were rejected: %v", err)
 	}
 	at(plan, "paths", "path3", "milestones", "tier5").(*s.Object).Set("improves", []any{"damage", "active-damage"})
 	if _, err := unit.DecodeDesignPlan(plan, &prepared.Request); err == nil || !strings.Contains(err.Error(), "same-path manual-boost") {
@@ -206,7 +208,9 @@ func TestUnsupportedMechanicsAreFindings(t *testing.T) {
 
 // The change budget belongs to the Definition profile: the Default Profile
 // allows the five changes of a real Crossbow Master, a Definition that sets
-// four rejects them, and no version 2 Definition may exceed the limit.
+// four rejects them, and no version 2 Definition may exceed the limit. The
+// fixture's Profile is the Default without requireTier5BehaviorChange, whose
+// rule the scripted x-5-x fails.
 func TestTheDefinitionProfileSetsTheChangeBudget(t *testing.T) {
 	stages, err := fixture.Build()
 	if err != nil {
@@ -218,7 +222,7 @@ func TestTheDefinitionProfileSetsTheChangeBudget(t *testing.T) {
 	if len(tier.Changes) != 5 {
 		t.Fatalf("x-x-5 has %d changes", len(tier.Changes))
 	}
-	definition := unit.DefaultAuthoringDefinition()
+	definition := fixture.Profile().MechanicsDefinition
 	if issues := m.ValidateBlueprint(s.FromGoValue(blueprint), s.FromGoValue(definition)); len(issues) > 0 {
 		t.Errorf("five changes rejected under the Default Profile: %v", issues)
 	}
@@ -303,6 +307,8 @@ func TestAStatLedPathIsAllowed(t *testing.T) {
 	}
 	critical := s.NewObject().Set("name", "Critical bolt").Set("effect", "Every fifth bolt deals ten times its damage.").Set("sourceIds", []any{"source1:18"})
 	at(plan, "paths", "path3", "milestones", "tier5").(*s.Object).Set("proposedMechanics", []any{critical})
+	// The scripted x-5-x only raises its Active Ability's numbers.
+	at(plan, "paths", "path2", "milestones", "tier5").(*s.Object).Set("proposedMechanics", []any{plasmaTransformation()})
 	if _, err := unit.DecodeDesignPlan(plan, &prepared.Request); err != nil {
 		t.Errorf("a stat-led bottom path was rejected: %v", err)
 	}

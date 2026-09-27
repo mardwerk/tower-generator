@@ -31,9 +31,6 @@ const EarlyBenefitsRule = "Two paths' first two purchases together must differ i
 // have the same early benefits.
 const ExclusiveEarlyBenefitsRule = "No dimension or capability that one path's first two purchases improve or unlock may be improved or unlocked by another path's first two purchases, whatever their order, names, prices or amounts; a path may repeat its own, any path's third to fifth purchases may improve it, and lowers do not count."
 
-// PathIdentityRule states requireTier3PathIdentity.
-const PathIdentityRule = "The third purchase of every path must distinguish it: it improves or unlocks a dimension or capability, or carries a proposed mechanic, that no purchase of the other two paths improves, unlocks or proposes; lowers, names, prices, amounts and a targeting change do not count."
-
 // CoreConceptsRule states requireCoreConcepts. Code checks the ranking,
 // that every source technique is listed, that a purchase names each core
 // entry as its technique, and whether a typed change or only a proposed
@@ -96,11 +93,6 @@ func (p *DesignPolicy) ExcludesSharedEarlyBenefits() bool {
 	return p != nil && p.ExclusiveEarlyBenefits != nil && *p.ExclusiveEarlyBenefits
 }
 
-// RequiresPathIdentity reports whether requireTier3PathIdentity is on.
-func (p *DesignPolicy) RequiresPathIdentity() bool {
-	return p != nil && p.RequireTier3PathIdentity != nil && *p.RequireTier3PathIdentity
-}
-
 // RequiresCoreConcepts reports whether requireCoreConcepts is on.
 func (p *DesignPolicy) RequiresCoreConcepts() bool {
 	return p != nil && p.RequireCoreConcepts != nil && *p.RequireCoreConcepts
@@ -156,11 +148,12 @@ func EarlyIdentityRule(d *Definition) string {
 
 // BehaviorChangeRule states requireTier3BehaviorChange (tier 3) and
 // requireTier5BehaviorChange (tier 5) as HasBehaviorTransition judges them.
-// A proposed mechanic of the purchase counts too, so a purchase can meet the
-// rule with a capability the Definition cannot express yet; larger numbers
-// of the Active Ability do not.
+// Larger numbers of the Active Ability do not count. A proposed mechanic
+// grants no behavior, so it does not meet the rule; a purchase whose only
+// new capability is proposed is an unresolved design gap, not a failure
+// (ProposedCapabilityGaps).
 func BehaviorChangeRule(tier int) string {
-	return "The " + ordinals[tier] + " purchase of every path must add a supported behavior or access, or carry a proposed mechanic: a new delivery, a distinct-target volley of more than one projectile, more than one projectile, splash, a status effect, a bounded follow-up, a new damage type, a newly detected trait or new bonus damage against an eligible enemy property; larger existing numbers, the Active Ability's included, a targeting change, a new name or a change with no effect do not count."
+	return "The " + ordinals[tier] + " purchase of every path must add a supported behavior or access: a new delivery, a distinct-target volley of more than one projectile, more than one projectile, splash, a status effect, a bounded follow-up, a new damage type, a newly detected trait or new bonus damage against an eligible enemy property; larger existing numbers, the Active Ability's included, a targeting change, a new name or a change with no effect do not count. A proposed mechanic grants no behavior in any build: a purchase whose only new capability is proposed is an unresolved design gap, not playable until the Definition supports it."
 }
 
 // CapstoneMultiplierRule states minTier5SpecialtyMultiplier.

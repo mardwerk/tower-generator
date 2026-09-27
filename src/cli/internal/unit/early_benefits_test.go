@@ -26,7 +26,7 @@ func withEarlyPolicy(d m.Definition, benefits *bool, first bool) m.Definition {
 }
 
 // multisetPolicy selects distinctEarlyBenefits alone, the early benefits
-// rule of the Default before v27.
+// rule of the Default before v29.
 func multisetPolicy(p *m.DesignPolicy) {
 	on := true
 	p.DistinctEarlyBenefits, p.ExclusiveEarlyBenefits = &on, nil

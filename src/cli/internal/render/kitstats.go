@@ -12,7 +12,11 @@ import (
 // when the purchase adds the property; Improvement is set for numbers.
 // Status effects and detection traits of a version 2 Definition come from
 // its vocabulary, so their changes also carry a Label, the Unit of the
-// number and the Kind of effect ("detection" for a trait).
+// number and the Kind of effect ("detection" for a trait). Delta is what
+// the purchase changes, worded as the unit sheet words it: "+1", "attacks
+// 18% faster" or "+100 percentage points". An Active Ability's multipliers
+// are text in percent: a damage multiplier of 2 is "+100%" and an interval
+// multiplier of 0.5 is "100% faster".
 type StatChange struct {
 	Key         string `json:"key"`
 	Label       string `json:"label,omitempty"`
@@ -20,6 +24,7 @@ type StatChange struct {
 	Kind        string `json:"kind,omitempty"`
 	Before      any    `json:"before,omitempty"`
 	After       any    `json:"after"`
+	Delta       string `json:"delta,omitempty"`
 	Improvement *bool  `json:"improvement,omitempty"`
 }
 
@@ -112,10 +117,12 @@ func tierChanges(before, after mechanics.ResolvedBuild, vocabulary *mechanics.Vo
 		prior, next := priorAttack.Stats.Get(key), nextAttack.Stats.Get(key)
 		if prior != next {
 			improvement := next > prior
+			change := delta(prior, next, statUnit(key))
 			if key == "intervalSeconds" {
 				improvement = next < prior
+				change = attackSpeedChange(prior, next)
 			}
-			changes = append(changes, StatChange{Key: key, Before: prior, After: next, Improvement: &improvement})
+			changes = append(changes, StatChange{Key: key, Before: prior, After: next, Delta: change, Improvement: &improvement})
 		}
 	}
 	if v2 {
@@ -176,9 +183,9 @@ func tierChanges(before, after mechanics.ResolvedBuild, vocabulary *mechanics.Vo
 		}
 		change := StatChange{Key: followUp.key}
 		if prior := followUp.prior; prior != nil {
-			change.Before = s.FormatNumber(prior.Count) + " nearby hits ×" + s.FormatNumber(prior.DamageMultiplier)
+			change.Before = s.FormatNumber(prior.Count) + " nearby hits at " + percentOfDamage(prior.DamageMultiplier) + " damage"
 		}
-		after := s.FormatNumber(next.Count) + " nearby hits ×" + s.FormatNumber(next.DamageMultiplier) + "; " + s.FormatNumber(next.Radius) + " range"
+		after := s.FormatNumber(next.Count) + " nearby hits at " + percentOfDamage(next.DamageMultiplier) + " damage; " + s.FormatNumber(next.Radius) + " range"
 		if next.InheritStatuses {
 			after += "; carries status effects"
 		}
@@ -198,7 +205,7 @@ func tierChanges(before, after mechanics.ResolvedBuild, vocabulary *mechanics.Vo
 			if (strings.HasSuffix(key, "Multiplier") && next == 1) || (key == "rangeBonus" && next == 0) {
 				continue
 			}
-			changes = append(changes, StatChange{Key: key, After: next})
+			changes = append(changes, StatChange{Key: key, After: boostValue(key, next)})
 			continue
 		}
 		prior := boostStat(priorBoost, key)
@@ -209,9 +216,35 @@ func tierChanges(before, after mechanics.ResolvedBuild, vocabulary *mechanics.Vo
 		if key == "intervalMultiplier" || key == "cooldownSeconds" {
 			improvement = next < prior
 		}
-		changes = append(changes, StatChange{Key: key, Before: prior, After: next, Improvement: &improvement})
+		changes = append(changes, StatChange{Key: key, Before: boostValue(key, prior), After: boostValue(key, next), Delta: boostDelta(key, prior, next), Improvement: &improvement})
 	}
 	return changes
+}
+
+// boostValue is an Active Ability value as UnitLab shows it: a multiplier
+// as the percentage it gives, any other value as its number.
+func boostValue(key string, value float64) any {
+	switch key {
+	case "damageMultiplier":
+		return activeDamage(value)
+	case "intervalMultiplier":
+		return activeSpeed(value)
+	}
+	return value
+}
+
+// boostDelta is the delta of an Active Ability value: percentage points for
+// a multiplier, as boostChange writes it on the unit sheet.
+func boostDelta(key string, before, after float64) string {
+	switch key {
+	case "damageMultiplier":
+		return pointsDelta((before-1)*100, (after-1)*100)
+	case "intervalMultiplier":
+		return pointsDelta(rateChange(1, before)*100, rateChange(1, after)*100)
+	case "durationSeconds", "cooldownSeconds":
+		return delta(before, after, " s")
+	}
+	return delta(before, after, "")
 }
 
 // statusChanges compares the status effects of two version 2 attacks in
@@ -232,6 +265,7 @@ func statusChanges(prior, next mechanics.Attack, vocabulary *mechanics.Vocabular
 			if had {
 				improvement := after > before
 				change.Before, change.Improvement = before, &improvement
+				change.Delta = delta(before, after, unitSuffix(unit))
 			}
 			changes = append(changes, change)
 		}
@@ -241,6 +275,18 @@ func statusChanges(prior, next mechanics.Attack, vocabulary *mechanics.Vocabular
 		number("seconds", effect.Name+" duration", "s", before.Seconds, after.Seconds)
 	}
 	return changes
+}
+
+// unitSuffix follows a number in a vocabulary unit: "%" for percent, " s"
+// for seconds and the unit itself otherwise, such as " damage/s".
+func unitSuffix(unit string) string {
+	switch unit {
+	case "":
+		return ""
+	case "percent":
+		return "%"
+	}
+	return " " + unit
 }
 
 func magnitude(status mechanics.StatusApplication) float64 {
@@ -290,6 +336,7 @@ func bonusChanges(prior *mechanics.Attack, next mechanics.Attack, vocabulary *me
 		if prior != nil && before != 0 {
 			improvement := after > before
 			change.Before, change.Improvement = before, &improvement
+			change.Delta = delta(before, after, "")
 		}
 		changes = append(changes, change)
 	}

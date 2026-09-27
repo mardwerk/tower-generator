@@ -8,8 +8,27 @@ import (
 	"testing"
 
 	"github.com/mardwerk/unit-generator/src/cli/internal/fixture"
+	"github.com/mardwerk/unit-generator/src/cli/internal/library"
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
 )
+
+// fixtureProfileFlags saves the fixture's Profile, the Default without
+// requireTier5BehaviorChange, whose rule the scripted x-5-x fails, in a
+// Profiles folder and returns the flags that select it.
+func fixtureProfileFlags(t *testing.T, dir string) []string {
+	t.Helper()
+	folder := filepath.Join(dir, "profiles")
+	profiles, err := library.OpenProfiles(folder)
+	if err != nil {
+		t.Fatal(err)
+	}
+	profile := fixture.Profile()
+	profile.ID, profile.Name, profile.Rules.ID = "dart-fixture", "Dart fixture", "profile:dart-fixture"
+	if _, err := profiles.Save(s.FromGoValue(profile)); err != nil {
+		t.Fatal(err)
+	}
+	return []string{"--profiles", folder, "--profile", "dart-fixture"}
+}
 
 // sequencedCodex writes a stand-in codex that answers call n with outputs[n].
 func sequencedCodex(t *testing.T, dir string, outputs ...any) string {
@@ -51,7 +70,7 @@ func TestFailedReviewsKeepTheCheckedDraft(t *testing.T) {
 
 	output := filepath.Join(dir, "dart.json")
 	flags := []string{"--provider", "codex", "--codex", codex, "--timeout", "20"}
-	_, stderr, err := cli(t, append([]string{"author", request, "--profile", "default", "-o", output}, flags...)...)
+	_, stderr, err := cli(t, append(append([]string{"author", request, "-o", output}, fixtureProfileFlags(t, dir)...), flags...)...)
 	if err == nil || !strings.Contains(err.Error(), "model.snake-crosspath") {
 		t.Fatalf("author: %v\n%s", err, stderr)
 	}

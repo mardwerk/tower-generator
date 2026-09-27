@@ -1,6 +1,7 @@
 package unit_test
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -118,6 +119,7 @@ func TestCoreConceptPlanCheck(t *testing.T) {
 			repertoireEntry(plan, "Crossbow").Set("importance", "major")
 			repertoireEntry(plan, "Fan Club").Set("importance", "core")
 			unadapt(repertoireEntry(plan, "Fan Club"))
+			at(plan, "paths", "path2", "milestones", "tier5").(*s.Object).Set("proposedMechanics", []any{plasmaTransformation()})
 		}, ""},
 		{"a core entry adapted with neither", func(plan *s.Object) {
 			omit(plan, juggernautOmitted)
@@ -414,21 +416,27 @@ func TestReviewReadsCoreConceptsAndOmissions(t *testing.T) {
 	}
 }
 
-// coreFindings checks the fixture draft with its plan edited and returns
-// its core concept Findings.
-func coreFindings(t *testing.T, edit func(plan *unit.DesignPlan)) []unit.Finding {
+// coreFindings drafts the fixture with its recorded plan edited, edits the
+// drafted plan, checks the draft and returns its core concept Findings.
+func coreFindings(t *testing.T, editOutput func(plan *s.Object), editPlan func(plan *unit.DesignPlan)) []unit.Finding {
 	t.Helper()
-	stages, err := fixture.Build()
+	prepared, err := fixture.Prepare()
 	if err != nil {
 		t.Fatal(err)
 	}
-	draft := stages.Draft
+	output := recordedOutput(t, "plan")
+	editOutput(output)
+	model := &fixture.Model{Outputs: []any{output, recordedOutput(t, "mechanics")}}
+	draft, err := unit.DraftUnit(context.Background(), prepared, model, fixture.Options())
+	if err != nil {
+		t.Fatalf("draft: %v", err)
+	}
 	plan := *draft.Run.DesignPlan
 	plan.Repertoire = append([]unit.PlanRepertoire(nil), plan.Repertoire...)
 	for i := range plan.Repertoire {
 		plan.Repertoire[i].Effects = append([]unit.PlanEffect(nil), plan.Repertoire[i].Effects...)
 	}
-	edit(&plan)
+	editPlan(&plan)
 	draft.Run.DesignPlan = &plan
 	checked, err := unit.CheckDraft(draft)
 	if err != nil {
@@ -455,39 +463,33 @@ func omitEffects(plan *unit.DesignPlan, name string) {
 	}
 }
 
-func rank(plan *unit.DesignPlan, name, importance string) {
-	for i := range plan.Repertoire {
-		if plan.Repertoire[i].Name == name {
-			plan.Repertoire[i].Importance = importance
-		}
-	}
-}
-
 // A core concept that a purchase adapts with a typed change is embodied and
 // passes clean. One that its purchases adapt only with a proposed mechanic
 // is an unresolved design gap: a proposal grants no behavior, so the Unit
 // does not embody it yet. One adapted with neither fails (SOL-67-01).
 func TestCoreConceptImplementedOrOnlyProposed(t *testing.T) {
-	if found := coreFindings(t, func(*unit.DesignPlan) {}); len(found) > 0 {
+	unchanged := func(*s.Object) {}
+	if found := coreFindings(t, unchanged, func(*unit.DesignPlan) {}); len(found) > 0 {
 		t.Errorf("typed core concepts found %v", found)
 	}
 
-	// Fan Club's effects are left unadapted, so only x-5-x's proposed
-	// Plasma transformation adapts it.
-	found := coreFindings(t, func(plan *unit.DesignPlan) {
-		rank(plan, "Crossbow", "major")
-		rank(plan, "Fan Club", "core")
-		omitEffects(plan, "Fan Club")
-	})
-	if len(found) != 1 || found[0].Outcome != "unresolved" || found[0].Subject != "paths.path2.tiers.tier5" ||
-		!strings.HasPrefix(found[0].Message, `The core concept "Fan Club" is only proposed: x-5-x `) ||
+	// Fan Club is core and its effects are left unadapted, so only x-5-x's
+	// proposed Plasma transformation adapts it. The plan passes.
+	found := coreFindings(t, func(plan *s.Object) {
+		repertoireEntry(plan, "Crossbow").Set("importance", "major")
+		repertoireEntry(plan, "Fan Club").Set("importance", "core")
+		unadapt(repertoireEntry(plan, "Fan Club"))
+		at(plan, "paths", "path2", "milestones", "tier5").(*s.Object).Set("proposedMechanics", []any{plasmaTransformation()})
+	}, func(*unit.DesignPlan) {})
+	if len(found) != 1 || found[0].Outcome != "unresolved" || found[0].Category != "missing_specification" || found[0].Subject != "paths.path2.tiers.tier5" ||
+		!strings.HasPrefix(found[0].Message, `The core concept "Fan Club" is only proposed: x-5-x Plasma Monkey Fan Club carries it as the proposed mechanic Plasma transformation, `) ||
 		!strings.Contains(found[0].Message, "until the Definition supports it, no build grants it and the Unit does not embody this core concept. "+m.CoreConceptsRule) {
 		t.Errorf("a proposed-only core concept: %+v", found)
 	}
 
-	// Crossbow's effects are left unadapted and its purchases propose
-	// nothing.
-	found = coreFindings(t, func(plan *unit.DesignPlan) { omitEffects(plan, "Crossbow") })
+	// A saved plan whose Crossbow effects are left unadapted, with no
+	// proposed mechanic on its purchases, fails.
+	found = coreFindings(t, unchanged, func(plan *unit.DesignPlan) { omitEffects(plan, "Crossbow") })
 	if len(found) != 1 || found[0].Outcome != "fail" || !strings.Contains(found[0].Message, `No purchase adapts the core concept "Crossbow": x-x-3 `) {
 		t.Errorf("a core concept adapted with neither: %+v", found)
 	}

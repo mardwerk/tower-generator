@@ -125,7 +125,6 @@ export interface DesignPolicy {
   /** Above 1, at most 20. */
   minTier5SpecialtyMultiplier?: number;
   requireTier3BehaviorChange?: boolean;
-  requireTier3PathIdentity?: boolean;
   requireTier5BehaviorChange?: boolean;
   /** Core concepts ranked in the plan and adapted on purchases. */
   requireCoreConcepts?: boolean;
@@ -490,6 +489,8 @@ export interface StatChange {
   kind?: EffectKind | 'detection' | 'bonusDamage';
   before?: number | string;
   after: number | string;
+  /** What the purchase changes, worded as on the unit sheet: "+1", "attacks 18% faster" or "+100 percentage points". */
+  delta?: string;
   improvement?: boolean;
 }
 

@@ -307,7 +307,7 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 			for _, issue := range PlanIntentIssues(blueprint, plan.UpgradeIntents, definition) {
 				issues = append(issues, issue.Path+": "+issue.Message)
 			}
-			for _, issue := range append(EarlyBenefitsIssues(blueprint, plan.UpgradeIntents, definition), PathIdentityIssues(blueprint, plan.UpgradeIntents, definition)...) {
+			for _, issue := range EarlyBenefitsIssues(blueprint, plan.UpgradeIntents, definition) {
 				issues = append(issues, issue.Path+": "+issue.Message)
 			}
 		}

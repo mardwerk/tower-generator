@@ -34,8 +34,8 @@ export const statLabels = {
   stunSeconds: 'Stun duration',
   durationSeconds: 'Active duration',
   cooldownSeconds: 'Cooldown',
-  damageMultiplier: 'Active damage multiplier',
-  intervalMultiplier: 'Active interval multiplier',
+  damageMultiplier: 'Active damage bonus',
+  intervalMultiplier: 'Active attack speed',
   rangeBonus: 'Active range bonus',
   camo: 'Camo detection',
   delivery: 'Delivery',
@@ -48,6 +48,11 @@ export const statLabels = {
 } as const;
 export type StatKey = keyof typeof statLabels;
 
+/**
+ * A stat value with its unit. The server words an Active Ability's
+ * multipliers as percentages ("+100%", "100% faster"), so they arrive as
+ * text and show as they are.
+ */
 export function statValue(
   key: StatKey,
   value: string | number,
@@ -62,7 +67,6 @@ export function statValue(
   if (unit) return `${number} ${unit}`;
   if (key.endsWith('Seconds')) return `${number} s`;
   if (key === 'slowPercent') return `${number}%`;
-  if (key.endsWith('Multiplier')) return `×${number}`;
   return number;
 }
 
@@ -116,6 +120,14 @@ export function Cost({ value, currency }: { value: number; currency: string }) {
     </span>
   );
 }
+/** Flags a change for the worse; the delta already says how much. */
+function worseLabel(key: string): string {
+  if (key === 'intervalSeconds' || key === 'intervalMultiplier') return 'Slower';
+  if (key === 'cooldownSeconds') return 'Longer wait';
+  return 'Reduced';
+}
+
+/** Each change as "before → after (delta)", as the unit sheet words it. */
 export function StatValues({ changes }: { changes: StatChange[] }) {
   return (
     <ul className="kit-stats relative z-[2] mt-2 grid gap-1.5 text-xs">
@@ -146,25 +158,15 @@ export function StatValues({ changes }: { changes: StatChange[] }) {
                 <span className="sr-only">{change.before === undefined ? '' : 'New: '}</span>
                 {statValue(key, change.after, change.unit, change.kind)}
               </span>
+              {change.delta && (
+                <span className="text-muted-foreground">
+                  <span className="sr-only">Change: </span>({change.delta})
+                </span>
+              )}
             </span>
-            {(change.key === 'intervalSeconds' || change.key === 'intervalMultiplier') &&
-              change.improvement !== undefined && (
-                <span
-                  className={cn(
-                    'text-[11px] text-muted-foreground',
-                    change.improvement === false && 'text-warning',
-                  )}
-                >
-                  {change.improvement ? 'Faster' : 'Slower'}
-                </span>
-              )}
-            {change.improvement === false &&
-              change.key !== 'intervalSeconds' &&
-              change.key !== 'intervalMultiplier' && (
-                <span className="text-[11px] text-warning">
-                  {change.key === 'cooldownSeconds' ? 'Longer wait' : 'Reduced'}
-                </span>
-              )}
+            {change.improvement === false && (
+              <span className="text-[11px] text-warning">{worseLabel(change.key)}</span>
+            )}
           </li>
         );
       })}

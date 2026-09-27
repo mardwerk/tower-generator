@@ -1,9 +1,16 @@
 // Package fixture builds a scripted reference unit for tests. It prepares the
-// Dart Monkey reference request under the bundled default Profile, then runs
-// the real plan, mechanics, check and review stages with recorded model
-// outputs. The unit is a test fixture written by hand from the btd6-atlas
-// brief: it exercises the Engine and is not a model generation or a
-// balanced design.
+// Dart Monkey reference request under the bundled default Profile without
+// requireTier5BehaviorChange, then runs the real plan, mechanics, check and
+// review stages with recorded model outputs. The unit is a test fixture
+// written by hand from the btd6-atlas brief: it exercises the Engine and is
+// not a model generation or a balanced design.
+//
+// The recorded unit keeps the captured Dart Monkey values. Its x-5-x,
+// Plasma Monkey Fan Club, only raises its Active Ability's damage and
+// duration, because the allied transformation it pays for is recorded as an
+// unsupported mechanic, so the Default's fifth-purchase rule rejects it
+// (#61). Prepare leaves that one rule off rather than change the reference
+// values; unit's TestDartFixtureUnderTheDefault pins the Default's verdict.
 package fixture
 
 import (
@@ -95,13 +102,24 @@ func Options() unit.Options {
 	}
 }
 
-// Prepare prepares the fixture request under the default Profile.
+// Prepare prepares the fixture request under the default Profile without
+// requireTier5BehaviorChange (see the package comment).
 func Prepare() (unit.Prepared, error) {
 	request, err := Request()
 	if err != nil {
 		return unit.Prepared{}, err
 	}
-	return unit.Prepare(s.FromGoValue(unit.ApplyProfile(request, unit.DefaultProfile())))
+	return unit.Prepare(s.FromGoValue(unit.ApplyProfile(request, Profile())))
+}
+
+// Profile is the default Profile without requireTier5BehaviorChange, which
+// the captured Dart Monkey x-5-x fails.
+func Profile() unit.Profile {
+	profile := unit.DefaultProfile()
+	policy := *profile.MechanicsDefinition.Profile.DesignPolicy
+	policy.RequireTier5BehaviorChange = nil
+	profile.MechanicsDefinition.Profile.DesignPolicy = &policy
+	return profile
 }
 
 // Build runs the scripted pipeline: plan, mechanics, check and review.

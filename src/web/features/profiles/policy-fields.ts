@@ -87,17 +87,12 @@ export const policyFields: Record<PolicyKey, PolicyField> = {
   },
   requireTier3BehaviorChange: {
     label: 'Behavior at the third purchase',
-    help: 'Every third purchase adds a behavior or access, or carries a proposed mechanic, not only larger numbers.',
-    control: toggle(true),
-  },
-  requireTier3PathIdentity: {
-    label: 'Path identity at the third purchase',
-    help: 'Every third purchase improves, unlocks or proposes something no purchase of the other paths does.',
+    help: 'Every third purchase adds a supported behavior or access, not only larger numbers. One whose only new capability is a proposed mechanic is reported as a design gap.',
     control: toggle(true),
   },
   requireTier5BehaviorChange: {
     label: 'Behavior at the fifth purchase',
-    help: 'Every fifth purchase adds a behavior or access, or carries a proposed mechanic, not only larger numbers.',
+    help: 'Every fifth purchase adds a supported behavior or access, not only larger numbers. One whose only new capability is a proposed mechanic is reported as a design gap.',
     control: toggle(true),
   },
   requireCoreConcepts: {

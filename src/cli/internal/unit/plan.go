@@ -365,9 +365,6 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 		if earlyBenefitsOn(*d) {
 			gates = append(gates, planDistinctEarly)
 		}
-		if pathIdentityOn(*d) {
-			gates = append(gates, m.PathIdentityRule+" "+planPathIdentity)
-		}
 		if policy.RequiresBehaviorChange(3) {
 			gates = append(gates, m.BehaviorChangeRule(3)+" "+planTier3Behavior)
 		}

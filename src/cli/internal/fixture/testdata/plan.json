@@ -7,9 +7,9 @@
     "adaptation": "The ordinary dart throw stays the base attack; every path develops that one throw instead of adding separate weapons."
   },
   "repertoire": [
-    { "name": "Spiked Ball", "importance": "core", "sourceIds": ["source1:6"], "limitation": "Rebounds off obstacles need wall geometry that the Definition does not model.", "effects": [{ "effect": "A heavier spiked ball replaces the dart and deals more damage.", "adaptedAs": ["damage"], "reason": "Heavier hits are per-hit damage." }, { "effect": "The ball hits many more bloons in one throw.", "adaptedAs": ["pierce"], "reason": "More bloons hit by one ball is pierce." }, { "effect": "The ball can damage Frozen bloons.", "adaptedAs": ["damage-type-change"], "reason": "Access to Frozen bloons is a damage type change." }, { "effect": "The ball rebounds off obstacles.", "adaptedAs": [], "reason": "The Definition has no wall geometry, so 3-x-x proposes the rebound as a mechanic." }]},
+    { "name": "Spiked Ball", "importance": "core", "sourceIds": ["source1:6"], "limitation": "Rebounds off obstacles need wall geometry that the Definition does not model.", "effects": [{ "effect": "A heavier spiked ball replaces the dart and deals more damage.", "adaptedAs": ["damage"], "reason": "Heavier hits are per-hit damage." }, { "effect": "The ball hits many more bloons in one throw.", "adaptedAs": ["pierce"], "reason": "More bloons hit by one ball is pierce." }, { "effect": "The ball can damage Frozen bloons.", "adaptedAs": ["damage-type-change"], "reason": "Access to Frozen bloons is a damage type change." }, { "effect": "The ball rebounds off obstacles.", "adaptedAs": [], "reason": "The Definition has no wall geometry, so rebounds are omitted." }]},
     { "name": "Triple Throw", "importance": "core", "sourceIds": ["source1:11"], "limitation": "The thirty degree arc becomes three darts aimed at the selected target.", "effects": [{ "effect": "Three darts are thrown in an arc at once.", "adaptedAs": ["projectiles"], "reason": "Three darts per throw are projectiles." }, { "effect": "The darts are thrown more often.", "adaptedAs": ["attack-rate"], "reason": "A shorter interval is attack rate." }]},
-    { "name": "Fan Club", "importance": "major", "sourceIds": ["source1:12"], "limitation": "Only this Unit's own frenzy can be a manual boost; transforming nearby allies is unsupported.", "effects": [{ "effect": "The attack interval is halved again.", "adaptedAs": ["attack-rate"], "reason": "A shorter interval is attack rate." }, { "effect": "For a limited time the monkeys attack far more often.", "adaptedAs": ["manual-boost"], "reason": "A timed frenzy is this Unit's own manual boost." }, { "effect": "Nearby allied Dart Monkeys are transformed.", "adaptedAs": [], "reason": "The Definition has no allied effects, so this Unit's own frenzy is the boost and x-5-x proposes the transformation as a mechanic." }]},
+    { "name": "Fan Club", "importance": "major", "sourceIds": ["source1:12"], "limitation": "Only this Unit's own frenzy can be a manual boost; transforming nearby allies is unsupported.", "effects": [{ "effect": "The attack interval is halved again.", "adaptedAs": ["attack-rate"], "reason": "A shorter interval is attack rate." }, { "effect": "For a limited time the monkeys attack far more often.", "adaptedAs": ["manual-boost"], "reason": "A timed frenzy is this Unit's own manual boost." }, { "effect": "Nearby allied Dart Monkeys are transformed.", "adaptedAs": [], "reason": "The Definition has no allied effects, so only this Unit's own frenzy is kept." }]},
     { "name": "Crossbow", "importance": "core", "sourceIds": ["source1:16", "source1:17"], "limitation": "Counted critical shots have no operator and stay unsupported.", "effects": [{ "effect": "Bolts deal more damage.", "adaptedAs": ["damage"], "reason": "Heavier bolts are per-hit damage." }, { "effect": "Bolts pierce more bloons.", "adaptedAs": ["pierce"], "reason": "More bloons hit per bolt is pierce." }, { "effect": "Bolts reach farther.", "adaptedAs": ["range"], "reason": "Longer reach is range." }, { "effect": "Every tenth shot is a critical hit.", "adaptedAs": [], "reason": "Counted critical shots have no operator, so they stay unsupported." }]}
   ],
   "base": {
@@ -26,7 +26,7 @@
       "milestones": {
         "tier1": { "change": "1-x-x raises dart pierce by one.", "improves": ["pierce"], "unlock": "none", "technique": "Dart Throw", "lowers": [] },
         "tier2": { "change": "2-x-x raises dart pierce by two more.", "improves": ["pierce"], "unlock": "none", "technique": "Dart Throw", "lowers": [] },
-        "tier3": { "change": "3-x-x replaces the dart with a heavier spiked ball that deals more damage and pierces far more enemies, at a slower throw.", "improves": ["damage", "pierce"], "unlock": "none", "technique": "Spiked Ball", "lowers": ["attack-rate"], "proposedMechanics": [{ "name": "Rebound", "effect": "A ball that hits an obstacle rebounds off it and flies on, hitting enemies it has not hit yet with its remaining pierce.", "sourceIds": ["source1:6"] }] },
+        "tier3": { "change": "3-x-x replaces the dart with a heavier spiked ball that deals more damage, reaches farther and pierces far more enemies, at a slower throw.", "improves": ["damage", "pierce", "range"], "unlock": "none", "technique": "Spiked Ball", "lowers": ["attack-rate"] },
         "tier4": { "change": "4-x-x throws the ball faster, multiplies its pierce and switches it to normal damage so it can hit Lead.", "improves": ["pierce", "attack-rate"], "unlock": "damage-type-change", "technique": "Spiked Ball", "lowers": [] },
         "tier5": { "change": "5-x-x raises ball damage and pierce again and adds a split: after each throw hits, up to twelve smaller balls strike other nearby enemies once each.", "improves": ["damage", "pierce"], "unlock": "follow-up", "technique": "Spiked Ball", "lowers": [] }
       },
@@ -42,7 +42,7 @@
         "tier2": { "change": "x-2-x shortens the attack interval again.", "improves": ["attack-rate"], "unlock": "none", "technique": "Dart Throw", "lowers": [] },
         "tier3": { "change": "x-3-x throws three darts at the selected target per attack and throws faster.", "improves": ["projectiles", "attack-rate"], "unlock": "none", "technique": "Triple Throw", "lowers": [] },
         "tier4": { "change": "x-4-x halves the interval again and unlocks a manual frenzy that makes this Unit attack far faster for a short window.", "improves": ["attack-rate"], "unlock": "manual-boost", "technique": "Fan Club", "lowers": [] },
-        "tier5": { "change": "x-5-x doubles dart damage during the frenzy and lengthens the frenzy window.", "improves": ["active-damage", "active-duration"], "unlock": "none", "technique": "Fan Club", "lowers": [], "proposedMechanics": [{ "name": "Plasma transformation", "effect": "While the frenzy runs, up to 20 nearby Dart Monkeys with no path above tier 2 attack about 16 times as often, and their darts deal 1 more damage and hit 3 more enemies.", "sourceIds": ["source1:12", "source1:13"] }] }
+        "tier5": { "change": "x-5-x doubles dart damage during the frenzy and lengthens the frenzy window.", "improves": ["active-damage", "active-duration"], "unlock": "none", "technique": "Fan Club", "lowers": [] }
       },
       "capstoneValue": "The frenzy window turns into the Unit's peak damage moment instead of only a speed spike."
     },
@@ -62,10 +62,10 @@
     }
   },
   "omittedTechniques": [
-    { "name": "Allied Fan Club", "importance": "minor", "reason": "Super Monkey Fan Club's transformation of nearby allied Units needs an ally operator that the Definition lacks; x-5-x proposes its Plasma version as a mechanic." },
+    { "name": "Allied Fan Club", "importance": "minor", "reason": "Transforming nearby allied Units needs an ally operator that the Definition lacks." },
     { "name": "Critical shots", "importance": "minor", "reason": "Every tenth or fifth shot dealing extra damage needs a shot counter operator." }
   ],
   "scopeLimits": [
-    "Knockback and Ceramic or Fortified bonuses have no operator and stay unsupported."
+    "Rebounds, knockback and Ceramic or Fortified bonuses have no operator and stay unsupported."
   ]
 }

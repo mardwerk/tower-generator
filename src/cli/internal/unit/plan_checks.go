@@ -180,8 +180,10 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 		return nil
 	}
 	var issues []m.Issue
-	// A proposed mechanic meets a behavior rule: it names a capability
-	// beyond larger numbers that the Definition cannot express yet (#61).
+	// A milestone that names a proposed mechanic passes: it names a
+	// capability beyond larger numbers that the Definition cannot express
+	// yet, which check reports as an unresolved design gap once resolved
+	// when no supported behavior comes with it (#61).
 	for _, tier := range []int{3, 5} {
 		if !definition.Profile.DesignPolicy.RequiresBehaviorChange(tier) {
 			continue
@@ -191,7 +193,7 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 			if !addsBehavior(intent) && len(intent.ProposedMechanics) == 0 {
 				issues = append(issues, m.Issue{
 					Path:    fmt.Sprintf("upgradeIntents.%s.tier%d", path, tier),
-					Message: fmt.Sprintf("%s promises no new behavior or access and names no proposed mechanic. %s Promise an unlock other than targeting-change, such as a new delivery, distinct-volley with more than one projectile, splash, a status effect, follow-up, damage-type-change or a detection trait, promise projectiles while the path fires one projectile, or name in proposedMechanics the capability the sources describe that the Definition cannot express.", BuildCode(pathIndex, tier), m.BehaviorChangeRule(tier)),
+					Message: fmt.Sprintf("%s promises no new behavior or access and names no proposed mechanic. %s Promise an unlock other than targeting-change, such as a new delivery, distinct-volley with more than one projectile, splash, a status effect, follow-up, damage-type-change or a detection trait, promise projectiles while the path fires one projectile, or, only when the Definition cannot express the capability the sources describe, name it in proposedMechanics, which leaves an unresolved design gap until the Definition supports it.", BuildCode(pathIndex, tier), m.BehaviorChangeRule(tier)),
 				})
 			}
 		}
@@ -207,11 +209,6 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 		issues = append(issues, exclusiveEarlyIssues(plan.UpgradeIntents, definition)...)
 	case earlyBenefitsOn(definition):
 		issues = append(issues, earlyBenefitsIssues(plan.UpgradeIntents)...)
-	}
-	// Under requireTier3PathIdentity each third purchase promises something
-	// no purchase of the other paths promises (#61).
-	if pathIdentityOn(definition) {
-		issues = append(issues, pathIdentityIssues(plan.UpgradeIntents, definition)...)
 	}
 	boostTier := definition.Rules.ManualBoostUnlockTier
 	boostKey := m.TierKeys[boostTier-1]

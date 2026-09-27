@@ -114,22 +114,16 @@ func TestProposedMechanicsStayOnTheirPurchase(t *testing.T) {
 		t.Fatal(err)
 	}
 	var proposed []unit.Finding
-	total := 0
 	for _, finding := range checked.Findings {
 		if finding.Outcome == "fail" {
 			t.Errorf("%s %s: %s", finding.Rule, finding.Subject, finding.Message)
 		}
-		// The fixture's own proposals, Rebound at 3-x-x and the Plasma
-		// transformation at x-5-x, are reported too.
 		if finding.Rule == unit.ProposedMechanicRule {
-			total++
-			if strings.HasSuffix(finding.Subject, "tier4.proposedMechanics.0") {
-				proposed = append(proposed, finding)
-			}
+			proposed = append(proposed, finding)
 		}
 	}
-	if len(proposed) != 2 || total != 4 {
-		t.Fatalf("proposed-mechanic findings %+v of %d", proposed, total)
+	if len(proposed) != 2 {
+		t.Fatalf("proposed-mechanic findings %+v", proposed)
 	}
 	first := proposed[0]
 	if first.Outcome != "unresolved" || first.Method != "deterministic" || first.Subject != "paths.path2.tiers.tier4.proposedMechanics.0" ||
@@ -174,7 +168,7 @@ func TestProposedMechanicsStayOnTheirPurchase(t *testing.T) {
 			t.Errorf("%q is not on its purchase: %s", want, line)
 		}
 	}
-	if strings.Count(markdown, "Proposed (not yet supported)") != 4 {
+	if strings.Count(markdown, "Proposed (not yet supported)") != 2 {
 		t.Error("a proposed mechanic appears outside its purchase, such as in a crosspath row")
 	}
 
@@ -211,30 +205,18 @@ func TestProposedMechanicsStayOnTheirPurchase(t *testing.T) {
 }
 
 // A saved unit without proposed mechanics loads, checks and renders as
-// before: no proposed-mechanic finding and no proposed line. The fixture
-// proposes a rebound and the Plasma transformation, so this unit is drafted
-// without them, under a policy that does not need them.
+// before: no proposed-mechanic finding and no proposed line.
 func TestUnitWithoutProposedMechanicsIsUnchanged(t *testing.T) {
-	prepared := preparedUnder(t, func(p *mechanics.DesignPolicy) { p.RequireTier3PathIdentity, p.RequireTier5BehaviorChange = nil, nil })
-	model := &fixture.Model{Outputs: []any{planWithoutProposals(t), recordedOutput(t, "mechanics"), recordedOutput(t, "review")}}
-	draft, err := unit.DraftUnit(context.Background(), prepared, model, fixture.Options())
+	stages, err := fixture.Build()
 	if err != nil {
 		t.Fatal(err)
 	}
-	checked, err := unit.CheckDraft(draft)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, finding := range checked.Findings {
+	for _, finding := range stages.Checked.Findings {
 		if finding.Rule == unit.ProposedMechanicRule {
 			t.Errorf("unexpected finding %+v", finding)
 		}
 	}
-	result, err := unit.ReviewDraft(context.Background(), checked, model, fixture.Options())
-	if err != nil {
-		t.Fatal(err)
-	}
-	value := s.FromGoValue(result)
+	value := s.FromGoValue(stages.Result)
 	if strings.Contains(s.Stringify(value), "proposedMechanics") {
 		t.Error("a Result without proposed mechanics writes the field")
 	}

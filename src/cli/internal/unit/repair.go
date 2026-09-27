@@ -193,16 +193,18 @@ func TargetedTierRepair(request *Request, previous any, issues []string) (*TierR
 		changesCapstoneBasis := false
 		// A fifth purchase's behavior change is judged against the pure
 		// fourth purchase, so an earlier tier that adds the same behavior
-		// takes it away. Under early identity a first or second purchase
-		// adds none but personal detection, and a proposed mechanic of the
-		// fifth purchase meets the rule whatever the earlier tiers do.
-		tier5Behavior := policy.RequiresBehaviorChange(5) && !wireHasProposed(wireTier(path, "tier5"))
+		// takes it away; the fifth purchase is rebuilt with it. A proposed
+		// mechanic of the fifth purchase does not exempt it: it grants no
+		// behavior, so losing the supported one would leave a design gap.
+		// Under early identity a first or second purchase can add only
+		// personal detection, so it is left out; a capstone whose only
+		// behavior is that detection trait fails the next check instead.
 		for _, t := range tiers.keys {
 			if t == "tier5" || policy == nil {
 				continue
 			}
 			early := t == "tier1" || t == "tier2"
-			if policy.MinTier5SpecialtyMultiplier != nil || (tier5Behavior && (!early || !policy.PreservesEarlyIdentity())) {
+			if policy.MinTier5SpecialtyMultiplier != nil || (policy.RequiresBehaviorChange(5) && (!early || !policy.PreservesEarlyIdentity())) {
 				changesCapstoneBasis = true
 			}
 		}
@@ -391,10 +393,4 @@ func WireRepairContext(previous any, request *Request) []any {
 		return []any{}
 	}
 	return CapstoneRepairContext(blueprint, request)
-}
-
-// wireHasProposed reports a wire tier that carries a proposed mechanic.
-func wireHasProposed(tier *s.Object) bool {
-	proposed, _ := field(tier, "proposedMechanics").([]any)
-	return len(proposed) > 0
 }

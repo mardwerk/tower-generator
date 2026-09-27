@@ -42,7 +42,7 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 	// context, not text the Unit must print (reported on #27).
 	for _, want := range []string{"A same-budget copy bound is context, not a verdict", "They are the drafting model's claims and can be wrong", "A name taken from the source", "not text the Unit must print",
 		// The reviewer checks the planned adaptation the unit shows, as a claim.
-		`"adaptation":"Replaces the dart with a heavier spiked ball that deals more damage and pierces far more enemies, at a slower throw."`,
+		`"adaptation":"Replaces the dart with a heavier spiked ball that deals more damage, reaches farther and pierces far more enemies, at a slower throw."`,
 		"It is a claim, not proof",
 		// A path theme is judged across the path (reported on #27: a review
 		// failed "Higher damage per hit" at x-4-x, which develops the boost).
@@ -58,7 +58,7 @@ func TestReviewReadsResolvedLegalBuilds(t *testing.T) {
 		// judged on its own build code (reported on #27: compression credited
 		// with range at x-x-1 was flagged only in crosspath proposals).
 		`"technique":"Dart Throw","sourceIds":["source1:2","source1:3"],"promises":{"improves":["pierce"],"unlock":"none"},"plannedChange":"1-x-x raises dart pierce by one."}`,
-		`"technique":"Spiked Ball","sourceIds":["source1:6"],"promises":{"improves":["damage","pierce"],"unlock":"none","lowers":["attack-rate"]},"promisesWithoutEffect":[],"adaptation":"Replaces the dart`,
+		`"technique":"Spiked Ball","sourceIds":["source1:6"],"promises":{"improves":["damage","pierce","range"],"unlock":"none","lowers":["attack-rate"]},"promisesWithoutEffect":["range"],"adaptation":"Replaces the dart`,
 		"Judge every purchased tier on its own build code, the first and second purchases included",
 		"against the passages its sourceIds cite", "which designPlan does not repeat",
 		// Each technique's effects are judged against its passages.
