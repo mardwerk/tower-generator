@@ -3,12 +3,13 @@ import type { Finding } from '../../api/contract.js';
 /** The rule of the Finding code adds when it cannot read a model finding's claim. */
 export const humanReviewRule = 'review-claim-unread';
 
-/** The rules of the Findings that record the review's verdict on each whole-technique omission and each path's third and fifth purchase. */
+/** The rules of the Findings that record the review's verdict on each whole-technique omission, each path's third and fifth purchase and each proposed mechanic of a purchase. */
 export const omissionVerdictRule = 'omission-verdict';
-/** The rule of the Findings that record the review's verdict on each Required concept of the Request. */
-export const requiredConceptVerdictRule = 'required-concept-verdict';
 export const pathIdentityVerdictRule = 'path-identity-verdict';
 export const capstoneVerdictRule = 'capstone-verdict';
+export const proposalVerdictRule = 'proposal-verdict';
+/** The rule of the Findings that record the review's verdict on each Required concept of the Request. */
+export const requiredConceptVerdictRule = 'required-concept-verdict';
 
 /** Names who produced a Finding, or that a person must read it. */
 export function findingSource(finding: Pick<Finding, 'method' | 'rule'>): string {
@@ -24,7 +25,8 @@ export function isReviewVerdict(finding: Pick<Finding, 'method' | 'rule'>): bool
     (finding.rule === omissionVerdictRule ||
       finding.rule === requiredConceptVerdictRule ||
       finding.rule === pathIdentityVerdictRule ||
-      finding.rule === capstoneVerdictRule)
+      finding.rule === capstoneVerdictRule ||
+      finding.rule === proposalVerdictRule)
   );
 }
 

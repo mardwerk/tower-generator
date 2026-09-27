@@ -390,7 +390,9 @@ func describeReview(view View) []string {
 	lines = append(lines, verdictSection(view.Findings, unit.PathIdentityVerdictRule, "### Third purchase verdicts",
 		"The model review's verdict on each path's third purchase: whether it defines or distinguishes its path against its own first and second purchases and the other paths' purchases.")...)
 	lines = append(lines, verdictSection(view.Findings, unit.CapstoneVerdictRule, "### Fifth purchase verdicts",
-		"The model review's verdict on each path's fifth purchase: whether it is its path's pinnacle, judged with the other two fifth purchases and its path's identity, and a distinct play reason when two fifth purchases buy the same capability kind.")...)
+		"The model review's verdict on each path's fifth purchase: whether it is its path's pinnacle, judged with the other two fifth purchases and its path's identity, a distinct play reason when two fifth purchases buy the same capability kind, and whether its gains fit its price beside cheaper side purchases.")...)
+	lines = append(lines, verdictSection(view.Findings, unit.ProposalVerdictRule, "### Proposal verdicts",
+		"The model review's verdict on each proposed mechanic of a purchase: unresolved when it is a coherent, source-fitting capability a player could see, a Design gap until the Definition supports it; fail when it restates a supported change of its purchase, has no effect a player could see, is lore or conflicts with the Definition.")...)
 	return lines
 }
 

@@ -191,9 +191,9 @@ var (
 		s.F("findings", s.Array(FindingSchema)),
 	)
 	reviewFinding = FindingSchema.Extend(s.F("id", text().Regex(`^model\.[a-zA-Z0-9][a-zA-Z0-9._-]*$`, "")), s.F("method", s.Literal("model")), s.F("facts", s.Array(factCitation).Max(8)))
-	// A review returns its verdicts on omissions and third and fifth
-	// purchases apart from its findings; code checks that each subject has
-	// exactly one.
+	// A review returns its verdicts on omissions, third and fifth
+	// purchases and proposed mechanics apart from its findings; code checks
+	// that each subject has exactly one.
 	SemanticReviewSchema = s.StrictObject(
 		s.F("summary", text()),
 		s.F("findings", s.Array(reviewFinding)),
@@ -202,6 +202,7 @@ var (
 		s.F("requiredConceptVerdicts", s.Optional(s.Array(requiredConceptVerdictSchema(text(), text())))),
 		s.F("thirdPurchaseVerdicts", s.Optional(s.Array(purchaseVerdictSchema(text(), text())))),
 		s.F("fifthPurchaseVerdicts", s.Optional(s.Array(purchaseVerdictSchema(text(), text())))),
+		s.F("proposalVerdicts", s.Optional(s.Array(proposalVerdictSchema(text(), text(), text())))),
 	)
 	ResultSchema = s.StrictObject(
 		s.F("schemaVersion", version),

@@ -3,6 +3,7 @@ package unit
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
@@ -18,10 +19,15 @@ import (
 // the review did not judge together (OPUS-NET-61-13): a fifth purchase
 // verdict judges each capstone against the other two capstones and its
 // path's identity, with no typed ban on two capstones sharing a capability
-// kind (SOL-61-10). Code checks that the review returns exactly one verdict
-// per subject and records each one in the Result as a model Finding: a pass
-// as a pass, so the owner can read every verdict, and a fail or unresolved
-// verdict as an open Finding.
+// kind (SOL-61-10). A fifth purchase verdict also judges payoff and price
+// from the numbers beside its subject (capstone_payoff.go, SOL-61-13). A
+// proposal verdict judges each purchase-level proposed mechanic: the v36
+// Luffy review caught 3-x-x's "Massive-scale impact", which restates its
+// typed splash, but not x-x-4's "Continuous momentum", which has no
+// player-visible effect (OPUS-NET-61-16, SOL-61-13). Code checks that the
+// review returns exactly one verdict per subject and records each one in
+// the Result as a model Finding: a pass as a pass, so the owner can read
+// every verdict, and a fail or unresolved verdict as an open Finding.
 
 const (
 	// OmissionVerdictRule is the rule of the Finding that records the
@@ -37,6 +43,9 @@ const (
 	// review's verdict on one path's fifth purchase, judged with the other
 	// paths' fifth purchases and its path's identity.
 	CapstoneVerdictRule = "capstone-verdict"
+	// ProposalVerdictRule is the rule of the Finding that records the
+	// review's verdict on one purchase-level proposed mechanic.
+	ProposalVerdictRule = "proposal-verdict"
 )
 
 // OmissionVerdict is the review's verdict on one whole-technique omission.
@@ -80,7 +89,23 @@ type ThirdPurchaseVerdict = PurchaseVerdict
 // FifthPurchaseVerdict is the review's verdict on one path's fifth purchase.
 type FifthPurchaseVerdict = PurchaseVerdict
 
-var verdictOutcome = s.Enum("pass", "fail", "unresolved")
+// ProposalVerdict is the review's verdict on one proposed mechanic of a
+// purchase, by the purchase's build code and the proposal's name. A
+// proposal grants nothing, so it never passes: a coherent one is
+// unresolved, a Design gap, and any other fails.
+type ProposalVerdict struct {
+	Build    string   `json:"build"`
+	Proposal string   `json:"proposal"`
+	Outcome  string   `json:"outcome"`
+	Reason   string   `json:"reason"`
+	Action   *string  `json:"action"`
+	Evidence []string `json:"evidence"`
+}
+
+var (
+	verdictOutcome  = s.Enum("pass", "fail", "unresolved")
+	proposalOutcome = s.Enum("unresolved", "fail")
+)
 
 // omissionVerdictSchema and purchaseVerdictSchema read any well-formed
 // verdict; the review request narrows the technique and build to its own
@@ -105,6 +130,17 @@ func requiredConceptVerdictSchema(concept, evidence s.Schema) *s.ObjectSchema {
 	)
 }
 
+func proposalVerdictSchema(build, proposal, evidence s.Schema) *s.ObjectSchema {
+	return s.StrictObject(
+		s.F("build", build),
+		s.F("proposal", proposal),
+		s.F("outcome", proposalOutcome),
+		s.F("reason", text()),
+		s.F("action", s.Nullable(text())),
+		s.F("evidence", s.Array(evidence)),
+	)
+}
+
 func purchaseVerdictSchema(build, evidence s.Schema) *s.ObjectSchema {
 	return s.StrictObject(
 		s.F("build", build),
@@ -117,13 +153,23 @@ func purchaseVerdictSchema(build, evidence s.Schema) *s.ObjectSchema {
 
 // verdictSubjects are what a review must give a verdict on: the distinct
 // names of the plan's whole-technique omissions with their rank, the
-// Request's required concepts (required), and each path's third and fifth
-// purchase by build code, with its name and technique.
+// Request's required concepts (required), each path's third and fifth
+// purchase by build code, with its name and technique, and each proposed
+// mechanic of a purchase.
 type verdictSubjects struct {
 	omissions      []PlanOmission
 	required       []RequiredConcept
 	thirdPurchases []purchaseSubject
 	fifthPurchases []purchaseSubject
+	proposals      []proposalSubject
+}
+
+// proposalSubject is one proposed mechanic of a purchase: the purchase, its
+// tier and the proposal, and its index among the purchase's proposals.
+type proposalSubject struct {
+	purchaseSubject
+	tier, index int
+	proposal    m.ProposedMechanic
 }
 
 type purchaseSubject struct {
@@ -180,7 +226,26 @@ func reviewVerdictSubjects(checked Checked) verdictSubjects {
 		subjects.thirdPurchases = append(subjects.thirdPurchases, purchase(index, 3))
 		subjects.fifthPurchases = append(subjects.fifthPurchases, purchase(index, 5))
 	}
+	for index := range m.PathKeys {
+		for tier := 1; tier <= len(m.TierKeys); tier++ {
+			var seen []string
+			for i, proposed := range candidate.Blueprint.Paths.At(index).Tiers.At(tier).ProposedMechanics {
+				// Two proposals of one purchase with the same name are
+				// one subject.
+				if slices.ContainsFunc(seen, func(name string) bool { return sameTechnique(name, proposed.Name) }) || strings.TrimSpace(proposed.Name) == "" {
+					continue
+				}
+				seen = append(seen, proposed.Name)
+				subjects.proposals = append(subjects.proposals, proposalSubject{purchaseSubject: purchase(index, tier), tier: tier, index: i, proposal: proposed})
+			}
+		}
+	}
 	return subjects
+}
+
+// judgedBy reports a proposal verdict on this proposal subject.
+func (p proposalSubject) judgedBy(verdict ProposalVerdict) bool {
+	return strings.TrimSpace(verdict.Build) == p.build && sameTechnique(verdict.Proposal, p.proposal.Name)
 }
 
 // purchases are the subjects of one kind of purchase verdict.
@@ -200,8 +265,10 @@ func purchaseVerdicts(review SemanticReview, kind purchaseKind) []PurchaseVerdic
 }
 
 // context lists the verdicts the review must give, for requiredVerdicts in
-// the review context.
-func (v verdictSubjects) context() *s.Object {
+// the review context. Each fifth purchase carries its payoff numbers
+// (CapstonePayoffs) when the review has purchase evidence, and each
+// proposal what it says it does.
+func (v verdictSubjects) context(payoffs map[string]*s.Object) *s.Object {
 	omissions := []any{}
 	for _, omission := range v.omissions {
 		entry := s.NewObject().Set("technique", omission.Name)
@@ -225,11 +292,25 @@ func (v verdictSubjects) context() *s.Object {
 		}
 		return out
 	}
+	fifth := purchases(v.fifthPurchases)
+	for i, purchase := range v.fifthPurchases {
+		if payoff, ok := payoffs[purchase.key]; ok {
+			fifth[i].(*s.Object).Set("payoff", payoff)
+		}
+	}
+	proposals := []any{}
+	for _, p := range v.proposals {
+		entry := s.NewObject().Set("build", p.build).Set("path", p.key).Set("name", p.name)
+		if p.technique != "" {
+			entry.Set("technique", p.technique)
+		}
+		proposals = append(proposals, entry.Set("proposal", p.proposal.Name).Set("effect", p.proposal.Effect).Set("sourceIds", anyStrings(p.proposal.SourceIDs)))
+	}
 	out := s.NewObject().Set("omissions", omissions)
 	if len(required) > 0 {
 		out.Set("requiredConcepts", required)
 	}
-	return out.Set("thirdPurchases", purchases(v.thirdPurchases)).Set("fifthPurchases", purchases(v.fifthPurchases))
+	return out.Set("thirdPurchases", purchases(v.thirdPurchases)).Set("fifthPurchases", fifth).Set("proposals", proposals)
 }
 
 // schemaFields narrow the review's verdict fields to exactly its subjects.
@@ -263,7 +344,20 @@ func (v verdictSubjects) schemaFields(evidence s.Schema) []s.Field {
 		}
 		fields = append(fields, s.F(kind.field, s.Array(purchase).Length(len(builds))))
 	}
-	return fields
+	var builds, proposals []string
+	for _, p := range v.proposals {
+		if !slices.Contains(builds, p.build) {
+			builds = append(builds, p.build)
+		}
+		if !slices.Contains(proposals, p.proposal.Name) {
+			proposals = append(proposals, p.proposal.Name)
+		}
+	}
+	proposal := proposalVerdictSchema(text(), text(), evidence)
+	if len(builds) > 0 {
+		proposal = proposalVerdictSchema(s.Enum(builds...), s.Enum(proposals...), evidence)
+	}
+	return append(fields, s.F("proposalVerdicts", s.Array(proposal).Length(len(v.proposals))))
 }
 
 // problems lists what keeps a review's verdicts from being exactly one per
@@ -336,6 +430,27 @@ func (v verdictSubjects) problems(review SemanticReview) []string {
 			}
 		}
 	}
+	counts = make([]int, len(v.proposals))
+	for _, verdict := range review.ProposalVerdicts {
+		known := false
+		for i, p := range v.proposals {
+			if p.judgedBy(verdict) {
+				counts[i]++
+				known = true
+			}
+		}
+		if !known {
+			problems = append(problems, fmt.Sprintf("a proposal verdict on %q at %q, which that purchase does not propose", verdict.Proposal, verdict.Build))
+		}
+	}
+	for i, p := range v.proposals {
+		switch {
+		case counts[i] == 0:
+			problems = append(problems, fmt.Sprintf("no verdict on the proposed mechanic %q of %s", p.proposal.Name, p.build))
+		case counts[i] > 1:
+			problems = append(problems, fmt.Sprintf("%d verdicts on the proposed mechanic %q of %s", counts[i], p.proposal.Name, p.build))
+		}
+	}
 	return problems
 }
 
@@ -343,7 +458,7 @@ func (v verdictSubjects) problems(review SemanticReview) []string {
 // exactly one per subject; like other malformed review output it fails the
 // review and keeps the checked draft.
 func incompleteVerdicts(problems []string) *ModelError {
-	message := "The model review did not return exactly one verdict per whole-technique omission and per third and fifth purchase, and per required concept of the Request: it gave " + strings.Join(problems, "; ") + ". The draft is retained. Retry the review or choose another model."
+	message := "The model review did not return exactly one verdict per whole-technique omission, per required concept of the Request, per third and fifth purchase and per proposed mechanic: it gave " + strings.Join(problems, "; ") + ". The draft is retained. Retry the review or choose another model."
 	return &ModelError{Message: message, Failure: &Failure{Code: CodeOutputInvalid, Message: message, Stage: "review"}}
 }
 
@@ -391,7 +506,27 @@ func (v verdictSubjects) findings(review SemanticReview) []Finding {
 			}
 		}
 	}
+	for _, p := range v.proposals {
+		for _, verdict := range review.ProposalVerdicts {
+			if !p.judgedBy(verdict) {
+				continue
+			}
+			id := fmt.Sprintf("verdict.proposal.%s.%s.%d", p.key, m.TierKeys[p.tier-1], p.index+1)
+			out = append(out, verdictFinding(id, "unsupported", verdict.Outcome, p.label(), ProposalVerdictRule, verdict.Reason, verdict.Action, verdict.Evidence))
+			break
+		}
+	}
 	return out
+}
+
+// label is a proposal verdict's subject, as "path3, x-x-4 Python Continuous
+// Stretch: Continuous momentum".
+func (p proposalSubject) label() string {
+	subject := p.key + ", " + p.build
+	if p.name != "" {
+		subject += " " + p.name
+	}
+	return subject + ": " + p.proposal.Name
 }
 
 func verdictFinding(id, category, outcome, subject, rule, reason string, action *string, evidence []string) Finding {
@@ -406,9 +541,10 @@ func verdictFinding(id, category, outcome, subject, rule, reason string, action 
 }
 
 // IsReviewVerdict reports a Finding that records a review verdict on an
-// omission, a required concept or a third or fifth purchase.
+// omission, a required concept, a third or fifth purchase or a proposed
+// mechanic.
 func IsReviewVerdict(finding Finding) bool {
-	return finding.Method == "model" && (finding.Rule == OmissionVerdictRule || finding.Rule == RequiredConceptVerdictRule || finding.Rule == PathIdentityVerdictRule || finding.Rule == CapstoneVerdictRule)
+	return finding.Method == "model" && (finding.Rule == OmissionVerdictRule || finding.Rule == RequiredConceptVerdictRule || finding.Rule == PathIdentityVerdictRule || finding.Rule == CapstoneVerdictRule || finding.Rule == ProposalVerdictRule)
 }
 
 // checkVerdicts rejects a review whose verdicts cite an unknown document or
@@ -422,6 +558,9 @@ func checkVerdicts(checked Checked, review SemanticReview, documents map[string]
 		evidence = append(evidence, verdict.Evidence)
 	}
 	for _, verdict := range append(append([]PurchaseVerdict{}, review.ThirdPurchaseVerdicts...), review.FifthPurchaseVerdicts...) {
+		evidence = append(evidence, verdict.Evidence)
+	}
+	for _, verdict := range review.ProposalVerdicts {
 		evidence = append(evidence, verdict.Evidence)
 	}
 	for _, ids := range evidence {
@@ -495,7 +634,25 @@ func (v verdictSubjects) repeatsVerdict(review SemanticReview, finding Finding) 
 			}
 		}
 	}
+	for _, p := range v.proposals {
+		for _, verdict := range review.ProposalVerdicts {
+			if p.judgedBy(verdict) && namesProposal(finding.Subject, p) && repeats(verdict.Outcome, verdict.Reason) {
+				return true
+			}
+		}
+	}
 	return false
+}
+
+// namesProposal reports a subject that names exactly one proposed
+// mechanic: its purchase as namesPurchase reads it, and the proposal's
+// name.
+func namesProposal(subject string, p proposalSubject) bool {
+	at := strings.Index(strings.ToLower(subject), strings.ToLower(p.proposal.Name))
+	if at < 0 {
+		return false
+	}
+	return namesPurchase(subject[:at]+" "+subject[at+len(p.proposal.Name):], p.purchaseSubject)
 }
 
 // omissionLabel is a leading word a finding's subject may give an omission,

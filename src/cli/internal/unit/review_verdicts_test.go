@@ -34,8 +34,11 @@ func TestReviewAsksForAVerdictPerOmissionAndThirdPurchase(t *testing.T) {
 	}
 	request := unit.BlueprintReviewRequest(stages.Checked)
 	for _, want := range []string{
-		`"requiredVerdicts":{"omissions":[{"technique":"Allied Fan Club","importance":"minor"},{"technique":"Critical shots","importance":"minor"}],"thirdPurchases":[{"build":"3-x-x","path":"path1","name":"Spike-o-pult","technique":"Spiked Ball"},{"build":"x-3-x","path":"path2","name":"Triple Shot","technique":"Triple Throw"},{"build":"x-x-3","path":"path3","name":"Crossbow","technique":"Crossbow"}],"fifthPurchases":[{"build":"5-x-x","path":"path1","name":"Ultra-Juggernaut","technique":"Spiked Ball"},{"build":"x-5-x","path":"path2","name":"Plasma Monkey Fan Club","technique":"Fan Club"},{"build":"x-x-5","path":"path3","name":"Crossbow Master","technique":"Crossbow"}]}`,
-		"Give at most eight useful findings; the verdicts on omissions and third and fifth purchases are apart from them, and the findings go to issues the verdicts do not cover.",
+		`"requiredVerdicts":{"omissions":[{"technique":"Allied Fan Club","importance":"minor"},{"technique":"Critical shots","importance":"minor"}],"thirdPurchases":[{"build":"3-x-x","path":"path1","name":"Spike-o-pult","technique":"Spiked Ball"},{"build":"x-3-x","path":"path2","name":"Triple Shot","technique":"Triple Throw"},{"build":"x-x-3","path":"path3","name":"Crossbow","technique":"Crossbow"}],"fifthPurchases":[{"build":"5-x-x","path":"path1","name":"Ultra-Juggernaut","technique":"Spiked Ball","payoff":{"fourthPurchase":"4-0-0",`,
+		`{"build":"x-5-x","path":"path2","name":"Plasma Monkey Fan Club","technique":"Fan Club","payoff":{"fourthPurchase":"0-4-0",`,
+		`{"build":"x-x-5","path":"path3","name":"Crossbow Master","technique":"Crossbow","payoff":{"fourthPurchase":"0-0-4",`,
+		`"proposals":[]}`,
+		"Give at most eight useful findings; the verdicts on omissions, third and fifth purchases and proposed mechanics are apart from them, and the findings go to issues the verdicts do not cover.",
 		"give one verdict on each subject requiredVerdicts lists, and no other",
 		"could adapt the technique's central effect, as the omission rule says, not whether some aspect of it is unsupported",
 		"whether its importance is plausible against the passages its sourceTechnique cites",
@@ -52,7 +55,8 @@ func TestReviewAsksForAVerdictPerOmissionAndThirdPurchase(t *testing.T) {
 		`"thirdPurchaseVerdicts":{"minItems":3,"maxItems":3,"type":"array","items":{"type":"object","properties":{"build":{"type":"string","enum":["3-x-x","x-3-x","x-x-3"]}`,
 		`"outcome":{"type":"string","enum":["pass","fail","unresolved"]}`,
 		`"fifthPurchaseVerdicts":{"minItems":3,"maxItems":3,"type":"array","items":{"type":"object","properties":{"build":{"type":"string","enum":["5-x-x","x-5-x","x-x-5"]}`,
-		`"required":["summary","findings","omissionVerdicts","thirdPurchaseVerdicts","fifthPurchaseVerdicts"]`,
+		`"proposalVerdicts":{"minItems":0,"maxItems":0,"type":"array"`,
+		`"required":["summary","findings","omissionVerdicts","thirdPurchaseVerdicts","fifthPurchaseVerdicts","proposalVerdicts"]`,
 	} {
 		if !strings.Contains(schema, want) {
 			t.Errorf("the review schema lacks %s", want)
@@ -191,7 +195,7 @@ func TestIncompleteVerdictsAreRejected(t *testing.T) {
 		_, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options())
 		var failure *unit.ModelError
 		if !errors.As(err, &failure) || failure.Failure == nil || failure.Failure.Code != unit.CodeOutputInvalid || failure.Failure.Stage != "review" ||
-			!strings.Contains(failure.Message, "did not return exactly one verdict per whole-technique omission and per third and fifth purchase") ||
+			!strings.Contains(failure.Message, "did not return exactly one verdict per whole-technique omission, per required concept of the Request, per third and fifth purchase and per proposed mechanic") ||
 			!strings.Contains(failure.Message, c.want) || len(model.Requests) != 1 {
 			t.Errorf("%s: %v after %d calls", name, err, len(model.Requests))
 		}
@@ -222,7 +226,7 @@ func TestCorrectionKeepsTheFirstVerdicts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(model.Requests[1].Prompt, "with omissionVerdicts, thirdPurchaseVerdicts and fifthPurchaseVerdicts as in your previous review") {
+	if !strings.Contains(model.Requests[1].Prompt, "with omissionVerdicts, thirdPurchaseVerdicts, fifthPurchaseVerdicts and proposalVerdicts as in your previous review") {
 		t.Error("the correction does not ask for the verdicts")
 	}
 	for _, f := range verdictFindings(result) {
@@ -289,7 +293,7 @@ func TestReviewJudgesCapstonesTogether(t *testing.T) {
 		"No capability kind is banned, but when two fifth purchases buy the same new capability kind, such as a follow-up on both, each needs a distinct play reason",
 		"Judge each fifth purchase in its fifth purchase verdict, against the other two fifth purchases and its path's identity.",
 		unit.ProposalDistinctRule,
-		"fail one that is not distinct on its purchase's build code, naming the supported mechanic it repeats",
+		"in its proposal verdict fail one that is not distinct, naming the supported mechanic it repeats",
 		"spend the findings on issues the verdicts do not cover",
 		"code drops a finding that repeats a verdict's subject, outcome and reason",
 	} {
@@ -330,4 +334,21 @@ func TestReviewDropsAFindingThatRepeatsAVerdict(t *testing.T) {
 	if got := strings.Join(ids, ","); got != "model.fan-club-allies,model.x5-price" {
 		t.Errorf("model findings %s", got)
 	}
+}
+
+// proposalVerdict is one scripted proposal verdict: build, proposal,
+// outcome and reason.
+type proposalVerdict struct{ build, proposal, outcome, reason string }
+
+// withProposalVerdicts sets a scripted review's proposal verdicts.
+func withProposalVerdicts(review *s.Object, verdicts ...proposalVerdict) *s.Object {
+	list := []any{}
+	for _, v := range verdicts {
+		var action any
+		if v.outcome == "fail" {
+			action = "Remove the proposal or state the difference a player would see."
+		}
+		list = append(list, s.NewObject().Set("build", v.build).Set("proposal", v.proposal).Set("outcome", v.outcome).Set("reason", v.reason).Set("action", action).Set("evidence", []any{}))
+	}
+	return review.Set("proposalVerdicts", list)
 }

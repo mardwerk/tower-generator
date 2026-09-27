@@ -264,6 +264,12 @@ func gapFindings(checked unit.Checked) []unit.Finding {
 	return out
 }
 
+// withPlasmaVerdict gives a scripted review its proposal verdict on x-5-x's
+// Plasma transformation, the only proposed mechanic.
+func withPlasmaVerdict(review *s.Object) *s.Object {
+	return withProposalVerdicts(review, proposalVerdict{"x-5-x", "Plasma transformation", "unresolved", "Transforming nearby Dart Monkeys is the Fan Club's allied effect, a coherent capability the Definition cannot express."})
+}
+
 // fanClubVerdict is the review's verdict on the required Fan Club.
 func fanClubVerdict(concept, outcome string) *s.Object {
 	return s.NewObject().Set("concept", concept).Set("outcome", outcome).
@@ -302,13 +308,13 @@ func TestRequiredMajorConceptOnlyProposed(t *testing.T) {
 		}
 	}
 	if schema := s.Stringify(request.Schema); !strings.Contains(schema, `"requiredConceptVerdicts":{"minItems":1,"maxItems":1,"type":"array","items":{"type":"object","properties":{"concept":{"type":"string","enum":["Fan Club"]}`) ||
-		!strings.Contains(schema, `"required":["summary","findings","omissionVerdicts","requiredConceptVerdicts","thirdPurchaseVerdicts","fifthPurchaseVerdicts"]`) {
+		!strings.Contains(schema, `"required":["summary","findings","omissionVerdicts","requiredConceptVerdicts","thirdPurchaseVerdicts","fifthPurchaseVerdicts","proposalVerdicts"]`) {
 		t.Errorf("the review schema does not require the verdict: %s", schema)
 	}
 
 	// A free-form finding that repeats the verdict's subject, outcome and
 	// reason is dropped; one on the concept with its own reason is kept.
-	output := recordedOutput(t, "review")
+	output := withPlasmaVerdict(recordedOutput(t, "review"))
 	verdictValue := fanClubVerdict("Fan Club", "unresolved")
 	output.Set("requiredConceptVerdicts", []any{verdictValue})
 	findings := at(output, "findings").([]any)
@@ -369,7 +375,7 @@ func TestRequiredMajorConceptOnlyProposed(t *testing.T) {
 		"a repeated verdict": {[]any{fanClubVerdict("Fan Club", "unresolved"), fanClubVerdict("fan club", "fail")}, `2 verdicts on the required concept "Fan Club"`},
 	}
 	for name, c := range cases {
-		output := recordedOutput(t, "review")
+		output := withPlasmaVerdict(recordedOutput(t, "review"))
 		if c.verdicts != nil {
 			output.Set("requiredConceptVerdicts", c.verdicts)
 		}
@@ -377,7 +383,7 @@ func TestRequiredMajorConceptOnlyProposed(t *testing.T) {
 		_, err := unit.ReviewDraft(context.Background(), checked, model, fixture.Options())
 		var failure *unit.ModelError
 		if !errors.As(err, &failure) || failure.Failure == nil || failure.Failure.Code != unit.CodeOutputInvalid || failure.Failure.Stage != "review" ||
-			!strings.Contains(failure.Message, "and per required concept of the Request: it gave "+c.want) || len(model.Requests) != 1 {
+			!strings.Contains(failure.Message, "per proposed mechanic: it gave "+c.want) || len(model.Requests) != 1 {
 			t.Errorf("%s: %v after %d calls", name, err, len(model.Requests))
 		}
 	}
