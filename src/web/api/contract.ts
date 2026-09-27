@@ -100,6 +100,31 @@ export interface Vocabulary {
   statusEffects: StatusEffect[];
 }
 
+export type PathKey = 'path1' | 'path2' | 'path3';
+
+/**
+ * The Definition profile's optional design policy, as `mechanics.DesignPolicy`
+ * and its schema define it. Every field is typed: the Profile rules editor's
+ * descriptor must cover each one except the fixed literals.
+ */
+export interface DesignPolicy {
+  version: '1';
+  distinctPathSpecializations: boolean;
+  distinctFirstUpgrades: boolean;
+  distinctEarlyBenefits?: boolean;
+  distinctCapstones: boolean;
+  preserveEarlyAttackIdentity?: boolean;
+  /** 0 to 3. */
+  maxManualAbilityPaths: number;
+  /** Absent: any path; null: no path. */
+  manualAbilityPath?: PathKey | null;
+  /** Above 1, at most 20. */
+  minTier5SpecialtyMultiplier?: number;
+  requireTier3BehaviorChange?: boolean;
+  requireTier5BehaviorChange?: boolean;
+  tier5Uniqueness: 'one-per-player-unit-type-and-path';
+}
+
 /** The numerical rules a unit is generated under. Only display fields are typed. */
 export interface MechanicsDefinition {
   version: '1' | '2';
@@ -113,7 +138,7 @@ export interface MechanicsDefinition {
   vocabulary?: Vocabulary;
   profile: {
     currency: string;
-    designPolicy?: { manualAbilityPath?: string | null } & Record<string, unknown>;
+    designPolicy?: DesignPolicy;
     referenceScale?: ReferenceScale;
     maxStatValue: number;
     maxChangesPerTier: number;

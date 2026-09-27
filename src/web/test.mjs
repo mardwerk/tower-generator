@@ -17,6 +17,10 @@ for (const file of files) {
     format: 'esm',
     platform: 'node',
     target: 'node22',
+    // Bundled CommonJS packages, such as react-dom/server, require Node built-ins.
+    banner: {
+      js: `import { createRequire } from 'node:module'; const require = createRequire(${JSON.stringify(web + file)});`,
+    },
     write: false,
   });
   const source = `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`;
