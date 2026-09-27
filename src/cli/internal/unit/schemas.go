@@ -189,9 +189,16 @@ var (
 		s.F("draft", DraftSchema),
 		s.F("findings", s.Array(FindingSchema)),
 	)
-	reviewFinding        = FindingSchema.Extend(s.F("id", text().Regex(`^model\.[a-zA-Z0-9][a-zA-Z0-9._-]*$`, "")), s.F("method", s.Literal("model")), s.F("facts", s.Array(factCitation).Max(8)))
-	SemanticReviewSchema = s.StrictObject(s.F("summary", text()), s.F("findings", s.Array(reviewFinding)))
-	ResultSchema         = s.StrictObject(
+	reviewFinding = FindingSchema.Extend(s.F("id", text().Regex(`^model\.[a-zA-Z0-9][a-zA-Z0-9._-]*$`, "")), s.F("method", s.Literal("model")), s.F("facts", s.Array(factCitation).Max(8)))
+	// A review returns its verdicts on omissions and third purchases apart
+	// from its findings; code checks that each subject has exactly one.
+	SemanticReviewSchema = s.StrictObject(
+		s.F("summary", text()),
+		s.F("findings", s.Array(reviewFinding)),
+		s.F("omissionVerdicts", s.Optional(s.Array(omissionVerdictSchema(text(), text())))),
+		s.F("thirdPurchaseVerdicts", s.Optional(s.Array(thirdPurchaseVerdictSchema(text(), text())))),
+	)
+	ResultSchema = s.StrictObject(
 		s.F("schemaVersion", version),
 		s.F("kind", s.Literal("result")),
 		s.F("id", text()),

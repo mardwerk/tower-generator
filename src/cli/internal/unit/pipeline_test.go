@@ -319,7 +319,10 @@ func TestVersion2AuthorsWithStackingEffects(t *testing.T) {
 	if got := mechanics.Sustained(effect, status, build.BaseAttack.Stats.IntervalSeconds); got != 10 {
 		t.Errorf("sustained poison %v, want the cap 10", got)
 	}
-	review := &fixture.Model{Outputs: []any{s.NewObject().Set("summary", "Poison develops the top path.").Set("findings", []any{})}}
+	verdicts := recordedOutput(t, "review")
+	output := s.NewObject().Set("summary", "Poison develops the top path.").Set("findings", []any{}).
+		Set("omissionVerdicts", at(verdicts, "omissionVerdicts")).Set("thirdPurchaseVerdicts", at(verdicts, "thirdPurchaseVerdicts"))
+	review := &fixture.Model{Outputs: []any{output}}
 	result, err := unit.ReviewDraft(context.Background(), checked, review, unit.Options{})
 	if err != nil {
 		t.Fatal(err)

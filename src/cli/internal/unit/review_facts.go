@@ -557,7 +557,7 @@ func correctionPrompt(previous SemanticReview, problems []citationProblem) strin
 	if len(mismatched) > 0 {
 		text += "\nSome findings name another path's purchase than their subject: " + strings.Join(mismatched, " ") + " Name the purchase the finding is about with the build code its subject uses."
 	}
-	text += "\nReturn the whole review again, with a summary that describes exactly the findings you return."
+	text += "\nReturn the whole review again, with a summary that describes exactly the findings you return, and with omissionVerdicts and thirdPurchaseVerdicts as in your previous review: this correction concerns findings only, and code keeps your previous verdicts."
 	if len(kept) > 0 {
 		text += " Return " + strings.Join(kept, ", ") + " verbatim, every field exactly as in your previous review, including message, subject, action, evidence and facts: their citations hold, and a review that drops or changes any field of one is rejected."
 	}

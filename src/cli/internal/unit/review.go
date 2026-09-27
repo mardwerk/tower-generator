@@ -36,7 +36,10 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		documentIDs = append(documentIDs, d.ID)
 	}
 	finding := ReviewFindingSchema().Extend(s.F("evidence", s.Array(s.Enum(documentIDs...))))
-	schema := SemanticReviewSchema.Extend(s.F("findings", s.Array(finding).Max(8)))
+	// The verdicts on each omission and third purchase sit outside the
+	// eight findings, one per subject (SOL-61-08).
+	verdicts := reviewVerdictSubjects(checked)
+	schema := SemanticReviewSchema.Extend(append([]s.Field{s.F("findings", s.Array(finding).Max(8))}, verdicts.schemaFields(s.Enum(documentIDs...))...)...)
 	mechanicsID := "mechanics:undefined"
 	if request.MechanicsDefinition != nil {
 		mechanicsID = "mechanics:" + request.MechanicsDefinition.ID
@@ -174,6 +177,7 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		Set("abilities", s.FromGoValue(candidate.Abilities)).
 		Set("mechanics", s.FromGoValue(candidate.Mechanics)).
 		Set("unresolvedQuestions", s.FromGoValue(candidate.UnresolvedQuestions)))
+	context.Set("requiredVerdicts", verdicts.context())
 	failed := []Finding{}
 	for _, f := range checked.Findings {
 		if f.Outcome == "fail" {
@@ -192,7 +196,7 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	if plan := checked.Draft.Run.DesignPlan; plan != nil && rankedPlan(*plan) {
 		prompt = append(prompt, reviewCoreConcepts)
 	}
-	prompt = append(prompt, reviewFindings)
+	prompt = append(prompt, reviewVerdicts, reviewFindings)
 	if context.Has("revision") {
 		prompt = append(prompt, reviewRevisionRule)
 	}
@@ -478,20 +482,27 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 		// Findings whose citations hold must come back unchanged in every field,
 		// and one whose only fault is notation with only its flagged codes
 		// replaced (keepCheckedFindings).
+		// The correction concerns findings only: the first review's
+		// verdicts are published, and the correction must return them too.
 		if problems := citations.problems(review); len(problems) > 0 {
 			request.Prompt += correctionPrompt(review, problems)
+			first := review
 			var corrected SemanticReview
 			if corrected, err = reviewOnce(ctx, checked, model, request, &calls); err == nil {
 				if review, err = keepCheckedFindings(review, corrected, problems); err == nil {
+					review.OmissionVerdicts, review.ThirdPurchaseVerdicts = first.OmissionVerdicts, first.ThirdPurchaseVerdicts
 					err = rejectedCitations(citations.problems(review))
 				}
 			}
 		}
 	}
+	// Every verdict is recorded as a model Finding, a pass included, after
+	// the deterministic findings and before the review's own.
+	verdicts := reviewVerdictSubjects(checked).findings(review)
 	// Publish guard: whatever the correction did, no numeric build the
 	// Definition does not allow reaches a Result, not even in a finding ID.
 	if err == nil && definition != nil {
-		published := append(append([]Finding{}, checked.Findings...), review.Findings...)
+		published := append(append(append([]Finding{}, checked.Findings...), verdicts...), review.Findings...)
 		if codes := citations.impossibleBuilds(review.Summary, published); len(codes) > 0 {
 			message := "The model review named builds this Definition does not allow (" + strings.Join(codes, ", ") + ") in the findings it would publish. The draft is retained. Retry the review or choose another model."
 			err = &ModelError{Message: message, Failure: &Failure{Code: CodeOutputInvalid, Message: message, Stage: "review"}}
@@ -505,7 +516,7 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 	// Prose timing and comparison cues cannot prove a false assertion.
 	// Keep the model finding as written and add an unresolved advisory
 	// when the claim needs human review.
-	findings := append(append([]Finding{}, checked.Findings...), review.Findings...)
+	findings := append(append(append([]Finding{}, checked.Findings...), verdicts...), review.Findings...)
 	if definition != nil {
 		findings = append(findings, citations.claims.humanReviewFindings(review.Findings, citations.currency)...)
 	}
@@ -555,6 +566,9 @@ func reviewOnce(ctx context.Context, checked Checked, model Model, request Model
 			if err != nil {
 				break
 			}
+		}
+		if err == nil {
+			err = checkVerdicts(checked, review, documents)
 		}
 	}
 	if err == nil && ctx.Err() != nil {

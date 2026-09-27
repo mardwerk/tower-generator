@@ -5,7 +5,13 @@ import type { Finding, UnitCandidate } from '../../api/contract.js';
 import type { LabArtifact } from '../../api/contract.js';
 import { candidateOf, findingsOf, requestOf } from '../../api/artifacts.js';
 import { compareGameplay } from './kit-comparison.js';
-import { findingSource } from './finding-source.js';
+import {
+  findingSource,
+  isReviewVerdict,
+  omissionVerdictRule,
+  pathIdentityVerdictRule,
+  reviewVerdicts,
+} from './finding-source.js';
 import { Badge, badgeVariants } from '../../ui/badge.js';
 import { Button } from '../../ui/button.js';
 import { Modal } from '../../ui/dialog.js';
@@ -109,6 +115,32 @@ function Behavior({ ability, abilities }: { ability: Ability; abilities: Map<str
           </div>
         ))}
     </dl>
+  );
+}
+/** The review's verdicts under one rule, passes included; nothing for a Result reviewed before verdicts. */
+function VerdictSection({
+  findings,
+  rule,
+  title,
+  description,
+}: {
+  findings: Finding[];
+  rule: string;
+  title: string;
+  description: string;
+}) {
+  const verdicts = reviewVerdicts(findings, rule);
+  if (!verdicts.length) return null;
+  return (
+    <section className="review-verdicts my-4" aria-label={title}>
+      <h3 className="text-sm font-semibold">
+        {title} ({verdicts.length})
+      </h3>
+      <p className="my-2 text-xs text-muted-foreground">{description}</p>
+      {verdicts.map((finding, i) => (
+        <FindingCard key={i} finding={finding} />
+      ))}
+    </section>
   );
 }
 function FindingCard({ finding }: { finding: Finding }) {
@@ -616,12 +648,26 @@ export function CharacterSheet({
                 <h3 className="mt-5 text-sm font-semibold">Stored findings</h3>
               </section>
             )}
-            {[...failures, ...unresolved, ...unchecked].map((finding, i) => (
-              <FindingCard key={i} finding={finding} />
-            ))}
+            <VerdictSection
+              findings={findings}
+              rule={omissionVerdictRule}
+              title="Omission verdicts"
+              description="The model review's verdict on each whole-technique omission: whether a supported typed change or a proposed mechanic on a purchase could adapt the technique's central effect, and whether its rank fits the passages it cites."
+            />
+            <VerdictSection
+              findings={findings}
+              rule={pathIdentityVerdictRule}
+              title="Third purchase verdicts"
+              description="The model review's verdict on each path's third purchase: whether it defines or distinguishes its path against its own first and second purchases and the other paths' purchases."
+            />
+            {[...failures, ...unresolved, ...unchecked]
+              .filter((f) => !isReviewVerdict(f))
+              .map((finding, i) => (
+                <FindingCard key={i} finding={finding} />
+              ))}
             <Disclosure title="Successful checks">
               {findings
-                .filter((f) => f.outcome === 'pass')
+                .filter((f) => f.outcome === 'pass' && !isReviewVerdict(f))
                 .map((finding, i) => (
                   <FindingCard key={i} finding={finding} />
                 ))}

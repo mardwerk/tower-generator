@@ -365,7 +365,8 @@ func describeReview(view View) []string {
 	)
 	var attention []string
 	for _, finding := range view.Findings {
-		if finding.Outcome == "pass" {
+		// Verdicts have their own sections below, passes included.
+		if finding.Outcome == "pass" || unit.IsReviewVerdict(finding) {
 			continue
 		}
 		action := ""
@@ -382,7 +383,32 @@ func describeReview(view View) []string {
 		lines = append(lines, "| Outcome | Method | Subject | Finding and next action |", "| --- | --- | --- | --- |")
 		lines = append(append(lines, attention...), "")
 	}
+	lines = append(lines, verdictSection(view.Findings, unit.OmissionVerdictRule, "### Omission verdicts",
+		"The model review's verdict on each whole-technique omission: whether a supported typed change or a proposed mechanic on a purchase could adapt the technique's central effect, and whether its rank fits the passages it cites.")...)
+	lines = append(lines, verdictSection(view.Findings, unit.PathIdentityVerdictRule, "### Third purchase verdicts",
+		"The model review's verdict on each path's third purchase: whether it defines or distinguishes its path against its own first and second purchases and the other paths' purchases.")...)
 	return lines
+}
+
+// verdictSection lists a Result's review verdicts under one rule, a pass
+// included; nil when it has none, as a Result reviewed before verdicts.
+func verdictSection(findings []unit.Finding, rule, heading, intro string) []string {
+	var rows []string
+	for _, finding := range findings {
+		if finding.Method != "model" || finding.Rule != rule {
+			continue
+		}
+		verdict := finding.Message
+		if finding.Action != nil && *finding.Action != "" {
+			verdict += " " + *finding.Action
+		}
+		rows = append(rows, "| "+finding.Outcome+" | "+Escape(finding.Subject)+" | "+Escape(verdict)+" |")
+	}
+	if len(rows) == 0 {
+		return nil
+	}
+	lines := []string{heading, "", intro, "", "| Outcome | Subject | Verdict and next action |", "| --- | --- | --- |"}
+	return append(append(lines, rows...), "")
 }
 
 func describeEvidence(view View) []string {
