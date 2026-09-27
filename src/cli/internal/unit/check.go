@@ -118,6 +118,7 @@ func CheckDraft(input Draft) (Checked, error) {
 	checkEvidence(candidate, request, report)
 	checkDependencies(candidate, request, report)
 	checkProposedMechanics(candidate.Blueprint, request, report)
+	checkCoreConcepts(candidate.Blueprint, draft.Run.DesignPlan, request, report)
 	checkProgression(candidate, request.Progression, report)
 	hasRules := false
 	for _, d := range request.Documents {

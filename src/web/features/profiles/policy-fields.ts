@@ -102,7 +102,7 @@ export const policyFields: Record<PolicyKey, PolicyField> = {
   },
   requireCoreConcepts: {
     label: 'Core concepts',
-    help: "The plan ranks the character's techniques core, major or minor and lists every source technique; each of the one to three core concepts is adapted on a purchase, never omitted whole.",
+    help: "The plan ranks the character's techniques core, major or minor and lists every source technique; each of the one to three core concepts is adapted on a purchase with a typed change, never omitted whole. One only proposed is reported as a design gap.",
     control: toggle(true),
   },
   minTier5SpecialtyMultiplier: {

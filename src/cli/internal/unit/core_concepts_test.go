@@ -12,13 +12,12 @@ import (
 )
 
 // fixtureSourceTechniques are source techniques as prepare would list them
-// for the Dart Monkey brief. Spike-o-pult and Super Monkey Fan Club are
-// listed by the passages their repertoire entries cite, Triple Shot and
-// Crossbow by name, and Juggernaut by nothing in the fixture plan.
+// for the Dart Monkey brief. The fixture plan names each but Juggernaut in
+// its repertoire.
 var fixtureSourceTechniques = []unit.SourceTechnique{
-	{Name: "Spike-o-pult", PassageIDs: []string{"source1:6"}},
-	{Name: "Triple Shot", PassageIDs: []string{"source1:11"}, Signature: true},
-	{Name: "Super Monkey Fan Club", PassageIDs: []string{"source1:12", "source1:13"}},
+	{Name: "Spiked Ball", PassageIDs: []string{"source1:6"}},
+	{Name: "Triple Throw", PassageIDs: []string{"source1:11"}, Signature: true},
+	{Name: "Fan Club", PassageIDs: []string{"source1:12", "source1:13"}},
 	{Name: "Crossbow", PassageIDs: []string{"source1:16", "source1:17"}},
 	{Name: "Juggernaut", PassageIDs: []string{"source1:7", "source1:8"}},
 }
@@ -58,6 +57,14 @@ func repertoireEntry(plan *s.Object, name string) *s.Object {
 	return nil
 }
 
+// unadapt leaves every effect of a repertoire entry unadapted.
+func unadapt(entry *s.Object) {
+	effects, _ := entry.Get("effects")
+	for _, effect := range effects.([]any) {
+		effect.(*s.Object).Set("adaptedAs", []any{})
+	}
+}
+
 var juggernautOmitted = omission("Juggernaut", "minor", "Juggernaut's bonus damage to Ceramic and Fortified needs properties this brief does not use; Spiked Ball already carries its heavier ball.")
 
 // Under requireCoreConcepts a plan ranks its repertoire and omitted
@@ -92,14 +99,30 @@ func TestCoreConceptPlanCheck(t *testing.T) {
 		{"a core entry omitted whole", func(plan *s.Object) {
 			omit(plan, juggernautOmitted, omission("crossbow", "major", "Counted critical shots have no operator."))
 		}, `omittedTechniques.3: omittedTechniques omits the core entry "Crossbow" whole. ` + m.CoreConceptsRule},
+		{"a core entry omitted whole with a qualifier word", func(plan *s.Object) {
+			omit(plan, juggernautOmitted, omission("Crossbow attacks", "major", "Counted critical shots have no operator."))
+		}, `omittedTechniques.3: omittedTechniques omits the core entry "Crossbow" whole. ` + m.CoreConceptsRule},
 		{"an omitted aspect of a core entry", func(plan *s.Object) {
 			omit(plan, juggernautOmitted, omission("Crossbow critical shots", "minor", "Every tenth shot dealing extra damage needs a shot counter operator."))
 		}, ""},
 		{"a source technique listed nowhere", func(*s.Object) {},
 			`repertoire: The plan leaves out the source technique "Juggernaut", which is neither in the repertoire nor in omittedTechniques. ` + m.CoreConceptsRule},
-		{"a name variant lists it", func(plan *s.Object) {
-			omit(plan, omission("Juggernaut ball", "minor", "Juggernaut's bonus damage needs properties this brief does not use."))
+		{"a name with a qualifier word lists it", func(plan *s.Object) {
+			omit(plan, omission("Juggernaut attacks", "minor", "Juggernaut's bonus damage needs properties this brief does not use."))
 		}, ""},
+		{"a more specific name does not list it", func(plan *s.Object) {
+			omit(plan, omission("Juggernaut ball", "minor", "Juggernaut's bonus damage needs properties this brief does not use."))
+		}, `The plan leaves out the source technique "Juggernaut"`},
+		{"a core entry adapted only by a proposed mechanic", func(plan *s.Object) {
+			omit(plan, juggernautOmitted)
+			repertoireEntry(plan, "Crossbow").Set("importance", "major")
+			repertoireEntry(plan, "Fan Club").Set("importance", "core")
+			unadapt(repertoireEntry(plan, "Fan Club"))
+		}, ""},
+		{"a core entry adapted with neither", func(plan *s.Object) {
+			omit(plan, juggernautOmitted)
+			unadapt(repertoireEntry(plan, "Crossbow"))
+		}, `repertoire.3: No purchase whose technique is the core entry "Crossbow" promises what one of its effects is adapted as or names a proposed mechanic. ` + m.CoreConceptsRule},
 		{"an unranked entry", func(plan *s.Object) {
 			omit(plan, juggernautOmitted)
 			repertoireEntry(plan, "Fan Club").Delete("importance")
@@ -126,32 +149,128 @@ func TestCoreConceptPlanCheck(t *testing.T) {
 	}
 }
 
-// A passage several source techniques share lists none of them: an entry
-// citing a sentence that names all three kinds of Haki does not list
-// Armament Haki. A technique whose passages are all shared is listed by any
-// of them, as an attack of a form is by the form's entry.
-func TestSharedPassagesListOnlyTheirOwnTechnique(t *testing.T) {
-	stages, err := fixture.Build()
-	if err != nil {
-		t.Fatal(err)
+// luffySections is a sectioned Luffy request: a character-wiki page whose
+// passages carry their section, and the source techniques prepare lists
+// from them.
+func luffySections(t *testing.T) (unit.Request, map[string]string) {
+	t.Helper()
+	request := sectionedRequest(t,
+		sourceDocument("character-wiki:onepiece.fandom.com:Monkey_D._Luffy/Abilities_and_Powers", strings.Join([]string{
+			"Devil Fruit\nGum-Gum Pistol: Luffy stretches his arm back and snaps it forward into a punch.",
+			"Devil Fruit\nGear 4\nGear 4 inflates his muscles with Armament Haki and makes him bounce.",
+			"Devil Fruit\nGear 4\nKong Gun: Luffy compresses his fist into his arm and fires it as a giant punch.",
+			"Devil Fruit\nGear 4\nPython: Luffy bends the path of a punch around a guard.",
+			"Devil Fruit\nGear 4\nIn Gear 4 his Gum-Gum Pistol becomes the Kong Gun.",
+			"Haki\nHaki lets Luffy use three kinds of power.",
+			"Haki\nArmament Haki\nArmament Haki lets him hit Logia users.",
+			"Haki\nObservation Haki\nObservation Haki lets him foresee attacks.",
+			"Haki\nSupreme King Haki\nSupreme King Haki knocks out weaker foes.",
+		}, "\n\n")),
+	)
+	ids := map[string]string{}
+	for _, span := range unit.AuthorEvidence(&request) {
+		ids[span.Text] = span.ID
 	}
-	plan := *stages.Draft.Run.DesignPlan
-	request := coreRequest(t, []unit.SourceTechnique{
-		{Name: "Heavy Ball", PassageIDs: []string{"source1:6", "source1:7"}},
-		{Name: "Ultra Ball", PassageIDs: []string{"source1:7", "source1:8"}},
-	})
-	plan.Repertoire[0].SourceIDs = []string{"source1:7"}
-	got := messages(unit.CoreConceptIssues(plan, &request))
-	if !strings.Contains(got, `the source techniques "Heavy Ball" and "Ultra Ball"`) {
-		t.Errorf("a shared passage listed a technique:\n%s", got)
+	return request, ids
+}
+
+// leftOut is the listing check's message naming the source techniques a
+// plan leaves out, or empty when it lists them all.
+func leftOut(t *testing.T, plan unit.DesignPlan, request unit.Request) string {
+	t.Helper()
+	for _, issue := range unit.CoreConceptIssues(plan, &request) {
+		if strings.Contains(issue.Message, "leaves out") {
+			return issue.Message
+		}
 	}
-	plan.Repertoire[0].SourceIDs = []string{"source1:6", "source1:7"}
-	request.SourceTechniques = &[]unit.SourceTechnique{
-		{Name: "Heavy Ball", PassageIDs: []string{"source1:6", "source1:7"}},
-		{Name: "Heavy Ball Throw", PassageIDs: []string{"source1:7"}},
+	return ""
+}
+
+func corePlan(base unit.PlanBase, entries ...unit.PlanRepertoire) unit.DesignPlan {
+	return unit.DesignPlan{Base: base, Repertoire: entries, OmittedTechniques: []unit.PlanOmission{}}
+}
+
+// A generic entry lists no more specific source technique: a repertoire
+// entry named "Haki" does not list Armament, Observation or Supreme King
+// Haki, even when it cites their passages, and "Armament Haki" lists only
+// itself. A more specific entry lists a less specific name only through a
+// qualifier word, as "Gear 4 forms" lists Gear 4 (SOL-67-01).
+func TestGenericEntryListsNoSpecificTechnique(t *testing.T) {
+	request, ids := luffySections(t)
+	names := map[string]bool{}
+	for _, technique := range *request.SourceTechniques {
+		names[technique.Name] = true
 	}
-	if got := messages(unit.CoreConceptIssues(plan, &request)); strings.Contains(got, "leaves out") {
-		t.Errorf("an entry citing a technique's shared passage did not list it:\n%s", got)
+	for _, want := range []string{"Gear 4", "Kong Gun", "Python", "Armament Haki", "Observation Haki", "Supreme King Haki"} {
+		if !names[want] {
+			t.Fatalf("prepare does not list %q: %v", want, *request.SourceTechniques)
+		}
+	}
+	base := unit.PlanBase{Name: "Gum-Gum Pistol", SourceIDs: []string{ids["Gum-Gum Pistol: Luffy stretches his arm back and snaps it forward into a punch."]}}
+	haki := unit.PlanRepertoire{Name: "Haki", Importance: "core", SourceIDs: []string{
+		ids["Haki lets Luffy use three kinds of power."],
+		ids["Armament Haki lets him hit Logia users."],
+		ids["Observation Haki lets him foresee attacks."],
+		ids["Supreme King Haki knocks out weaker foes."],
+	}}
+	gear4 := unit.PlanRepertoire{Name: "Gear 4 forms", Importance: "core", SourceIDs: []string{ids["Gear 4 inflates his muscles with Armament Haki and makes him bounce."]}}
+	got := leftOut(t, corePlan(base, haki, gear4), request)
+	for _, kind := range []string{"Armament Haki", "Observation Haki", "Supreme King Haki"} {
+		if !strings.Contains(got, `"`+kind+`"`) {
+			t.Errorf("a generic Haki entry lists %s:\n%s", kind, got)
+		}
+	}
+	if strings.Contains(got, `"Gear 4"`) {
+		t.Errorf("a Gear 4 forms entry does not list Gear 4:\n%s", got)
+	}
+	armament := unit.PlanRepertoire{Name: "Armament Haki", Importance: "major", SourceIDs: []string{ids["Armament Haki lets him hit Logia users."]}}
+	got = leftOut(t, corePlan(base, armament, gear4), request)
+	if strings.Contains(got, `"Armament Haki"`) || !strings.Contains(got, `"Observation Haki"`) || !strings.Contains(got, `"Supreme King Haki"`) {
+		t.Errorf("an Armament Haki entry lists another kind of Haki, or not itself:\n%s", got)
+	}
+}
+
+// Citing a passage lists a source technique only when the technique is a
+// part of a form inside the form's own section and the citing entry is that
+// form: a Gear 4 entry citing "Kong Gun: …" and "Python: …" under Gear 4
+// lists both, while a Pistol base attack citing a Gear 4 passage lists
+// neither Gear 4 nor Kong Gun, and a Gear 4 entry citing a Gear 4 passage
+// that mentions the Pistol does not list the Pistol (SOL-67-01).
+func TestCitationListsOnlyAFormsOwnSubtechniques(t *testing.T) {
+	request, ids := luffySections(t)
+	gear4Passage := ids["Gear 4 inflates his muscles with Armament Haki and makes him bounce."]
+	kongGun := ids["Kong Gun: Luffy compresses his fist into his arm and fires it as a giant punch."]
+	python := ids["Python: Luffy bends the path of a punch around a guard."]
+	mention := ids["In Gear 4 his Gum-Gum Pistol becomes the Kong Gun."]
+	haki := []unit.PlanRepertoire{
+		{Name: "Armament Haki", Importance: "major", SourceIDs: []string{ids["Armament Haki lets him hit Logia users."]}},
+		{Name: "Observation Haki", Importance: "minor", SourceIDs: []string{ids["Observation Haki lets him foresee attacks."]}},
+		{Name: "Supreme King Haki", Importance: "minor", SourceIDs: []string{ids["Supreme King Haki knocks out weaker foes."]}},
+	}
+
+	pistol := unit.PlanBase{Name: "Pistol", SourceIDs: []string{gear4Passage, kongGun, mention}}
+	got := leftOut(t, corePlan(pistol, haki...), request)
+	for _, name := range []string{"Gear 4", "Kong Gun", "Python", "Gum-Gum Pistol"} {
+		if !strings.Contains(got, `"`+name+`"`) {
+			t.Errorf("a Pistol entry citing Gear 4 passages lists %s:\n%s", name, got)
+		}
+	}
+	unrelated := unit.PlanRepertoire{Name: "Pistol", Importance: "core", SourceIDs: []string{gear4Passage}}
+	if got := leftOut(t, corePlan(unit.PlanBase{Name: "Gum-Gum Pistol"}, append(haki, unrelated)...), request); !strings.Contains(got, `"Gear 4"`) {
+		t.Errorf("a Pistol repertoire entry citing a Gear 4 passage lists Gear 4:\n%s", got)
+	}
+
+	gear4 := unit.PlanRepertoire{Name: "Gear 4", Importance: "core", SourceIDs: []string{gear4Passage, kongGun, python, mention}}
+	got = leftOut(t, corePlan(unit.PlanBase{Name: "Stretch punch"}, append(haki, gear4)...), request)
+	if strings.Contains(got, `"Kong Gun"`) || strings.Contains(got, `"Python"`) || strings.Contains(got, `"Gear 4"`) {
+		t.Errorf("a Gear 4 entry does not list its own subtechniques:\n%s", got)
+	}
+	if !strings.Contains(got, `"Gum-Gum Pistol"`) {
+		t.Errorf("a Gear 4 entry citing a passage that mentions the Pistol lists it:\n%s", got)
+	}
+	gear4.SourceIDs = []string{gear4Passage}
+	if got := leftOut(t, corePlan(unit.PlanBase{Name: "Gum-Gum Pistol"}, append(haki, gear4)...), request); !strings.Contains(got, `the source techniques "Kong Gun" and "Python"`) {
+		t.Errorf("a Gear 4 entry lists subtechniques whose passages it does not cite:\n%s", got)
 	}
 }
 
@@ -250,7 +369,7 @@ func TestCoreConceptPrompts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(request.Prompt, `"sourceTechniques":[{"name":"Spike-o-pult","passageIds":["source1:6"],"signature":false}`) {
+	if !strings.Contains(request.Prompt, `"sourceTechniques":[{"name":"Spiked Ball","passageIds":["source1:6"],"signature":false}`) {
 		t.Error("the plan context does not list the source techniques")
 	}
 }
@@ -292,5 +411,84 @@ func TestReviewReadsCoreConceptsAndOmissions(t *testing.T) {
 	checked.Draft.Run.DesignPlan = &plan
 	if prompt := unit.BlueprintReviewRequest(checked).Prompt; strings.Contains(prompt, m.CoreConceptsRule) || !strings.Contains(prompt, unit.OmissionRule) {
 		t.Error("an unranked plan's review states the core concept rule, or omits the omission rule")
+	}
+}
+
+// coreFindings checks the fixture draft with its plan edited and returns
+// its core concept Findings.
+func coreFindings(t *testing.T, edit func(plan *unit.DesignPlan)) []unit.Finding {
+	t.Helper()
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	draft := stages.Draft
+	plan := *draft.Run.DesignPlan
+	plan.Repertoire = append([]unit.PlanRepertoire(nil), plan.Repertoire...)
+	for i := range plan.Repertoire {
+		plan.Repertoire[i].Effects = append([]unit.PlanEffect(nil), plan.Repertoire[i].Effects...)
+	}
+	edit(&plan)
+	draft.Run.DesignPlan = &plan
+	checked, err := unit.CheckDraft(draft)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out []unit.Finding
+	for _, f := range checked.Findings {
+		if f.Rule == unit.CoreConceptFindingRule {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
+// omitEffects leaves every effect of a repertoire entry unadapted.
+func omitEffects(plan *unit.DesignPlan, name string) {
+	for i := range plan.Repertoire {
+		if plan.Repertoire[i].Name != name {
+			continue
+		}
+		for j := range plan.Repertoire[i].Effects {
+			plan.Repertoire[i].Effects[j].AdaptedAs = []string{}
+		}
+	}
+}
+
+func rank(plan *unit.DesignPlan, name, importance string) {
+	for i := range plan.Repertoire {
+		if plan.Repertoire[i].Name == name {
+			plan.Repertoire[i].Importance = importance
+		}
+	}
+}
+
+// A core concept that a purchase adapts with a typed change is embodied and
+// passes clean. One that its purchases adapt only with a proposed mechanic
+// is an unresolved design gap: a proposal grants no behavior, so the Unit
+// does not embody it yet. One adapted with neither fails (SOL-67-01).
+func TestCoreConceptImplementedOrOnlyProposed(t *testing.T) {
+	if found := coreFindings(t, func(*unit.DesignPlan) {}); len(found) > 0 {
+		t.Errorf("typed core concepts found %v", found)
+	}
+
+	// Fan Club's effects are left unadapted, so only x-5-x's proposed
+	// Plasma transformation adapts it.
+	found := coreFindings(t, func(plan *unit.DesignPlan) {
+		rank(plan, "Crossbow", "major")
+		rank(plan, "Fan Club", "core")
+		omitEffects(plan, "Fan Club")
+	})
+	if len(found) != 1 || found[0].Outcome != "unresolved" || found[0].Subject != "paths.path2.tiers.tier5" ||
+		!strings.HasPrefix(found[0].Message, `The core concept "Fan Club" is only proposed: x-5-x `) ||
+		!strings.Contains(found[0].Message, "the Unit does not yet embody this core concept until the Definition supports that mechanic. "+m.CoreConceptsRule) {
+		t.Errorf("a proposed-only core concept: %+v", found)
+	}
+
+	// Crossbow's effects are left unadapted and its purchases propose
+	// nothing.
+	found = coreFindings(t, func(plan *unit.DesignPlan) { omitEffects(plan, "Crossbow") })
+	if len(found) != 1 || found[0].Outcome != "fail" || !strings.Contains(found[0].Message, `No purchase adapts the core concept "Crossbow": x-x-3 `) {
+		t.Errorf("a core concept adapted with neither: %+v", found)
 	}
 }

@@ -35,10 +35,11 @@ const ExclusiveEarlyBenefitsRule = "No dimension or capability that one path's f
 const PathIdentityRule = "The third purchase of every path must distinguish it: it improves or unlocks a dimension or capability, or carries a proposed mechanic, that no purchase of the other two paths improves, unlocks or proposes; lowers, names, prices, amounts and a targeting change do not count."
 
 // CoreConceptsRule states requireCoreConcepts. Code checks the ranking,
-// that every source technique is listed and that a purchase names each core
-// entry as its technique; whether that purchase fulfils the concept is the
+// that every source technique is listed, that a purchase names each core
+// entry as its technique, and whether a typed change or only a proposed
+// mechanic adapts it; whether that purchase fulfils the concept is the
 // review's judgment.
-const CoreConceptsRule = "Rank every repertoire entry and every omitted technique core, major or minor, and list every source technique in the repertoire or in omittedTechniques; one to three entries are core, the concepts without which the character would not feel canonical, and each core entry is the base attack or the technique of at least one purchase that adapts its central effect, as a typed change or a proposed mechanic, and is never omitted whole, only in named aspects."
+const CoreConceptsRule = "Rank every repertoire entry and every omitted technique core, major or minor, and list every source technique in the repertoire or in omittedTechniques; one to three entries are core, the concepts without which the character would not feel canonical, and each core entry is the base attack or the technique of at least one purchase that adapts its central effect with a typed change, and is never omitted whole, only in named aspects; a core entry adapted only by a proposed mechanic is an unresolved design gap, because a proposal grants no behavior, and the Unit embodies it only once the Definition supports that mechanic."
 
 // NoDefinitionActiveAbilityRule stands for ActiveAbilityRule when a request
 // carries no Definition.
