@@ -228,7 +228,7 @@ func sourceListingIssues(plan DesignPlan, request *Request) []m.Issue {
 	if len(missing) == 0 {
 		return nil
 	}
-	return []m.Issue{coreIssue("repertoire", fmt.Sprintf("The plan leaves out the source %s, which %s neither in the repertoire nor in omittedTechniques.", pluralWord(len(missing), "technique", "techniques")+" "+joinWith(quoted(missing), "and", ""), pluralWord(len(missing), "is", "are")), "Name each in the repertoire, or omit it in omittedTechniques with the exact effect the Definition cannot express; a technique that is a part of a form in the form's own section is also listed by that form's entry citing the passage that names it.")}
+	return []m.Issue{coreIssue("repertoire", fmt.Sprintf("The plan leaves out the source %s, which %s neither in the repertoire nor in omittedTechniques.", pluralWord(len(missing), "technique", "techniques")+" "+joinWith(quoted(missing), "and", ""), pluralWord(len(missing), "is", "are")), "Name each in the repertoire, or omit it in omittedTechniques with the exact effect the Definition cannot express; a technique that is a part of a form in the form's own section is also listed by that form's entry citing the passage that names it, unless its salience is strong: a strong technique needs an entry of its own.")}
 }
 
 // majorFloorIssues reports each plan entry ranked minor that is named for a
@@ -264,7 +264,8 @@ func majorFloorIssues(plan DesignPlan, techniques []SourceTechnique) []m.Issue {
 // a part of that form inside the form's own section (namesSubtechnique), as
 // a Gear 4 entry citing "Python (…): …" under "Gear 4" lists Python. Citing
 // a passage alone lists nothing: a Pistol entry citing a Gear 4 passage does
-// not list Gear 4.
+// not list Gear 4. A strong technique is listed only by name, so it always has
+// an entry of its own whose rank the major floor checks (SOL-69-01).
 func sourceTechniqueListed(plan DesignPlan, techniques []SourceTechnique, index int, spans map[string]EvidenceSpan) bool {
 	technique := techniques[index]
 	type entry struct {
@@ -284,6 +285,9 @@ func sourceTechniqueListed(plan DesignPlan, techniques []SourceTechnique, index 
 		if listsTechnique(omission.Name, technique) {
 			return true
 		}
+	}
+	if technique.Salience == SalienceStrong {
+		return false
 	}
 	for _, e := range citing {
 		if slices.ContainsFunc(technique.Names(), func(name string) bool { return generalizes(e.name, name) }) {
