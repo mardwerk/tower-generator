@@ -41,6 +41,13 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	// SOL-61-13).
 	verdicts := reviewVerdictSubjects(checked)
 	schema := SemanticReviewSchema.Extend(append([]s.Field{s.F("findings", s.Array(finding).Max(8))}, verdicts.schemaFields(s.Enum(documentIDs...))...)...)
+	// Strict structured output requires every property of the model-facing
+	// schema to be required, so a Request without required concepts gets no
+	// requiredConceptVerdicts property at all. OpenRouter rejected Escanor's
+	// v38 review with a 400 while the optional property remained.
+	if len(verdicts.required) == 0 {
+		schema = schema.Omit("requiredConceptVerdicts")
+	}
 	mechanicsID := "mechanics:undefined"
 	if request.MechanicsDefinition != nil {
 		mechanicsID = "mechanics:" + request.MechanicsDefinition.ID
