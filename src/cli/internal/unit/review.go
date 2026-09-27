@@ -61,7 +61,11 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	}
 	context := s.NewObject()
 	if checked.Draft.Run.DesignPlan != nil {
-		context.Set("designPlan", reviewDesignPlan(*checked.Draft.Run.DesignPlan))
+		var techniques []SourceTechnique
+		if request.SourceTechniques != nil {
+			techniques = *request.SourceTechniques
+		}
+		context.Set("designPlan", reviewDesignPlan(*checked.Draft.Run.DesignPlan, techniques))
 	}
 	if checked.Draft.Run.DesignEvaluation != nil {
 		// The retained evidence plus the time-averaged Active rates and the
@@ -145,9 +149,13 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 			// What the purchase needs beyond its typed changes, which no
 			// build grants; the review judges whether each fits.
 			if blueprint != nil && len(candidate.Paths) == len(m.PathKeys) && t.Tier >= 1 && t.Tier <= len(m.TierKeys) {
-				if proposed := blueprint.Paths.At(index).Tiers.At(t.Tier).ProposedMechanics; len(proposed) > 0 {
+				tier := blueprint.Paths.At(index).Tiers.At(t.Tier)
+				if proposed := tier.ProposedMechanics; len(proposed) > 0 {
 					entry.Set("proposedMechanics", s.FromGoValue(proposed))
 				}
+				// Its typed changes by scope, to compare with the planned
+				// text's claims about the Active Ability.
+				entry.Set("changeScope", ChangeScope(*tier))
 			}
 			tiers = append(tiers, entry)
 		}
@@ -206,8 +214,27 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 // effects only on those purchases, so the review can see which entries code
 // did not check (Kyle on #27: an entry no purchase names could claim an
 // adaptation the unit lacks while the review was told code had checked it).
-func reviewDesignPlan(plan DesignPlan) *s.Object {
+//
+// Each omitted technique named for a source technique, or for one of its
+// aliases, gains sourceTechnique: its name, salience and passageIds, so the
+// review judges the omission and its rank against those passages
+// (SOL-61-05).
+func reviewDesignPlan(plan DesignPlan, techniques []SourceTechnique) *s.Object {
 	view := s.FromGoValue(plan).(*s.Object)
+	if omitted, ok := view.Get("omittedTechniques"); ok {
+		for index, omission := range plan.OmittedTechniques {
+			for _, technique := range techniques {
+				if listsTechnique(omission.Name, technique) {
+					source := s.NewObject().Set("name", technique.Name)
+					if technique.Salience != "" {
+						source.Set("salience", technique.Salience)
+					}
+					omitted.([]any)[index].(*s.Object).Set("sourceTechnique", source.Set("passageIds", anyStrings(technique.PassageIDs)))
+					break
+				}
+			}
+		}
+	}
 	if plan.UpgradeIntents != nil {
 		entries, _ := view.Get("repertoire")
 		for index, entry := range plan.Repertoire {

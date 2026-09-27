@@ -86,9 +86,17 @@ func withUsage(a Attempt, usage *Usage) Attempt {
 	return a
 }
 
+// planDesign makes the planning call and at most repairs full-plan retries.
+// A plan attempt that fails only on items a targeted correction can fix is
+// followed by one such correction (planCorrections), which does not use
+// the retry budget and is not sent when the budget is 0.
 func planDesign(ctx context.Context, prepared Prepared, model Model, repairs int, attempts *[]Attempt) (DesignPlan, error) {
 	correction := ""
-	for index := 0; index <= repairs; index++ {
+	purpose, full, corrected := "plan", 0, false
+	for purpose == PlanCorrectionPurpose || full <= repairs {
+		if purpose == "plan" {
+			full++
+		}
 		if err := cancelled(ctx, *attempts); err != nil {
 			return DesignPlan{}, err
 		}
@@ -105,7 +113,7 @@ func planDesign(ctx context.Context, prepared Prepared, model Model, repairs int
 		if err == nil {
 			plan, err = DecodeDesignPlan(response.Output, &prepared.Request)
 			if err == nil {
-				*attempts = append(*attempts, withUsage(Attempt{Number: len(*attempts) + 1, Purpose: "plan", Issues: []string{}}, response.Usage))
+				*attempts = append(*attempts, withUsage(Attempt{Number: len(*attempts) + 1, Purpose: purpose, Issues: []string{}}, response.Usage))
 				return plan, nil
 			}
 		}
@@ -135,7 +143,7 @@ func planDesign(ctx context.Context, prepared Prepared, model Model, repairs int
 		if errors.As(err, &modelErr) && modelErr.Usage != nil {
 			billed = modelErr.Usage
 		}
-		rejected := withUsage(Attempt{Number: len(*attempts) + 1, Purpose: "plan", Issues: issues}, billed)
+		rejected := withUsage(Attempt{Number: len(*attempts) + 1, Purpose: purpose, Issues: issues}, billed)
 		if validation != nil {
 			rejected.Output = response.Output
 		}
@@ -144,6 +152,14 @@ func planDesign(ctx context.Context, prepared Prepared, model Model, repairs int
 			failure := StageFailure(err, "draft", totalUsage(*attempts), false)
 			return DesignPlan{}, &ModelError{Message: failure.Message, Usage: totalUsage(*attempts), Failure: failure.Failure, Cause: failure, Evidence: failureEvidence(&prepared.Request, nil, *attempts)}
 		}
+		if repairs > 0 && !corrected && onlyCorrectable(validation.Issues) {
+			if items := planCorrections(response.Output, &prepared.Request); len(items) > 0 {
+				purpose, corrected = PlanCorrectionPurpose, true
+				correction = targetedPlanCorrection(items, response.Output)
+				continue
+			}
+		}
+		purpose = "plan"
 		// A Luffy retry on #27 returned only the one repertoire entry an
 		// issue named, and the shortened plan failed.
 		correction = "\n\nCorrect this invalid design plan while retaining supported character identity. Return the complete plan with every field and entry, changing only what the issues require: " +
@@ -359,7 +375,7 @@ func draftBlueprint(ctx context.Context, prepared Prepared, model Model, options
 	}
 	designAttempts := 0
 	for _, a := range attempts {
-		if a.Purpose != "plan" {
+		if a.Purpose != "plan" && a.Purpose != PlanCorrectionPurpose {
 			designAttempts++
 		}
 	}
