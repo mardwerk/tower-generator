@@ -13,24 +13,10 @@ import (
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
 )
 
-// Two claims a model finding can make that code can check against the
-// retained plan and purchase evidence (#57). Each is corrected like a wrong
-// fact, corrected or withdrawn in the one correction, and only when code can
-// identify it (SOL-57-01):
-//   - timing: the finding faults a purchase whose planned technique is the
-//     base attack for lacking a technique its path adapts only at a later
-//     purchase. Sol's v22 Luffy review failed x-x-1 because "this purchase
-//     begins the Gear 4 Tankman path", while x-x-1 adapts Gum-Gum Pistol and
-//     Gear 4 Tankman starts at x-x-3.
-//   - comparison: the finding states the opposite of one againstCapstone
-//     comparison its quoted side gain matches uniquely. The same review said
-//     x-5-x's 6.21 gain "is smaller than" a side purchase's 4.66.
-//
-// Mentioning a later technique or quoting a side gain is not by itself a
-// false claim. When code finds such a claim but cannot tell what the finding
-// asserts, it corrects nothing: the finding is published as the review
-// wrote it, beside an unresolved Finding that asks for it to be checked
-// (humanReviewFindings).
+// Prose cues can identify claims worth checking, but cannot prove their
+// meaning. Negation and qualifications such as "per Gold" can reverse the
+// apparent assertion. These checks only add human-review advisories; hard
+// fact correction is restricted to structured citations in review_facts.go.
 
 // reviewClaims holds what the two checks read: the retained plan, the
 // purchase names and the side-purchase comparisons against each capstone.
@@ -705,13 +691,17 @@ func (c reviewClaims) humanReviewFindings(findings []Finding, currency string) [
 	var out []Finding
 	for _, f := range findings {
 		var reasons []string
-		if wrong, uncertain := c.timing(f); len(wrong) == 0 {
-			for _, claim := range uncertain {
+		if suspected, uncertain := c.timing(f); len(suspected)+len(uncertain) > 0 {
+			for _, claim := range append(suspected, uncertain...) {
 				reasons = append(reasons, fmt.Sprintf("Code could not tell whether %s faults %s for %s: %s adapts %s, and %s starts at %s.", f.ID, claim.purchase, claim.later, claim.purchase, claim.technique, claim.later, claim.starts))
 			}
 		}
-		if wrong, uncertain := c.comparison(f, currency); len(wrong) == 0 {
+		if suspected, uncertain := c.comparison(f, currency); faulting(f) {
 			reasons = append(reasons, uncertain...)
+			for _, claim := range suspected {
+				row := claim.row
+				reasons = append(reasons, fmt.Sprintf("Code could not verify the meaning of %s's comparison: %s adds %s and %s adds %s %s. Check whether the prose compares these absolute gains or a different measure.", f.ID, row.side, gainText(row.sideGain), row.capstone, gainText(row.capstoneGain), row.metric))
+			}
 		}
 		if len(reasons) == 0 {
 			continue

@@ -104,25 +104,21 @@ func timingFinding(kept *s.Object, message string) *s.Object {
 
 const faultedTiming = "1-x-x Sharp Shots claims only a sharper Dart Throw, but this purchase begins the Spiked Ball path."
 
-// Fix 2: a finding that faults 1-x-x for Spiked Ball goes through the
-// correction like a wrong fact: withdrawn, it is published without it;
-// returned unchanged, the review is rejected.
-func TestReviewCorrectsAPurchaseFaultedForALaterTechnique(t *testing.T) {
+// Timing prose is retained with an advisory, without a correction call.
+func TestReviewAdvisesOnAPurchaseFaultedForALaterTechnique(t *testing.T) {
 	stages, err := fixture.Build()
 	if err != nil {
 		t.Fatal(err)
 	}
 	_, kept := notationReview(t, "")
 	first, _ := notationReview(t, "One timing concern.", timingFinding(kept, faultedTiming))
-	withdrawn, _ := notationReview(t, "No timing concern.")
-	result, err, model := review(t, stages.Checked, first, withdrawn)
-	accepted(t, "withdrawn", result, err, len(model.Requests), "model.fan-club-allies", "No timing concern.")
-	contains(t, "timing", model.Requests[len(model.Requests)-1].Prompt, []string{
-		"Some findings fault a purchase for a technique its path adapts only at a later purchase: model.sharp-timing faults 1-x-x for Spiked Ball, but 1-x-x adapts Dart Throw; Spiked Ball starts at 3-x-x.",
-		"Return model.sharp-timing corrected under the same ID, or omit it",
-	}, nil)
-	result, err, model = review(t, stages.Checked, first, first)
-	rejected(t, "returned unchanged", result, err, len(model.Requests), []string{"model.sharp-timing faults 1-x-x for Spiked Ball"})
+	result, err, model := review(t, stages.Checked, first)
+	if err != nil || len(model.Requests) != 1 || modelIDs(result) != "model.fan-club-allies,model.sharp-timing" {
+		t.Fatalf("advisory timing: %v after %d calls, %s", err, len(model.Requests), modelIDs(result))
+	}
+	if result.Findings[len(result.Findings)-1].Rule != unit.HumanReviewRule {
+		t.Fatal("missing timing advisory")
+	}
 	// A contextual mention is published as written, in one call.
 	context, _ := notationReview(t, "One pierce concern.", timingFinding(kept, "1-x-x Sharp Shots adds pierce the Dart Throw passage does not describe. Spiked Ball replaces the dart at 3-x-x."))
 	result, err, model = review(t, stages.Checked, context)
@@ -131,10 +127,8 @@ func TestReviewCorrectsAPurchaseFaultedForALaterTechnique(t *testing.T) {
 	}
 }
 
-// Fix 3: a finding that says x-x-5's gain is smaller than the x-2-x side
-// purchase's, where purchaseEvidence says the side gain is smaller, goes
-// through the same correction.
-func TestReviewCorrectsAReversedCapstoneComparison(t *testing.T) {
+// A suspected reversed comparison is retained for human review.
+func TestReviewAdvisesOnAReversedCapstoneComparison(t *testing.T) {
 	stages, err := fixture.Build()
 	if err != nil {
 		t.Fatal(err)
@@ -147,13 +141,13 @@ func TestReviewCorrectsAReversedCapstoneComparison(t *testing.T) {
 		Set("message", "x-x-5 costs 21,500 Gold and adds 21.05 time-averaged direct damage rate over x-x-4. Its gain is smaller than the x-2-x side purchase's 10.53 gain, which costs 190 Gold.").
 		Set("facts", []any{})
 	first, _ := notationReview(t, "One price concern.", reversed)
-	withdrawn, _ := notationReview(t, "No price concern.")
-	result, err, model := review(t, stages.Checked, first, withdrawn)
-	accepted(t, "withdrawn", result, err, len(model.Requests), "model.fan-club-allies", "No price concern.")
-	contains(t, "comparison", model.Requests[len(model.Requests)-1].Prompt, []string{
-		"Some findings state the opposite of a checked againstCapstone comparison in purchaseEvidence: model.crossbow-price says the x-2-x side purchase's 10.53 gain is at least x-x-5's, but sideGainAtLeastCapstone is false for the time-averaged direct damage rate: from 0-1-5 to 0-2-5, x-2-x adds 10.53 for 190 Gold and x-x-5 adds 21.05 for 21500 Gold.",
-		"A side purchase that adds less absolute gain than the capstone is no evidence against it",
-	}, nil)
+	result, err, model := review(t, stages.Checked, first)
+	if err != nil || len(model.Requests) != 1 || modelIDs(result) != "model.fan-club-allies,model.crossbow-price" {
+		t.Fatalf("advisory comparison: %v after %d calls, %s", err, len(model.Requests), modelIDs(result))
+	}
+	if result.Findings[len(result.Findings)-1].Rule != unit.HumanReviewRule {
+		t.Fatal("missing comparison advisory")
+	}
 	// The same gain quoted in the right direction is published as written.
 	right := s.Clone(reversed).(*s.Object).Set("message", "x-x-5 costs 21,500 Gold and adds 21.05 time-averaged direct damage rate over x-x-4. The x-2-x side purchase's 10.53 gain, for 190 Gold, is smaller than the capstone's.")
 	correct, _ := notationReview(t, "One price concern.", right)
@@ -191,5 +185,36 @@ func TestReviewRetainsAnUnreadClaimForReview(t *testing.T) {
 		if f.Rule == unit.HumanReviewRule {
 			t.Errorf("the scripted review is marked: %+v", f)
 		}
+	}
+}
+
+// Negation and a price denominator change the meaning of the same prose
+// cues. Neither may force withdrawal of a valid model finding.
+func TestReviewProseCuesCannotForceCorrection(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, kept := notationReview(t, "")
+	for _, test := range []struct{ name, subject, message string }{
+		{"negated timing", "1-x-x Sharp Shots", "1-x-x does not introduce Spiked Ball; its extra pierce lacks support in the Dart Throw passage."},
+		{"price efficiency", "x-x-5 Crossbow Master", "x-x-5 adds 21.05 time-averaged direct damage rate for 21,500 Gold. The x-2-x side purchase adds 10.53 for 190 Gold and beats the capstone in direct damage per Gold."},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			finding := s.Clone(kept).(*s.Object).Set("id", "model.prose").Set("subject", test.subject).Set("message", test.message).Set("outcome", "fail").Set("facts", []any{})
+			first, _ := notationReview(t, "One concern.", finding)
+			result, err, model := review(t, stages.Checked, first)
+			if err != nil || len(model.Requests) != 1 || modelIDs(result) != "model.fan-club-allies,model.prose" {
+				t.Fatalf("prose triggered correction: %v after %d calls, %s", err, len(model.Requests), modelIDs(result))
+			}
+			if result.Findings[len(result.Findings)-1].Rule != unit.HumanReviewRule {
+				t.Fatal("missing prose advisory")
+			}
+			for _, f := range result.Findings {
+				if f.ID == "model.prose" && f.Message != test.message {
+					t.Fatal("model prose changed")
+				}
+			}
+		})
 	}
 }

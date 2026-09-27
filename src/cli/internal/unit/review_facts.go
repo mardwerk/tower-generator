@@ -138,17 +138,13 @@ func newReviewCitations(blueprint *m.Blueprint, definition m.Definition) reviewC
 
 // citationProblem is what code rejected in one finding, or in the summary
 // when finding is empty: impossible builds, malformed codes, wrong facts,
-// purchases the text names in place of the one its subject names, a
-// purchase faulted for a technique its path adapts later, and a side gain
-// said to compare with the capstone's the opposite way from purchaseEvidence.
+// or purchases the text names in place of the one its subject names.
 type citationProblem struct {
 	finding    string
 	illegal    []string
 	malformed  []string
 	wrong      []string
 	mismatched []purchaseMismatch
-	timing     []timingClaim
-	comparison []comparisonClaim
 }
 
 // purchaseMismatch is a purchase a finding's subject names and the purchase
@@ -159,19 +155,6 @@ type purchaseMismatch struct {
 
 func (m purchaseMismatch) String() string {
 	return fmt.Sprintf("%s's subject names %s, but its text names %s instead.", m.finding, m.subject, m.text)
-}
-
-// claimSentences are a problem's timing and comparison claims as errors
-// state them.
-func claimSentences(p citationProblem) []string {
-	var out []string
-	for _, claim := range p.timing {
-		out = append(out, claim.String())
-	}
-	for _, claim := range p.comparison {
-		out = append(out, claim.String())
-	}
-	return out
 }
 
 // mismatchSentences are the mismatches as the prompt and errors state them.
@@ -197,9 +180,7 @@ func (c reviewCitations) problems(review SemanticReview) []citationProblem {
 		}
 		illegal, malformed := c.illegal(texts...)
 		problem := citationProblem{finding: f.ID, illegal: illegal, malformed: malformed, wrong: c.wrongFacts(f), mismatched: mismatchedPurchases(f)}
-		problem.timing, _ = c.claims.timing(f)
-		problem.comparison, _ = c.claims.comparison(f, c.currency)
-		if len(problem.illegal) > 0 || len(problem.malformed) > 0 || len(problem.wrong) > 0 || len(problem.mismatched) > 0 || len(problem.timing) > 0 || len(problem.comparison) > 0 {
+		if len(problem.illegal) > 0 || len(problem.malformed) > 0 || len(problem.wrong) > 0 || len(problem.mismatched) > 0 {
 			out = append(out, problem)
 		}
 	}
@@ -277,11 +258,10 @@ const (
 	flagFact                        // (c) correct or withdraw
 )
 
-// class is a wrong fact also for a timing or comparison claim: the finding
-// may be corrected or withdrawn.
+// class determines the permitted correction for a citation problem.
 func (p citationProblem) class() flagClass {
 	switch {
-	case len(p.wrong) > 0 || len(p.timing) > 0 || len(p.comparison) > 0:
+	case len(p.wrong) > 0:
 		return flagFact
 	case len(p.illegal) > 0:
 		return flagImpossible
@@ -424,8 +404,7 @@ func (c reviewCitations) wrongFacts(finding Finding) []string {
 //     codes replaced (notationFixed), or the review is rejected;
 //   - (b) impossible, a numeric build legalBuilds does not list: it may be
 //     fixed under any ID or withdrawn, and is never published;
-//   - (c) fact, a wrong or unverifiable fact, or a timing or comparison
-//     claim code identified (review_claims.go): it may be corrected under
+//   - (c) fact, a wrong or unverifiable structured fact: it may be corrected under
 //     its ID or withdrawn.
 //
 // When every problem is notation, the correction adds no finding and its
@@ -503,9 +482,8 @@ func rejectedCitations(problems []citationProblem) error {
 	if len(problems) == 0 {
 		return nil
 	}
-	var illegal, malformed, wrong, mismatched, claims []string
+	var illegal, malformed, wrong, mismatched []string
 	for _, p := range problems {
-		claims = append(claims, claimSentences(p)...)
 		for _, code := range p.illegal {
 			if !slices.Contains(illegal, code) {
 				illegal = append(illegal, code)
@@ -522,9 +500,6 @@ func rejectedCitations(problems []citationProblem) error {
 	message := "The model review cited resolved facts that are wrong after one correction: " + strings.Join(wrong, " ") + " The draft is retained. Retry the review or choose another model."
 	if len(wrong) == 0 {
 		message = "The model review named another path's purchase than its subject after one correction: " + strings.Join(mismatched, " ") + " The draft is retained. Retry the review or choose another model."
-		if len(claims) > 0 {
-			message = "The model review still states what the plan or purchaseEvidence contradicts after one correction: " + strings.Join(claims, " ") + " The draft is retained. Retry the review or choose another model."
-		}
 	}
 	if len(malformed) > 0 {
 		message = "The model review wrote build codes that are neither a purchase nor a build (" + strings.Join(malformed, ", ") + ") after one correction. The draft is retained. Retry the review or choose another model."
@@ -538,7 +513,7 @@ func rejectedCitations(problems []citationProblem) error {
 // correctionPrompt asks for the flagged findings again, with the previous
 // review and what code rejected in it.
 func correctionPrompt(previous SemanticReview, problems []citationProblem) string {
-	var illegal, malformed, wrong, mismatched, timing, comparison, flagged []string
+	var illegal, malformed, wrong, mismatched, flagged []string
 	byClass := map[flagClass][]string{}
 	seen := map[string]bool{}
 	for _, p := range problems {
@@ -554,12 +529,6 @@ func correctionPrompt(previous SemanticReview, problems []citationProblem) strin
 		}
 		wrong = append(wrong, p.wrong...)
 		mismatched = append(mismatched, mismatchSentences(p.mismatched)...)
-		for _, claim := range p.timing {
-			timing = append(timing, claim.String())
-		}
-		for _, claim := range p.comparison {
-			comparison = append(comparison, claim.String())
-		}
 		if p.finding != "" {
 			flagged = append(flagged, p.finding)
 			byClass[p.class()] = append(byClass[p.class()], p.finding)
@@ -587,12 +556,6 @@ func correctionPrompt(previous SemanticReview, problems []citationProblem) strin
 	}
 	if len(mismatched) > 0 {
 		text += "\nSome findings name another path's purchase than their subject: " + strings.Join(mismatched, " ") + " Name the purchase the finding is about with the build code its subject uses."
-	}
-	if len(timing) > 0 {
-		text += "\nSome findings fault a purchase for a technique its path adapts only at a later purchase: " + strings.Join(timing, " ") + " Judge each purchase on the technique its plan names; a path's name and theme describe the whole path, not a promise every purchase repeats."
-	}
-	if len(comparison) > 0 {
-		text += "\nSome findings state the opposite of a checked againstCapstone comparison in purchaseEvidence: " + strings.Join(comparison, " ") + " A side purchase that adds less absolute gain than the capstone is no evidence against it; one that adds as much or more is."
 	}
 	text += "\nReturn the whole review again, with a summary that describes exactly the findings you return."
 	if len(kept) > 0 {
