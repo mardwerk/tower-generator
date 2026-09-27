@@ -1,5 +1,5 @@
-// A purchase's plan intent, shown apart from its resolved effects, and the
-// techniques no build grants (#35).
+// A purchase's plan intent, shown apart from its resolved effects, its
+// proposed mechanics and the techniques no build grants (#35, #61).
 import type { Ability, Purchase } from '../../api/contract.js';
 
 /** Reads ["a"], ["a", "b"] and ["a", "b", "c"] as "a", "a and b" and "a, b and c". */
@@ -35,6 +35,26 @@ export function PurchasePlan({ purchase }: { purchase: Purchase | undefined }) {
           purchase.
         </p>
       )}
+    </>
+  );
+}
+
+/**
+ * The mechanics a purchase needs that its Definition cannot express yet,
+ * labeled as proposed: no build grants them until the Definition is
+ * expanded (#61).
+ */
+export function ProposedMechanics({ purchase }: { purchase: Purchase | undefined }) {
+  const proposed = purchase?.proposedMechanics ?? [];
+  if (proposed.length === 0) return null;
+  return (
+    <>
+      {proposed.map((mechanic) => (
+        <p className="mt-1 text-[13px] text-warning" key={mechanic.name}>
+          <span className="font-medium">Proposed (not yet supported)</span> · {mechanic.name}:{' '}
+          {mechanic.effect}
+        </p>
+      ))}
     </>
   );
 }

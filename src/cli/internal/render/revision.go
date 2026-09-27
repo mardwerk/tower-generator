@@ -60,6 +60,17 @@ func (sh *sheet) revisionNotes(previous *sheet) *RevisionNotes {
 			if oldTier.Cost != newTier.Cost {
 				notes.Mechanics = append(notes.Mechanics, fmt.Sprintf("%s price %s to %s.", code, previous.money(oldTier.Cost), sh.money(newTier.Cost)))
 			}
+			oldProposed, newProposed := proposedNames(oldTier.ProposedMechanics), proposedNames(newTier.ProposedMechanics)
+			for _, proposed := range newProposed {
+				if !contains(oldProposed, proposed) {
+					notes.Mechanics = append(notes.Mechanics, code+" new proposed mechanic: "+proposed+".")
+				}
+			}
+			for _, proposed := range oldProposed {
+				if !contains(newProposed, proposed) {
+					notes.Mechanics = append(notes.Mechanics, code+" no longer proposes: "+proposed+".")
+				}
+			}
 			if sameChanges(oldTier.Changes, newTier.Changes) {
 				continue
 			}
@@ -116,6 +127,14 @@ func proposalNames(proposals []m.Proposal) []string {
 	out := []string{}
 	for _, proposal := range proposals {
 		out = append(out, proposal.Name)
+	}
+	return out
+}
+
+func proposedNames(proposed []m.ProposedMechanic) []string {
+	out := []string{}
+	for _, mechanic := range proposed {
+		out = append(out, mechanic.Name)
 	}
 	return out
 }

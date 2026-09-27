@@ -2,7 +2,7 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { Ability, Purchase } from '../../api/contract.js';
-import { PurchasePlan, splitAbilities } from './purchase-plan.js';
+import { ProposedMechanics, PurchasePlan, splitAbilities } from './purchase-plan.js';
 
 function contains(markup: string, want: string, what: string) {
   if (!markup.includes(want)) throw new Error(`${what}: missing ${want}\n  in ${markup}`);
@@ -45,6 +45,28 @@ export const tests = {
   async 'a purchase from a plan without typed techniques shows no plan line'() {
     const markup = renderToStaticMarkup(createElement(PurchasePlan, { purchase: purchase({}) }));
     if (markup !== '') throw new Error(`expected no plan markup, got ${markup}`);
+  },
+  async 'a purchase shows its proposed mechanics as not yet supported'() {
+    const markup = renderToStaticMarkup(
+      createElement(ProposedMechanics, {
+        purchase: purchase({
+          proposedMechanics: [
+            {
+              name: 'Boundman bounce',
+              effect: 'Each punch bounces to one more enemy within 12 of its target.',
+              sourceIds: ['source3:83'],
+            },
+          ],
+        }),
+      }),
+    );
+    contains(
+      markup,
+      '<span class="font-medium">Proposed (not yet supported)</span> · Boundman bounce: Each punch bounces to one more enemy within 12 of its target.',
+      'proposed mechanic',
+    );
+    const none = renderToStaticMarkup(createElement(ProposedMechanics, { purchase: purchase({}) }));
+    if (none !== '') throw new Error(`expected no proposed markup, got ${none}`);
   },
   async 'a typed unit lists reserved and omitted techniques apart from its other abilities'() {
     const abilities = [

@@ -545,11 +545,24 @@ func (c *Change) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("unknown change kind %q", raw.Kind)
 }
 
-// Tier is one purchasable upgrade.
+// Tier is one purchasable upgrade. ProposedMechanics are what the purchase
+// needs beyond its typed changes; no build grants them.
 type Tier struct {
-	Name    string   `json:"name"`
-	Cost    float64  `json:"cost"`
-	Changes []Change `json:"changes"`
+	Name              string             `json:"name"`
+	Cost              float64            `json:"cost"`
+	Changes           []Change           `json:"changes"`
+	ProposedMechanics []ProposedMechanic `json:"proposedMechanics,omitempty"`
+}
+
+// ProposedMechanic is a mechanic a purchase needs that its Definition cannot
+// express yet: its name, what it does in play and the source passages
+// (evidence span IDs) that describe it. It is design intent kept visible on
+// its purchase, flagged for Definition expansion: build resolution ignores
+// it, so it grants nothing and changes no stat.
+type ProposedMechanic struct {
+	Name      string   `json:"name"`
+	Effect    string   `json:"effect"`
+	SourceIDs []string `json:"sourceIds"`
 }
 
 // Tiers are the five upgrades of a path.
@@ -598,7 +611,8 @@ type Coverage struct {
 	Implementation string `json:"implementation"`
 }
 
-// Proposal is an unsupported mechanic or a reserved technique.
+// Proposal is an unsupported mechanic that belongs to no purchase, or a
+// reserved technique.
 type Proposal struct {
 	Name   string `json:"name"`
 	Reason string `json:"reason"`

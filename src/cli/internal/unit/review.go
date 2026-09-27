@@ -137,6 +137,13 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 			if plan := checked.Draft.Run.DesignPlan; plan != nil && len(candidate.Paths) == len(m.PathKeys) && t.Tier >= 1 && t.Tier <= len(m.TierKeys) {
 				plannedTier(entry, *plan, index, t.Tier)
 			}
+			// What the purchase needs beyond its typed changes, which no
+			// build grants; the review judges whether each fits.
+			if blueprint != nil && len(candidate.Paths) == len(m.PathKeys) && t.Tier >= 1 && t.Tier <= len(m.TierKeys) {
+				if proposed := blueprint.Paths.At(index).Tiers.At(t.Tier).ProposedMechanics; len(proposed) > 0 {
+					entry.Set("proposedMechanics", s.FromGoValue(proposed))
+				}
+			}
 			tiers = append(tiers, entry)
 		}
 		if tiers == nil {

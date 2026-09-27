@@ -137,6 +137,16 @@ func planAuthoringFloor(plan *s.Object, add func(path []any, message string)) {
 	}
 }
 
+// MaxPlannedProposals bounds the proposed mechanics a milestone may name.
+const MaxPlannedProposals = 2
+
+// plannedProposals are the proposed mechanics a milestone names, which the
+// mechanics stage keeps on its purchase. Plans made before proposed
+// mechanics existed have none.
+func plannedProposals() *s.ArraySchema {
+	return s.Array(mechanics.ProposedMechanicSchema).Max(MaxPlannedProposals)
+}
+
 // techniqueName is the repertoire technique or base attack a purchase adapts.
 func techniqueName() *s.StringSchema { return s.String().Trim().Min(1).Max(80) }
 
@@ -150,11 +160,12 @@ func tradeoffList() *s.ArraySchema { return s.Array(s.Enum(Tradeoffs...)).Max(3)
 func improvesList(improvement s.Schema) *s.ArraySchema { return s.Array(improvement).Max(5) }
 
 // upgradeIntentSchema is a retained promise. Plans made before purchases
-// named their technique or tradeoffs have none.
+// named their technique, tradeoffs or proposed mechanics have none.
 func upgradeIntentSchema(improvement, unlock s.Schema) *s.ObjectSchema {
 	return s.StrictObject(
 		s.F("improves", improvesList(improvement)), s.F("unlock", unlock),
 		s.F("technique", s.Optional(techniqueName())), s.F("lowers", s.Optional(tradeoffList())),
+		s.F("proposedMechanics", s.Optional(plannedProposals())),
 	)
 }
 

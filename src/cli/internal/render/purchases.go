@@ -36,6 +36,10 @@ type Purchase struct {
 	// to, an advisory flag for review; see unit.PurchaseNameMentions.
 	NameMentions []string `json:"nameMentions,omitempty"`
 	Effects      []string `json:"effects"`
+	// ProposedMechanics are what the purchase needs that its Definition
+	// cannot express yet. No build grants them; they follow the resolved
+	// effects, labeled as proposed.
+	ProposedMechanics []m.ProposedMechanic `json:"proposedMechanics,omitempty"`
 	// Text is Passage, derived when read, so every view words the purchase
 	// the same way.
 	Text string `json:"text"`
@@ -44,9 +48,10 @@ type Purchase struct {
 // Passage is the purchase as one passage. With a planned technique it labels
 // the plan's intent apart from the resolved effects: "Plan: adapts Gear 3.
 // {adaptation} Resolved: {effects}". Without one, as for Results made before
-// plans typed techniques, it is the effects alone.
+// plans typed techniques, it is the effects alone. Each proposed mechanic
+// follows the effects as "Proposed (not yet supported): {name}: {effect}".
 func (p Purchase) Passage() string {
-	effects := strings.Join(p.Effects, " ")
+	effects := strings.Join(p.Effects, " ") + p.proposedPassage()
 	if p.Technique == "" {
 		return strings.TrimSpace(p.Adaptation + " " + effects)
 	}
@@ -62,6 +67,21 @@ func (p Purchase) Passage() string {
 		plan += " Review: the name suggests " + joinAnd(p.NameMentions) + ", which the plan does not map to this purchase."
 	}
 	return plan + " Resolved: " + effects
+}
+
+// proposedPassage labels each proposed mechanic as not yet supported:
+// " Proposed (not yet supported): Boundman bounce: each hit bounces to a
+// second enemy."
+func (p Purchase) proposedPassage() string {
+	var text string
+	for _, proposed := range p.ProposedMechanics {
+		effect := strings.TrimSpace(proposed.Effect)
+		if effect != "" && !strings.HasSuffix(effect, ".") {
+			effect += "."
+		}
+		text += " Proposed (not yet supported): " + strings.TrimSpace(proposed.Name) + ": " + effect
+	}
+	return text
 }
 
 // PathPurchases are a path's five purchases in order.
@@ -691,6 +711,7 @@ func (sh *sheet) purchases() []PathPurchases {
 				Effects:      sh.purchaseEffects(upgrade.Changes, sh.resolve(before), sh.resolve(after)),
 			})
 			last := &entry.Purchases[len(entry.Purchases)-1]
+			last.ProposedMechanics = upgrade.ProposedMechanics
 			last.Text = last.Passage()
 		}
 		out = append(out, entry)

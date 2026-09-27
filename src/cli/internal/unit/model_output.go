@@ -114,6 +114,8 @@ func ModelOutputSchema(request *Request) (*s.ObjectSchema, error) {
 		ids = append(ids, span.ID)
 	}
 	sourceIDs := s.Array(s.Enum(ids...)).Min(1).Max(96)
+	// A purchase's proposed mechanics cite the passages that describe them.
+	proposed := s.Optional(s.Array(m.ProposedMechanicSchema.Extend(s.F("sourceIds", s.Array(s.Enum(ids...)).Min(1).Max(8)))).Max(m.MaxProposedMechanics))
 	definition := request.MechanicsDefinition
 	var policy *m.DesignPolicy
 	if definition != nil {
@@ -151,7 +153,7 @@ func ModelOutputSchema(request *Request) (*s.ObjectSchema, error) {
 			}
 			return tierOutputFor(definition).Extend(
 				s.F("distribution", distribution), s.F("followUp", followUp), s.F("activeFollowUp", active),
-				s.F("unlockBoost", unlock), s.F("boostChanges", boosts),
+				s.F("unlockBoost", unlock), s.F("boostChanges", boosts), s.F("proposedMechanics", proposed),
 			)
 		}
 		output := pathOutput.Extend(s.F("tiers", s.StrictObject(
@@ -479,7 +481,12 @@ func DecodeForDiagnostics(output any, request *Request) (m.Blueprint, []s.Issue,
 				changes = append(changes, s.NewObject().Set("kind", "modifyBoost").Set("target", "base").
 					Set("stat", field(co, "stat")).Set("operation", field(co, "operation")).Set("value", field(co, "value")))
 			}
-			tiers.Set(tierKey, s.NewObject().Set("name", field(t, "name")).Set("cost", field(t, "cost")).Set("changes", changes))
+			decoded := s.NewObject().Set("name", field(t, "name")).Set("cost", field(t, "cost")).Set("changes", changes)
+			// A proposed mechanic is kept on its purchase and adds no change.
+			if list, ok := field(t, "proposedMechanics").([]any); ok && len(list) > 0 {
+				decoded.Set("proposedMechanics", list)
+			}
+			tiers.Set(tierKey, decoded)
 		}
 		path.Set("tiers", tiers)
 		outPaths.Set(key, path)

@@ -165,7 +165,11 @@ func expandPurchasePlan(output any, schema s.Schema) (any, error) {
 		for _, tier := range m.TierKeys {
 			milestone := field(milestones, tier).(*s.Object)
 			texts.Set(tier, field(milestone, "change"))
-			pathIntents.Set(tier, s.NewObject().Set("improves", field(milestone, "improves")).Set("unlock", field(milestone, "unlock")).Set("technique", field(milestone, "technique")).Set("lowers", field(milestone, "lowers")))
+			intent := s.NewObject().Set("improves", field(milestone, "improves")).Set("unlock", field(milestone, "unlock")).Set("technique", field(milestone, "technique")).Set("lowers", field(milestone, "lowers"))
+			if proposed, ok := field(milestone, "proposedMechanics").([]any); ok && len(proposed) > 0 {
+				intent.Set("proposedMechanics", proposed)
+			}
+			pathIntents.Set(tier, intent)
 		}
 		expanded.Set("milestones", texts)
 		var crosspaths []any
@@ -201,6 +205,9 @@ func MechanicsPlan(plan DesignPlan) *s.Object {
 				}
 				if len(intent.Lowers) > 0 {
 					entry.Set("lowers", s.FromGoValue(intent.Lowers))
+				}
+				if len(intent.ProposedMechanics) > 0 {
+					entry.Set("proposedMechanics", s.FromGoValue(intent.ProposedMechanics))
 				}
 			}
 			milestones.Set(m.TierKeys[tier-1], entry)
@@ -427,6 +434,17 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 			}
 		}
 	}
+	for pathIndex, path := range m.PathKeys {
+		for number := 1; number <= len(m.TierKeys); number++ {
+			for i, proposed := range plan.UpgradeIntents.At(pathIndex).At(number).ProposedMechanics {
+				for index, id := range proposed.SourceIDs {
+					if _, ok := evidence[id]; !ok {
+						issues = append(issues, s.Issue{Code: "custom", Path: []any{"upgradeIntents", path, m.TierKeys[number-1], "proposedMechanics", i, "sourceIds", index}, Message: "Unknown character evidence ID: " + id})
+					}
+				}
+			}
+		}
+	}
 	for i, key := range m.PathKeys {
 		selected := map[string]bool{}
 		includesSelf := false
@@ -589,6 +607,9 @@ func BindDesignPlan(output any, plan DesignPlan) any {
 				rationale = branch.BuyFor
 			}
 			path.Set("rationale", rationale)
+			if plan.UpgradeIntents != nil {
+				bindProposedMechanics(path, plan.UpgradeIntents.At(index))
+			}
 		}
 	}
 	return bound

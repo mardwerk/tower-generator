@@ -18,7 +18,7 @@ import { visualReferencesOf } from './visual-references.js';
 import { api } from '../../api/client.js';
 import { buildCode, tierStatKey, type StatChange, type UnitView } from '../../api/contract.js';
 import { Cost, StatValues } from './kit-stats.js';
-import { PurchasePlan, splitAbilities } from './purchase-plan.js';
+import { ProposedMechanics, PurchasePlan, splitAbilities } from './purchase-plan.js';
 
 /**
  * Resolved stats, purchase sentences, crosspath builds and revision notes come
@@ -433,6 +433,7 @@ export function CharacterSheet({
                         ) : (
                           <p className="my-2 text-[13px]">{tier.benefit}</p>
                         )}
+                        <ProposedMechanics purchase={purchase} />
                         <CardOpen
                           label={`Open details for ${path.name}, ${code}: ${tier.name}`}
                           title={

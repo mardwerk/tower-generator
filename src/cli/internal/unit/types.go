@@ -433,6 +433,10 @@ type UpgradeIntent struct {
 	Technique string `json:"technique,omitempty"`
 	// Lowers are promised tradeoffs: dimensions the purchase reduces.
 	Lowers []string `json:"lowers,omitempty"`
+	// ProposedMechanics are mechanics the purchase needs that the
+	// Definition cannot express yet. They are no promise code can check:
+	// BindDesignPlan keeps them on the purchase, which no build grants.
+	ProposedMechanics []mechanics.ProposedMechanic `json:"proposedMechanics,omitempty"`
 }
 
 // PathIntents are the five promises of a path.

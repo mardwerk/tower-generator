@@ -9,6 +9,9 @@ import (
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
 )
 
+// MaxProposedMechanics bounds the proposed mechanics of one purchase.
+const MaxProposedMechanics = 4
+
 // PathKeys and TierKeys name the fixed 3 paths × 5 tiers.
 var (
 	PathKeys = []string{"path1", "path2", "path3"}
@@ -91,10 +94,18 @@ var (
 		s.StrictObject(s.F("kind", lit("unlockBoost")), s.F("target", lit("base")), s.F("boost", BoostSchema)),
 		s.StrictObject(s.F("kind", lit("modifyBoost")), s.F("target", lit("base")), s.F("stat", enum(BoostStatKeys)), s.F("operation", OperationSchema), s.F("value", s.Number())),
 	)
+	// ProposedMechanicSchema is one proposed mechanic of a purchase. Tiers
+	// saved before proposed mechanics existed have none.
+	ProposedMechanicSchema = s.StrictObject(
+		s.F("name", text().Max(80)),
+		s.F("effect", text().Max(300)),
+		s.F("sourceIds", s.Array(text()).Min(1).Max(8)),
+	)
 	tierSchema = s.StrictObject(
 		s.F("name", text().Max(80)),
 		s.F("cost", positive()),
 		s.F("changes", s.Array(ChangeSchema).Min(1).Max(4)),
+		s.F("proposedMechanics", s.Optional(s.Array(ProposedMechanicSchema).Max(MaxProposedMechanics))),
 	)
 	PathSchema = s.StrictObject(
 		s.F("name", text().Max(80)),

@@ -499,6 +499,13 @@ export interface KitStats {
   tiers: Record<string, { cost: number; changes: StatChange[] }>;
 }
 
+/** A mechanic a purchase needs that its Definition cannot express yet: what it does in play and the source passages that describe it. */
+export interface ProposedMechanic {
+  name: string;
+  effect: string;
+  sourceIds: string[];
+}
+
 /** One purchase in build-code notation with its resolved effects, from /api/v1/view. */
 export interface Purchase {
   code: string;
@@ -513,6 +520,8 @@ export interface Purchase {
   /** Other repertoire entries the purchase's name points to: an advisory flag for review, never a remap. */
   nameMentions?: string[];
   effects: string[];
+  /** Mechanics the purchase needs that its Definition cannot express yet: no build grants them, and each awaits a Definition expansion. */
+  proposedMechanics?: ProposedMechanic[];
   /** The purchase as one passage, labeling plan intent apart from resolved effects. */
   text: string;
 }
