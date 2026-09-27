@@ -300,6 +300,9 @@ func (in *invocation) execute(ctx context.Context) (any, error) {
 			return nil, err
 		}
 		prepared, err := sources.Prepare(profile)
+		if err == nil {
+			prepared, err = in.withRequired(prepared)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -335,6 +338,7 @@ func (in *invocation) execute(ctx context.Context) (any, error) {
 		request.Previous = &unit.Previous{ResultID: result.ID, Draft: result.Candidate, Findings: result.Findings}
 		feedback := in.feedback
 		request.Feedback = &feedback
+		request.RequiredConcepts = in.requiredConcepts(request.RequiredConcepts)
 		return in.author(ctx, request)
 	}
 	value, err := research.ReadJSONFile(in.input)
@@ -414,8 +418,42 @@ func (in *invocation) lookup(ctx context.Context, name string) (*research.Source
 	return sources, nil
 }
 
-// prepare reads Sources (prepared under --profile) or a request file.
+// requiredConcepts adds the --require names to a request's required
+// concepts; Prepare rejects a name given twice.
+func (in *invocation) requiredConcepts(concepts []unit.RequiredConcept) []unit.RequiredConcept {
+	out := append([]unit.RequiredConcept{}, concepts...)
+	for _, name := range in.requires {
+		out = append(out, unit.RequiredConcept{Name: name})
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// withRequired prepares a prepared request again with the --require names
+// among its required concepts; without them it is unchanged.
+func (in *invocation) withRequired(prepared unit.Prepared) (unit.Prepared, error) {
+	if len(in.requires) == 0 {
+		return prepared, nil
+	}
+	request := prepared.Request
+	request.RequiredConcepts = in.requiredConcepts(request.RequiredConcepts)
+	return unit.Prepare(s.FromGoValue(request))
+}
+
+// prepare reads Sources (prepared under --profile) or a request file, with
+// the --require names as required concepts.
 func (in *invocation) prepare(ctx context.Context, path string) (unit.Prepared, error) {
+	prepared, err := in.prepareInput(ctx, path)
+	if err != nil {
+		return unit.Prepared{}, err
+	}
+	return in.withRequired(prepared)
+}
+
+// prepareInput reads Sources (prepared under --profile) or a request file.
+func (in *invocation) prepareInput(ctx context.Context, path string) (unit.Prepared, error) {
 	value, err := research.ReadJSONFile(path)
 	if err != nil {
 		return unit.Prepared{}, err

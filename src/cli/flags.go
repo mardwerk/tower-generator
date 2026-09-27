@@ -17,17 +17,22 @@ type options struct {
 	choice, port                                           int
 	tiers                                                  string
 	repairs                                                *int
-	details, help                                          bool
-	set                                                    map[string]bool
+	// requires are the --require names, in order; the flag repeats.
+	requires      []string
+	details, help bool
+	set           map[string]bool
 }
 
 var valued = map[string]bool{
 	"output": true, "profile": true, "profiles": true, "library": true, "previous": true, "feedback": true,
 	"provider": true, "model": true, "reasoning": true, "timeout": true, "codex": true, "evidence-dir": true,
-	"choice": true, "tiers": true, "repairs": true, "port": true, "fandom": true,
+	"choice": true, "tiers": true, "repairs": true, "port": true, "fandom": true, "require": true,
 }
 
 var switches = map[string]bool{"details": true, "help": true}
+
+// repeated are the valued options that may be given more than once.
+var repeated = map[string]bool{"require": true}
 
 // parse splits arguments into positionals and flags.
 func parse(args []string) ([]string, options, error) {
@@ -64,11 +69,17 @@ func parse(args []string) ([]string, options, error) {
 				i++
 				value = args[i]
 			}
+			if repeated[name] {
+				if strings.TrimSpace(value) == "" {
+					return nil, o, errors.New("--" + name + " needs a nonblank value.")
+				}
+				o.requires = append(o.requires, strings.TrimSpace(value))
+			}
 			values[name] = value
 		default:
 			return nil, o, errors.New("Unknown option " + arg + ". Run mardwerk-unit --help.")
 		}
-		if o.set[name] {
+		if o.set[name] && !repeated[name] {
 			return nil, o, errors.New("--" + name + " is given twice.")
 		}
 		o.set[name] = true
@@ -113,10 +124,10 @@ func parse(args []string) ([]string, options, error) {
 // and --help.
 var allowed = map[string][]string{
 	"research":   {"choice", "fandom"},
-	"prepare":    {"profile", "profiles", "previous", "feedback"},
-	"generate":   {"profile", "profiles", "choice", "fandom", "provider", "model", "reasoning", "timeout", "codex", "evidence-dir", "repairs"},
-	"author":     {"profile", "profiles", "previous", "feedback", "provider", "model", "reasoning", "timeout", "codex", "evidence-dir", "repairs"},
-	"edit":       {"feedback", "provider", "model", "reasoning", "timeout", "codex", "evidence-dir", "repairs"},
+	"prepare":    {"profile", "profiles", "previous", "feedback", "require"},
+	"generate":   {"profile", "profiles", "choice", "fandom", "provider", "model", "reasoning", "timeout", "codex", "evidence-dir", "repairs", "require"},
+	"author":     {"profile", "profiles", "previous", "feedback", "provider", "model", "reasoning", "timeout", "codex", "evidence-dir", "repairs", "require"},
+	"edit":       {"feedback", "provider", "model", "reasoning", "timeout", "codex", "evidence-dir", "repairs", "require"},
 	"draft":      {"provider", "model", "reasoning", "timeout", "codex", "evidence-dir", "repairs"},
 	"check":      {},
 	"review":     {"provider", "model", "reasoning", "timeout", "codex", "evidence-dir"},

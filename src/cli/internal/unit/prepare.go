@@ -98,6 +98,9 @@ func validateRequest(request Request) error {
 	if err := unique(ids, "Constraints"); err != nil {
 		return err
 	}
+	if err := requiredConceptNames(request.RequiredConcepts); err != nil {
+		return err
+	}
 	hasSource := false
 	for _, d := range request.Documents {
 		if d.Kind == "source" {

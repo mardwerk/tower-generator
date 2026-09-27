@@ -47,6 +47,14 @@ type Constraint struct {
 	Text string `json:"text"`
 }
 
+// RequiredConcept is a technique or form of the character that the Request
+// requires the Unit to adapt (required_concepts.go): its name, as the
+// sources or the plan name it, and optionally why it is required.
+type RequiredConcept struct {
+	Name   string `json:"name"`
+	Reason string `json:"reason,omitempty"`
+}
+
 // ProgressionPath is a declared path and its tiers.
 type ProgressionPath struct {
 	ID    string `json:"id"`
@@ -77,13 +85,16 @@ type Previous struct {
 
 // Request is one explicit, resolved generation request.
 type Request struct {
-	SchemaVersion       string                `json:"schemaVersion"`
-	Task                string                `json:"task"`
-	Deliverable         string                `json:"deliverable,omitempty"`
-	Operation           string                `json:"operation,omitempty"`
-	Character           Character             `json:"character"`
-	Documents           []Document            `json:"documents"`
-	Constraints         []Constraint          `json:"constraints"`
+	SchemaVersion string       `json:"schemaVersion"`
+	Task          string       `json:"task"`
+	Deliverable   string       `json:"deliverable,omitempty"`
+	Operation     string       `json:"operation,omitempty"`
+	Character     Character    `json:"character"`
+	Documents     []Document   `json:"documents"`
+	Constraints   []Constraint `json:"constraints"`
+	// RequiredConcepts are the owner's required concepts. A request
+	// without them keeps its hash.
+	RequiredConcepts    []RequiredConcept     `json:"requiredConcepts,omitempty"`
 	Progression         *Progression          `json:"progression"`
 	MechanicsDefinition *mechanics.Definition `json:"mechanicsDefinition,omitempty"`
 	Previous            *Previous             `json:"previous"`

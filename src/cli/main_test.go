@@ -266,3 +266,42 @@ func TestServeNamesTheModelAndTheMaskedKeyAndWhereItCameFrom(t *testing.T) {
 		}
 	}
 }
+
+// --require adds a required concept to the prepared Request, once per
+// flag, for Sources and request files alike; without it the Request and
+// its hash are as before.
+func TestRequireAddsRequiredConcepts(t *testing.T) {
+	scratch(t)
+	sources := filepath.Join("internal", "unit", "testdata", "luffy.sources.json")
+	plain, _, err := cli(t, "prepare", sources)
+	if err != nil || strings.Contains(plain, "requiredConcepts") {
+		t.Fatalf("prepare %v", err)
+	}
+	required, _, err := cli(t, "prepare", sources, "--require", "Gear 4", "--require=Gear 5")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var value struct {
+		InputHash string `json:"inputHash"`
+		Request   struct {
+			RequiredConcepts []map[string]string `json:"requiredConcepts"`
+		} `json:"request"`
+	}
+	_ = json.Unmarshal([]byte(required), &value)
+	if len(value.Request.RequiredConcepts) != 2 || value.Request.RequiredConcepts[0]["name"] != "Gear 4" || value.Request.RequiredConcepts[1]["name"] != "Gear 5" || strings.Contains(plain, value.InputHash) {
+		t.Errorf("required concepts %v", value.Request.RequiredConcepts)
+	}
+	request := filepath.Join("..", "..", "data", "reference", "dart-monkey.request.json")
+	if out, _, err := cli(t, "prepare", request, "--profile", "default", "--require", "Triple Shot"); err != nil || !strings.Contains(out, `"name": "Triple Shot"`) {
+		t.Errorf("a request file: %v", err)
+	}
+	if _, _, err := cli(t, "prepare", sources, "--require", "Gear 4", "--require", "gear 4"); err == nil || !strings.Contains(err.Error(), "listed twice") {
+		t.Errorf("a repeated concept: %v", err)
+	}
+	if _, _, err := cli(t, "prepare", sources, "--require", " "); err == nil {
+		t.Error("a blank concept is accepted")
+	}
+	if _, _, err := cli(t, "render", sources, "--require", "Gear 4"); err == nil || !strings.Contains(err.Error(), "--require does not apply to render") {
+		t.Errorf("render: %v", err)
+	}
+}

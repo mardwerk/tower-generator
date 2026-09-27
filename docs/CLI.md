@@ -42,6 +42,7 @@ Drafting makes a planning call and a mechanics call, each allowed one repair by 
 | `--choice ID` | `research`, `generate` | Pick a character when the name is ambiguous |
 | `--fandom URL` | `research`, `generate` | The character's page on its work's Fandom wiki (`https://WIKI.fandom.com/wiki/PAGE`), read instead of the page the identity lookup finds; use it when research finds no character wiki page |
 | `--previous FILE`, `--feedback TEXT` | `prepare`, `author` (request files); `--feedback` also `edit` | Revise an earlier Result |
+| `--require NAME` | `prepare`, `generate`, `author`, `edit` | A Required concept, such as a signature form, added to the Request's `requiredConcepts`; repeat it for each, as `--require "Gear 4" --require "Gear 5"`. A reason can be given only in a request file |
 | `--repairs 0\|1\|2` | `draft`, `generate`, `author`, `edit` | Repair budget per model stage |
 | `--evidence-dir DIR` | `draft`, `generate`, `author`, `edit`, `review` | Keep exact model inputs and raw outputs |
 | `--tiers A,B,C` | `build` | Purchased tiers, each 0–5 |
@@ -66,7 +67,7 @@ mardwerk-unit check data/runs/draft.json -o data/runs/checked.json
 
 ## Request files
 
-A request file has `schemaVersion: "1"` (or `"2"` when it carries a version 2 [mechanics Definition](MECHANICS.md#profile-defined-vocabulary-version-2)), a `task`, the character (`name`, `work`, `scope`) and a list of documents. Each document has an `id`, a `kind` (`source`, `rules` or `decisions`) and exactly one of `text`, `file` or `url`; `sourceUrl` attributes pasted text. File paths resolve relative to the request file. `constraints` lists confirmed decisions by ID. The example in [data/reference](../data/reference), [dart-monkey.request.json](../data/reference/dart-monkey.request.json), is a brief written from the pinned btd6-atlas capture; to use your own text, give a document `file` next to the request file.
+A request file has `schemaVersion: "1"` (or `"2"` when it carries a version 2 [mechanics Definition](MECHANICS.md#profile-defined-vocabulary-version-2)), a `task`, the character (`name`, `work`, `scope`) and a list of documents. Each document has an `id`, a `kind` (`source`, `rules` or `decisions`) and exactly one of `text`, `file` or `url`; `sourceUrl` attributes pasted text. File paths resolve relative to the request file. `constraints` lists confirmed decisions by ID. The optional `requiredConcepts` lists [Required concepts](../CONTEXT.md) as `{name, reason}`, with `reason` optional; a request without it prepares with the same hash as before. The example in [data/reference](../data/reference), [dart-monkey.request.json](../data/reference/dart-monkey.request.json), is a brief written from the pinned btd6-atlas capture; to use your own text, give a document `file` next to the request file.
 
 A request needs a mechanics Definition to be drafted. Prepare a request file with `--profile` (for example `--profile default`): the Profile replaces its task, progression, Definition and rules document and keeps its character, sources, decisions and revision context. `prepare` prints a note when the result has no Definition.
 

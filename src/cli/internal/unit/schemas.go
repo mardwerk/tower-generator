@@ -133,6 +133,7 @@ var (
 		s.F("character", CharacterSchema),
 		s.F("documents", s.Array(ResolvedDocumentSchema).Min(1)),
 		s.F("constraints", s.Array(s.StrictObject(s.F("id", text()), s.F("text", text())))),
+		s.F("requiredConcepts", s.Optional(s.Array(RequiredConceptSchema).Min(1).Max(MaxRequiredConcepts))),
 		s.F("progression", s.Nullable(ProgressionSchema)),
 		s.F("mechanicsDefinition", s.Optional(mechanics.MechanicsDefinitionSchema)),
 		s.F("previous", s.Nullable(s.StrictObject(
