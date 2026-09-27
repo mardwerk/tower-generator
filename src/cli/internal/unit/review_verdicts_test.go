@@ -236,3 +236,25 @@ func TestVerdictsWithoutOmissions(t *testing.T) {
 		t.Error("a plan without omissions still asks for omission verdicts")
 	}
 }
+
+// A coherent, source-backed proposed mechanic that is a third purchase's only
+// new capability is an unresolved design gap, not a fail; an invalid or
+// numbers-only proposal still fails (SOL-72-01).
+func TestProposedOnlyThirdPurchaseVerdictIsUnresolved(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	prompt := unit.BlueprintReviewRequest(stages.Checked).Prompt
+	for _, want := range []string{
+		"When a third purchase's only new capability is a proposed mechanic, give its verdict unresolved, a design gap until the Definition supports it, if the proposal is coherent, fits the technique's cited source and adds a real capability",
+		"give it fail if the proposal is invalid, only renames larger numbers, conflicts with the Definition's rules",
+	} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("the review prompt lacks %q", want)
+		}
+	}
+	if strings.Contains(prompt, "fail one whose only distinction is a proposed mechanic that is not playable") {
+		t.Error("the review prompt still fails every proposed-only third purchase")
+	}
+}
