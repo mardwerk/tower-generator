@@ -490,15 +490,19 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 			var corrected SemanticReview
 			if corrected, err = reviewOnce(ctx, checked, model, request, &calls); err == nil {
 				if review, err = keepCheckedFindings(review, corrected, problems); err == nil {
-					review.OmissionVerdicts, review.ThirdPurchaseVerdicts = first.OmissionVerdicts, first.ThirdPurchaseVerdicts
+					review.OmissionVerdicts, review.ThirdPurchaseVerdicts, review.FifthPurchaseVerdicts = first.OmissionVerdicts, first.ThirdPurchaseVerdicts, first.FifthPurchaseVerdicts
 					err = rejectedCitations(citations.problems(review))
 				}
 			}
 		}
 	}
 	// Every verdict is recorded as a model Finding, a pass included, after
-	// the deterministic findings and before the review's own.
-	verdicts := reviewVerdictSubjects(checked).findings(review)
+	// the deterministic findings and before the review's own, and a
+	// free-form finding that repeats a verdict's subject, outcome and
+	// reason is dropped (withoutRepeats).
+	subjects := reviewVerdictSubjects(checked)
+	verdicts := subjects.findings(review)
+	review.Findings = subjects.withoutRepeats(review, review.Findings)
 	// Publish guard: whatever the correction did, no numeric build the
 	// Definition does not allow reaches a Result, not even in a finding ID.
 	if err == nil && definition != nil {

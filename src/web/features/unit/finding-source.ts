@@ -3,9 +3,10 @@ import type { Finding } from '../../api/contract.js';
 /** The rule of the Finding code adds when it cannot read a model finding's claim. */
 export const humanReviewRule = 'review-claim-unread';
 
-/** The rules of the Findings that record the review's verdict on each whole-technique omission and each path's third purchase. */
+/** The rules of the Findings that record the review's verdict on each whole-technique omission and each path's third and fifth purchase. */
 export const omissionVerdictRule = 'omission-verdict';
 export const pathIdentityVerdictRule = 'path-identity-verdict';
+export const capstoneVerdictRule = 'capstone-verdict';
 
 /** Names who produced a Finding, or that a person must read it. */
 export function findingSource(finding: Pick<Finding, 'method' | 'rule'>): string {
@@ -18,7 +19,9 @@ export function findingSource(finding: Pick<Finding, 'method' | 'rule'>): string
 export function isReviewVerdict(finding: Pick<Finding, 'method' | 'rule'>): boolean {
   return (
     finding.method === 'model' &&
-    (finding.rule === omissionVerdictRule || finding.rule === pathIdentityVerdictRule)
+    (finding.rule === omissionVerdictRule ||
+      finding.rule === pathIdentityVerdictRule ||
+      finding.rule === capstoneVerdictRule)
   );
 }
 

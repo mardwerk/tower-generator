@@ -65,5 +65,34 @@
         "dart-monkey-atlas-56-3"
       ]
     }
+  ],
+  "fifthPurchaseVerdicts": [
+    {
+      "build": "5-x-x",
+      "outcome": "pass",
+      "reason": "5-x-x Ultra-Juggernaut adds Split Balls, a follow-up that carries each hit to up to twelve other nearby enemies, which neither other fifth purchase buys, and it crowns the top path's heavy, high-pierce ball.",
+      "action": null,
+      "evidence": [
+        "dart-monkey-atlas-56-3"
+      ]
+    },
+    {
+      "build": "x-5-x",
+      "outcome": "unresolved",
+      "reason": "x-5-x Plasma Monkey Fan Club only doubles the frenzy's damage and lengthens it; beside 5-x-x's split and x-x-5's damage type its play reason is the allied transformation, an unsupported mechanic, so its capstone value waits on the Definition.",
+      "action": "Give x-5-x a supported capability of the frenzy, such as a follow-up during the Active, or keep the allied transformation as a design gap.",
+      "evidence": [
+        "dart-monkey-atlas-56-3"
+      ]
+    },
+    {
+      "build": "x-x-5",
+      "outcome": "pass",
+      "reason": "x-x-5 Crossbow Master is the only fifth purchase that switches to normal damage, so its bolts reach Lead, and its faster, harder bolts crown the bottom path's long-range precision.",
+      "action": null,
+      "evidence": [
+        "dart-monkey-atlas-56-3"
+      ]
+    }
   ]
 }

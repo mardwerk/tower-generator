@@ -1,0 +1,327 @@
+{
+  "note": "Luffy v34 Result a6d93b5c (OPUS-NET-61-13): its review verdicts and its eight free-form model findings.",
+  "omissionVerdicts": [
+    {
+      "technique": "Soru",
+      "importance": "major",
+      "outcome": "pass",
+      "reason": "The cited passages describe rapid movement, which the stationary attack Definition cannot express; no purchase proposal carries that movement or evasion effect.",
+      "action": null,
+      "evidence": [
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%202%20Techniques",
+        "character-wiki:onepiece.fandom.com:Monkey_D._Luffy/Abilities_and_Powers",
+        "mechanics:btd6-combat-v1"
+      ]
+    },
+    {
+      "technique": "Gomu Gomu no Jet Pistol",
+      "importance": "major",
+      "outcome": "fail",
+      "reason": "The cited passage describes a fast, forceful punch that propels its target. Gear 2 adapts speed and force, and knockback is expressible, so the named-technique omission is not justified by the claim that no purchase names it.",
+      "action": "Add it as a repertoire entry adapted by the relevant purchase, or revise the whole-technique omission.",
+      "evidence": [
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%202%20Techniques",
+        "mechanics:btd6-combat-v1"
+      ]
+    },
+    {
+      "technique": "Gomu Gomu no Jet Stamp",
+      "importance": "minor",
+      "outcome": "pass",
+      "reason": "The supplied passage only identifies it as a Gear 2 version of Stamp and provides no combat effect to adapt safely.",
+      "action": null,
+      "evidence": [
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%202%20Techniques"
+      ]
+    },
+    {
+      "technique": "Gomu Gomu no Jet Bazooka",
+      "importance": "minor",
+      "outcome": "unresolved",
+      "reason": "The omission reason relies on naming alone, but the selected source also describes a high-speed double open-palm strike. The record does not establish whether that passage is this named technique, leaving the proposed adaptation connection uncertain.",
+      "action": "Check the technique passage association and either adapt the described strike or document why it is not the omitted technique.",
+      "evidence": [
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%202%20Techniques"
+      ]
+    },
+    {
+      "technique": "Hone Fusen",
+      "importance": "minor",
+      "outcome": "pass",
+      "reason": "Its cited central effect is defense and projectile reflection, neither of which the supplied Unit Definition expresses or a purchase proposes.",
+      "action": null,
+      "evidence": [
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%203%20Techniques",
+        "mechanics:btd6-combat-v1"
+      ]
+    },
+    {
+      "technique": "Gomu Gomu no Gigant Pistol",
+      "importance": "major",
+      "outcome": "fail",
+      "reason": "The cited passage identifies it as the Gear 3 Pistol, and the Gear 3 path adapts enlarged impact through damage and splash. The lack of a separately named attack does not justify omitting its central effect.",
+      "action": "Add it to the repertoire and associate the Gear 3 purchases that adapt it.",
+      "evidence": [
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%203%20Techniques",
+        "character-wiki:onepiece.fandom.com:Monkey_D._Luffy/Abilities_and_Powers",
+        "mechanics:btd6-combat-v1"
+      ]
+    },
+    {
+      "technique": "Gomu Gomu no Rocket",
+      "importance": "minor",
+      "outcome": "pass",
+      "reason": "The cited passage describes launching and repositioning, which the stationary attack Definition cannot express; no purchase proposes movement.",
+      "action": null,
+      "evidence": [
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%203%20Techniques",
+        "mechanics:btd6-combat-v1"
+      ]
+    },
+    {
+      "technique": "Gomu Gomu no Gigant Axe",
+      "importance": "minor",
+      "outcome": "pass",
+      "reason": "The cited passage names the attack but does not establish its combat effect, so an axe-specific adaptation is not supported by the supplied evidence.",
+      "action": null,
+      "evidence": [
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%203%20Techniques"
+      ]
+    },
+    {
+      "technique": "Kin'niku Fusen",
+      "importance": "minor",
+      "outcome": "pass",
+      "reason": "The cited central effect is enhanced durability, with no corresponding defense mechanic or purchase proposal in the supplied Definition.",
+      "action": null,
+      "evidence": [
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%204%20Techniques",
+        "mechanics:btd6-combat-v1"
+      ]
+    },
+    {
+      "technique": "Atama Buso",
+      "importance": "minor",
+      "outcome": "fail",
+      "reason": "The cited passage connects forehead hardening to preparation for a headbutt. Damage is expressible, so the claim that no distinct attack effect can be safely adapted does not justify whole-technique omission.",
+      "action": "Add a damage-based headbutt adaptation, or narrow the omission to the unrepresented hardening aspect.",
+      "evidence": [
+        "character-wiki:onepiece.fandom.com:Monkey_D._Luffy/Abilities_and_Powers",
+        "mechanics:btd6-combat-v1"
+      ]
+    },
+    {
+      "technique": "Gear 2 Buso",
+      "importance": "minor",
+      "outcome": "fail",
+      "reason": "The cited passage describes a hardened fist and apparent ignition. Damage or burn can represent an offensive effect, so the reason that no purchase currently adapts it does not establish that the whole technique cannot be adapted.",
+      "action": "Add a coherent damage or burn proposal to a purchase, or narrow the omission reason.",
+      "evidence": [
+        "character-wiki:onepiece.fandom.com:Monkey_D._Luffy/Abilities_and_Powers",
+        "mechanics:btd6-combat-v1"
+      ]
+    },
+    {
+      "technique": "Afro Luffy",
+      "importance": "minor",
+      "outcome": "pass",
+      "reason": "The cited passages frame the power claim as possibly joking and do not support a reliable combat effect.",
+      "action": null,
+      "evidence": [
+        "character-wiki:onepiece.fandom.com:Monkey_D._Luffy/Abilities_and_Powers"
+      ]
+    },
+    {
+      "technique": "Nightmare Luffy",
+      "importance": "major",
+      "outcome": "pass",
+      "reason": "The cited central effect depends on containing shadows and using their combined strength and skills. No typed change or purchase proposal carries those source-dependent behaviors.",
+      "action": null,
+      "evidence": [
+        "character-wiki:onepiece.fandom.com:Monkey_D._Luffy/Abilities_and_Powers",
+        "mechanics:btd6-combat-v1"
+      ]
+    }
+  ],
+  "thirdPurchaseVerdicts": [
+    {
+      "path": "path1",
+      "build": "3-x-x",
+      "name": "Gigant Pistol",
+      "outcome": "pass",
+      "reason": "3-x-x adds splash and increased damage while slowing the attack. Its first two purchases only increase damage, and the other paths do not add splash at their third purchase, so it establishes Gear 3’s group-impact identity.",
+      "action": null,
+      "evidence": [
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%203%20Techniques",
+        "default-td-profile-v34"
+      ]
+    },
+    {
+      "path": "path2",
+      "build": "x-3-x",
+      "name": "Jet Pistol",
+      "outcome": "pass",
+      "reason": "x-3-x adds stronger, faster punches after its first two purchases increase only attack rate. The other third purchases specialize in splash or Gear 4 attack speed without the same combined damage and rate change, giving Gear 2 a distinct fast, forceful strike identity.",
+      "action": null,
+      "evidence": [
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%202%20Techniques",
+        "default-td-profile-v34"
+      ]
+    },
+    {
+      "path": "path3",
+      "build": "x-x-3",
+      "name": "Gear 4 Fast Punch",
+      "outcome": "fail",
+      "reason": "x-x-3 adds faster attacks, but x-1-x and x-2-x already increase attack rate, and x-3-x also adds attack rate. It adds no distinguishing capability beyond a dimension already shared by the other paths’ purchases.",
+      "action": "Give the Gear 4 third purchase a distinct supported capability, or revise the path progression.",
+      "evidence": [
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%204%20Techniques",
+        "default-td-profile-v34"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "model.omit-jetpistol",
+      "method": "model",
+      "category": "coverage",
+      "severity": "error",
+      "outcome": "fail",
+      "subject": "Omission: Gomu Gomu no Jet Pistol",
+      "rule": "A whole-technique omission fails when its central effect can be carried by a supported typed change or a coherent proposed mechanic.",
+      "message": "The cited passage describes Jet Pistol as a fast, forceful punch that propels its target. Gear 2’s attack-rate and damage changes adapt its speed and force, and knockback is an available typed effect, so the reason that it is not named as a separate entry does not justify omitting the technique. Add Jet Pistol to the repertoire or revise the omission to account for its central effect.",
+      "evidence": [
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%202%20Techniques",
+        "mechanics:btd6-combat-v1"
+      ],
+      "action": "Add the technique as an adapted repertoire entry or remove it from whole-technique omissions.",
+      "facts": []
+    },
+    {
+      "id": "model.omit-gigantpistol",
+      "method": "model",
+      "category": "coverage",
+      "severity": "error",
+      "outcome": "fail",
+      "subject": "Omission: Gomu Gomu no Gigant Pistol",
+      "rule": "A whole-technique omission fails when a purchase already adapts the technique’s central effect.",
+      "message": "The cited passage identifies Gigant Pistol as the Gear 3 version of Pistol, and the Gear 3 path adapts enlarged, forceful impact through damage and splash. The claim that the named attack is not separately implemented does not justify omitting its adapted central effect. Add it as a repertoire entry or revise the plan’s coverage.",
+      "evidence": [
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%203%20Techniques",
+        "character-wiki:onepiece.fandom.com:Monkey_D._Luffy/Abilities_and_Powers",
+        "mechanics:btd6-combat-v1"
+      ],
+      "action": "Add Gigant Pistol to the repertoire and associate its adapting purchases.",
+      "facts": []
+    },
+    {
+      "id": "model.omit-atamabuso",
+      "method": "model",
+      "category": "coverage",
+      "severity": "warning",
+      "outcome": "fail",
+      "subject": "Omission: Atama Buso",
+      "rule": "Do not omit a technique as wholly unadaptable when a supported purchase effect can represent its central combat effect.",
+      "message": "The cited passages describe hardening Luffy’s forehead in preparation for a headbutt. Damage is a supported way to represent a forceful headbutt, so the statement that the evidence does not describe a distinct attack effect does not support omitting the technique wholesale. Add a purchase adaptation or narrow the omission to the unsupported hardening aspect.",
+      "evidence": [
+        "character-wiki:onepiece.fandom.com:Monkey_D._Luffy/Abilities_and_Powers",
+        "mechanics:btd6-combat-v1"
+      ],
+      "action": "Add a damage-based headbutt adaptation or revise the omission to name only the unrepresented aspect.",
+      "facts": []
+    },
+    {
+      "id": "model.omit-gearbuso",
+      "method": "model",
+      "category": "coverage",
+      "severity": "warning",
+      "outcome": "fail",
+      "subject": "Omission: Gear 2 Buso",
+      "rule": "A whole-technique omission fails when its central described effect can be represented by a supported effect or proposed mechanic.",
+      "message": "The cited passage describes a hardened Gear 2 fist and an apparent ignition effect. The omission discusses only the lack of a burn purchase, but a bounded damage or burn proposal could represent those offensive effects. Add the proposed behavior to a purchase or narrow the omission to the unsupported aspect.",
+      "evidence": [
+        "character-wiki:onepiece.fandom.com:Monkey_D._Luffy/Abilities_and_Powers",
+        "mechanics:btd6-combat-v1"
+      ],
+      "action": "Add a coherent damage or burn proposal to a purchase, or narrow the omission reason.",
+      "facts": []
+    },
+    {
+      "id": "model.path3-identity",
+      "method": "model",
+      "category": "scope",
+      "severity": "error",
+      "outcome": "fail",
+      "subject": "x-x-3, Gear 4 Fast Punch",
+      "rule": "A third purchase must distinguish its path from its own first and second purchases and from the other paths’ purchases.",
+      "message": "x-x-3 adds faster attack rate, a dimension already developed by x-1-x and x-2-x and by x-3-x. Unlike x-3-x, it adds no other typed change, so the third purchase does not establish a distinct Gear 4 path identity. Give x-x-3 a distinct supported capability or revise the path progression.",
+      "evidence": [
+        "default-td-profile-v34",
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%204%20Techniques"
+      ],
+      "action": "Give x-x-3 a distinct supported capability beyond faster attacks, or redesign its third-tier role.",
+      "facts": []
+    },
+    {
+      "id": "model.path3-tier4-proposal",
+      "method": "model",
+      "category": "unsupported",
+      "severity": "error",
+      "outcome": "fail",
+      "subject": "x-x-4, Python Pistol",
+      "rule": "A proposed mechanic must be coherent with its cited technique and must not conflict with the Definition.",
+      "message": "The proposal says Python redirects the punch after its primary hit, but x-x-4 has no follow-up in its resolved changes. Treating it as an implemented purchase benefit would be false. Either keep redirection explicitly proposed and unresolved at this tier, or add a supported follow-up mechanic to the Definition and purchase.",
+      "evidence": [
+        "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%204%20Techniques",
+        "mechanics:btd6-combat-v1"
+      ],
+      "action": "Mark the x-x-4 redirection as a proposal requiring Definition support, or add the typed follow-up support.",
+      "facts": []
+    },
+    {
+      "id": "model.pierce-noeffect",
+      "method": "model",
+      "category": "conflict",
+      "severity": "warning",
+      "outcome": "fail",
+      "subject": "4-x-x, Gigant Pistol Force",
+      "rule": "A purchase’s effect assessment must agree with its resolved changes.",
+      "message": "The x-x-4 text lists pierce as an improvement without an effect, but 4-x-x raises pierce from 2 to 3. Correct the plan’s promisesWithoutEffect assessment so it does not deny a delivered benefit.",
+      "evidence": [
+        "character-wiki:onepiece.fandom.com:Monkey_D._Luffy/Abilities_and_Powers",
+        "mechanics:btd6-combat-v1"
+      ],
+      "action": "Remove pierce from promisesWithoutEffect for this purchase.",
+      "facts": [
+        {
+          "build": "4-0-0",
+          "field": "attack.pierce",
+          "value": "3"
+        }
+      ]
+    },
+    {
+      "id": "model.knockback-noeffect",
+      "method": "model",
+      "category": "conflict",
+      "severity": "warning",
+      "outcome": "fail",
+      "subject": "5-x-x, Gigant Pistol Knockback",
+      "rule": "A purchase’s effect assessment must agree with its resolved changes.",
+      "message": "The x-x-5 text lists knockback as an improvement without an effect, but 5-x-x applies knockback. Correct the plan’s promisesWithoutEffect assessment.",
+      "evidence": [
+        "character-wiki:onepiece.fandom.com:Monkey_D._Luffy/Abilities_and_Powers",
+        "mechanics:btd6-combat-v1"
+      ],
+      "action": "Remove knockback from promisesWithoutEffect for this purchase.",
+      "facts": [
+        {
+          "build": "5-0-0",
+          "field": "attack.statuses",
+          "value": "[{\"effect\":\"knockback\",\"magnitude\":2,\"seconds\":0.15}]"
+        }
+      ]
+    }
+  ]
+}

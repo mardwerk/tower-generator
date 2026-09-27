@@ -387,6 +387,8 @@ func describeReview(view View) []string {
 		"The model review's verdict on each whole-technique omission: whether a supported typed change or a proposed mechanic on a purchase could adapt the technique's central effect, and whether its rank fits the passages it cites.")...)
 	lines = append(lines, verdictSection(view.Findings, unit.PathIdentityVerdictRule, "### Third purchase verdicts",
 		"The model review's verdict on each path's third purchase: whether it defines or distinguishes its path against its own first and second purchases and the other paths' purchases.")...)
+	lines = append(lines, verdictSection(view.Findings, unit.CapstoneVerdictRule, "### Fifth purchase verdicts",
+		"The model review's verdict on each path's fifth purchase: whether it is its path's pinnacle, judged with the other two fifth purchases and its path's identity, and a distinct play reason when two fifth purchases buy the same capability kind.")...)
 	return lines
 }
 

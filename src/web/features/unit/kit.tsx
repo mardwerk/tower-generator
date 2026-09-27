@@ -6,6 +6,7 @@ import type { LabArtifact } from '../../api/contract.js';
 import { candidateOf, findingsOf, requestOf } from '../../api/artifacts.js';
 import { compareGameplay } from './kit-comparison.js';
 import {
+  capstoneVerdictRule,
   findingSource,
   isReviewVerdict,
   omissionVerdictRule,
@@ -659,6 +660,12 @@ export function CharacterSheet({
               rule={pathIdentityVerdictRule}
               title="Third purchase verdicts"
               description="The model review's verdict on each path's third purchase: whether it defines or distinguishes its path against its own first and second purchases and the other paths' purchases."
+            />
+            <VerdictSection
+              findings={findings}
+              rule={capstoneVerdictRule}
+              title="Fifth purchase verdicts"
+              description="The model review's verdict on each path's fifth purchase: whether it is its path's pinnacle, judged with the other two fifth purchases and its path's identity, and a distinct play reason when two fifth purchases buy the same capability kind."
             />
             {[...failures, ...unresolved, ...unchecked]
               .filter((f) => !isReviewVerdict(f))

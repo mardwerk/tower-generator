@@ -321,7 +321,7 @@ func TestVersion2AuthorsWithStackingEffects(t *testing.T) {
 	}
 	verdicts := recordedOutput(t, "review")
 	output := s.NewObject().Set("summary", "Poison develops the top path.").Set("findings", []any{}).
-		Set("omissionVerdicts", at(verdicts, "omissionVerdicts")).Set("thirdPurchaseVerdicts", at(verdicts, "thirdPurchaseVerdicts"))
+		Set("omissionVerdicts", at(verdicts, "omissionVerdicts")).Set("thirdPurchaseVerdicts", at(verdicts, "thirdPurchaseVerdicts")).Set("fifthPurchaseVerdicts", at(verdicts, "fifthPurchaseVerdicts"))
 	review := &fixture.Model{Outputs: []any{output}}
 	result, err := unit.ReviewDraft(context.Background(), checked, review, unit.Options{})
 	if err != nil {
