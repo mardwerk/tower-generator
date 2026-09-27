@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 
 	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
@@ -79,7 +80,7 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	}
 	// The raw capstone comparisons are in purchaseEvidence per path; the
 	// review also gets their checked ordering.
-	context.Set("purchaseComparisonOrdering", capstoneOrdering(comparisons)).
+	context.Set("purchaseComparisonOrdering", capstoneOrdering(comparisons, blueprint)).
 		Set("character", s.FromGoValue(request.Character)).
 		Set("task", request.Task).
 		Set("constraints", s.FromGoValue(request.Constraints))
@@ -220,8 +221,10 @@ func reviewDesignPlan(plan DesignPlan) *s.Object {
 
 // plannedTier sets what the plan says about one purchase on its review tier:
 // the technique it adapts with that technique's citations, its typed
-// promises, and its planned text, as adaptation when the unit shows it and
-// as plannedChange when it stays private.
+// promises, the promises no effect of that technique adapts
+// (promisesWithoutEffect, when code can tell), and its planned text, as
+// adaptation when the unit shows it and as plannedChange when it stays
+// private.
 func plannedTier(entry *s.Object, plan DesignPlan, pathIndex, tier int) {
 	if plan.UpgradeIntents != nil {
 		intent := plan.UpgradeIntents.At(pathIndex).At(tier)
@@ -236,6 +239,9 @@ func plannedTier(entry *s.Object, plan DesignPlan, pathIndex, tier int) {
 			promises.Set("lowers", anyStrings(intent.Lowers))
 		}
 		entry.Set("promises", promises)
+		if missing, ok := PromisesWithoutEffect(plan, pathIndex, tier); ok {
+			entry.Set("promisesWithoutEffect", anyStrings(missing))
+		}
 	}
 	if adaptation := PurchaseAdaptation(&plan, pathIndex, tier); adaptation != "" {
 		entry.Set("adaptation", adaptation)
@@ -308,15 +314,24 @@ func ReferencePriceFacts(blueprint *m.Blueprint, definition m.Definition) *s.Obj
 
 // capstoneOrdering gives review a checked numerical comparison. The raw
 // metrics remain in purchaseEvidence; this is prompt context, not saved
-// design evidence, so older drafts retain their exact evidence.
-func capstoneOrdering(comparisons []any) []any {
+// design evidence, so older drafts retain their exact evidence. Each path
+// row orders its fifth purchase against the same-budget copy bound by the
+// ordinary direct and group rates and by their time-averaged rates, where
+// every copy owns the fourth purchase's Active Ability. activeOnly marks a
+// fifth purchase whose typed changes all change the Active Ability: its
+// ordinary rates equal the fourth purchase's, so their ratio to the copies
+// is the same as for a capstone that adds nothing (#57: Luffy's x-5-x cost
+// 18,000 Gold for a longer, stronger Gear 2 burst, and three x-4-x copies
+// with the same Active out-averaged it). It is a checked comparison for the
+// review, not a balance verdict.
+func capstoneOrdering(comparisons []any, blueprint *m.Blueprint) []any {
 	out := []any{}
 	metric := func(object *s.Object, key string) (float64, bool) {
 		value, ok := object.Get(key)
 		number, numeric := value.(float64)
 		return number, ok && numeric
 	}
-	for _, value := range comparisons {
+	for index, value := range comparisons {
 		comparison := value.(*s.Object)
 		path, _ := comparison.Get("path")
 		tier5, _ := comparison.Get("tier5")
@@ -324,12 +339,7 @@ func capstoneOrdering(comparisons []any) []any {
 		tier5Metrics, _ := tier5.(*s.Object).Get("metrics")
 		bounds, _ := copies.(*s.Object).Get("additiveThroughputUpperBounds")
 		row := s.NewObject().Set("path", path)
-		for _, key := range []string{"direct damage rate", "group damage rate upper bound"} {
-			tier5Value, validTier5 := metric(tier5Metrics.(*s.Object), key)
-			copiesValue, validCopies := metric(bounds.(*s.Object), key)
-			if !validTier5 || !validCopies {
-				continue
-			}
+		order := func(key string, tier5Value, copiesValue float64) {
 			ordering := "equal"
 			if tier5Value > copiesValue {
 				ordering = "higher"
@@ -342,9 +352,46 @@ func capstoneOrdering(comparisons []any) []any {
 			}
 			row.Set(key, s.NewObject().Set("ordering", ordering).Set("tier5ToCopiesRatio", ratio))
 		}
+		for _, key := range []string{"direct damage rate", "group damage rate upper bound"} {
+			tier5Value, validTier5 := metric(tier5Metrics.(*s.Object), key)
+			copiesValue, validCopies := metric(bounds.(*s.Object), key)
+			if validTier5 && validCopies {
+				order(key, tier5Value, copiesValue)
+			}
+		}
+		// Time-averaged: the fifth purchase's rate against count copies of
+		// the fourth purchase's rate, each copy using its own Active.
+		count, _ := copies.(*s.Object).Get("count")
+		perCopy, _ := copies.(*s.Object).Get("perCopyMetrics")
+		if n, ok := evidenceNumber(count); ok {
+			if copyMetrics, ok := perCopy.(*s.Object); ok {
+				for _, averaged := range timeAveragedMetrics {
+					tier5Value, validTier5 := evidenceNumber(timeAveraged(tier5Metrics.(*s.Object).Get, averaged.ordinary, averaged.peak))
+					copyValue, validCopy := evidenceNumber(timeAveraged(copyMetrics.Get, averaged.ordinary, averaged.peak))
+					if validTier5 && validCopy && !math.IsInf(copyValue*n, 0) {
+						order(averaged.name, tier5Value, copyValue*n)
+					}
+				}
+			}
+		}
+		if blueprint != nil && index < len(m.PathKeys) {
+			row.Set("activeOnly", activeOnlyCapstone(*blueprint.Paths.At(index).Tiers.At(len(m.TierKeys))))
+		}
 		out = append(out, row)
 	}
 	return out
+}
+
+// activeOnlyCapstone reports a fifth purchase that changes only the Active
+// Ability: it has changes, and each one unlocks or modifies the boost or
+// sets the boost's follow-up.
+func activeOnlyCapstone(tier m.Tier) bool {
+	for _, change := range tier.Changes {
+		if change.Kind != "modifyBoost" && change.Kind != "unlockBoost" && (change.Kind != "followUp" || change.Target != "boost") {
+			return false
+		}
+	}
+	return len(tier.Changes) > 0
 }
 
 func invalidReview() *ModelError {
@@ -379,10 +426,12 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 	var citations reviewCitations
 	if definition != nil {
 		citations = newReviewCitations(checked.Draft.Candidate.Blueprint, *definition)
+		citations.claims, citations.currency = newReviewClaims(checked), definition.Profile.Currency
 	}
 	if err == nil && definition != nil {
 		// A review that cites builds the Definition does not allow, or
-		// resolved values that are wrong, is corrected once, then rejected.
+		// structured resolved values that are wrong, is corrected once,
+		// then rejected if the correction still has invalid citations.
 		// Findings whose citations hold must come back unchanged in every field,
 		// and one whose only fault is notation with only its flagged codes
 		// replaced (keepCheckedFindings).
@@ -410,10 +459,17 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 		var validation *s.Error
 		return Result{}, StageFailure(err, "review", usage, errors.As(err, &validation))
 	}
+	// Prose timing and comparison cues cannot prove a false assertion.
+	// Keep the model finding as written and add an unresolved advisory
+	// when the claim needs human review.
+	findings := append(append([]Finding{}, checked.Findings...), review.Findings...)
+	if definition != nil {
+		findings = append(findings, citations.claims.humanReviewFindings(review.Findings, citations.currency)...)
+	}
 	result := Result{
 		SchemaVersion: checked.SchemaVersion, Kind: "result", ID: options.id(),
 		Prepared: checked.Draft.Prepared, Candidate: checked.Draft.Candidate,
-		Findings:      append(append([]Finding{}, checked.Findings...), review.Findings...),
+		Findings:      findings,
 		ReviewSummary: review.Summary,
 		Run: ResultRuns{
 			Draft:  checked.Draft.Run,

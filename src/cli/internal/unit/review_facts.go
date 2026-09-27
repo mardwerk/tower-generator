@@ -120,6 +120,10 @@ func LegalBuildFacts(blueprint *m.Blueprint, definition m.Definition) []any {
 // facts a finding cites.
 type reviewCitations struct {
 	builds map[string]*s.Object
+	// claims checks what a finding says about technique timing and the
+	// side-purchase comparisons against a capstone (review_claims.go).
+	claims   reviewClaims
+	currency string
 }
 
 func newReviewCitations(blueprint *m.Blueprint, definition m.Definition) reviewCitations {
@@ -133,8 +137,8 @@ func newReviewCitations(blueprint *m.Blueprint, definition m.Definition) reviewC
 }
 
 // citationProblem is what code rejected in one finding, or in the summary
-// when finding is empty: impossible builds, malformed codes, wrong facts and
-// purchases the text names in place of the one its subject names.
+// when finding is empty: impossible builds, malformed codes, wrong facts,
+// or purchases the text names in place of the one its subject names.
 type citationProblem struct {
 	finding    string
 	illegal    []string
@@ -254,6 +258,7 @@ const (
 	flagFact                        // (c) correct or withdraw
 )
 
+// class determines the permitted correction for a citation problem.
 func (p citationProblem) class() flagClass {
 	switch {
 	case len(p.wrong) > 0:
@@ -399,8 +404,8 @@ func (c reviewCitations) wrongFacts(finding Finding) []string {
 //     codes replaced (notationFixed), or the review is rejected;
 //   - (b) impossible, a numeric build legalBuilds does not list: it may be
 //     fixed under any ID or withdrawn, and is never published;
-//   - (c) fact, a wrong or unverifiable fact: it may be corrected under its
-//     ID or withdrawn.
+//   - (c) fact, a wrong or unverifiable structured fact: it may be corrected under
+//     its ID or withdrawn.
 //
 // When every problem is notation, the correction adds no finding and its
 // summary may change only at the codes the first review flagged there.

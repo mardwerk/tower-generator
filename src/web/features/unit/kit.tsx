@@ -5,6 +5,7 @@ import type { Finding, UnitCandidate } from '../../api/contract.js';
 import type { LabArtifact } from '../../api/contract.js';
 import { candidateOf, findingsOf, requestOf } from '../../api/artifacts.js';
 import { compareGameplay } from './kit-comparison.js';
+import { findingSource } from './finding-source.js';
 import { Badge, badgeVariants } from '../../ui/badge.js';
 import { Button } from '../../ui/button.js';
 import { Modal } from '../../ui/dialog.js';
@@ -121,9 +122,7 @@ function FindingCard({ finding }: { finding: Finding }) {
     >
       <div className={entryHeading}>
         <Status value={finding.outcome} />
-        <span className="text-xs text-muted-foreground">
-          {finding.method === 'model' ? 'Model review' : 'Structural check'}
-        </span>
+        <span className="text-xs text-muted-foreground">{findingSource(finding)}</span>
       </div>
       <h4 className="mt-2 font-semibold [overflow-wrap:anywhere]">{finding.subject}</h4>
       <p className="my-2">{finding.message}</p>

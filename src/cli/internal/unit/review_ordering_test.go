@@ -15,7 +15,7 @@ func TestCapstoneOrderingDoesNotInvertTheCopyComparison(t *testing.T) {
 		Set("sameBudgetTier4Copies", s.NewObject().
 			Set("additiveThroughputUpperBounds", s.NewObject().
 				Set("group damage rate upper bound", 454.74)))
-	rows := capstoneOrdering([]any{comparison})
+	rows := capstoneOrdering([]any{comparison}, nil)
 	row := rows[0].(*s.Object)
 	group, _ := row.Get("group damage rate upper bound")
 	ordering, _ := group.(*s.Object).Get("ordering")
