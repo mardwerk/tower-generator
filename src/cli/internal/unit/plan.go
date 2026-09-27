@@ -309,6 +309,9 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 		Set("character", s.FromGoValue(request.Character)).
 		Set("task", request.Task).
 		Set("constraints", s.FromGoValue(request.Constraints))
+	if len(request.RequiredConcepts) > 0 {
+		context.Set("requiredConcepts", requiredConceptsContext(request))
+	}
 	if request.MechanicsDefinition != nil {
 		context.Set("definition", s.FromGoValue(request.MechanicsDefinition))
 	}
@@ -351,6 +354,16 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 		// The vocabulary summary goes before the closing guidance line.
 		last := guidance[len(guidance)-1]
 		guidance = append(append(guidance[:len(guidance)-1], VocabularyGuidance(request)...), last)
+	}
+	if request.MechanicsDefinition != nil {
+		// Plan checks that hold under any Definition go before the
+		// closing guidance line.
+		last := guidance[len(guidance)-1]
+		gates := []string{planNames}
+		if len(request.RequiredConcepts) > 0 {
+			gates = append(gates, RequiredConceptRule+" "+planRequiredConcepts+" "+CoreSpiritRule)
+		}
+		guidance = append(append(append([]string{}, guidance[:len(guidance)-1]...), gates...), last)
 	}
 	if d := request.MechanicsDefinition; d != nil && d.Profile.DesignPolicy != nil {
 		// Policy requirements go before the closing guidance line.
@@ -556,6 +569,9 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 		// unlisted source technique and an unused repertoire entry
 		// (planCorrections).
 		correctable := PlanEffectIssues(plan)
+		// And a repertoire name listed twice or also omitted
+		// (plan_contradictions.go).
+		correctable = append(correctable, PlanContradictionIssues(plan, request)...)
 		if policy != nil {
 			// A targeted correction can also fix a repertoire entry
 			// that no purchase adapts.
@@ -574,6 +590,9 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 				issues = append(issues, s.Issue{Code: code, Path: path, Message: issue.Message})
 			}
 		}
+		// The Request's required concepts need a full plan: adapting
+		// one changes purchases.
+		feasibility = append(feasibility, RequiredConceptIssues(plan, request)...)
 		add(third, "custom")
 		add(capstone, capstoneIssue)
 		add(feasibility, "custom")

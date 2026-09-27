@@ -376,68 +376,29 @@ func typedAdaptation(entry PlanRepertoire, intent UpgradeIntent) bool {
 // Unit does not embody. A core entry is embodied when it is the base attack
 // or when a purchase whose technique it is adapts one of its effects with a
 // typed change (typedAdaptation). One that those purchases adapt only with
-// proposed mechanics is an unresolved design gap: no build grants a
-// proposal, so the Unit embodies the concept only once the Definition
-// supports the mechanic. One they adapt with neither fails. Whether the
-// typed change carries the concept's central effect is the review's
-// judgment (CoreSpiritRule). Like CoreConceptIssues it runs only under
-// requireCoreConcepts for a request that lists its source techniques.
+// proposed mechanics is an unresolved design gap (onlyProposedFinding): no
+// build grants a proposal, so the Unit embodies the concept only once the
+// Definition supports the mechanic. One they adapt with neither fails.
+// Whether the typed change carries the concept's central effect is the
+// review's judgment (CoreSpiritRule). Like CoreConceptIssues it runs only
+// under requireCoreConcepts for a request that lists its source techniques.
 func checkCoreConcepts(blueprint *m.Blueprint, plan *DesignPlan, request Request, report reporter) {
-	definition := request.MechanicsDefinition
-	if blueprint == nil || plan == nil || plan.UpgradeIntents == nil || definition == nil || !coreConceptsOn(*definition) || request.SourceTechniques == nil {
+	if !coreConceptsChecked(blueprint, plan, request) {
 		return
 	}
-	documents := map[string]string{}
-	for _, span := range AuthorEvidence(&request) {
-		documents[span.ID] = span.DocumentID
-	}
+	documents := evidenceDocuments(&request)
 	for index, entry := range plan.Repertoire {
 		if entry.Importance != "core" || sameTechnique(entry.Name, plan.Base.Name) {
 			continue
 		}
-		var named, proposing, proposals []string
-		evidence := []string{}
+		e := embodiment(blueprint, plan, []int{index}, documents)
 		subject := fmt.Sprintf("designPlan.repertoire.%d", index)
-		typed := false
-		for pathIndex, path := range m.PathKeys {
-			for tier := 1; tier <= len(m.TierKeys); tier++ {
-				intent := *plan.UpgradeIntents.At(pathIndex).At(tier)
-				if !sameTechnique(intent.Technique, entry.Name) {
-					continue
-				}
-				upgrade := blueprint.Paths.At(pathIndex).Tiers.At(tier)
-				code := BuildCode(pathIndex, tier) + " " + upgrade.Name
-				named = append(named, code)
-				typed = typed || typedAdaptation(entry, intent)
-				if len(upgrade.ProposedMechanics) == 0 {
-					continue
-				}
-				if len(proposing) == 0 {
-					subject = fmt.Sprintf("paths.%s.tiers.%s", path, m.TierKeys[tier-1])
-				}
-				proposing = append(proposing, code)
-				for _, proposed := range upgrade.ProposedMechanics {
-					proposals = append(proposals, proposed.Name)
-					for _, id := range proposed.SourceIDs {
-						if document, ok := documents[id]; ok && !slices.Contains(evidence, document) {
-							evidence = append(evidence, document)
-						}
-					}
-				}
-			}
-		}
 		switch {
-		case typed:
+		case e.typed:
 			continue
-		case len(proposing) > 0:
-			report(checkFinding{
-				Category: "missing_specification", Outcome: "unresolved", Subject: subject, Rule: CoreConceptFindingRule,
-				Message: fmt.Sprintf("The core concept %q is only proposed: %s %s it as the proposed %s %s, and no purchase whose technique it is adapts one of its effects with a typed change. A proposed mechanic is not yet playable: until the Definition supports it, no build grants it and the Unit does not embody this core concept. %s",
-					entry.Name, joinWith(proposing, "and", ""), pluralWord(len(proposing), "carries", "carry"), pluralWord(len(proposals), "mechanic", "mechanics"), joinWith(proposals, "and", ""), m.CoreConceptsRule),
-				Action:   act("Adapt one of its effects with a typed change on a purchase whose technique it is, or expand the Definition with its proposed mechanic. Until then the Unit does not embody the concept in play."),
-				Evidence: evidence,
-			})
-		case len(named) == 0:
+		case e.onlyProposed():
+			report(e.onlyProposedFinding("core concept", entry.Name, CoreConceptFindingRule, m.CoreConceptsRule))
+		case len(e.named) == 0:
 			report(checkFinding{
 				Category: "conflict", Outcome: "fail", Subject: subject, Rule: CoreConceptFindingRule,
 				Message: fmt.Sprintf("No purchase names the core concept %q as its technique. %s", entry.Name, m.CoreConceptsRule),
@@ -446,9 +407,99 @@ func checkCoreConcepts(blueprint *m.Blueprint, plan *DesignPlan, request Request
 		default:
 			report(checkFinding{
 				Category: "conflict", Outcome: "fail", Subject: subject, Rule: CoreConceptFindingRule,
-				Message: fmt.Sprintf("No purchase adapts the core concept %q: %s %s none of its effects with a typed change and %s no proposed mechanic. %s", entry.Name, joinWith(named, "and", ""), pluralWord(len(named), "adapts", "adapt"), pluralWord(len(named), "carries", "carry"), m.CoreConceptsRule),
+				Message: fmt.Sprintf("No purchase adapts the core concept %q: %s %s none of its effects with a typed change and %s no proposed mechanic. %s", entry.Name, joinWith(e.named, "and", ""), pluralWord(len(e.named), "adapts", "adapt"), pluralWord(len(e.named), "carries", "carry"), m.CoreConceptsRule),
 				Action:  act("Promise, on a purchase whose technique it is, a typed change that one of its effects is adapted as, or carry what the Definition cannot express as a proposed mechanic."),
 			})
 		}
+	}
+}
+
+// coreConceptsChecked reports whether checkCoreConcepts judges a checked
+// Unit's core entries: a typed Unit with a retained plan that names its
+// purchases' techniques, under requireCoreConcepts, for a request that
+// lists its source techniques.
+func coreConceptsChecked(blueprint *m.Blueprint, plan *DesignPlan, request Request) bool {
+	definition := request.MechanicsDefinition
+	return blueprint != nil && plan != nil && plan.UpgradeIntents != nil && definition != nil && coreConceptsOn(*definition) && request.SourceTechniques != nil
+}
+
+// coreGap reports a core entry that checkCoreConcepts reports as only
+// proposed, so a required concept named for it needs no gap of its own.
+func coreGap(blueprint *m.Blueprint, plan *DesignPlan, request Request, index int, documents map[string]string) bool {
+	entry := plan.Repertoire[index]
+	return coreConceptsChecked(blueprint, plan, request) && entry.Importance == "core" && !sameTechnique(entry.Name, plan.Base.Name) &&
+		embodiment(blueprint, plan, []int{index}, documents).onlyProposed()
+}
+
+// evidenceDocuments maps each passage ID of a request to its document.
+func evidenceDocuments(request *Request) map[string]string {
+	documents := map[string]string{}
+	for _, span := range AuthorEvidence(request) {
+		documents[span.ID] = span.DocumentID
+	}
+	return documents
+}
+
+// conceptEmbodiment is how the purchases whose technique is one of a
+// plan's repertoire entries adapt it on the checked Unit: whether one
+// adapts one of its effects with a typed change, the purchases named for
+// it, those that carry proposed mechanics with the proposals' names and the
+// documents they cite, and the blueprint path of the first proposing
+// purchase.
+type conceptEmbodiment struct {
+	typed                                 bool
+	named, proposing, proposals, evidence []string
+	subject                               string
+}
+
+// embodiment is how a checked Unit's purchases adapt the given repertoire
+// entries, which name one concept.
+func embodiment(blueprint *m.Blueprint, plan *DesignPlan, entries []int, documents map[string]string) conceptEmbodiment {
+	e := conceptEmbodiment{evidence: []string{}}
+	for pathIndex, path := range m.PathKeys {
+		for tier := 1; tier <= len(m.TierKeys); tier++ {
+			intent := *plan.UpgradeIntents.At(pathIndex).At(tier)
+			index := slices.IndexFunc(entries, func(i int) bool { return sameTechnique(intent.Technique, plan.Repertoire[i].Name) })
+			if index < 0 {
+				continue
+			}
+			upgrade := blueprint.Paths.At(pathIndex).Tiers.At(tier)
+			code := BuildCode(pathIndex, tier) + " " + upgrade.Name
+			e.named = append(e.named, code)
+			e.typed = e.typed || typedAdaptation(plan.Repertoire[entries[index]], intent)
+			if len(upgrade.ProposedMechanics) == 0 {
+				continue
+			}
+			if len(e.proposing) == 0 {
+				e.subject = fmt.Sprintf("paths.%s.tiers.%s", path, m.TierKeys[tier-1])
+			}
+			e.proposing = append(e.proposing, code)
+			for _, proposed := range upgrade.ProposedMechanics {
+				e.proposals = append(e.proposals, proposed.Name)
+				for _, id := range proposed.SourceIDs {
+					if document, ok := documents[id]; ok && !slices.Contains(e.evidence, document) {
+						e.evidence = append(e.evidence, document)
+					}
+				}
+			}
+		}
+	}
+	return e
+}
+
+// onlyProposed reports a concept that its purchases adapt only with
+// proposed mechanics: a design gap.
+func (e conceptEmbodiment) onlyProposed() bool { return !e.typed && len(e.proposing) > 0 }
+
+// onlyProposedFinding is the unresolved design gap of a concept, a core
+// concept or a required concept, that its purchases adapt only with
+// proposed mechanics, under its rule and stating its rule sentence.
+func (e conceptEmbodiment) onlyProposedFinding(kind, name, rule, statement string) checkFinding {
+	return checkFinding{
+		Category: "missing_specification", Outcome: "unresolved", Subject: e.subject, Rule: rule,
+		Message: fmt.Sprintf("The %s %q is only proposed: %s %s it as the proposed %s %s, and no purchase whose technique it is adapts one of its effects with a typed change. A proposed mechanic is not yet playable: until the Definition supports it, no build grants it and the Unit does not embody this %s. %s",
+			kind, name, joinWith(e.proposing, "and", ""), pluralWord(len(e.proposing), "carries", "carry"), pluralWord(len(e.proposals), "mechanic", "mechanics"), joinWith(e.proposals, "and", ""), kind, statement),
+		Action:   act("Adapt one of its effects with a typed change on a purchase whose technique it is, or expand the Definition with its proposed mechanic. Until then the Unit does not embody the concept in play."),
+		Evidence: e.evidence,
 	}
 }

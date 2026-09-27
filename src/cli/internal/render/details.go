@@ -385,6 +385,8 @@ func describeReview(view View) []string {
 	}
 	lines = append(lines, verdictSection(view.Findings, unit.OmissionVerdictRule, "### Omission verdicts",
 		"The model review's verdict on each whole-technique omission: whether a supported typed change or a proposed mechanic on a purchase could adapt the technique's central effect, and whether its rank fits the passages it cites.")...)
+	lines = append(lines, verdictSection(view.Findings, unit.RequiredConceptVerdictRule, "### Required concept verdicts",
+		"The model review's verdict on each Required concept of the Request: pass when a typed change carries its central effect, fail when the Unit adapts it only in name or only for a peripheral effect, and unresolved when only a proposed mechanic carries it, a Design gap until the Definition supports the mechanic.")...)
 	lines = append(lines, verdictSection(view.Findings, unit.PathIdentityVerdictRule, "### Third purchase verdicts",
 		"The model review's verdict on each path's third purchase: whether it defines or distinguishes its path against its own first and second purchases and the other paths' purchases.")...)
 	lines = append(lines, verdictSection(view.Findings, unit.CapstoneVerdictRule, "### Fifth purchase verdicts",

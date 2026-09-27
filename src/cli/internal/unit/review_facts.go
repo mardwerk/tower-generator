@@ -561,6 +561,9 @@ func correctionPrompt(previous SemanticReview, problems []citationProblem) strin
 	if len(kept) > 0 {
 		text += " Return " + strings.Join(kept, ", ") + " verbatim, every field exactly as in your previous review, including message, subject, action, evidence and facts: their citations hold, and a review that drops or changes any field of one is rejected."
 	}
+	if len(previous.RequiredConceptVerdicts) > 0 {
+		text += " Return requiredConceptVerdicts as in your previous review too."
+	}
 	if ids := byClass[flagNotation]; len(ids) > 0 {
 		text += " Return " + strings.Join(ids, ", ") + " under the same ID with its build codes corrected and every other field unchanged, including outcome, severity, evidence and facts: code found no wrong fact in it, so a review that omits it or changes those fields is rejected. Replace only the codes named above as notation errors or as another path's purchase, each with one code, and keep every other build code and word exactly, in subject, rule, message and action."
 	}

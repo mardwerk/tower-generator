@@ -195,7 +195,7 @@ func TestIncompleteVerdictsAreRejected(t *testing.T) {
 		_, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options())
 		var failure *unit.ModelError
 		if !errors.As(err, &failure) || failure.Failure == nil || failure.Failure.Code != unit.CodeOutputInvalid || failure.Failure.Stage != "review" ||
-			!strings.Contains(failure.Message, "did not return exactly one verdict per whole-technique omission, per third and fifth purchase and per proposed mechanic") ||
+			!strings.Contains(failure.Message, "did not return exactly one verdict per whole-technique omission, per required concept of the Request, per third and fifth purchase and per proposed mechanic") ||
 			!strings.Contains(failure.Message, c.want) || len(model.Requests) != 1 {
 			t.Errorf("%s: %v after %d calls", name, err, len(model.Requests))
 		}

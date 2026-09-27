@@ -241,6 +241,8 @@ export interface AuthorRequest {
   character: Character;
   documents: ResolvedDocument[];
   constraints: { id: string; text: string }[];
+  /** Concepts the owner requires the Unit to adapt; absent when there are none. */
+  requiredConcepts?: { name: string; reason?: string }[];
   progression: Progression | null;
   mechanicsDefinition?: MechanicsDefinition;
   previous: { resultId: string; draft: UnitCandidate; findings: Finding[] } | null;
@@ -347,9 +349,13 @@ export interface DocumentSpec {
 export type LabDocument = ResolvedDocument | DocumentSpec;
 
 /** Editable inputs may be incomplete. Prepare validates their executable form. */
-export type LabRequest = Omit<AuthorRequest, 'documents' | 'constraints' | 'progression'> & {
+export type LabRequest = Omit<
+  AuthorRequest,
+  'documents' | 'constraints' | 'requiredConcepts' | 'progression'
+> & {
   documents: LabDocument[];
   constraints: unknown;
+  requiredConcepts?: unknown;
   progression: unknown;
   previousResultFile?: string;
 };

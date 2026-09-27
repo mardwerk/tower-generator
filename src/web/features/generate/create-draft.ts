@@ -44,6 +44,9 @@ export function createDraft(
         (Array.isArray(request.constraints)
           ? request.constraints.length
           : request.constraints != null) ||
+        (Array.isArray(request.requiredConcepts)
+          ? request.requiredConcepts.length
+          : request.requiredConcepts != null) ||
         request.progression ||
         request.mechanicsDefinition),
     ),

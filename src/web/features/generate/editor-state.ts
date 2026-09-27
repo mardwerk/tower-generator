@@ -18,6 +18,8 @@ export interface EditorInput {
   character: LabRequest['character'];
   task: string;
   constraints: string;
+  /** Required concepts as a JSON array; an empty array leaves the field out. */
+  requiredConcepts: string;
   progression: string;
   documents: DocumentInput[];
 }
@@ -27,6 +29,7 @@ export function editRequest(request: LabRequest): EditorInput {
     character: { ...request.character },
     task: request.task,
     constraints: JSON.stringify(request.constraints, null, 2),
+    requiredConcepts: JSON.stringify(request.requiredConcepts ?? [], null, 2),
     progression: JSON.stringify(request.progression, null, 2),
     documents: request.documents.map((document) => ({
       id: document.id,
@@ -41,18 +44,23 @@ export function editRequest(request: LabRequest): EditorInput {
   };
 }
 export function readEditor(input: EditorInput): LabRequest {
-  let constraints: unknown, progression: unknown;
+  let constraints: unknown, requiredConcepts: unknown, progression: unknown;
   try {
     constraints = JSON.parse(input.constraints);
+    requiredConcepts = JSON.parse(input.requiredConcepts.trim() || '[]');
     progression = JSON.parse(input.progression);
   } catch {
-    throw new Error('Constraints and progression must contain valid JSON.');
+    throw new Error('Constraints, required concepts and progression must contain valid JSON.');
   }
+  const { requiredConcepts: _previous, ...base } = input.base;
   return {
-    ...input.base,
+    ...base,
     character: input.character,
     task: input.task,
     constraints,
+    ...(Array.isArray(requiredConcepts) && requiredConcepts.length === 0
+      ? {}
+      : { requiredConcepts }),
     progression,
     documents: input.documents.map((document) => {
       if (document.mode === 'url')

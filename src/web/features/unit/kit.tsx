@@ -12,6 +12,7 @@ import {
   omissionVerdictRule,
   pathIdentityVerdictRule,
   proposalVerdictRule,
+  requiredConceptVerdictRule,
   reviewVerdicts,
 } from './finding-source.js';
 import { Badge, badgeVariants } from '../../ui/badge.js';
@@ -655,6 +656,12 @@ export function CharacterSheet({
               rule={omissionVerdictRule}
               title="Omission verdicts"
               description="The model review's verdict on each whole-technique omission: whether a supported typed change or a proposed mechanic on a purchase could adapt the technique's central effect, and whether its rank fits the passages it cites."
+            />
+            <VerdictSection
+              findings={findings}
+              rule={requiredConceptVerdictRule}
+              title="Required concept verdicts"
+              description="The model review's verdict on each Required concept of the Request: pass when a typed change carries its central effect, fail when the Unit adapts it only in name or only for a peripheral effect, and unresolved when only a proposed mechanic carries it, a Design gap until the Definition supports the mechanic."
             />
             <VerdictSection
               findings={findings}

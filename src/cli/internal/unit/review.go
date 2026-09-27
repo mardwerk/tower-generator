@@ -117,6 +117,11 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	if request.SourceTechniques != nil {
 		context.Set("sourceTechniques", s.FromGoValue(*request.SourceTechniques))
 	}
+	// The owner's required concepts, with the entries and purchases code
+	// found for each, so the review judges their central effects.
+	if len(request.RequiredConcepts) > 0 {
+		context.Set("requiredConcepts", reviewRequiredConcepts(checked.Draft.Run.DesignPlan, request))
+	}
 	context.Set("documents", documents).
 		Set("sourcePassages", s.FromGoValue(evidence)).
 		Set("sourceScope", s.NewObject().
@@ -199,6 +204,9 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	prompt := []string{reviewStyle, reviewScope, reviewGrounding, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, fmt.Sprintf(reviewPolicy, inCurrency(currency)), reviewProgression}
 	if plan := checked.Draft.Run.DesignPlan; plan != nil && rankedPlan(*plan) {
 		prompt = append(prompt, reviewCoreConcepts)
+	}
+	if len(request.RequiredConcepts) > 0 {
+		prompt = append(prompt, reviewRequired)
 	}
 	prompt = append(prompt, reviewVerdicts, reviewFindings)
 	if context.Has("revision") {
@@ -494,7 +502,7 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 			var corrected SemanticReview
 			if corrected, err = reviewOnce(ctx, checked, model, request, &calls); err == nil {
 				if review, err = keepCheckedFindings(review, corrected, problems); err == nil {
-					review.OmissionVerdicts, review.ThirdPurchaseVerdicts, review.FifthPurchaseVerdicts, review.ProposalVerdicts = first.OmissionVerdicts, first.ThirdPurchaseVerdicts, first.FifthPurchaseVerdicts, first.ProposalVerdicts
+					review.OmissionVerdicts, review.RequiredConceptVerdicts, review.ThirdPurchaseVerdicts, review.FifthPurchaseVerdicts, review.ProposalVerdicts = first.OmissionVerdicts, first.RequiredConceptVerdicts, first.ThirdPurchaseVerdicts, first.FifthPurchaseVerdicts, first.ProposalVerdicts
 					err = rejectedCitations(citations.problems(review))
 				}
 			}

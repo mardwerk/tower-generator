@@ -223,6 +223,18 @@ export function RequestEditor({
             onChange={(e) => onChange({ ...value, constraints: e.target.value })}
           />
         </Field>
+        <Field label="Required concepts (JSON array of {name, reason})">
+          <Textarea
+            className="font-mono text-xs"
+            rows={4}
+            value={value.requiredConcepts}
+            onChange={(e) => onChange({ ...value, requiredConcepts: e.target.value })}
+          />
+        </Field>
+        <p className="text-xs text-muted-foreground">
+          Each required concept, such as a signature form, must be adapted on a purchase and is
+          never omitted whole.
+        </p>
         {definition && (
           <p className="text-xs text-muted-foreground">
             Progression follows the mechanics Definition. To customize these rules, import a request

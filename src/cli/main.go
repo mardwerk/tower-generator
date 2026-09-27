@@ -54,6 +54,9 @@ Options:
   --library DIR            Library folder (default: data/runs/library)
   --previous FILE          Prior Result for prepare or author (request files)
   --feedback TEXT          Requested changes for prepare, author or edit
+  --require NAME           A concept the Unit must adapt, such as a signature
+                           form; repeat it for each (prepare, generate,
+                           author, edit)
   --provider NAME          openrouter (default) or codex
   --model NAME             Model for the selected provider
   --reasoning LEVEL        OpenRouter: none, low, medium, high; Codex: minimal, low, medium, high, xhigh, max, ultra

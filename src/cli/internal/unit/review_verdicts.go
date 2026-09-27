@@ -33,6 +33,9 @@ const (
 	// OmissionVerdictRule is the rule of the Finding that records the
 	// review's verdict on one whole-technique omission.
 	OmissionVerdictRule = "omission-verdict"
+	// RequiredConceptVerdictRule is the rule of the Finding that records
+	// the review's verdict on one Required concept of the Request.
+	RequiredConceptVerdictRule = "required-concept-verdict"
 	// PathIdentityVerdictRule is the rule of the Finding that records the
 	// review's verdict on one path's third purchase, its Path identity.
 	PathIdentityVerdictRule = "path-identity-verdict"
@@ -52,6 +55,22 @@ type OmissionVerdict struct {
 	Reason    string   `json:"reason"`
 	Action    *string  `json:"action"`
 	Evidence  []string `json:"evidence"`
+}
+
+// RequiredConceptVerdict is the review's verdict on one required concept
+// of the Request, by its name: pass when a typed change carries its central
+// effect, fail when the Unit adapts it only in name or only for a
+// peripheral effect, and unresolved when only a coherent, source-fitting
+// proposed mechanic carries it, a design gap (SOL-76-01). The plan check
+// establishes only that a purchase names it and promises or proposes
+// something for it, so without this verdict a review could leave a
+// required concept unjudged.
+type RequiredConceptVerdict struct {
+	Concept  string   `json:"concept"`
+	Outcome  string   `json:"outcome"`
+	Reason   string   `json:"reason"`
+	Action   *string  `json:"action"`
+	Evidence []string `json:"evidence"`
 }
 
 // PurchaseVerdict is the review's verdict on one purchase, a path's third or
@@ -101,6 +120,16 @@ func omissionVerdictSchema(technique, evidence s.Schema) *s.ObjectSchema {
 	)
 }
 
+func requiredConceptVerdictSchema(concept, evidence s.Schema) *s.ObjectSchema {
+	return s.StrictObject(
+		s.F("concept", concept),
+		s.F("outcome", verdictOutcome),
+		s.F("reason", text()),
+		s.F("action", s.Nullable(text())),
+		s.F("evidence", s.Array(evidence)),
+	)
+}
+
 func proposalVerdictSchema(build, proposal, evidence s.Schema) *s.ObjectSchema {
 	return s.StrictObject(
 		s.F("build", build),
@@ -123,11 +152,13 @@ func purchaseVerdictSchema(build, evidence s.Schema) *s.ObjectSchema {
 }
 
 // verdictSubjects are what a review must give a verdict on: the distinct
-// names of the plan's whole-technique omissions with their rank, each
-// path's third and fifth purchase by build code, with its name and
-// technique, and each proposed mechanic of a purchase.
+// names of the plan's whole-technique omissions with their rank, the
+// Request's required concepts (required), each path's third and fifth
+// purchase by build code, with its name and technique, and each proposed
+// mechanic of a purchase.
 type verdictSubjects struct {
 	omissions      []PlanOmission
+	required       []RequiredConcept
 	thirdPurchases []purchaseSubject
 	fifthPurchases []purchaseSubject
 	proposals      []proposalSubject
@@ -174,6 +205,7 @@ func reviewVerdictSubjects(checked Checked) verdictSubjects {
 			}
 		}
 	}
+	subjects.required = checked.Draft.Prepared.Request.RequiredConcepts
 	candidate := checked.Draft.Candidate
 	if candidate.Blueprint == nil || len(candidate.Paths) != len(m.PathKeys) {
 		return subjects
@@ -245,6 +277,10 @@ func (v verdictSubjects) context(payoffs map[string]*s.Object) *s.Object {
 		}
 		omissions = append(omissions, entry)
 	}
+	required := []any{}
+	for _, concept := range v.required {
+		required = append(required, s.NewObject().Set("concept", concept.Name))
+	}
 	purchases := func(subjects []purchaseSubject) []any {
 		out := []any{}
 		for _, purchase := range subjects {
@@ -270,7 +306,11 @@ func (v verdictSubjects) context(payoffs map[string]*s.Object) *s.Object {
 		}
 		proposals = append(proposals, entry.Set("proposal", p.proposal.Name).Set("effect", p.proposal.Effect).Set("sourceIds", anyStrings(p.proposal.SourceIDs)))
 	}
-	return s.NewObject().Set("omissions", omissions).Set("thirdPurchases", purchases(v.thirdPurchases)).Set("fifthPurchases", fifth).Set("proposals", proposals)
+	out := s.NewObject().Set("omissions", omissions)
+	if len(required) > 0 {
+		out.Set("requiredConcepts", required)
+	}
+	return out.Set("thirdPurchases", purchases(v.thirdPurchases)).Set("fifthPurchases", fifth).Set("proposals", proposals)
 }
 
 // schemaFields narrow the review's verdict fields to exactly its subjects.
@@ -284,6 +324,15 @@ func (v verdictSubjects) schemaFields(evidence s.Schema) []s.Field {
 		omission = omissionVerdictSchema(s.Enum(names...), evidence)
 	}
 	fields := []s.Field{s.F("omissionVerdicts", s.Array(omission).Length(len(names)))}
+	// A Request without required concepts asks for no verdict on them, so
+	// its review schema is unchanged.
+	if len(v.required) > 0 {
+		var concepts []string
+		for _, concept := range v.required {
+			concepts = append(concepts, concept.Name)
+		}
+		fields = append(fields, s.F("requiredConceptVerdicts", s.Array(requiredConceptVerdictSchema(s.Enum(concepts...), evidence)).Length(len(concepts))))
+	}
 	for _, kind := range []purchaseKind{thirdPurchaseKind, fifthPurchaseKind} {
 		var builds []string
 		for _, purchase := range v.purchases(kind) {
@@ -334,6 +383,27 @@ func (v verdictSubjects) problems(review SemanticReview) []string {
 			problems = append(problems, fmt.Sprintf("no verdict on the omission of %q", omission.Name))
 		case counts[i] > 1:
 			problems = append(problems, fmt.Sprintf("%d verdicts on the omission of %q", counts[i], omission.Name))
+		}
+	}
+	counts = make([]int, len(v.required))
+	for _, verdict := range review.RequiredConceptVerdicts {
+		known := false
+		for i, concept := range v.required {
+			if sameTechnique(verdict.Concept, concept.Name) {
+				counts[i]++
+				known = true
+			}
+		}
+		if !known {
+			problems = append(problems, fmt.Sprintf("a verdict on %q, which requiredConcepts does not list", verdict.Concept))
+		}
+	}
+	for i, concept := range v.required {
+		switch {
+		case counts[i] == 0:
+			problems = append(problems, fmt.Sprintf("no verdict on the required concept %q", concept.Name))
+		case counts[i] > 1:
+			problems = append(problems, fmt.Sprintf("%d verdicts on the required concept %q", counts[i], concept.Name))
 		}
 	}
 	for _, kind := range []purchaseKind{thirdPurchaseKind, fifthPurchaseKind} {
@@ -388,12 +458,13 @@ func (v verdictSubjects) problems(review SemanticReview) []string {
 // exactly one per subject; like other malformed review output it fails the
 // review and keeps the checked draft.
 func incompleteVerdicts(problems []string) *ModelError {
-	message := "The model review did not return exactly one verdict per whole-technique omission, per third and fifth purchase and per proposed mechanic: it gave " + strings.Join(problems, "; ") + ". The draft is retained. Retry the review or choose another model."
+	message := "The model review did not return exactly one verdict per whole-technique omission, per required concept of the Request, per third and fifth purchase and per proposed mechanic: it gave " + strings.Join(problems, "; ") + ". The draft is retained. Retry the review or choose another model."
 	return &ModelError{Message: message, Failure: &Failure{Code: CodeOutputInvalid, Message: message, Stage: "review"}}
 }
 
 // findings records every verdict as a model Finding, in subject order: an
-// omission's verdict under OmissionVerdictRule, a third purchase's under
+// omission's verdict under OmissionVerdictRule, a required concept's under
+// RequiredConceptVerdictRule, a third purchase's under
 // PathIdentityVerdictRule and a fifth purchase's under CapstoneVerdictRule.
 // A pass stays a pass; a fail or unresolved verdict is an open Finding like
 // any other.
@@ -410,6 +481,14 @@ func (v verdictSubjects) findings(review SemanticReview) []Finding {
 			}
 			out = append(out, verdictFinding(fmt.Sprintf("verdict.omission.%d", index+1), "coverage", verdict.Outcome, subject, OmissionVerdictRule, verdict.Reason, verdict.Action, verdict.Evidence))
 			break
+		}
+	}
+	for index, concept := range v.required {
+		for _, verdict := range review.RequiredConceptVerdicts {
+			if sameTechnique(verdict.Concept, concept.Name) {
+				out = append(out, verdictFinding(fmt.Sprintf("verdict.required-concept.%d", index+1), "coverage", verdict.Outcome, "requiredConcepts, "+concept.Name, RequiredConceptVerdictRule, verdict.Reason, verdict.Action, verdict.Evidence))
+				break
+			}
 		}
 	}
 	for _, kind := range []purchaseKind{thirdPurchaseKind, fifthPurchaseKind} {
@@ -462,9 +541,10 @@ func verdictFinding(id, category, outcome, subject, rule, reason string, action 
 }
 
 // IsReviewVerdict reports a Finding that records a review verdict on an
-// omission, a third or fifth purchase or a proposed mechanic.
+// omission, a required concept, a third or fifth purchase or a proposed
+// mechanic.
 func IsReviewVerdict(finding Finding) bool {
-	return finding.Method == "model" && (finding.Rule == OmissionVerdictRule || finding.Rule == PathIdentityVerdictRule || finding.Rule == CapstoneVerdictRule || finding.Rule == ProposalVerdictRule)
+	return finding.Method == "model" && (finding.Rule == OmissionVerdictRule || finding.Rule == RequiredConceptVerdictRule || finding.Rule == PathIdentityVerdictRule || finding.Rule == CapstoneVerdictRule || finding.Rule == ProposalVerdictRule)
 }
 
 // checkVerdicts rejects a review whose verdicts cite an unknown document or
@@ -472,6 +552,9 @@ func IsReviewVerdict(finding Finding) bool {
 func checkVerdicts(checked Checked, review SemanticReview, documents map[string]bool) error {
 	var evidence [][]string
 	for _, verdict := range review.OmissionVerdicts {
+		evidence = append(evidence, verdict.Evidence)
+	}
+	for _, verdict := range review.RequiredConceptVerdicts {
 		evidence = append(evidence, verdict.Evidence)
 	}
 	for _, verdict := range append(append([]PurchaseVerdict{}, review.ThirdPurchaseVerdicts...), review.FifthPurchaseVerdicts...) {
@@ -499,12 +582,13 @@ func checkVerdicts(checked Checked, review SemanticReview, documents map[string]
 // (OPUS-NET-61-13). Word overlap cannot establish that a finding repeats a
 // verdict: "does not redirect" and "redirects" share every content word
 // (SOL-74-01). Code therefore drops a free-form model finding only when it
-// names exactly a verdict's subject, as the omitted technique or the
-// purchase's build code with at most its path and name, has the verdict's
-// outcome, and its message is the verdict's reason word for word once case,
-// spacing and final punctuation are normalized (sameReason). Every other
-// finding stays, a paraphrase included; the prompt asks the review to
-// spend its findings on issues the verdicts do not cover.
+// names exactly a verdict's subject, as the omitted technique, the required
+// concept or the purchase's build code with at most its path and name, has
+// the verdict's outcome, and its message is the verdict's reason word for
+// word once case, spacing and final punctuation are normalized
+// (sameReason). Every other finding stays, a paraphrase included; the
+// prompt asks the review to spend its findings on issues the verdicts do
+// not cover.
 
 // withoutRepeats drops each finding that repeats one of the review's
 // verdicts.
@@ -530,6 +614,13 @@ func (v verdictSubjects) repeatsVerdict(review SemanticReview, finding Finding) 
 	for _, omission := range v.omissions {
 		for _, verdict := range review.OmissionVerdicts {
 			if sameTechnique(verdict.Technique, omission.Name) && namesOmission(finding.Subject, omission.Name) && repeats(verdict.Outcome, verdict.Reason) {
+				return true
+			}
+		}
+	}
+	for _, concept := range v.required {
+		for _, verdict := range review.RequiredConceptVerdicts {
+			if sameTechnique(verdict.Concept, concept.Name) && namesRequiredConcept(finding.Subject, concept.Name) && repeats(verdict.Outcome, verdict.Reason) {
 				return true
 			}
 		}
@@ -580,6 +671,17 @@ func namesOmission(subject, technique string) bool {
 	}
 	name := trailingRank.ReplaceAllString(omissionLabel.ReplaceAllString(subject, ""), "")
 	return sameTechnique(name, technique)
+}
+
+// requiredLabel is a leading word a finding's subject may give a required
+// concept, as "requiredConcepts, Gear 4" or "Required concept: Gear 4".
+var requiredLabel = regexp.MustCompile(`(?i)^\s*(?:requiredConcepts|required concepts?)\s*[:,]?\s*`)
+
+// namesRequiredConcept reports a subject that names exactly one required
+// concept, with at most a leading required concept label, and no build
+// code.
+func namesRequiredConcept(subject, concept string) bool {
+	return !buildCodePattern.MatchString(subject) && sameTechnique(requiredLabel.ReplaceAllString(subject, ""), concept)
 }
 
 // namesPurchase reports a subject that names exactly one purchase: its build

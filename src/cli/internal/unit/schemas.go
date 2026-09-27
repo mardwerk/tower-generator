@@ -133,6 +133,7 @@ var (
 		s.F("character", CharacterSchema),
 		s.F("documents", s.Array(ResolvedDocumentSchema).Min(1)),
 		s.F("constraints", s.Array(s.StrictObject(s.F("id", text()), s.F("text", text())))),
+		s.F("requiredConcepts", s.Optional(s.Array(RequiredConceptSchema).Min(1).Max(MaxRequiredConcepts))),
 		s.F("progression", s.Nullable(ProgressionSchema)),
 		s.F("mechanicsDefinition", s.Optional(mechanics.MechanicsDefinitionSchema)),
 		s.F("previous", s.Nullable(s.StrictObject(
@@ -197,6 +198,8 @@ var (
 		s.F("summary", text()),
 		s.F("findings", s.Array(reviewFinding)),
 		s.F("omissionVerdicts", s.Optional(s.Array(omissionVerdictSchema(text(), text())))),
+		// One verdict per required concept, when the Request has any.
+		s.F("requiredConceptVerdicts", s.Optional(s.Array(requiredConceptVerdictSchema(text(), text())))),
 		s.F("thirdPurchaseVerdicts", s.Optional(s.Array(purchaseVerdictSchema(text(), text())))),
 		s.F("fifthPurchaseVerdicts", s.Optional(s.Array(purchaseVerdictSchema(text(), text())))),
 		s.F("proposalVerdicts", s.Optional(s.Array(proposalVerdictSchema(text(), text(), text())))),
