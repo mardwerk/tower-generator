@@ -21,10 +21,10 @@ import (
 // one of its bounds (s.Issue.NumberBound), the rest of the output parsed, so
 // code still runs the semantic checks: on a copy in which each such number
 // is moved into its bound, to the limit of an inclusive bound and one past
-// the limit of an exclusive one, only so the rest decodes. Semantic issues
-// about a purchase with such a number, or a build that owns it, are
-// dropped, so nothing is judged from a value the model did not write
-// (SOL-61-11). The attempt still fails on its schema issues, and the repair
+// the limit of an exclusive one, only so the rest decodes. Only the
+// per-build structural checks run on it, and only builds that do not own a
+// purchase with such a number are reported, so nothing is judged from a
+// value the model did not write (SOL-61-11, SOL-73-01). The attempt still fails on its schema issues, and the repair
 // receives every issue together. The copy is
 // diagnostic only: code never publishes, records or repairs it, the repair
 // sees the output as the model wrote it, and final validation is as strict
@@ -121,7 +121,7 @@ func schemaFailureIssues(output any, request *Request, plan DesignPlan, validati
 	if _, again := s.Parse(schema, copied); len(again) > 0 {
 		return issues
 	}
-	blueprint, budget, err := DecodeForDiagnostics(copied, request)
+	blueprint, _, err := DecodeForDiagnostics(copied, request)
 	if err != nil {
 		return issues
 	}
@@ -142,9 +142,16 @@ func schemaFailureIssues(output any, request *Request, plan DesignPlan, validati
 	for _, issue := range outputIssues {
 		issues = append(issues, issue.PathString()+": "+issue.Message+". The other checks ran on every purchase and build that does not include this value.")
 	}
-	for _, issue := range semanticIssues(blueprint, budget, request, plan) {
-		if !touchesTier(issue, invalid) {
-			issues = append(issues, issue)
+	// Only per-build checks run on the copy: each resolved legal build is
+	// judged on the purchases it owns, so a build without the invalid
+	// purchase depends on nothing substituted. Checks that compare purchases
+	// or paths (design policy, plan promises, early benefits) could consume
+	// the substituted value and report it on another purchase, so they wait
+	// for an output that passes its schema (SOL-73-01).
+	for _, issue := range m.ValidateStructure(&blueprint, *request.MechanicsDefinition) {
+		text := issue.Path + ": " + issue.Message
+		if strings.HasPrefix(issue.Path, "builds.") && !touchesTier(text, invalid) {
+			issues = append(issues, text)
 		}
 	}
 	return issues

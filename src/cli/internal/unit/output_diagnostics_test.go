@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -197,5 +198,55 @@ func TestRepairPatchWithNumberOutOfBounds(t *testing.T) {
 	at(tier, "activeFollowUp").(*s.Object).Delete("inheritStatuses")
 	if _, err := repair.Apply(patch); err == nil {
 		t.Error("a patch with a missing field was merged")
+	}
+}
+
+// Only per-build checks run on the copy in bounds. A check that compares
+// purchases or paths, such as exclusive early benefits, can consume a
+// substituted value and report it on another purchase, so it waits for an
+// output that passes its schema, while every build that does not own the
+// invalid purchase is still judged (SOL-73-01).
+func TestCrossPurchaseIssuesWaitForAValidOutput(t *testing.T) {
+	prepared, _, plan, output := escanorV34(t)
+	tier := func(value any, path, name string) *s.Object {
+		paths, _ := value.(*s.Object).Get("paths")
+		p, _ := paths.(*s.Object).Get(path)
+		tiers, _ := p.(*s.Object).Get("tiers")
+		found, _ := tiers.(*s.Object).Get(name)
+		return found.(*s.Object)
+	}
+	// path3's first two purchases buy exactly what path1's do.
+	shared := s.Clone(output)
+	for _, name := range []string{"tier1", "tier2"} {
+		changes, _ := tier(shared, "path1", name).Get("statChanges")
+		tier(shared, "path3", name).Set("statChanges", s.Clone(changes))
+	}
+	crossPurchase := func(issues []string) []string {
+		var found []string
+		for _, issue := range issues {
+			if !strings.HasPrefix(issue, "builds.") && !strings.HasPrefix(issue, "paths.path2.tiers.tier5.activeFollowUp.radius") {
+				found = append(found, issue)
+			}
+		}
+		return found
+	}
+	valid := s.Clone(shared)
+	followUp, _ := tier(valid, "path2", "tier5").Get("activeFollowUp")
+	followUp.(*s.Object).Set("radius", 1.0)
+	issues, _ := unit.MechanicsIssues(valid, &prepared.Request, plan)
+	if len(crossPurchase(issues)) == 0 {
+		t.Fatalf("the valid output reports no cross-purchase issue: %q", issues)
+	}
+	issues, ok := unit.MechanicsIssues(shared, &prepared.Request, plan)
+	if ok || issues[0] != escanorRadius+". The other checks ran on every purchase and build that does not include this value." {
+		t.Fatalf("the schema issue: %q", issues)
+	}
+	if found := crossPurchase(issues); len(found) != 0 {
+		t.Errorf("a cross-purchase issue survived the invalid number: %q", found)
+	}
+	for _, build := range escanorSplash {
+		if !slices.ContainsFunc(issues, func(issue string) bool { return strings.HasPrefix(issue, "builds."+build+".") }) {
+			t.Errorf("build %s lost its splash issue", build)
+		}
 	}
 }
