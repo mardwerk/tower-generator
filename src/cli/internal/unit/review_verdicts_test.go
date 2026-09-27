@@ -299,9 +299,9 @@ func TestReviewJudgesCapstonesTogether(t *testing.T) {
 	}
 }
 
-// A free-form finding that repeats a verdict's subject, outcome and reason
-// is dropped from the Result; one on the same subject about another problem
-// is kept.
+// A free-form finding that repeats a verdict's subject, outcome and exact
+// reason is dropped from the Result; one on the same subject about another
+// problem is kept.
 func TestReviewDropsAFindingThatRepeatsAVerdict(t *testing.T) {
 	stages, err := fixture.Build()
 	if err != nil {
@@ -314,7 +314,7 @@ func TestReviewDropsAFindingThatRepeatsAVerdict(t *testing.T) {
 			Set("subject", subject).Set("message", message).Set("rule", "capstone")
 	}
 	output.Set("findings", append(findings,
-		finding("model.x5-repeat", "x-5-x, Plasma Monkey Fan Club", "x-5-x Plasma Monkey Fan Club only doubles the frenzy's damage and lengthens it; its play reason, the allied transformation beside 5-x-x's split and x-x-5's damage type, is an unsupported mechanic."),
+		finding("model.x5-repeat", "x-5-x, Plasma Monkey Fan Club", "x-5-x Plasma Monkey Fan Club only doubles the frenzy's damage and lengthens it; beside 5-x-x's split and x-x-5's damage type its play reason is the allied transformation, an unsupported mechanic, so its capstone value waits on the Definition."),
 		finding("model.x5-price", "x-5-x", "x-5-x costs 45,000 Gold for a longer frenzy; price it for that gain."),
 	))
 	result, err := unit.ReviewDraft(context.Background(), stages.Checked, &fixture.Model{Outputs: []any{output}}, fixture.Options())

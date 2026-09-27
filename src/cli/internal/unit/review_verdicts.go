@@ -359,18 +359,15 @@ func checkVerdicts(checked Checked, review SemanticReview, documents map[string]
 // Verdict repeats (SOL-61-10). The v34 Luffy review repeated four omission
 // fails and the x-x-3 fail as free-form findings despite the instruction not
 // to, spending five of its eight findings on verdicts already recorded
-// (OPUS-NET-61-13). Code drops a free-form model finding only when it
-// repeats a verdict: it names exactly that verdict's subject, as the
-// omitted technique or the purchase's build code with at most its path and
-// name, it has the verdict's outcome, and its message shares at least half
-// of the content words of the shorter of it and the verdict's reason
-// (repeatedReasonShare). In those five v34 pairs the share is 0.56 to 0.95.
-// A finding on the same subject with another outcome, or with its own
-// reason, such as a capstone's price beside its capstone verdict, stays.
-
-// repeatedReasonShare is the least share of shared content words at which a
-// finding on a verdict's subject with its outcome repeats its reason.
-const repeatedReasonShare = 0.5
+// (OPUS-NET-61-13). Word overlap cannot establish that a finding repeats a
+// verdict: "does not redirect" and "redirects" share every content word
+// (SOL-74-01). Code therefore drops a free-form model finding only when it
+// names exactly a verdict's subject, as the omitted technique or the
+// purchase's build code with at most its path and name, has the verdict's
+// outcome, and its message is the verdict's reason word for word once case,
+// spacing and final punctuation are normalized (sameReason). Every other
+// finding stays, a paraphrase included; the prompt asks the review to
+// spend its findings on issues the verdicts do not cover.
 
 // withoutRepeats drops each finding that repeats one of the review's
 // verdicts.
@@ -391,7 +388,7 @@ func (v verdictSubjects) repeatsVerdict(review SemanticReview, finding Finding) 
 		return false
 	}
 	repeats := func(outcome, reason string) bool {
-		return finding.Outcome == outcome && sharedReason(finding.Message, reason) >= repeatedReasonShare
+		return finding.Outcome == outcome && sameReason(finding.Message, reason)
 	}
 	for _, omission := range v.omissions {
 		for _, verdict := range review.OmissionVerdicts {
@@ -450,43 +447,11 @@ func namesPurchase(subject string, purchase purchaseSubject) bool {
 	return strings.Trim(rest, " ,:;.-") == ""
 }
 
-// reasonStopWords are frequent words that say nothing of a reason.
-var reasonStopWords = map[string]bool{
-	"the": true, "and": true, "that": true, "this": true, "with": true, "from": true, "into": true, "have": true, "does": true,
-	"their": true, "there": true, "which": true, "when": true, "than": true, "then": true, "also": true, "only": true, "each": true,
-	"other": true, "more": true, "most": true, "will": true, "would": true, "been": true, "were": true, "what": true, "them": true,
-	"they": true, "not": true, "but": true, "for": true, "are": true, "was": true, "can": true, "one": true, "two": true, "any": true,
-}
-
-var reasonWord = regexp.MustCompile(`[\pL\pN]+(?:-[\pL\pN]+)*`)
-
-// contentWords are the distinct words of a text with four or more
-// characters, a build code included, other than frequent words.
-func contentWords(text string) map[string]bool {
-	words := map[string]bool{}
-	for _, word := range reasonWord.FindAllString(strings.ToLower(text), -1) {
-		if len([]rune(word)) >= 4 && !reasonStopWords[word] {
-			words[word] = true
-		}
+// sameReason reports two reasons that are the same text once case, runs of
+// spaces and final punctuation are normalized.
+func sameReason(a, b string) bool {
+	normalize := func(text string) string {
+		return strings.TrimRight(strings.Join(strings.Fields(strings.ToLower(text)), " "), ".!;: ")
 	}
-	return words
-}
-
-// sharedReason is the share of the content words of the shorter of two
-// texts that the other has too.
-func sharedReason(a, b string) float64 {
-	x, y := contentWords(a), contentWords(b)
-	if len(x) == 0 || len(y) == 0 {
-		return 0
-	}
-	if len(y) < len(x) {
-		x, y = y, x
-	}
-	shared := 0
-	for word := range x {
-		if y[word] {
-			shared++
-		}
-	}
-	return float64(shared) / float64(len(x))
+	return normalize(a) != "" && normalize(a) == normalize(b)
 }
