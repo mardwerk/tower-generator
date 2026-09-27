@@ -10,9 +10,60 @@
       "subject": "path-2 tier 4",
       "rule": "source-fidelity",
       "message": "The brief's Fan Club transforms up to 10 nearby Dart Monkeys; the Unit keeps only its own frenzy.",
-      "evidence": ["dart-monkey-atlas-56-3"],
+      "evidence": [
+        "dart-monkey-atlas-56-3"
+      ],
       "action": "Decide whether an ally operator is worth a Definition extension.",
       "facts": []
+    }
+  ],
+  "omissionVerdicts": [
+    {
+      "technique": "Allied Fan Club",
+      "outcome": "pass",
+      "reason": "Transforming nearby allied Units is the technique's central effect, and no typed change or proposed mechanic on a purchase affects another Unit; minor fits a brief that names it only at x-4-x and x-5-x.",
+      "action": null,
+      "evidence": [
+        "dart-monkey-atlas-56-3"
+      ]
+    },
+    {
+      "technique": "Critical shots",
+      "outcome": "pass",
+      "reason": "A hit counter is the central effect, and damage or a proposed mechanic on x-4-x would carry only its size, not its every-tenth-shot timing; minor fits a brief that names it only on the bottom path.",
+      "action": null,
+      "evidence": [
+        "dart-monkey-atlas-56-3"
+      ]
+    }
+  ],
+  "thirdPurchaseVerdicts": [
+    {
+      "build": "3-x-x",
+      "outcome": "pass",
+      "reason": "3-x-x Spike-o-pult turns the top path's pierce into a heavy spiked ball with 13 more pierce and more damage; no other path's purchase reaches that pierce.",
+      "action": null,
+      "evidence": [
+        "dart-monkey-atlas-56-3"
+      ]
+    },
+    {
+      "build": "x-3-x",
+      "outcome": "pass",
+      "reason": "x-3-x Triple Shot is the only purchase that fires more than one projectile; x-1-x and x-2-x only attack faster.",
+      "action": null,
+      "evidence": [
+        "dart-monkey-atlas-56-3"
+      ]
+    },
+    {
+      "build": "x-x-3",
+      "outcome": "pass",
+      "reason": "x-x-3 Crossbow adds damage and pierce to a path whose first two purchases add range and Camo detection, and no other path gains range at its third purchase.",
+      "action": null,
+      "evidence": [
+        "dart-monkey-atlas-56-3"
+      ]
     }
   ]
 }

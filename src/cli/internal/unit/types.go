@@ -317,6 +317,10 @@ type Result struct {
 type SemanticReview struct {
 	Summary  string    `json:"summary"`
 	Findings []Finding `json:"findings"`
+	// The verdicts on each whole-technique omission and each path's third
+	// purchase, outside the findings' limit (review_verdicts.go).
+	OmissionVerdicts      []OmissionVerdict      `json:"omissionVerdicts,omitempty"`
+	ThirdPurchaseVerdicts []ThirdPurchaseVerdict `json:"thirdPurchaseVerdicts,omitempty"`
 }
 
 // Profile is a reusable generation configuration.
