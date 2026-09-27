@@ -37,7 +37,7 @@ func TestLuffyV34ParaphrasedRepeatsAreKept(t *testing.T) {
 	var subjects verdictSubjects
 	var review SemanticReview
 	for _, verdict := range saved.OmissionVerdicts {
-		subjects.omissions = append(subjects.omissions, PlanOmission{Name: verdict.Technique, Importance: verdict.Importance})
+		subjects.omissions = append(subjects.omissions, omissionSubject{PlanOmission: PlanOmission{Name: verdict.Technique, Importance: verdict.Importance}})
 		review.OmissionVerdicts = append(review.OmissionVerdicts, verdict.OmissionVerdict)
 	}
 	for index, verdict := range saved.ThirdPurchaseVerdicts {
@@ -60,7 +60,7 @@ func TestLuffyV34ParaphrasedRepeatsAreKept(t *testing.T) {
 // purchase stays (SOL-74-01).
 func TestVerdictRepeatNeedsSubjectOutcomeAndSameReason(t *testing.T) {
 	subjects := verdictSubjects{
-		omissions:      []PlanOmission{{Name: "Gear 5", Importance: "major"}},
+		omissions:      []omissionSubject{{PlanOmission: PlanOmission{Name: "Gear 5", Importance: "major"}}},
 		fifthPurchases: []purchaseSubject{{path: 1, build: "x-5-x", name: "Jet Pistol Follow-Through", key: "path2"}},
 	}
 	capstone := "The fifth purchase follow-up redirects the attack to another target."

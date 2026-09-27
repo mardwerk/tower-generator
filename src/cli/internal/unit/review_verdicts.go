@@ -157,11 +157,18 @@ func purchaseVerdictSchema(build, evidence s.Schema) *s.ObjectSchema {
 // purchase by build code, with its name and technique, and each proposed
 // mechanic of a purchase.
 type verdictSubjects struct {
-	omissions      []PlanOmission
+	omissions      []omissionSubject
 	required       []RequiredConcept
 	thirdPurchases []purchaseSubject
 	fifthPurchases []purchaseSubject
 	proposals      []proposalSubject
+}
+
+// omissionSubject is one whole-technique omission with where the plan
+// names it (omissionNamedBy).
+type omissionSubject struct {
+	PlanOmission
+	namedBy []string
 }
 
 // proposalSubject is one proposed mechanic of a purchase: the purchase, its
@@ -195,13 +202,17 @@ var (
 func reviewVerdictSubjects(checked Checked) verdictSubjects {
 	var subjects verdictSubjects
 	if plan := checked.Draft.Run.DesignPlan; plan != nil {
+		var techniques []SourceTechnique
+		if list := checked.Draft.Prepared.Request.SourceTechniques; list != nil {
+			techniques = *list
+		}
 		for _, omission := range plan.OmittedTechniques {
 			duplicate := false
 			for _, listed := range subjects.omissions {
 				duplicate = duplicate || sameTechnique(listed.Name, omission.Name)
 			}
 			if !duplicate && strings.TrimSpace(omission.Name) != "" {
-				subjects.omissions = append(subjects.omissions, omission)
+				subjects.omissions = append(subjects.omissions, omissionSubject{omission, omissionNamedBy(*plan, checked.Draft.Candidate, techniques, omission)})
 			}
 		}
 	}
@@ -274,6 +285,9 @@ func (v verdictSubjects) context(payoffs map[string]*s.Object) *s.Object {
 		entry := s.NewObject().Set("technique", omission.Name)
 		if omission.Importance != "" {
 			entry.Set("importance", omission.Importance)
+		}
+		if len(omission.namedBy) > 0 {
+			entry.Set("namedBy", anyStrings(omission.namedBy))
 		}
 		omissions = append(omissions, entry)
 	}

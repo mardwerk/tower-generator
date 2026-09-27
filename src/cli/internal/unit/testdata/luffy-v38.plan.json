@@ -1,0 +1,503 @@
+{
+  "contract": "purchase-plan-v1",
+  "concept": "Monkey D. Luffy, adapted from a bounded subset of the supplied passages. The ordinary attack is a stretched rubber punch; the three paths develop Gear 3 impact, Gear 2 speed, and Gear 4 and Gear 5 transformations. Tower Defense mechanics are proposals, not claims about canon or engine support.",
+  "signature": {
+    "name": "Gum-Gum Pistol",
+    "sourceIds": [
+      "source1:7",
+      "source1:64"
+    ],
+    "adaptation": "Luffy slingshots a stretched punch at his chosen target. This is the automatic base attack in every build; the proposed clear-path delivery and capacities are Tower Defense abstractions, not claims about the punch's exact travel or enemy capacity."
+  },
+  "repertoire": [
+    {
+      "name": "Gum-Gum Pistol",
+      "importance": "core",
+      "sourceIds": [
+        "source1:7",
+        "source1:64"
+      ],
+      "limitation": "A rubber punch stretched at a target; the cited passages do not specify its area, hit capacity, or ability to reach through obstructions.",
+      "effects": [
+        {
+          "effect": "Luffy slingshots a punch at an opponent from a distance.",
+          "adaptedAs": [
+            "damage",
+            "range"
+          ],
+          "reason": "The base attack is a single-target blunt hit delivered along a clear path; range is a proposed representation of the stretch."
+        }
+      ]
+    },
+    {
+      "name": "Gear 3",
+      "importance": "major",
+      "sourceIds": [
+        "source1:67",
+        "source3:9",
+        "source3:22",
+        "source7:37",
+        "source7:38",
+        "source7:39"
+      ],
+      "limitation": "Inflated bones enlarge a body part and strengthen its strike. The earlier temporary shrinking drawback is not applied to this later-period adaptation, since the supplied reference says it no longer affects Luffy after the timeskip.",
+      "effects": [
+        {
+          "effect": "Luffy inflates a body part to make it gigantic and strengthen it.",
+          "adaptedAs": [
+            "damage"
+          ],
+          "reason": "The path proposes a heavier blunt hit."
+        },
+        {
+          "effect": "Gear 3 attacks can inflict damage on a massive scale.",
+          "adaptedAs": [
+            "splash",
+            "pierce"
+          ],
+          "reason": "The Tower Defense adaptation uses a bounded nearby impact and increased hit capacity; this does not claim the attack's exact physical area."
+        },
+        {
+          "effect": "Initially, Gear 3 temporarily shrank Luffy after use.",
+          "adaptedAs": [],
+          "reason": "The supplied reference explicitly says the post-timeskip Luffy no longer suffers this drawback."
+        }
+      ]
+    },
+    {
+      "name": "Gear 2",
+      "importance": "major",
+      "sourceIds": [
+        "source1:65",
+        "source2:9",
+        "source2:13",
+        "source2:17",
+        "source2:18",
+        "source7:29",
+        "source7:31",
+        "source7:32"
+      ],
+      "limitation": "Gear 2 enhances speed and mobility. Its blood-pumping explanation is canon description, not a Tower Defense mechanic; the adaptation does not add movement or obstacle bypass.",
+      "effects": [
+        {
+          "effect": "Gear 2 enhances Luffy's speed and mobility.",
+          "adaptedAs": [
+            "attack-rate"
+          ],
+          "reason": "Faster automatic punches represent the described speed increase."
+        },
+        {
+          "effect": "Soru lets Luffy move at disappearing speeds.",
+          "adaptedAs": [
+            "attack-rate"
+          ],
+          "reason": "The adaptation represents speed as faster attacks, not movement or evasion."
+        },
+        {
+          "effect": "Jet Pistol is Gear 2's version of the Pistol; its fast, forceful impact can propel its recipient.",
+          "adaptedAs": [
+            "damage"
+          ],
+          "reason": "The harder punch adapts the described force. The recipient being propelled is not implemented, so this aspect is omitted rather than represented as knockback."
+        }
+      ]
+    },
+    {
+      "name": "Gear 4",
+      "importance": "core",
+      "sourceIds": [
+        "source4:9",
+        "source4:10",
+        "source4:13",
+        "source4:17",
+        "source4:18",
+        "source7:42",
+        "source7:47",
+        "source7:48",
+        "source7:49",
+        "source7:51",
+        "source7:52"
+      ],
+      "limitation": "Gear 4 uses Haki and has variations with different speed, power, and defense. The Definition cannot represent its defense, Haki exhaustion, or a transformation ending in a weakened state; these are not granted or silently simulated.",
+      "effects": [
+        {
+          "effect": "Gear 4 uses Haki and enhances some amount of defense, speed, and power beyond normal limits.",
+          "adaptedAs": [
+            "damage",
+            "attack-rate"
+          ],
+          "reason": "The selected permanent purchase represents offensive strength and speed; defense is omitted because this Definition has no defensive mechanic."
+        },
+        {
+          "effect": "Python redirects punches during an attack, reducing the needed buildup between attacks; in Snakeman its attack accelerates until retracted.",
+          "adaptedAs": [
+            "attack-rate"
+          ],
+          "reason": "The path adapts this to a faster automatic attack, not homing, redirection, or accelerating projectile behavior."
+        },
+        {
+          "effect": "Gear 4 has a Haki-recharging period after use.",
+          "adaptedAs": [],
+          "reason": "The Definition has no Haki resource or post-transformation lockout mechanic."
+        }
+      ]
+    },
+    {
+      "name": "Gear 5",
+      "importance": "core",
+      "sourceIds": [
+        "source5:9",
+        "source5:12",
+        "source5:18",
+        "source7:53",
+        "source7:54",
+        "source7:55"
+      ],
+      "limitation": "Gear 5 is an awakened form with increased physical power, speed, and freedom, and can give the surroundings rubber properties. The adaptation selects the physical impact aspect and does not grant environmental rubber conversion or unrestricted imagination.",
+      "effects": [
+        {
+          "effect": "Gear 5 strengthens Luffy's rubbery body and increases physical power and speed.",
+          "adaptedAs": [
+            "damage",
+            "attack-rate"
+          ],
+          "reason": "The capstone increases the attack's damage and rate as a Tower Defense adaptation of the described physical enhancement."
+        },
+        {
+          "effect": "Awakening can give the environment and touched objects rubber properties.",
+          "adaptedAs": [],
+          "reason": "Environmental conversion and its interactions are not expressed by the Definition and are not part of this path's purchased attack."
+        }
+      ]
+    }
+  ],
+  "base": {
+    "name": "Gum-Gum Pistol",
+    "sourceIds": [
+      "source1:7",
+      "source1:64"
+    ],
+    "behavior": "At 0-0-0, Luffy stretches and slingshots one blunt punch at the player's chosen target within range along a clear delivery path. The attack hits one enemy per punch, has no secondary targets or statuses, and cannot hit the same enemy again within that punch. Its proposed damage type is normal. No enemy is hit through an obstruction."
+  },
+  "paths": {
+    "path1": {
+      "name": "Gear 3 Impact",
+      "sourceIds": [
+        "source3:9",
+        "source3:22",
+        "source7:37",
+        "source7:38"
+      ],
+      "buyFor": "Choose this path when a slower, heavier inflated-limb punch and bounded group impact are wanted.",
+      "weakness": "The large-impact adaptation remains bounded by its listed splash and pierce. It does not attack faster, bypass obstructions, reproduce physical scale, or implement the earlier shrinking drawback; enemies outside its defined splash and hit capacity are unaffected.",
+      "milestones": {
+        "tier1": "At 1-x-x, Luffy inflates a body part for a heavier single-target blunt punch, increasing its damage while retaining the base delivery, target choice, and one-hit capacity.",
+        "tier2": "At 2-x-x, Luffy stretches the inflated punch farther along its clear path, increasing range while retaining its single-target blunt hit.",
+        "tier3": "At 3-x-x, Luffy swings an inflated limb into the chosen target; the heavier blunt impact also deals bounded splash damage to nearby enemies and can hit more enemies along the attack's path. Each enemy can be hit at most once by this attack, and the splash has its own bounded target capacity.",
+        "tier4": "At 4-x-x, Luffy's inflated strike hits harder and can hit additional distinct enemies along its path; it keeps the tier-three bounded splash, with no repeated hits on an enemy.",
+        "tier5": "At 5-x-x, the massive blunt impact grows stronger and splashes within its existing bounded area; enemies hit by the primary impact or splash, subject to the attack's capacity, are also pushed back briefly. Knockback does not affect enemies immune to it."
+      },
+      "capstoneValue": "The fifth purchase adds bounded knockback to the large-impact attack, rather than only enlarging its numbers. One placement concentrates this path's mass-impact behavior; more fourth-purchase copies do not gain the capstone's control.",
+      "crosspaths": [
+        {
+          "path": "path2",
+          "contribution": "Proposed early purchases: At x-1-x, Luffy uses Gear 2 to increase the rate of his automatic single-target punches; the punch retains its damage, target choice, and clear-path delivery. At x-2-x, Gear 2 further increases the automatic punch rate without changing its single-target delivery or adding projectiles."
+        },
+        {
+          "path": "path3",
+          "contribution": "Proposed early purchases: At x-x-1, Luffy's Gear 4 limb-focused punch can hit an additional distinct enemy along its clear path while retaining its base damage, target choice, and blunt delivery. At x-x-2, Luffy's Gear 4 punch can hit further distinct enemies along its clear path, retaining the x-x-1 hit capacity increase and the base attack's delivery."
+        }
+      ],
+      "referenceExample": "The Profile's scale references inform this proposal; the supplied Definition alone authorizes mechanics."
+    },
+    "path2": {
+      "name": "Gear 2 Jet Pistol",
+      "sourceIds": [
+        "source2:9",
+        "source2:17",
+        "source2:18",
+        "source7:29",
+        "source7:31",
+        "source7:32"
+      ],
+      "buyFor": "Choose this path for a fast single-target punch and a manually timed burst of that same attack.",
+      "weakness": "The attack remains a single-target punch without splash or extra projectiles. Its Active Ability affects only this Unit's attack, has a cooldown independent of attack speed, and does not grant movement, dodging, or obstacle bypass.",
+      "milestones": {
+        "tier1": "At x-1-x, Luffy uses Gear 2 to increase the rate of his automatic single-target punches; the punch retains its damage, target choice, and clear-path delivery.",
+        "tier2": "At x-2-x, Gear 2 further increases the automatic punch rate without changing its single-target delivery or adding projectiles.",
+        "tier3": "At x-3-x, Luffy's Jet Pistol strikes harder and faster than his ordinary punch. It remains one blunt hit on the selected target, and does not propel or home toward another enemy.",
+        "tier4": "At x-4-x, Luffy unlocks one manual boost of his purchased Gear 2 punch. While activated, that same attack deals more damage and attacks faster for the boost duration, then returns to its normal x-3-x behavior; the ability uses its own cooldown and cannot be reactivated while active.",
+        "tier5": "At x-5-x, the automatic Gear 2 punch attacks faster and ignites its struck target briefly, applying burn on each damaging hit. The same permanent burn effect is inherited during the x-4-x boost; it is not limited to the Active Ability."
+      },
+      "capstoneValue": "The fifth purchase adds a supported burn effect to the faster punch, so it changes what the attack does rather than only increasing the boost's numbers. Its single-target limit remains, and extra copies do not expand its target capacity.",
+      "crosspaths": [
+        {
+          "path": "path1",
+          "contribution": "Proposed early purchases: At 1-x-x, Luffy inflates a body part for a heavier single-target blunt punch, increasing its damage while retaining the base delivery, target choice, and one-hit capacity. At 2-x-x, Luffy stretches the inflated punch farther along its clear path, increasing range while retaining its single-target blunt hit."
+        },
+        {
+          "path": "path3",
+          "contribution": "Proposed early purchases: At x-x-1, Luffy's Gear 4 limb-focused punch can hit an additional distinct enemy along its clear path while retaining its base damage, target choice, and blunt delivery. At x-x-2, Luffy's Gear 4 punch can hit further distinct enemies along its clear path, retaining the x-x-1 hit capacity increase and the base attack's delivery."
+        }
+      ],
+      "referenceExample": "The Profile's scale references inform this proposal; the supplied Definition alone authorizes mechanics."
+    },
+    "path3": {
+      "name": "Gear Forms",
+      "sourceIds": [
+        "source4:9",
+        "source4:10",
+        "source4:17",
+        "source5:9",
+        "source5:18",
+        "source7:42",
+        "source7:47",
+        "source7:48",
+        "source7:51",
+        "source7:52",
+        "source7:53",
+        "source7:54"
+      ],
+      "buyFor": "Choose this path for Gear 4's enhanced strike and attack speed, with Gear 5's further physical enhancement at the capstone.",
+      "weakness": "These purchases do not implement Haki resource limits, defense, environment conversion, or the loss of Haki after Gear 4. The attack remains a clear-path blunt punch with bounded hit capacity; speed and strength do not grant homing or unrestricted transformation effects.",
+      "milestones": {
+        "tier1": "At x-x-1, Luffy's Gear 4 limb-focused punch can hit an additional distinct enemy along its clear path while retaining its base damage, target choice, and blunt delivery.",
+        "tier2": "At x-x-2, Luffy's Gear 4 punch can hit further distinct enemies along its clear path, retaining the x-x-1 hit capacity increase and the base attack's delivery.",
+        "tier3": "At x-x-3, Luffy's Gear 4 punch hits harder and faster, adapting the form's stated physical enhancement while retaining its selected target and clear-path delivery.",
+        "tier4": "At x-x-4, Luffy further strengthens the Gear 4 punch without changing its delivery, target choice, or hit capacity.",
+        "tier5": "At x-x-5, Luffy awakens Gear 5 and his automatic blunt punch hits harder and faster. Each primary hit also produces one bounded follow-up against a distinct eligible secondary enemy; the follow-up cannot hit the primary again, does not chain, and uses the attack's clear-path requirement. This attack inherits purchased Gear 4 improvements."
+      },
+      "capstoneValue": "The fifth purchase brings Gear 5's supported physical enhancement and a bounded follow-up to a single placed Unit, adding a distinct attack behavior beyond Gear 4's larger and faster punch. It does not grant environmental rubber conversion or unlimited flexibility.",
+      "crosspaths": [
+        {
+          "path": "path1",
+          "contribution": "Proposed early purchases: At 1-x-x, Luffy inflates a body part for a heavier single-target blunt punch, increasing its damage while retaining the base delivery, target choice, and one-hit capacity. At 2-x-x, Luffy stretches the inflated punch farther along its clear path, increasing range while retaining its single-target blunt hit."
+        },
+        {
+          "path": "path2",
+          "contribution": "Proposed early purchases: At x-1-x, Luffy uses Gear 2 to increase the rate of his automatic single-target punches; the punch retains its damage, target choice, and clear-path delivery. At x-2-x, Gear 2 further increases the automatic punch rate without changing its single-target delivery or adding projectiles."
+        }
+      ],
+      "referenceExample": "The Profile's scale references inform this proposal; the supplied Definition alone authorizes mechanics."
+    }
+  },
+  "omittedTechniques": [
+    {
+      "name": "Gomu Gomu no Jet Stamp",
+      "importance": "minor",
+      "reason": "The supplied passage identifies it as a Gear 2 version of Stamp but does not describe its impact, target capacity, or other behavior sufficiently to adapt its central effect separately."
+    },
+    {
+      "name": "Gomu Gomu no Jet Bazooka",
+      "importance": "minor",
+      "reason": "The supplied passage identifies it as a Gear 2 version of Bazooka but does not describe the attack's effect sufficiently to support a distinct purchase."
+    },
+    {
+      "name": "Hone Fusen",
+      "importance": "minor",
+      "reason": "The cited passages describe inflation and defensive ricochet, but the Definition has no defensive or projectile-reflection behavior; a punch purchase would not carry the technique's central defensive effect."
+    },
+    {
+      "name": "Gomu Gomu no Gigant Pistol",
+      "importance": "minor",
+      "reason": "Its cited passage only identifies it as Gear 3's Pistol variant; the Gear 3 purchases adapt the documented giant-impact effect without claiming a distinct Gigant Pistol behavior."
+    },
+    {
+      "name": "Gomu Gomu no Rocket",
+      "importance": "minor",
+      "reason": "The passages describe launching Luffy himself to compensate for difficulty moving while inflated; the stationary Tower Defense attack Definition cannot express self-propulsion or movement."
+    },
+    {
+      "name": "Gomu Gomu no Gigant Axe",
+      "importance": "minor",
+      "reason": "The cited passage names it as a Gear 3 variant but supplies no distinct attack effect to adapt beyond the selected Gear 3 impact."
+    },
+    {
+      "name": "Kin'niku Fusen",
+      "importance": "minor",
+      "reason": "The cited passage describes Gear 4 inflation and enhanced durability, but the Definition cannot express defense or damage mitigation; the Gear 4 attack purchases do not implement that defensive technique."
+    },
+    {
+      "name": "Python",
+      "importance": "minor",
+      "reason": "Its redirection and semi-homing behavior is not expressed by this Definition's clear-path attack; attack-rate alone would not represent redirected trajectories or homing."
+    },
+    {
+      "name": "Supreme King Haki",
+      "importance": "major",
+      "reason": "The supplied passages describe knocking out multiple weak-willed targets and infusing attacks with Haki. The Definition cannot express will-based eligibility or Haki infusion as distinct behavior without unsupported enemy properties, so this plan does not claim either effect."
+    },
+    {
+      "name": "Observation Haki",
+      "importance": "major",
+      "reason": "Sensing presence and intent, seeing future moves, and dodging attacks are not behaviors available to this stationary attack Definition; detection only supports the listed Camo trait and is not general sensing."
+    },
+    {
+      "name": "Armament Haki",
+      "importance": "major",
+      "reason": "The cited passages describe hardening, enhanced offense, and contact with otherwise intangible opponents. The Definition has no intangible enemy property or defense behavior; ordinary damage can represent increased offense but cannot carry the technique's contact and defense effects."
+    },
+    {
+      "name": "Atama Buso",
+      "importance": "minor",
+      "reason": "The cited passage establishes hardening Luffy's forehead in preparation for another move, not a distinct attack effect; this Definition cannot grant defensive hardening."
+    },
+    {
+      "name": "Gear 2 Buso",
+      "importance": "minor",
+      "reason": "The cited passage describes a hardened, apparently ignited fist under Gear 2. Gear 2 purchases adapt its supported speed and force; this plan does not claim Haki hardening or fire from that combined technique."
+    },
+    {
+      "name": "Afro Luffy",
+      "importance": "minor",
+      "reason": "The passages explicitly present its extra power as uncertain or joking, so a reliable combat effect is unsupported."
+    },
+    {
+      "name": "Nightmare Luffy",
+      "importance": "major",
+      "reason": "This situational form uses absorbed shadows and their combined strength and skills, but the Definition cannot summon or represent those shadow helpers; merely increasing punch stats would not adapt the central combined-shadow behavior."
+    }
+  ],
+  "scopeLimits": [
+    "The supplied selection is bounded and does not establish an exhaustive Luffy repertoire. This plan uses a limited subset and does not claim complete source coverage or independent canon verification.",
+    "No explicit requested story period was supplied. Gear 2, Gear 3, Gear 4, and awakened Gear 5 are represented as separately purchased Tower Defense adaptations, not as simultaneous canon availability or a claim about a particular point in the story.",
+    "Proposed damage, range, rate, splash, pierce, knockback, burn, and follow-up behaviors are qualitative Tower Defense design choices. The evidence does not establish their numerical balance, precise area, duration, target capacity, or execution in an engine.",
+    "The Definition cannot express Luffy's defense, immunity, self-propulsion, Haki resources or contact effects, future sight, environmental rubber conversion, freedom limited only by imagination, or the earlier Gear 3 drawback. None is granted by this plan."
+  ],
+  "upgradeIntents": {
+    "path1": {
+      "tier1": {
+        "improves": [
+          "damage"
+        ],
+        "unlock": "none",
+        "technique": "Gear 3",
+        "lowers": []
+      },
+      "tier2": {
+        "improves": [
+          "range"
+        ],
+        "unlock": "none",
+        "technique": "Gear 3",
+        "lowers": []
+      },
+      "tier3": {
+        "improves": [
+          "damage",
+          "pierce",
+          "splash"
+        ],
+        "unlock": "splash",
+        "technique": "Gear 3",
+        "lowers": []
+      },
+      "tier4": {
+        "improves": [
+          "damage",
+          "pierce"
+        ],
+        "unlock": "none",
+        "technique": "Gear 3",
+        "lowers": []
+      },
+      "tier5": {
+        "improves": [
+          "damage",
+          "splash"
+        ],
+        "unlock": "knockback",
+        "technique": "Gear 3",
+        "lowers": []
+      }
+    },
+    "path2": {
+      "tier1": {
+        "improves": [
+          "attack-rate"
+        ],
+        "unlock": "none",
+        "technique": "Gear 2",
+        "lowers": []
+      },
+      "tier2": {
+        "improves": [
+          "attack-rate"
+        ],
+        "unlock": "none",
+        "technique": "Gear 2",
+        "lowers": []
+      },
+      "tier3": {
+        "improves": [
+          "damage",
+          "attack-rate"
+        ],
+        "unlock": "none",
+        "technique": "Gear 2",
+        "lowers": []
+      },
+      "tier4": {
+        "improves": [
+          "active-attack-rate",
+          "active-damage"
+        ],
+        "unlock": "manual-boost",
+        "technique": "Gear 2",
+        "lowers": []
+      },
+      "tier5": {
+        "improves": [
+          "attack-rate"
+        ],
+        "unlock": "burn",
+        "technique": "Gear 2",
+        "lowers": []
+      }
+    },
+    "path3": {
+      "tier1": {
+        "improves": [
+          "pierce"
+        ],
+        "unlock": "none",
+        "technique": "Gear 4",
+        "lowers": []
+      },
+      "tier2": {
+        "improves": [
+          "pierce"
+        ],
+        "unlock": "none",
+        "technique": "Gear 4",
+        "lowers": []
+      },
+      "tier3": {
+        "improves": [
+          "damage",
+          "attack-rate"
+        ],
+        "unlock": "none",
+        "technique": "Gear 4",
+        "lowers": []
+      },
+      "tier4": {
+        "improves": [
+          "damage"
+        ],
+        "unlock": "none",
+        "technique": "Gear 4",
+        "lowers": []
+      },
+      "tier5": {
+        "improves": [
+          "damage",
+          "attack-rate"
+        ],
+        "unlock": "follow-up",
+        "technique": "Gear 5",
+        "lowers": []
+      }
+    }
+  }
+}

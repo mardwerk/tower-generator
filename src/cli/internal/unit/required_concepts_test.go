@@ -3,6 +3,7 @@ package unit_test
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 
@@ -189,11 +190,13 @@ func TestRequiredConceptsReachThePromptsAndKeepTheHash(t *testing.T) {
 	}
 	review := unit.BlueprintReviewRequest(checked).Prompt
 	for _, want := range []string{
-		`"requiredConcepts":[{"name":"Fan Club","reason":"The owner's signature support form.","baseAttack":false,"entries":["Fan Club"],"adaptedBy":["x-4-x","x-5-x"]}]`,
+		`"requiredConcepts":[{"name":"Fan Club","reason":"The owner's signature support form.","baseAttack":false,"entries":["Fan Club"],"sourceIds":["source1:12"],"adaptedBy":["x-4-x","x-5-x"],"purchases":[` +
+			`{"build":"x-4-x","name":"Super Monkey Fan Club","changeScope":{"base":["intervalSeconds multiply 0.5"],"boost":["unlocks the Active Ability Fan Club Frenzy"]}},` +
+			`{"build":"x-5-x","name":"Plasma Monkey Fan Club","changeScope":{"base":[],"boost":["boost damageMultiplier set 2","boost durationSeconds add 5"]}}]}]`,
 		"requiredConcepts lists the concepts the owner requires this character's Unit to adapt",
 		unit.RequiredConceptRule,
 		`"requiredConcepts":[{"concept":"Fan Club"}]`,
-		"fail when the Unit adapts it only in name or only for a peripheral effect",
+		"fail when the Unit adapts it only in name, only for a peripheral effect or only with stats its cited passages do not make its identifying effect",
 	} {
 		if !strings.Contains(review, want) {
 			t.Errorf("the review prompt lacks %q", want)
@@ -300,8 +303,8 @@ func TestRequiredMajorConceptOnlyProposed(t *testing.T) {
 	for _, want := range []string{
 		`"requiredVerdicts":{"omissions":[{"technique":"Allied Fan Club","importance":"minor"},{"technique":"Critical shots","importance":"minor"}],"requiredConcepts":[{"concept":"Fan Club"}],"thirdPurchases":`,
 		"in requiredConceptVerdicts, one verdict per concept by the name requiredVerdicts.requiredConcepts gives, apart from the eight findings",
-		"fail when the Unit adapts it only in name or only for a peripheral effect",
-		"unresolved when only a coherent, source-fitting proposed mechanic carries its central effect, a design gap until the Definition supports it",
+		"fail when the Unit adapts it only in name, only for a peripheral effect or only with stats its cited passages do not make its identifying effect",
+		"unresolved, never pass, when only a coherent, source-fitting proposed mechanic carries its central effect, a design gap until the Definition supports it",
 	} {
 		if !strings.Contains(request.Prompt, want) {
 			t.Errorf("the review prompt lacks %q", want)
@@ -396,5 +399,253 @@ func TestRequiredCoreConceptOnlyProposedHasOneGap(t *testing.T) {
 	if len(gaps) != 1 || gaps[0].Rule != unit.CoreConceptFindingRule || gaps[0].Outcome != "unresolved" ||
 		!strings.HasPrefix(gaps[0].Message, `The core concept "Fan Club" is only proposed: `) {
 		t.Errorf("gap findings: %+v", gaps)
+	}
+}
+
+// luffyV38Checked is the v38 Luffy Result 55b028fa as a checked draft, with
+// Gear 4 and Gear 5 required as its Request required them (OPUS-NET-61-21).
+func luffyV38Checked(t *testing.T) unit.Checked {
+	t.Helper()
+	return luffyChecked(t, "v38", unit.Run{ID: "7b135155-1602-4110-99cf-223cbb7ed4c6", ModelID: "openrouter:openai/gpt-6-luna", StartedAt: "2026-09-27T14:31:37.867Z", CompletedAt: "2026-09-27T14:32:47.283Z"}, "Gear 4", "Gear 5")
+}
+
+// The v38 Luffy review passed Gear 4 and Gear 5 as "increased power and
+// speed", though x-x-1 to x-x-4 buy only pierce, damage and attack rate and
+// x-x-5 damage, attack rate and a nearby follow-up, stats the Gear 3 and
+// Gear 2 paths buy too, while the cited passages identify Gear 4 by
+// redirected punches and Gear 5 by rubber properties it gives its
+// surroundings (SOL-61-16). The review's context for each required concept
+// now gives the passages its entry cites, its source technique's passages
+// and each purchase that carries it with its typed changes, and the prompt
+// asks for the effect that identifies the concept and a pass only when a
+// named typed change carries it. A model's verdict cannot be tested here;
+// this pins what the review is given and asked.
+func TestRequiredConceptReviewGetsTheIdentifyingEffectEvidence(t *testing.T) {
+	prompt, context := reviewContext(t, luffyV38Checked(t))
+	concepts := at(context, "requiredConcepts").([]any)
+	if len(concepts) != 2 {
+		t.Fatalf("required concepts %s", s.Stringify(concepts))
+	}
+	for i, want := range []string{
+		`{"name":"Gear 4","reason":"The owner holds it essential to the character.","baseAttack":false,"entries":["Gear 4"],` +
+			`"sourceIds":["source4:9","source4:10","source4:13","source4:17","source4:18","source7:42","source7:47","source7:48","source7:49","source7:51","source7:52"],` +
+			`"sourceTechnique":{"name":"Gear 4","passageIds":["source4:9","source4:13","source4:17","source5:18","source7:42","source7:46","source7:47","source7:48","source7:49","source7:51","source7:52","source7:89"]},` +
+			`"adaptedBy":["x-x-1","x-x-2","x-x-3","x-x-4"],"purchases":[` +
+			`{"build":"x-x-1","name":"Gear 4 Reach","changeScope":{"base":["pierce add 1"],"boost":[]}},` +
+			`{"build":"x-x-2","name":"Snakeman Reach","changeScope":{"base":["pierce add 1"],"boost":[]}},` +
+			`{"build":"x-x-3","name":"Snakeman Pistol","changeScope":{"base":["damage add 1","intervalSeconds multiply 0.85"],"boost":[]}},` +
+			`{"build":"x-x-4","name":"Gear 4 Power","changeScope":{"base":["damage add 3"],"boost":[]}}]}`,
+		`{"name":"Gear 5","reason":"The owner holds it essential to the character.","baseAttack":false,"entries":["Gear 5"],` +
+			`"sourceIds":["source5:9","source5:12","source5:18","source7:53","source7:54","source7:55"],` +
+			`"sourceTechnique":{"name":"Gear 5","passageIds":["source5:9","source5:12","source5:18","source5:28","source7:53","source7:54","source7:55","source7:56"]},` +
+			`"adaptedBy":["x-x-5"],"purchases":[` +
+			`{"build":"x-x-5","name":"Gear 5 Follow-up","changeScope":{"base":["damage add 4","intervalSeconds multiply 0.8","follow-up Gear 5 follow-up strike: 1 hits of 0.5 damage within 6"],"boost":[]}}]}`,
+	} {
+		if got := s.Stringify(concepts[i]); got != want {
+			t.Errorf("required concept %d:\n got %s\nwant %s", i, got, want)
+		}
+	}
+
+	// The passages that identify each form are among those its entry
+	// cites, and the review reads their text.
+	passages := map[string]string{}
+	for _, passage := range at(context, "sourcePassages").([]any) {
+		passages[at(passage, "id").(string)] = at(passage, "text").(string)
+	}
+	for id, want := range map[string]string{
+		"source4:17": "redirect his punches during an attack",
+		"source7:54": "grant the environment around him the same properties as rubber",
+	} {
+		if !strings.Contains(passages[id], want) {
+			t.Errorf("the review does not read %s: %q", id, passages[id])
+		}
+	}
+
+	// Every stat Gear 4's purchases change, and x-x-5's damage and attack
+	// rate, some other path's purchases change too: shared stats, which
+	// alone cannot prove either form. x-x-5's follow-up is its only change
+	// of its own, and the review judges it against Gear 5's passages.
+	stat := func(label any) string { return strings.Fields(label.(string))[0] }
+	shared := map[string]bool{}
+	for _, path := range at(context, "unit", "paths").([]any)[:2] {
+		for _, tier := range at(path, "tiers").([]any) {
+			for _, label := range at(tier, "changeScope", "base").([]any) {
+				shared[stat(label)] = true
+			}
+		}
+	}
+	var own []string
+	for _, concept := range concepts {
+		for _, purchase := range at(concept, "purchases").([]any) {
+			for _, label := range at(purchase, "changeScope", "base").([]any) {
+				if !shared[stat(label)] {
+					own = append(own, at(purchase, "build").(string)+" "+label.(string))
+				}
+			}
+		}
+	}
+	if got := strings.Join(own, "; "); got != "x-x-5 follow-up Gear 5 follow-up strike: 1 hits of 0.5 damage within 6" {
+		t.Errorf("changes no other path makes: %s", got)
+	}
+
+	for _, want := range []string{
+		unit.CoreSpiritRule,
+		"the passages those entries cite (sourceIds), the source technique it names with its passageIds, when sourceTechniques has one, and the purchases whose technique those entries are (adaptedBy), each with its name and changeScope (purchases)",
+		"first name its central effect from its sourceIds and passageIds, against the character's other forms and techniques, then give pass only when a typed change of one of its purchases, or the base attack, carries that effect, naming in the reason that purchase by build code, that change as its changeScope lists it and the passage that makes it the concept's identifying effect",
+		"fail when the Unit adapts it only in name, only for a peripheral effect or only with stats its cited passages do not make its identifying effect, naming that effect and the purchase that should carry it by build code",
+		"unresolved, never pass, when only a coherent, source-fitting proposed mechanic carries its central effect",
+	} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("the review prompt lacks %q", want)
+		}
+	}
+}
+
+// The v38 Luffy x-2-x Soru only shortens the attack interval, and the Gear
+// 2 passage it cites describes Soru as movement at disappearing speeds
+// (OPUS-NET-61-21, W3). The review reads that passage beside the purchase's
+// typed changes and applies the naming rule, which fails a source name its
+// cited passages do not support for what the purchase does.
+func TestReviewGetsTheNamingEvidenceForSoru(t *testing.T) {
+	prompt, context := reviewContext(t, luffyV38Checked(t))
+	soru := at(context, "unit", "paths").([]any)[1].(*s.Object)
+	tier := at(soru, "tiers").([]any)[1]
+	if at(tier, "name") != "Soru" || s.Stringify(at(tier, "changeScope")) != `{"base":["intervalSeconds multiply 0.8"],"boost":[]}` ||
+		!strings.Contains(s.Stringify(at(tier, "sourceIds")), `"source2:13"`) {
+		t.Fatalf("x-2-x %s", s.Stringify(tier))
+	}
+	for _, passage := range at(context, "sourcePassages").([]any) {
+		if at(passage, "id") == "source2:13" && !strings.Contains(at(passage, "text").(string), "Soru, allowing him to move at disappearing speeds") {
+			t.Errorf("source2:13 reads %q", at(passage, "text"))
+		}
+	}
+	if !strings.Contains(prompt, unit.NamingRule) {
+		t.Error("the review prompt lacks the naming rule")
+	}
+}
+
+// scriptedLuffyV38Review is a scripted review of the v38 Luffy checked
+// draft: the given required concept verdicts and a pass on every other
+// subject requiredVerdicts lists. It is not a model's judgment.
+func scriptedLuffyV38Review(t *testing.T, checked unit.Checked, required ...any) *s.Object {
+	t.Helper()
+	return scriptedReview(t, checked, nil, required)
+}
+
+// scriptedReview is a scripted review of a checked draft: the given
+// omission verdicts, by technique, and required concept verdicts, a pass on
+// every other omission and on every third and fifth purchase
+// requiredVerdicts lists, and an unresolved verdict on every proposal. A
+// Request without required concepts gets no requiredConceptVerdicts. It is
+// not a model's judgment.
+func scriptedReview(t *testing.T, checked unit.Checked, omissions map[string]*s.Object, required []any) *s.Object {
+	t.Helper()
+	_, context := reviewContext(t, checked)
+	verdicts := at(context, "requiredVerdicts").(*s.Object)
+	verdict := func(key, field, outcome string, subject any) *s.Object {
+		return s.NewObject().Set(key, at(subject, field)).Set("outcome", outcome).Set("reason", "Scripted.").Set("action", nil).Set("evidence", []any{})
+	}
+	list := func(name, key, field string) []any {
+		out := []any{}
+		for _, subject := range at(verdicts, name).([]any) {
+			out = append(out, verdict(key, field, "pass", subject))
+		}
+		return out
+	}
+	omitted := []any{}
+	for _, subject := range at(verdicts, "omissions").([]any) {
+		if given, ok := omissions[at(subject, "technique").(string)]; ok {
+			omitted = append(omitted, given)
+		} else {
+			omitted = append(omitted, verdict("technique", "technique", "pass", subject))
+		}
+	}
+	proposals := []any{}
+	for _, subject := range at(verdicts, "proposals").([]any) {
+		proposals = append(proposals, verdict("build", "build", "unresolved", subject).Set("proposal", at(subject, "proposal")))
+	}
+	review := s.NewObject().Set("summary", "Scripted review.").Set("findings", []any{}).
+		Set("omissionVerdicts", omitted)
+	if verdicts.Has("requiredConcepts") {
+		review.Set("requiredConceptVerdicts", required)
+	}
+	return review.Set("thirdPurchaseVerdicts", list("thirdPurchases", "build", "build")).
+		Set("fifthPurchaseVerdicts", list("fifthPurchases", "build", "build")).
+		Set("proposalVerdicts", proposals)
+}
+
+// A fail verdict on a required form that its purchases carry only with
+// shared stats is recorded as an open Finding under the verdict rule, its
+// action naming the purchase that should carry the identifying effect. The
+// verdicts are scripted as the clarified rule asks for them on the v38
+// Luffy Unit (SOL-61-16); they show what the Result keeps, not what a model
+// returns.
+func TestStatOnlyRequiredFormFailVerdictIsRecorded(t *testing.T) {
+	checked := luffyV38Checked(t)
+	gear4 := "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%204%20Techniques"
+	gear5 := "character-technique:onepiece.fandom.com:Gomu%20Gomu%20no%20Mi%2FGear%205%20Techniques"
+	verdict := func(concept, reason, action, evidence string) *s.Object {
+		return s.NewObject().Set("concept", concept).Set("outcome", "fail").Set("reason", reason).Set("action", action).Set("evidence", []any{evidence})
+	}
+	output := scriptedLuffyV38Review(t, checked,
+		verdict("Gear 4", "source4:17 identifies Gear 4 by punches redirected during an attack; x-x-1 to x-x-4 buy only pierce, damage and attack rate, which the Gear 3 and Gear 2 paths buy too, so no typed change carries it.", "Carry the redirected punch on x-x-3 with a typed change, such as a bounded follow-up, or propose it there.", gear4),
+		verdict("Gear 5", "source7:54 identifies Gear 5 by the rubber properties it gives its surroundings; x-x-5 buys damage, attack rate and a nearby follow-up that no cited passage ties to Gear 5.", "Carry that effect on x-x-5 with a typed change, such as knockback, or propose it there.", gear5),
+	)
+	result, err := unit.ReviewDraft(context.Background(), checked, &fixture.Model{Outputs: []any{output}}, fixture.Options())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []unit.Finding
+	for _, f := range verdictFindings(result) {
+		if f.Rule == unit.RequiredConceptVerdictRule {
+			got = append(got, f)
+		}
+	}
+	if len(got) != 2 {
+		t.Fatalf("required concept verdicts %+v", got)
+	}
+	for i, want := range []struct{ id, subject, build string }{
+		{"verdict.required-concept.1", "requiredConcepts, Gear 4", "x-x-3"},
+		{"verdict.required-concept.2", "requiredConcepts, Gear 5", "x-x-5"},
+	} {
+		f := got[i]
+		if f.ID != want.id || f.Subject != want.subject || f.Outcome != "fail" || f.Severity != "error" || f.Method != "model" ||
+			f.Action == nil || !strings.Contains(*f.Action, want.build) || !strings.Contains(f.Message, "identifies") {
+			t.Errorf("verdict %d: %+v", i, f)
+		}
+	}
+}
+
+// A required concept the base attack adapts cites the base attack's
+// passages, so a pass verdict can name one even without a repertoire entry.
+// The review may cite the identifying passage from either the source
+// technique's passages or the concept's sourceIds, and gives unresolved only
+// when neither establishes the effect (SOL-80-01, SOL-80-03).
+func TestBaseAttackRequiredConceptCarriesItsPassages(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	checked := stages.Checked
+	base := checked.Draft.Run.DesignPlan.Base
+	checked.Draft.Prepared.Request.RequiredConcepts = []unit.RequiredConcept{{Name: base.Name}}
+	prompt, context := reviewContext(t, checked)
+	concept := at(context, "requiredConcepts").([]any)[0].(*s.Object)
+	if value, _ := concept.Get("baseAttack"); value != true {
+		t.Fatalf("%s is not the base attack: %s", base.Name, s.Stringify(concept))
+	}
+	ids, _ := concept.Get("sourceIds")
+	for _, id := range base.SourceIDs {
+		if !slices.Contains(ids.([]any), any(id)) {
+			t.Errorf("the base concept's sourceIds %v lack the base attack's %s", ids, id)
+		}
+	}
+	for _, want := range []string{
+		"citing it from sourceTechnique.passageIds or from its sourceIds, whichever holds the identifying passage, when both exist too; its sourceIds include the base attack's passages when the base attack adapts it",
+		"and unresolved when neither sourceTechnique nor sourceIds supplies a passage that identifies the concept, saying that the supplied sources do not establish its central effect.",
+	} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("the review prompt lacks %q", want)
+		}
 	}
 }

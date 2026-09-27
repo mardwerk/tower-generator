@@ -78,9 +78,11 @@ type conceptAdaptation struct {
 	entries   []int
 	omissions []int
 	// adaptedBy are the build codes of the purchases whose technique is
-	// one of entries; adapting are those that promise what one of that
-	// entry's effects is adapted as or carry a proposed mechanic.
+	// one of entries, at those tiers; adapting are those that promise what
+	// one of that entry's effects is adapted as or carry a proposed
+	// mechanic.
 	adaptedBy, adapting []string
+	tiers               []tierRef
 }
 
 // requiredConceptAdaptations lists, for each required concept, the plan's
@@ -110,6 +112,7 @@ func requiredConceptAdaptations(plan DesignPlan, request *Request) []conceptAdap
 						}
 						code := BuildCode(pathIndex, tier)
 						a.adaptedBy = append(a.adaptedBy, code)
+						a.tiers = append(a.tiers, tierRef{pathIndex, tier})
 						if typedAdaptation(plan.Repertoire[index], intent) || len(intent.ProposedMechanics) > 0 {
 							a.adapting = append(a.adapting, code)
 						}
@@ -178,21 +181,53 @@ func requiredConceptsContext(request *Request) []any {
 }
 
 // reviewRequiredConcepts is the review's view of each required concept:
-// the plan's entries named for it and the purchases whose technique those
-// entries are (adaptedBy), as code found them, and whether it is the base
-// attack.
-func reviewRequiredConcepts(plan *DesignPlan, request *Request) []any {
+// the plan's entries named for it, the passages they cite (sourceIds), the
+// source technique it names with its passages, and the purchases whose
+// technique those entries are (adaptedBy), as code found them, each with
+// its name and typed changes by scope (purchases), and whether it is the
+// base attack. The review judges from them which effect identifies the
+// concept and whether a named typed change carries it (#61, SOL-61-16):
+// the v38 Luffy review passed Gear 4 and Gear 5 on damage, attack rate and
+// pierce that every Gear path shares.
+func reviewRequiredConcepts(plan *DesignPlan, request *Request, blueprint *m.Blueprint) []any {
 	out := requiredConceptsContext(request)
 	if plan == nil {
 		return out
 	}
 	for i, a := range requiredConceptAdaptations(*plan, request) {
 		entry := out[i].(*s.Object)
-		var names []string
+		var names, sources []string
 		for _, index := range a.entries {
 			names = append(names, plan.Repertoire[index].Name)
+			for _, id := range plan.Repertoire[index].SourceIDs {
+				if !slices.Contains(sources, id) {
+					sources = append(sources, id)
+				}
+			}
 		}
-		entry.Set("baseAttack", a.base).Set("entries", anyStrings(names)).Set("adaptedBy", anyStrings(a.adaptedBy))
+		// A concept the base attack adapts cites the base attack's
+		// passages, so a pass can name one even without a repertoire entry
+		// (SOL-80-01).
+		if a.base {
+			for _, id := range plan.Base.SourceIDs {
+				if !slices.Contains(sources, id) {
+					sources = append(sources, id)
+				}
+			}
+		}
+		entry.Set("baseAttack", a.base).Set("entries", anyStrings(names)).Set("sourceIds", anyStrings(sources))
+		if technique := conceptTechnique(a.concept, request); technique != nil {
+			entry.Set("sourceTechnique", s.NewObject().Set("name", technique.Name).Set("passageIds", anyStrings(technique.PassageIDs)))
+		}
+		entry.Set("adaptedBy", anyStrings(a.adaptedBy))
+		if blueprint != nil {
+			purchases := []any{}
+			for j, at := range a.tiers {
+				tier := blueprint.Paths.At(at.path).Tiers.At(at.tier)
+				purchases = append(purchases, s.NewObject().Set("build", a.adaptedBy[j]).Set("name", tier.Name).Set("changeScope", ChangeScope(*tier)))
+			}
+			entry.Set("purchases", purchases)
+		}
 	}
 	return out
 }

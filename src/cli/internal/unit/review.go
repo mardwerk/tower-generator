@@ -124,10 +124,11 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 	if request.SourceTechniques != nil {
 		context.Set("sourceTechniques", s.FromGoValue(*request.SourceTechniques))
 	}
-	// The owner's required concepts, with the entries and purchases code
-	// found for each, so the review judges their central effects.
+	// The owner's required concepts, with the entries, passages and
+	// purchases code found for each, so the review judges their central
+	// effects.
 	if len(request.RequiredConcepts) > 0 {
-		context.Set("requiredConcepts", reviewRequiredConcepts(checked.Draft.Run.DesignPlan, request))
+		context.Set("requiredConcepts", reviewRequiredConcepts(checked.Draft.Run.DesignPlan, request, blueprint))
 	}
 	context.Set("documents", documents).
 		Set("sourcePassages", s.FromGoValue(evidence)).
