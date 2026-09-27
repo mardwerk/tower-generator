@@ -6,12 +6,12 @@ import (
 	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
 )
 
-// Omitted names (#61, SOL-61-17): every v38 Escanor purchase text said
-// "Rhitta slash" while the plan omitted Rhitta whole. A plan that names a
-// technique it omits whole contradicts the omission (OmittedNameRule), but
-// a text may also name a technique to set it apart, so code only lists
-// where the plan names it, as a cue beside the omission's Review verdict,
-// and gates nothing.
+// Omitted names (#61, SOL-61-17): the v38 Escanor base attack and the
+// first purchase of every path said "Rhitta slash" while the plan omitted
+// Rhitta whole. A plan that names a technique it omits whole contradicts
+// the omission (OmittedNameRule), but a text may also name a technique to
+// set it apart, so code only lists where the plan names it, as a cue beside
+// the omission's Review verdict, and gates nothing.
 
 // omissionNamedBy lists where the plan names an omitted technique, by its
 // name or an alias of the source technique it is named for: the

@@ -29,12 +29,13 @@ const OmissionRule = "A whole technique in omittedTechniques, major or minor, na
 
 // OmittedNameRule is when a plan contradicts a whole-technique omission by
 // naming the technique elsewhere, stated with OmissionRule by the plan
-// prompt and the review (#61, SOL-61-17). Every v38 Escanor purchase text
-// said "Rhitta slash" while the plan omitted Rhitta whole. Code lists where
+// prompt and the review (#61, SOL-61-17). The v38 Escanor base attack and
+// the first purchase of every path said "Rhitta slash" while the plan
+// omitted Rhitta whole. Code lists where
 // the plan names each omitted technique (omissionNamedBy) and gates
 // nothing: a text may name a technique to set it apart, and the review
 // judges each.
-const OmittedNameRule = "A technique omitted whole is not claimed elsewhere in the plan: a signature, base attack or purchase whose name or planned text names it as part of what the Unit does, as \"Rhitta slash\" in every purchase's text beside an omitted Rhitta, contradicts the omission; either a typed change or a proposed mechanic on a purchase adapts the technique's central effect, a repertoire entry selects it and only its unsupported aspect stays omitted, as an effect of that entry with adaptedAs empty and its reason, or those texts stop naming it."
+const OmittedNameRule = "A technique omitted whole is not claimed elsewhere in the plan: a signature, base attack or purchase whose name or planned text names it as part of what the Unit does, as \"Rhitta slash\" in purchase texts beside an omitted Rhitta, contradicts the omission; either a typed change or a proposed mechanic on a purchase adapts the technique's central effect, a repertoire entry selects it and only its unsupported aspect stays omitted, as an effect of that entry with adaptedAs empty and its reason, or those texts stop naming it."
 
 // centralEffect is what a concept's or an omitted technique's central
 // effect is, as CoreSpiritRule and OmissionRule state it (SOL-61-16,
