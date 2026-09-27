@@ -263,9 +263,11 @@ func shot(attack m.Attack) string {
 	return "pulse"
 }
 
-// followUp describes a bounded follow-up of an attack. Its multiplier,
-// shown as a percentage of the hit damage, scales the hit's ordinary damage; the attack's bonus damage is added to
-// each follow-up hit unscaled.
+// followUp describes a bounded follow-up of the supplied attack: the ordinary
+// attack for a base follow-up, and the Active Ability's boosted attack for a
+// boost follow-up. Its multiplier, shown as a percentage of the hit damage,
+// scales that attack's damage; the attack's bonus damage is added to each
+// follow-up hit unscaled.
 func (sh *sheet) followUp(f m.FollowUp, attack m.Attack) string {
 	inherit := "it applies no statuses"
 	if f.InheritStatuses {
