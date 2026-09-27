@@ -6,12 +6,14 @@ import (
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
 )
 
-// Targeted plan correction (#61, SOL-61-05). Five plan failures have a
+// Targeted plan correction (#61, SOL-61-05). Six plan failures have a
 // known, local fix: a source technique the plan lists nowhere, an effect
 // adapted as a promise that no purchase of its technique makes, a
 // repertoire entry that neither the base attack nor any purchase adapts
-// (RepertoireUseRule, SOL-61-10), a repertoire name listed twice and an
-// omitted name the plan also selects (PlanNamesRule, SOL-61-13).
+// (RepertoireUseRule, SOL-61-10), a repertoire name listed twice, an
+// omitted name the plan also selects (PlanNamesRule, SOL-61-13) and an
+// unlock that an earlier milestone of its path already promises, when the
+// Definition can improve it (UnlockOrderRule, SOL-61-21).
 // Escanor's v30 plans failed on these after the full-plan retry (escanor-m
 // in OPUS-NET-61-6). When a plan attempt fails on these alone, the next
 // call is a correction that names each failed item and the corrections it
@@ -45,7 +47,8 @@ func onlyCorrectable(issues []s.Issue) bool {
 // promise on a purchase of that technique or loses that adaptedAs, an
 // unused repertoire entry moves to omittedTechniques with its reason or
 // becomes a purchase's technique, a repertoire name listed twice keeps one
-// entry, and an omitted name the plan selects leaves omittedTechniques.
+// entry, an omitted name the plan selects leaves omittedTechniques, and a
+// late unlock moves to the earlier milestone or becomes an improvement.
 func planCorrections(output any, request *Request) []any {
 	plan, err := parseDesignPlan(output, request)
 	if err != nil {
@@ -110,6 +113,7 @@ func correctionItems(plan DesignPlan, request *Request, open []int) []any {
 		}
 	}
 	items = append(items, contradictionItems(plan, request)...)
+	items = append(items, unlockOrderItems(plan, request, open)...)
 	if request.SourceTechniques != nil && request.MechanicsDefinition != nil && coreConceptsOn(*request.MechanicsDefinition) {
 		for _, technique := range unlistedSourceTechniques(plan, request) {
 			rank := "core, major or minor"

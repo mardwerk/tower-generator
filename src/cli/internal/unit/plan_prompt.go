@@ -41,6 +41,10 @@ const planCoreConcepts = "sourceTechniques, when supplied, lists the techniques 
 // PlanContradictionIssues enforces it.
 const planNames = PlanNamesRule + " Code rejects a plan whose repertoire lists a name twice or whose omittedTechniques omits a name the plan selects, compared exactly, case and spacing aside."
 
+// planUnlockOrder follows UnlockOrderRule under any Definition; the plan
+// check UnlockOrderIssues enforces it.
+const planUnlockOrder = UnlockOrderRule + " For example, when x-x-3 promises improves splash, x-x-5 promises improves splash too, not unlock splash; to make splash new at x-x-3, promise unlock splash there. Code rejects a plan whose milestone promises to unlock what an earlier milestone of its path already promises."
+
 // planRequiredConcepts follows RequiredConceptRule for a Request with
 // required concepts; the plan check RequiredConceptIssues enforces it.
 const planRequiredConcepts = "requiredConcepts lists the concepts the owner requires for this character, each with its name and, when given, the reason. Name each one's repertoire entry by that name, or by the name or an alias sourceTechniques gives it, as \"Gear 4 forms\" names Gear 4, whatever its importance. Code rejects a plan that omits one whole or lists one nowhere, and one where no purchase whose technique it is promises what one of its effects is adapted as or carries a proposed mechanic."

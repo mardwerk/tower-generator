@@ -42,8 +42,14 @@ func loadV39Run(t *testing.T, character string, required ...string) v39Run {
 		}
 	}
 	run := v39Run{prepared: prepared, planOutput: testdataValue(t, character+"-v39.plan.json")}
+	// Since Default v42 the plan check rejects Escanor a's plan, whose
+	// x-x-5 unlocks the splash x-x-3 improves (plan_unlock_order.go), so
+	// its mechanics are checked against the plan as it was retained.
 	if run.plan, err = unit.DecodeDesignPlan(run.planOutput, &prepared.Request); err != nil {
-		t.Fatalf("the retained plan: %v", err)
+		if character != "escanor" || !strings.Contains(err.Error(), "x-x-5 promises unlock splash, but x-x-3 already promises improves splash.") {
+			t.Fatalf("the retained plan: %v", err)
+		}
+		run.plan = parsedPlan(t, run.planOutput)
 	}
 	run.design = testdataValue(t, character+"-v39-design.output.json")
 	run.repair = testdataValue(t, character+"-v39-repair.output.json")
@@ -296,21 +302,10 @@ func TestNoLocalRepairWithoutABudget(t *testing.T) {
 
 // Escanor a's repair left x-x-5's promised splash unlock undelivered, but
 // x-x-3 already gives 0-0-4 splash, so no change of x-x-5 alone can unlock
-// it: the local repair is not sent and the draft fails with the repair's
-// issue, as before.
+// it: no local repair applies. Since Default v42 the plan check rejects
+// that plan before the design stage (TestEscanorV39PlanUnlocksWhatX3Improves).
 func TestNoLocalRepairWhenThePurchaseCannotDeliver(t *testing.T) {
 	run := escanorV39(t)
-	patch := tierPatch(at(run.repair, "paths", "path3", "tiers", "tier5"), "path3", "tier5")
-	model := &fixture.Model{Outputs: []any{run.planOutput, run.design, patch}}
-	_, err := unit.DraftUnit(context.Background(), run.prepared, model, fixture.Options())
-	var modelErr *unit.ModelError
-	if !errors.As(err, &modelErr) || modelErr.Evidence == nil || len(model.Requests) != 3 {
-		t.Fatalf("draft: %v after %d calls", err, len(model.Requests))
-	}
-	attempts := modelErr.Evidence.Attempts
-	if strings.Join(attempts[1].Issues, "\n") != strings.Join(run.designIssues, "\n") || strings.Join(attempts[2].Issues, "\n") != strings.Join(run.repaired, "\n") {
-		t.Errorf("the design and repair issues: %q, %q", attempts[1].Issues, attempts[2].Issues)
-	}
 	previous := unit.BindDesignPlan(s.Clone(run.repair), run.plan)
 	if repair, err := unit.LocalRepair(&run.prepared.Request, previous, run.repaired); err != nil || repair != nil {
 		t.Errorf("a local repair for Escanor: %v, %v", repair, err)

@@ -171,8 +171,9 @@ func addsBehavior(intent UpgradeIntent) bool {
 }
 
 // PlanFeasibilityIssues rejects promises that the mechanics could not keep:
-// an active promise without the same path's boost, a capability unlocked twice
-// and promises beyond the change budget. It judges no payoff; the review does,
+// an active promise without the same path's boost, an unlock of what an
+// earlier purchase of the path already promises (UnlockOrderIssues) and
+// promises beyond the change budget. It judges no payoff; the review does,
 // from the resolved purchase evidence. Plans are checked when they are
 // authored; saved drafts keep the promises they were made with.
 func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
@@ -180,7 +181,8 @@ func PlanFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 		return nil
 	}
 	third, fifth := behaviorChangeIssues(plan, definition)
-	return append(append(third, fifth...), promiseFeasibilityIssues(plan, definition)...)
+	correctable, other := UnlockOrderIssues(plan, definition)
+	return append(append(append(append(third, fifth...), promiseFeasibilityIssues(plan, definition)...), correctable...), other...)
 }
 
 // behaviorChangeIssues are the plan issues of requireTier3BehaviorChange
@@ -218,7 +220,7 @@ func behaviorChangeIssues(plan DesignPlan, definition m.Definition) (third, fift
 }
 
 // promiseFeasibilityIssues are PlanFeasibilityIssues apart from the
-// behavior rules.
+// behavior rules and the unlock order.
 func promiseFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 	if plan.UpgradeIntents == nil {
 		return nil
@@ -240,7 +242,6 @@ func promiseFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issu
 	boostKey := m.TierKeys[boostTier-1]
 	for pathIndex, path := range m.PathKeys {
 		intents := plan.UpgradeIntents.At(pathIndex)
-		unlocked := map[string]string{}
 		for index, tier := range m.TierKeys {
 			intent := intents.At(index + 1)
 			report := func(message string) {
@@ -259,13 +260,6 @@ func promiseFeasibilityIssues(plan DesignPlan, definition m.Definition) []m.Issu
 			}
 			if needsBoost && (index+1 < boostTier || intents.At(boostTier).Unlock != "manual-boost") {
 				report(fmt.Sprintf("Active improvements and active-follow-up require an explicitly planned same-path manual-boost at %s. The base attack and another path's boost cannot supply it.", boostKey))
-			}
-			if isCapabilityUnlock(definition, intent.Unlock) {
-				if previous, ok := unlocked[intent.Unlock]; ok {
-					report(fmt.Sprintf("Cannot unlock %s again after %s on the same path without a disable intent. Describe development of the existing capability as an improvement.", intent.Unlock, previous))
-				} else {
-					unlocked[intent.Unlock] = tier
-				}
 			}
 			profile := definition.Profile
 			limit := profile.MaxChangesPerTier
