@@ -481,7 +481,7 @@ func TestCoreConceptImplementedOrOnlyProposed(t *testing.T) {
 	})
 	if len(found) != 1 || found[0].Outcome != "unresolved" || found[0].Subject != "paths.path2.tiers.tier5" ||
 		!strings.HasPrefix(found[0].Message, `The core concept "Fan Club" is only proposed: x-5-x `) ||
-		!strings.Contains(found[0].Message, "the Unit does not yet embody this core concept until the Definition supports that mechanic. "+m.CoreConceptsRule) {
+		!strings.Contains(found[0].Message, "until the Definition supports it, no build grants it and the Unit does not embody this core concept. "+m.CoreConceptsRule) {
 		t.Errorf("a proposed-only core concept: %+v", found)
 	}
 

@@ -361,10 +361,10 @@ func checkCoreConcepts(blueprint *m.Blueprint, plan *DesignPlan, request Request
 			continue
 		case len(proposing) > 0:
 			report(checkFinding{
-				Category: "unsupported", Outcome: "unresolved", Subject: subject, Rule: CoreConceptFindingRule,
-				Message: fmt.Sprintf("The core concept %q is only proposed: %s %s it as the proposed %s %s, and no purchase whose technique it is adapts one of its effects with a typed change. A proposed mechanic grants no behavior, so the Unit does not yet embody this core concept until the Definition supports that mechanic. %s",
+				Category: "missing_specification", Outcome: "unresolved", Subject: subject, Rule: CoreConceptFindingRule,
+				Message: fmt.Sprintf("The core concept %q is only proposed: %s %s it as the proposed %s %s, and no purchase whose technique it is adapts one of its effects with a typed change. A proposed mechanic is not yet playable: until the Definition supports it, no build grants it and the Unit does not embody this core concept. %s",
 					entry.Name, joinWith(proposing, "and", ""), pluralWord(len(proposing), "carries", "carry"), pluralWord(len(proposals), "mechanic", "mechanics"), joinWith(proposals, "and", ""), m.CoreConceptsRule),
-				Action:   act("Expand the Definition with the proposed mechanic, or adapt the concept's central effect with a typed change on a purchase whose technique it is."),
+				Action:   act("Adapt one of its effects with a typed change on a purchase whose technique it is, or expand the Definition with its proposed mechanic. Until then the Unit does not embody the concept in play."),
 				Evidence: evidence,
 			})
 		case len(named) == 0:
