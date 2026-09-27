@@ -367,6 +367,7 @@ func TestEditedDesignPolicySavesAndErrorsNameTheField(t *testing.T) {
 		RequireTier3BehaviorChange:  &yes,
 		RequireTier3PathIdentity:    &no,
 		RequireTier5BehaviorChange:  &yes,
+		RequireCoreConcepts:         &no,
 		Tier5Uniqueness:             "one-per-player-unit-type-and-path",
 	}
 	if _, err := profiles.Save(s.FromGoValue(edited)); err != nil {
@@ -384,6 +385,7 @@ func TestEditedDesignPolicySavesAndErrorsNameTheField(t *testing.T) {
 		"distinctEarlyBenefits":       "yes",
 		"exclusiveEarlyBenefits":      "yes",
 		"requireTier3PathIdentity":    1,
+		"requireCoreConcepts":         "on",
 	} {
 		invalid := s.FromGoValue(edited).(*s.Object)
 		policy := invalid

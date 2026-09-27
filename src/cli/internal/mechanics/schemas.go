@@ -184,6 +184,7 @@ var (
 				s.F("requireTier3BehaviorChange", s.Optional(s.Bool())),
 				s.F("requireTier3PathIdentity", s.Optional(s.Bool())),
 				s.F("requireTier5BehaviorChange", s.Optional(s.Bool())),
+				s.F("requireCoreConcepts", s.Optional(s.Bool())),
 				s.F("tier5Uniqueness", lit("one-per-player-unit-type-and-path")),
 			))),
 			s.F("referenceScale", s.Optional(s.StrictObject(

@@ -101,6 +101,11 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		}
 	}
 	evidence := AuthorEvidence(request)
+	// The source techniques the plan ranked, so the review can judge the
+	// ranking and each omission against them.
+	if request.SourceTechniques != nil {
+		context.Set("sourceTechniques", s.FromGoValue(*request.SourceTechniques))
+	}
 	context.Set("documents", documents).
 		Set("sourcePassages", s.FromGoValue(evidence)).
 		Set("sourceScope", s.NewObject().
@@ -175,7 +180,11 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 			statuses += " " + reviewBonusDamage
 		}
 	}
-	prompt := []string{reviewStyle, reviewScope, reviewGrounding, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, fmt.Sprintf(reviewPolicy, inCurrency(currency)), reviewProgression, reviewFindings}
+	prompt := []string{reviewStyle, reviewScope, reviewGrounding, reviewPlan, reviewPrivate, reviewAdaptation, reviewPeriod, reviewReading, statuses, fmt.Sprintf(reviewPolicy, inCurrency(currency)), reviewProgression}
+	if plan := checked.Draft.Run.DesignPlan; plan != nil && rankedPlan(*plan) {
+		prompt = append(prompt, reviewCoreConcepts)
+	}
+	prompt = append(prompt, reviewFindings)
 	if context.Has("revision") {
 		prompt = append(prompt, reviewRevisionRule)
 	}
@@ -563,4 +572,20 @@ func reviewRevision(request *Request) *s.Object {
 		revision.Set("feedback", *request.Feedback)
 	}
 	return revision
+}
+
+// rankedPlan reports a plan that ranks its repertoire or omitted techniques,
+// as plans made under requireCoreConcepts do.
+func rankedPlan(plan DesignPlan) bool {
+	for _, entry := range plan.Repertoire {
+		if entry.Importance != "" {
+			return true
+		}
+	}
+	for _, omission := range plan.OmittedTechniques {
+		if omission.Importance != "" {
+			return true
+		}
+	}
+	return false
 }

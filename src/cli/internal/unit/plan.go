@@ -105,8 +105,15 @@ func PurchasePlanOutputSchema(request *Request) *s.ObjectSchema {
 		)))
 	}
 	effect := planEffect.Extend(s.F("adaptedAs", s.Array(s.Enum(effectPromises(definition)...)).Max(4)))
+	// Under requireCoreConcepts every repertoire entry and omitted technique
+	// is ranked; otherwise the plan does not rank them.
+	var importance s.Schema
+	if coreConceptsOn(*definition) {
+		importance = importanceRank
+	}
 	return PurchasePlanSchema.Extend(
-		s.F("repertoire", repertoireOf(s.Array(effect).Min(1).Max(6))),
+		s.F("repertoire", repertoireOf(s.Array(effect).Min(1).Max(6), importance)),
+		s.F("omittedTechniques", omissionsOf(importance)),
 		s.F("paths", s.StrictObject(
 			s.F("path1", pathSchema("path1")), s.F("path2", pathSchema("path2")), s.F("path3", pathSchema("path3")),
 		)),
@@ -305,8 +312,13 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 	if request.MechanicsDefinition != nil {
 		context.Set("definition", s.FromGoValue(request.MechanicsDefinition))
 	}
+	context.Set("documents", documents)
+	// The techniques and forms the selected passages name, which the plan
+	// ranks under requireCoreConcepts.
+	if request.SourceTechniques != nil {
+		context.Set("sourceTechniques", s.FromGoValue(*request.SourceTechniques))
+	}
 	context.
-		Set("documents", documents).
 		Set("evidenceSpans", s.FromGoValue(evidence)).
 		Set("sourceOrigins", origins).
 		Set("sourceScope", s.NewObject().
@@ -361,6 +373,9 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 		}
 		if policy.RequiresBehaviorChange(5) {
 			gates = append(gates, m.BehaviorChangeRule(5)+" "+planTier5Pinnacle)
+		}
+		if coreConceptsOn(*d) {
+			gates = append(gates, m.CoreConceptsRule+" "+planCoreConcepts+" "+CoreSpiritRule)
 		}
 		last := guidance[len(guidance)-1]
 		guidance = append(append(append([]string{}, guidance[:len(guidance)-1]...), gates...), last)
@@ -543,6 +558,7 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 		feasibility := append(PlanFeasibilityIssues(plan, *request.MechanicsDefinition), PlanEffectIssues(plan)...)
 		if policy != nil {
 			feasibility = append(feasibility, PlanTechniqueIssues(plan, *request.MechanicsDefinition)...)
+			feasibility = append(feasibility, CoreConceptIssues(plan, request)...)
 		}
 		for _, issue := range feasibility {
 			var path []any

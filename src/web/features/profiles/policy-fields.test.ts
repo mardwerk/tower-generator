@@ -42,6 +42,7 @@ const defaultPolicy: DesignPolicy = {
   manualAbilityPath: 'path2',
   requireTier3PathIdentity: true,
   requireTier5BehaviorChange: true,
+  requireCoreConcepts: true,
   tier5Uniqueness: 'one-per-player-unit-type-and-path',
 };
 
@@ -138,6 +139,7 @@ export const tests: Record<string, () => Promise<void>> = {
         'requireTier3BehaviorChange',
         'requireTier3PathIdentity',
         'requireTier5BehaviorChange',
+        'requireCoreConcepts',
         'minTier5SpecialtyMultiplier',
         'manualAbilityPath',
         'maxManualAbilityPaths',
@@ -192,6 +194,7 @@ export const tests: Record<string, () => Promise<void>> = {
         'requireTier3BehaviorChange',
         'requireTier3PathIdentity',
         'requireTier5BehaviorChange',
+        'requireCoreConcepts',
       ],
       'checked toggles',
     );
@@ -310,6 +313,7 @@ export const tests: Record<string, () => Promise<void>> = {
         ['Behavior at the third purchase', 'Off'],
         ['Path identity at the third purchase', 'On'],
         ['Behavior at the fifth purchase', 'On'],
+        ['Core concepts', 'On'],
         ['Capstone multiplier', '3'],
         ['Active Ability', 'Middle path only'],
       ],
@@ -379,11 +383,12 @@ export const tests: Record<string, () => Promise<void>> = {
       'saved Active Ability',
     );
   },
-  async 'the early benefits and path identity toggles round-trip through profiles/save'() {
+  async 'the early benefits, path identity and core concepts toggles round-trip through profiles/save'() {
     for (const key of [
       'distinctEarlyBenefits',
       'exclusiveEarlyBenefits',
       'requireTier3PathIdentity',
+      'requireCoreConcepts',
     ] as const) {
       const api = scriptedProfiles();
       const form = {

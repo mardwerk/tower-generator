@@ -100,6 +100,11 @@ export const policyFields: Record<PolicyKey, PolicyField> = {
     help: 'Every fifth purchase adds a behavior or access, or carries a proposed mechanic, not only larger numbers.',
     control: toggle(true),
   },
+  requireCoreConcepts: {
+    label: 'Core concepts',
+    help: "The plan ranks the character's techniques core, major or minor and lists every source technique; each of the one to three core concepts is adapted on a purchase, never omitted whole.",
+    control: toggle(true),
+  },
   minTier5SpecialtyMultiplier: {
     label: 'Capstone multiplier',
     help: "The fifth purchase multiplies its path's specialty metric over the fourth by at least this much.",

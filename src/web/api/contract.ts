@@ -127,6 +127,8 @@ export interface DesignPolicy {
   requireTier3BehaviorChange?: boolean;
   requireTier3PathIdentity?: boolean;
   requireTier5BehaviorChange?: boolean;
+  /** Core concepts ranked in the plan and adapted on purchases. */
+  requireCoreConcepts?: boolean;
   tier5Uniqueness: 'one-per-player-unit-type-and-path';
 }
 

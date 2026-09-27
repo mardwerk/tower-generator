@@ -80,7 +80,7 @@ func TestTechniqueEffectsAreAdaptedOrOmitted(t *testing.T) {
 		return func(plan *s.Object) {
 			repertoire, _ := plan.Get("repertoire")
 			plan.Set("repertoire", append(repertoire.([]any), s.NewObject().
-				Set("name", name).Set("sourceIds", []any{"source1:2"}).
+				Set("name", name).Set("importance", "minor").Set("sourceIds", []any{"source1:2"}).
 				Set("limitation", "The ordinary throw is described, not a purchase.").
 				Set("effects", []any{s.NewObject().Set("effect", "The dart flies to a distant target.").Set("adaptedAs", []any{"range"}).Set("reason", "Reach is range.")})))
 		}
