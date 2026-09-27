@@ -2,8 +2,10 @@ package render_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -434,5 +436,40 @@ func TestPurchaseTextLabelsPlanApartFromResolvedEffects(t *testing.T) {
 	}
 	if got := (render.Purchase{Effects: []string{"Raises pierce from 2 to 3 (+1)."}}).Passage(); got != "Raises pierce from 2 to 3 (+1)." {
 		t.Errorf("a purchase without a planned technique: %q", got)
+	}
+}
+
+// A follow-up that runs only while the Active is on scales the boosted hit,
+// so the sheet words its damage from the Active's boosted attack. Escanor's
+// v38 x-5-x read "(4)" where the boosted hit, and the crosspath row, deal
+// 10 (SOL-61-17).
+func TestBoostFollowUpWordsTheBoostedDamage(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	result := stages.Result
+	blueprint := *result.Candidate.Blueprint
+	tier := blueprint.Paths.Path2.Tiers.At(5)
+	tier.Changes = append(append([]mechanics.Change{}, tier.Changes...), mechanics.Change{
+		Kind: "followUp", Target: "boost",
+		FollowUp: &mechanics.FollowUp{Name: "Boosted Slash", Count: 2, DamageMultiplier: 1, Radius: 6},
+	})
+	result.Candidate.Blueprint = &blueprint
+	build := mechanics.ResolveUnchecked(&blueprint, mechanics.Selection{0, 5, 0})
+	if len(build.Abilities) == 0 {
+		t.Fatal("the fixture's x-5-x has no Active Ability")
+	}
+	boosted, ordinary := build.Abilities[0].BoostedAttack.Stats.Damage, build.BaseAttack.Stats.Damage
+	if boosted == ordinary {
+		t.Fatalf("the fixture's boost does not change damage (%v)", boosted)
+	}
+	text, err := render.Markdown(s.FromGoValue(result), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := fmt.Sprintf("Boosted Slash: after each volley hits, up to 2 other detected enemies within 6 of the primary impact take 100%% of the hit damage (%s)", strconv.FormatFloat(boosted, 'f', -1, 64))
+	if !strings.Contains(text, want) {
+		t.Errorf("the boost follow-up does not word the boosted damage %v:\n%s", boosted, text)
 	}
 }
