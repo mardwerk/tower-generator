@@ -169,11 +169,11 @@ func TestUnitSheetUsesBuildCodesAndEveryCrosspath(t *testing.T) {
 		}
 	}
 	for _, want := range []string{
-		// A purchase that adapts a named technique shows the plan's
-		// description of that adaptation before its effects; one of the base
-		// attack alone shows only its effects.
-		"## Top path: Juggernaut Line", "**3-x-x Spike-o-pult** (320 Gold). Replaces the dart with a heavier spiked ball that deals more damage, reaches farther and pierces far more enemies, at a slower throw. Raises damage from 1 to 2 (+1).",
-		"**1-x-x Sharp Shots** (140 Gold). Raises pierce from 2 to 3 (+1).",
+		// Each purchase labels the plan's intent apart from its resolved
+		// effects (#35): the technique the plan maps it to and, for a named
+		// technique, the plan's description of the adaptation.
+		"## Top path: Juggernaut Line", "**3-x-x Spike-o-pult** (320 Gold). Plan: adapts Spiked Ball. Replaces the dart with a heavier spiked ball that deals more damage, reaches farther and pierces far more enemies, at a slower throw. Resolved: Raises damage from 1 to 2 (+1).",
+		"**1-x-x Sharp Shots** (140 Gold). Plan: adapts Dart Throw (base attack). Resolved: Raises pierce from 2 to 3 (+1).",
 		"**x-4-x Super Monkey Fan Club** (7,200 Gold).", "Adds Fan Club Frenzy, this Unit's Active Ability: for 15 s it multiplies its interval by 0.0625 and adds 8 range",
 		"**x-x-5 Crossbow Master** (21,500 Gold).", "Switches damage from Sharp to Normal.",
 		"### Early builds (12)", "### Advanced builds (36)",
@@ -384,5 +384,30 @@ func TestKnockbackResolvesAndReads(t *testing.T) {
 	metrics := s.Stringify(mechanics.SpecialtyMetricsWith(build, "control", &terms))
 	if !strings.Contains(metrics, `"knockback coverage upper bound"`) || strings.Contains(metrics, `"knockback coverage upper bound":0`) {
 		t.Errorf("control metrics %s", metrics)
+	}
+}
+
+// A purchase labels the plan's technique, adaptation and name flag as plan
+// intent, apart from its resolved effects; one without a planned technique
+// reads as before (#35).
+func TestPurchaseTextLabelsPlanApartFromResolvedEffects(t *testing.T) {
+	flagged := render.Purchase{
+		Technique: "Gum-Gum Pistol", BaseTechnique: true, NameMentions: []string{"Gear 4 Boundman"},
+		Effects: []string{"Raises damage from 1 to 2 (+1)."},
+	}
+	want := "Plan: adapts Gum-Gum Pistol (base attack). Review: the name suggests Gear 4 Boundman, which the plan does not map to this purchase. Resolved: Raises damage from 1 to 2 (+1)."
+	if got := flagged.Passage(); got != want {
+		t.Errorf("flagged purchase:\n%s\nwant\n%s", got, want)
+	}
+	adapted := render.Purchase{
+		Technique: "Gear 3", Adaptation: "Luffy inflates his arm into a giant limb.",
+		Effects: []string{"Raises damage from 2 to 4 (+2).", "Raises splash radius from 0 to 8 (+8)."},
+	}
+	want = "Plan: adapts Gear 3. Luffy inflates his arm into a giant limb. Resolved: Raises damage from 2 to 4 (+2). Raises splash radius from 0 to 8 (+8)."
+	if got := adapted.Passage(); got != want {
+		t.Errorf("adapted purchase:\n%s\nwant\n%s", got, want)
+	}
+	if got := (render.Purchase{Effects: []string{"Raises pierce from 2 to 3 (+1)."}}).Passage(); got != "Raises pierce from 2 to 3 (+1)." {
+		t.Errorf("a purchase without a planned technique: %q", got)
 	}
 }
