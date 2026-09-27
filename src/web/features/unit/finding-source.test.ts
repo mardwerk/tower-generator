@@ -1,6 +1,7 @@
 // Who produced a Finding, as the unit view labels it.
 import type { Finding } from '../../api/contract.js';
 import {
+  capstoneVerdictRule,
   findingSource,
   isReviewVerdict,
   omissionVerdictRule,
@@ -36,10 +37,11 @@ export const tests: Record<string, () => Promise<void>> = {
       { method: 'model', rule: omissionVerdictRule, outcome: 'fail' },
       { method: 'model', rule: pathIdentityVerdictRule, outcome: 'pass' },
       { method: 'model', rule: 'source-fit', outcome: 'fail' },
+      { method: 'model', rule: capstoneVerdictRule, outcome: 'unresolved' },
     ];
     equal(
       findings.map((finding) => String(isReviewVerdict(finding))).join(','),
-      'false,true,true,false',
+      'false,true,true,false,true',
       'verdicts',
     );
     equal(
@@ -55,6 +57,13 @@ export const tests: Record<string, () => Promise<void>> = {
         .join(','),
       'pass',
       'third purchase verdicts',
+    );
+    equal(
+      reviewVerdicts(findings, capstoneVerdictRule)
+        .map((finding) => finding.outcome)
+        .join(','),
+      'unresolved',
+      'fifth purchase verdicts',
     );
   },
 };

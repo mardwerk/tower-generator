@@ -34,8 +34,8 @@ func TestReviewAsksForAVerdictPerOmissionAndThirdPurchase(t *testing.T) {
 	}
 	request := unit.BlueprintReviewRequest(stages.Checked)
 	for _, want := range []string{
-		`"requiredVerdicts":{"omissions":[{"technique":"Allied Fan Club","importance":"minor"},{"technique":"Critical shots","importance":"minor"}],"thirdPurchases":[{"build":"3-x-x","path":"path1","name":"Spike-o-pult","technique":"Spiked Ball"},{"build":"x-3-x","path":"path2","name":"Triple Shot","technique":"Triple Throw"},{"build":"x-x-3","path":"path3","name":"Crossbow","technique":"Crossbow"}]}`,
-		"Give at most eight useful findings; the verdicts on omissions and third purchases are apart from them.",
+		`"requiredVerdicts":{"omissions":[{"technique":"Allied Fan Club","importance":"minor"},{"technique":"Critical shots","importance":"minor"}],"thirdPurchases":[{"build":"3-x-x","path":"path1","name":"Spike-o-pult","technique":"Spiked Ball"},{"build":"x-3-x","path":"path2","name":"Triple Shot","technique":"Triple Throw"},{"build":"x-x-3","path":"path3","name":"Crossbow","technique":"Crossbow"}],"fifthPurchases":[{"build":"5-x-x","path":"path1","name":"Ultra-Juggernaut","technique":"Spiked Ball"},{"build":"x-5-x","path":"path2","name":"Plasma Monkey Fan Club","technique":"Fan Club"},{"build":"x-x-5","path":"path3","name":"Crossbow Master","technique":"Crossbow"}]}`,
+		"Give at most eight useful findings; the verdicts on omissions and third and fifth purchases are apart from them, and the findings go to issues the verdicts do not cover.",
 		"give one verdict on each subject requiredVerdicts lists, and no other",
 		"could adapt the technique's central effect, as the omission rule says, not whether some aspect of it is unsupported",
 		"whether its importance is plausible against the passages its sourceTechnique cites",
@@ -51,7 +51,8 @@ func TestReviewAsksForAVerdictPerOmissionAndThirdPurchase(t *testing.T) {
 		`"omissionVerdicts":{"minItems":2,"maxItems":2,"type":"array","items":{"type":"object","properties":{"technique":{"type":"string","enum":["Allied Fan Club","Critical shots"]}`,
 		`"thirdPurchaseVerdicts":{"minItems":3,"maxItems":3,"type":"array","items":{"type":"object","properties":{"build":{"type":"string","enum":["3-x-x","x-3-x","x-x-3"]}`,
 		`"outcome":{"type":"string","enum":["pass","fail","unresolved"]}`,
-		`"required":["summary","findings","omissionVerdicts","thirdPurchaseVerdicts"]`,
+		`"fifthPurchaseVerdicts":{"minItems":3,"maxItems":3,"type":"array","items":{"type":"object","properties":{"build":{"type":"string","enum":["5-x-x","x-5-x","x-x-5"]}`,
+		`"required":["summary","findings","omissionVerdicts","thirdPurchaseVerdicts","fifthPurchaseVerdicts"]`,
 	} {
 		if !strings.Contains(schema, want) {
 			t.Errorf("the review schema lacks %s", want)
@@ -82,6 +83,9 @@ func TestReviewRecordsEveryVerdict(t *testing.T) {
 		"verdict.third-purchase.path1 path-identity-verdict pass info path1, 3-x-x Spike-o-pult",
 		"verdict.third-purchase.path2 path-identity-verdict pass info path2, x-3-x Triple Shot",
 		"verdict.third-purchase.path3 path-identity-verdict pass info path3, x-x-3 Crossbow",
+		"verdict.fifth-purchase.path1 capstone-verdict pass info path1, 5-x-x Ultra-Juggernaut",
+		"verdict.fifth-purchase.path2 capstone-verdict unresolved warning path2, x-5-x Plasma Monkey Fan Club",
+		"verdict.fifth-purchase.path3 capstone-verdict pass info path3, x-x-5 Crossbow Master",
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Errorf("verdicts:\n%s\nwant:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
@@ -98,7 +102,7 @@ func TestReviewRecordsEveryVerdict(t *testing.T) {
 	}
 	// The Result reads back with its verdicts.
 	reread, err := unit.ParseResult(s.FromGoValue(stages.Result))
-	if err != nil || len(verdictFindings(reread)) != 5 {
+	if err != nil || len(verdictFindings(reread)) != 8 {
 		t.Errorf("the Result does not read back with its verdicts: %v", err)
 	}
 }
@@ -158,10 +162,18 @@ func TestIncompleteVerdictsAreRejected(t *testing.T) {
 		"a missing omission": {func(o *s.Object) {
 			o.Set("omissionVerdicts", at(o, "omissionVerdicts").([]any)[1:])
 		}, `no verdict on the omission of "Allied Fan Club"`},
+		"a missing fifth purchase": {func(o *s.Object) {
+			o.Set("fifthPurchaseVerdicts", at(o, "fifthPurchaseVerdicts").([]any)[1:])
+		}, "no verdict on the fifth purchase 5-x-x"},
+		"a third purchase verdict on a fifth purchase": {func(o *s.Object) {
+			verdicts := at(o, "thirdPurchaseVerdicts").([]any)
+			o.Set("thirdPurchaseVerdicts", append(verdicts, s.Clone(verdicts[0]).(*s.Object).Set("build", "5-x-x")))
+		}, `a third purchase verdict on "5-x-x", which is no path's third purchase`},
 		"no verdicts": {func(o *s.Object) {
 			o.Delete("omissionVerdicts")
 			o.Delete("thirdPurchaseVerdicts")
-		}, `no verdict on the omission of "Allied Fan Club"; no verdict on the omission of "Critical shots"; no verdict on the third purchase 3-x-x`},
+			o.Delete("fifthPurchaseVerdicts")
+		}, `no verdict on the omission of "Allied Fan Club"; no verdict on the omission of "Critical shots"; no verdict on the third purchase 3-x-x; no verdict on the third purchase x-3-x; no verdict on the third purchase x-x-3; no verdict on the fifth purchase 5-x-x`},
 		"a repeated verdict": {func(o *s.Object) {
 			verdicts := at(o, "thirdPurchaseVerdicts").([]any)
 			o.Set("thirdPurchaseVerdicts", append(verdicts, s.Clone(verdicts[0])))
@@ -179,7 +191,7 @@ func TestIncompleteVerdictsAreRejected(t *testing.T) {
 		_, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options())
 		var failure *unit.ModelError
 		if !errors.As(err, &failure) || failure.Failure == nil || failure.Failure.Code != unit.CodeOutputInvalid || failure.Failure.Stage != "review" ||
-			!strings.Contains(failure.Message, "did not return exactly one verdict per whole-technique omission and per third purchase") ||
+			!strings.Contains(failure.Message, "did not return exactly one verdict per whole-technique omission and per third and fifth purchase") ||
 			!strings.Contains(failure.Message, c.want) || len(model.Requests) != 1 {
 			t.Errorf("%s: %v after %d calls", name, err, len(model.Requests))
 		}
@@ -204,16 +216,17 @@ func TestCorrectionKeepsTheFirstVerdicts(t *testing.T) {
 	at(illegal, "findings").([]any)[0].(*s.Object).Set("message", "The 3-3-0 crosspath loses the frenzy.")
 	changed := s.Clone(valid).(*s.Object)
 	at(changed, "thirdPurchaseVerdicts").([]any)[0].(*s.Object).Set("outcome", "fail").Set("action", "Rename it.")
+	at(changed, "fifthPurchaseVerdicts").([]any)[1].(*s.Object).Set("outcome", "pass").Set("action", nil)
 	model := &fixture.Model{Outputs: []any{illegal, changed}}
 	result, err := unit.ReviewDraft(context.Background(), stages.Checked, model, fixture.Options())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(model.Requests[1].Prompt, "with omissionVerdicts and thirdPurchaseVerdicts as in your previous review") {
+	if !strings.Contains(model.Requests[1].Prompt, "with omissionVerdicts, thirdPurchaseVerdicts and fifthPurchaseVerdicts as in your previous review") {
 		t.Error("the correction does not ask for the verdicts")
 	}
 	for _, f := range verdictFindings(result) {
-		if f.Outcome != "pass" {
+		if want := map[bool]string{true: "unresolved", false: "pass"}[f.ID == "verdict.fifth-purchase.path2"]; f.Outcome != want {
 			t.Errorf("the correction changed the verdict %s", f.ID)
 		}
 	}
@@ -256,5 +269,65 @@ func TestProposedOnlyThirdPurchaseVerdictIsUnresolved(t *testing.T) {
 	}
 	if strings.Contains(prompt, "fail one whose only distinction is a proposed mechanic that is not playable") {
 		t.Error("the review prompt still fails every proposed-only third purchase")
+	}
+}
+
+// Each fifth purchase gets a verdict that judges it with the other two
+// fifth purchases and its path's identity; two capstones that buy the same
+// capability kind need a distinct play reason, with no typed ban
+// (SOL-61-10). A proposed mechanic that restates a supported mechanic of its
+// purchase fails, as Luffy's v34 x-x-5 "Python redirection" beside a
+// follow-up that already hits a second enemy (OPUS-NET-61-13).
+func TestReviewJudgesCapstonesTogether(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	prompt := unit.BlueprintReviewRequest(stages.Checked).Prompt
+	for _, want := range []string{
+		"fifthPurchaseVerdicts has one verdict per path's fifth purchase, by its build code: its reason judges the capstone together with the other two fifth purchases and its path's identity",
+		"No capability kind is banned, but when two fifth purchases buy the same new capability kind, such as a follow-up on both, each needs a distinct play reason",
+		"Judge each fifth purchase in its fifth purchase verdict, against the other two fifth purchases and its path's identity.",
+		unit.ProposalDistinctRule,
+		"fail one that is not distinct on its purchase's build code, naming the supported mechanic it repeats",
+		"spend the findings on issues the verdicts do not cover",
+		"code drops a finding that repeats a verdict's subject, outcome and reason",
+	} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("the review prompt lacks %q", want)
+		}
+	}
+}
+
+// A free-form finding that repeats a verdict's subject, outcome and reason
+// is dropped from the Result; one on the same subject about another problem
+// is kept.
+func TestReviewDropsAFindingThatRepeatsAVerdict(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	output := recordedOutput(t, "review")
+	findings := at(output, "findings").([]any)
+	finding := func(id, subject, message string) *s.Object {
+		return s.Clone(findings[0]).(*s.Object).Set("id", id).Set("category", "conflict").Set("severity", "warning").Set("outcome", "unresolved").
+			Set("subject", subject).Set("message", message).Set("rule", "capstone")
+	}
+	output.Set("findings", append(findings,
+		finding("model.x5-repeat", "x-5-x, Plasma Monkey Fan Club", "x-5-x Plasma Monkey Fan Club only doubles the frenzy's damage and lengthens it; its play reason, the allied transformation beside 5-x-x's split and x-x-5's damage type, is an unsupported mechanic."),
+		finding("model.x5-price", "x-5-x", "x-5-x costs 45,000 Gold for a longer frenzy; price it for that gain."),
+	))
+	result, err := unit.ReviewDraft(context.Background(), stages.Checked, &fixture.Model{Outputs: []any{output}}, fixture.Options())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ids []string
+	for _, f := range result.Findings {
+		if f.Method == "model" && !unit.IsReviewVerdict(f) {
+			ids = append(ids, f.ID)
+		}
+	}
+	if got := strings.Join(ids, ","); got != "model.fan-club-allies,model.x5-price" {
+		t.Errorf("model findings %s", got)
 	}
 }
