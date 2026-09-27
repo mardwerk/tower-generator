@@ -108,7 +108,7 @@ func PlanTechniqueIssues(plan DesignPlan, definition m.Definition) []m.Issue {
 		if !own[pathIndex] {
 			issues = append(issues, m.Issue{
 				Path:    "upgradeIntents." + path,
-				Message: fmt.Sprintf("The %s path adapts no technique of its own: every purchase adapts the base attack or a technique another path also adapts. Give the path a repertoire technique that is its identity; it may still build on other paths' techniques in crosspaths.", pathPosition(path)),
+				Message: fmt.Sprintf("The %s path adapts no technique of its own: every purchase adapts the base attack or a technique another path also adapts. Give the path a repertoire technique that is its identity; it may still build on other paths' techniques in crosspaths.", m.PathPosition(path)),
 			})
 		}
 	}

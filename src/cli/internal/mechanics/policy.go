@@ -254,60 +254,64 @@ func DesignPolicyIssues(blueprint *Blueprint, definition Definition) []Issue {
 		return nil
 	}
 	var issues []Issue
-	specializations := map[string]bool{}
-	firstUpgrades := map[string]string{}
-	capstones := map[string]string{}
-	manualPaths := 0
+	specializations := map[string]string{}
+	firstUpgrades := map[string]int{}
+	capstones := map[string]int{}
+	var activePaths []string
+	activeRule := ActiveAbilityRule(&definition)
 	for index, path := range PathKeys {
 		branch := blueprint.Paths.At(index)
 		prefix := "paths." + path
 		specialization := branch.Specialization
 		if specialization == "" {
 			issues = append(issues, Issue{prefix + ".specialization", "The design policy requires an explicit path specialization."})
-		} else {
-			if policy.DistinctPathSpecializations && specializations[specialization] {
-				issues = append(issues, Issue{prefix + ".specialization", fmt.Sprintf("The design policy requires distinct path specializations; %s is already used.", specialization)})
-			}
-			specializations[specialization] = true
+		} else if previous, ok := specializations[specialization]; ok && policy.DistinctPathSpecializations {
+			issues = append(issues, Issue{prefix + ".specialization", fmt.Sprintf("The %s path already declares %s. %s Choose another specialization for the %s path.", PathPosition(previous), specialization, DistinctSpecializationsRule, PathPosition(path))})
+		} else if !ok {
+			specializations[specialization] = path
 		}
 		tier4 := pureBuild(blueprint, index, 4)
 		tier5 := pureBuild(blueprint, index, 5)
-		for _, req := range []struct {
-			tier     int
-			required *bool
-		}{{3, policy.RequireTier3BehaviorChange}, {5, policy.RequireTier5BehaviorChange}} {
-			if req.required != nil && *req.required && !HasBehaviorTransition(pureBuild(blueprint, index, req.tier-1), pureBuild(blueprint, index, req.tier)) {
-				issues = append(issues, Issue{fmt.Sprintf("%s.tiers.tier%d", prefix, req.tier), fmt.Sprintf("Tier %d must introduce a supported attack behavior or access, such as a new delivery, a distinct-target volley of more than one projectile, more than one projectile, status, splash, bounded follow-up, damage type or detected trait. Increasing existing numbers, changing targeting or a name, or a change with no effect is insufficient.", req.tier)})
+		for _, tier := range []int{3, 5} {
+			if policy.RequiresBehaviorChange(tier) && !HasBehaviorTransition(pureBuild(blueprint, index, tier-1), pureBuild(blueprint, index, tier)) {
+				issues = append(issues, Issue{fmt.Sprintf("%s.tiers.tier%d", prefix, tier), fmt.Sprintf("Resolved %s adds no new behavior or access over %s. %s", BuildCode(index, tier), BuildCode(index, tier-1), BehaviorChangeRule(tier))})
 			}
 		}
 		for _, check := range []struct {
 			enabled bool
 			tier    int
+			rule    string
 			build   Build
-			seen    map[string]string
-		}{{policy.DistinctFirstUpgrades, 1, pureBuild(blueprint, index, 1), firstUpgrades}, {policy.DistinctCapstones, 5, tier5, capstones}} {
+			seen    map[string]int
+		}{{policy.DistinctFirstUpgrades, 1, DistinctFirstPurchasesRule, pureBuild(blueprint, index, 1), firstUpgrades}, {policy.DistinctCapstones, 5, DistinctCapstonesRule, tier5, capstones}} {
 			if !check.enabled {
 				continue
 			}
 			signature := policyBehavior(check.build)
 			if previous, ok := check.seen[signature]; ok {
-				issues = append(issues, Issue{fmt.Sprintf("%s.tiers.tier%d", prefix, check.tier), fmt.Sprintf("Resolved tier %d behavior duplicates %s; names and prices do not make a distinct upgrade. Change what this purchase improves, or by how much, so the resolved attack differs.", check.tier, previous)})
+				code := BuildCode(index, check.tier)
+				issues = append(issues, Issue{fmt.Sprintf("%s.tiers.tier%d", prefix, check.tier), fmt.Sprintf("Resolved %s behaves exactly like %s. %s Change what %s improves, or by how much, so the resolved attack differs.", code, BuildCode(previous, check.tier), check.rule, code)})
 			} else {
-				check.seen[signature] = path
+				check.seen[signature] = index
 			}
-		}
-		manual := policy.ManualAbilityPath
-		if len(tier4.Abilities) > 0 && manual.Present && (manual.Null || manual.Value != path) {
-			message := fmt.Sprintf("The design policy permits a manual ability only on %s. This path must remain automatic.", manual.Value)
-			if manual.Null {
-				message = "The design policy does not permit manual abilities on any path."
-			}
-			issues = append(issues, Issue{prefix + ".tiers.tier4", message})
 		}
 		if len(tier4.Abilities) > 0 {
-			manualPaths++
-			if manualPaths > policy.MaxManualAbilityPaths {
-				issues = append(issues, Issue{prefix + ".tiers.tier4", fmt.Sprintf("The design policy permits at most %d paths with manual abilities.", policy.MaxManualAbilityPaths)})
+			code := BuildCode(index, 4)
+			manual := policy.ManualAbilityPath
+			if manual.Present && (manual.Null || manual.Value != path) {
+				issues = append(issues, Issue{prefix + ".tiers.tier4", fmt.Sprintf("Resolved %s unlocks an Active Ability. %s Set this path's unlockBoost to null and its boostChanges to empty.", code, activeRule)})
+			}
+			activePaths = append(activePaths, code)
+			if len(activePaths) > policy.MaxManualAbilityPaths {
+				facts := fmt.Sprintf("Resolved %s unlocks an Active Ability.", code)
+				fix := "Set every unlockBoost to null and every boostChanges to empty."
+				if len(activePaths) > 1 {
+					facts = fmt.Sprintf("Resolved %s each unlock an Active Ability.", joinAnd(activePaths))
+				}
+				if policy.MaxManualAbilityPaths > 0 {
+					fix = fmt.Sprintf("Keep it on at most %s; on the others set unlockBoost to null and boostChanges to empty.", pathCount(policy.MaxManualAbilityPaths))
+				}
+				issues = append(issues, Issue{prefix + ".tiers.tier4", facts + " " + activeRule + " " + fix})
 			}
 		}
 		if specialization == "" || policy.MinTier5SpecialtyMultiplier == nil {
@@ -351,19 +355,15 @@ func DesignPolicyIssues(blueprint *Blueprint, definition Definition) []Issue {
 			}
 		}
 		if !improved {
-			achieved := "no finite positive tier 4 specialty metric is established"
+			facts := fmt.Sprintf("Resolved %s establishes no finite positive %s specialty metric.", BuildCode(index, 4), specialization)
 			if len(ratios) > 0 {
 				parts := make([]string, len(ratios))
 				for i, r := range ratios {
-					parts[i] = fmt.Sprintf("%s: %sx", r.metric, toPrecision4(r.value))
+					parts[i] = fmt.Sprintf("%s %sx", r.metric, toPrecision4(r.value))
 				}
-				achieved = strings.Join(parts, "; ")
+				facts = fmt.Sprintf("Resolved %s multiplies the %s specialty metrics of %s by these ratios: %s.", BuildCode(index, 5), specialization, BuildCode(index, 4), joinAnd(parts))
 			}
-			suffix := ""
-			if specialization == "ability-burst" {
-				suffix = " A duty-only gain must also retain peak output."
-			}
-			issues = append(issues, Issue{prefix + ".tiers.tier5", fmt.Sprintf("Tier 5 must improve an established %s specialty metric by at least %sx over pure tier 4. Achieved %s.%s These are capacity heuristics, including group/control upper bounds, not simulated combat power or a universal BTD6 balance rule.", specialization, s.FormatNumber(minimum), achieved, suffix)})
+			issues = append(issues, Issue{prefix + ".tiers.tier5", facts + " " + CapstoneMultiplierRule(minimum) + " These are capacity heuristics, including group/control upper bounds, not simulated combat power or a universal BTD6 balance rule."})
 		}
 	}
 	return issues

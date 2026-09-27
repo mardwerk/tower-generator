@@ -64,12 +64,7 @@ func PurchasePlanOutputSchema(request *Request) *s.ObjectSchema {
 	}
 	rules, policy := definition.Rules, definition.Profile.DesignPolicy
 	pathSchema := func(path string) s.Schema {
-		maxPaths := 1
-		if policy != nil {
-			maxPaths = policy.MaxManualAbilityPaths
-		}
-		allowsBoost := (policy == nil || !policy.ManualAbilityPath.Null || !policy.ManualAbilityPath.Present) && maxPaths > 0 &&
-			(policy == nil || !policy.ManualAbilityPath.Present || policy.ManualAbilityPath.Value == path)
+		allowsBoost := m.ActiveAbilityAllowed(policy, path)
 		atTier := func(tier int) s.Schema {
 			active := allowsBoost && tier >= rules.ManualBoostUnlockTier
 			var unlocks []string
@@ -80,7 +75,7 @@ func PurchasePlanOutputSchema(request *Request) *s.ObjectSchema {
 					ok = allowsBoost && tier == rules.ManualBoostUnlockTier
 				case unlock == "active-follow-up":
 					ok = active && tier > rules.ManualBoostUnlockTier && rules.HasExtension("volley-follow-up")
-				case tier <= 2 && policy != nil && policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity && !earlyIdentityAllowed(definition, unlock):
+				case tier <= 2 && policy.PreservesEarlyIdentity() && !earlyIdentityAllowed(definition, unlock):
 					ok = false
 				case unlock == "distinct-volley":
 					ok = rules.HasExtension("distinct-volley")
@@ -93,7 +88,7 @@ func PurchasePlanOutputSchema(request *Request) *s.ObjectSchema {
 			}
 			// Under the early-identity policy a first or second purchase keeps a
 			// single-projectile attack single, so it cannot promise projectiles.
-			earlyIdentity := tier <= 2 && policy != nil && policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity
+			earlyIdentity := tier <= 2 && policy.PreservesEarlyIdentity()
 			var improvements []string
 			for _, dimension := range ImprovementsFor(definition) {
 				if earlyIdentity && dimension == "projectiles" {
@@ -320,9 +315,12 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 	guidance := append([]string{}, planGuidance...)
 	// Build legality, crosspath counts and the Active slot come from the
 	// Definition, not from text written for the Default Profile.
-	activation, shape := "A player-activated ability exists only where the Definition allows one.", "Code resolves every legal crosspath build; do not output a crosspath tree."
+	activation, shape := m.ActiveAbilityRule(request.MechanicsDefinition)+" "+planActiveForm, "Code resolves every legal crosspath build; do not output a crosspath tree."
 	if d := request.MechanicsDefinition; d != nil {
-		activation, shape = ActivationShape(*d), BuildShape(*d)
+		shape = BuildShape(*d)
+		if d.Profile.DesignPolicy.ForbidsActiveAbility() {
+			activation = m.ActiveAbilityRule(d) + " " + planNoActive
+		}
 	}
 	for i, line := range guidance {
 		guidance[i] = strings.NewReplacer("{{activation}}", activation, "{{buildShape}}", shape).Replace(line)
@@ -338,14 +336,18 @@ func DesignPlanRequest(prepared Prepared) (ModelRequest, error) {
 	if d := request.MechanicsDefinition; d != nil && d.Profile.DesignPolicy != nil {
 		// Policy requirements go before the closing guidance line.
 		gates := []string{planPathGates}
-		if policy := d.Profile.DesignPolicy; policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity {
-			gates = append(gates, planEarlyIdentity)
+		policy := d.Profile.DesignPolicy
+		if policy.PreservesEarlyIdentity() {
+			gates = append(gates, m.EarlyIdentityRule(d)+" "+planEarlyIdentity)
 		}
 		if earlyBenefitsOn(*d) {
 			gates = append(gates, planDistinctEarly)
 		}
-		if policy := d.Profile.DesignPolicy; policy.RequireTier3BehaviorChange != nil && *policy.RequireTier3BehaviorChange {
-			gates = append(gates, planTier3Behavior)
+		if policy.RequiresBehaviorChange(3) {
+			gates = append(gates, m.BehaviorChangeRule(3)+" "+planTier3Behavior)
+		}
+		if policy.RequiresBehaviorChange(5) {
+			gates = append(gates, m.BehaviorChangeRule(5))
 		}
 		last := guidance[len(guidance)-1]
 		guidance = append(append(append([]string{}, guidance[:len(guidance)-1]...), gates...), last)
@@ -444,6 +446,7 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 		rules, policy, boostTier = &d.Rules, d.Profile.DesignPolicy, d.Rules.ManualBoostUnlockTier
 	}
 	hasExtension := func(name string) bool { return rules != nil && rules.HasExtension(name) }
+	activeRule := m.ActiveAbilityRule(request.MechanicsDefinition)
 	activePaths := map[string]bool{}
 	for pathIndex, path := range m.PathKeys {
 		for number := 1; number <= 5; number++ {
@@ -468,22 +471,14 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 					issue(fmt.Sprintf("Active improvements require a purchased same-path boost at tier %d or later.", boostTier))
 				}
 				if policy != nil && policy.ManualAbilityPath.Present && (policy.ManualAbilityPath.Null || policy.ManualAbilityPath.Value != path) {
-					if policy.ManualAbilityPath.Null {
-						issue("The Definition does not permit manual boosts or active improvements on any path.")
-					} else {
-						issue(fmt.Sprintf("The Definition permits manual boosts and active improvements only on %s. This path must remain automatic.", policy.ManualAbilityPath.Value))
-					}
+					issue(fmt.Sprintf("%s promises an Active Ability (%s). %s Remove manual-boost and every active- improvement from this path.", BuildCode(pathIndex, number), activePromises(intent), activeRule))
 				}
 			}
-			if number <= 2 && policy != nil && policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity && earlyIdentityBreaking(request.MechanicsDefinition, intent.Unlock) {
-				detection := "personal Camo detection"
-				if d := request.MechanicsDefinition; d != nil && d.IsV2() {
-					detection = "personal detection"
-				}
-				issue(BuildCode(pathIndex, number) + " must preserve the existing attack identity: the first and second purchase of a path add no new status, attack pattern, delivery, targeting or damage-type access before the third; " + detection + " and improvements to existing effects remain allowed.")
+			if number <= 2 && policy.PreservesEarlyIdentity() && earlyIdentityBreaking(request.MechanicsDefinition, intent.Unlock) {
+				issue(fmt.Sprintf("%s promises to unlock %s. %s Unlock %s at the third purchase or later.", BuildCode(pathIndex, number), intent.Unlock, m.EarlyIdentityRule(request.MechanicsDefinition), intent.Unlock))
 			}
-			if number <= 2 && policy != nil && policy.PreserveEarlyAttackIdentity != nil && *policy.PreserveEarlyAttackIdentity && slices.Contains(intent.Improves, "projectiles") {
-				issue(BuildCode(pathIndex, number) + " cannot promise projectiles: the first and second purchase keep a single-projectile attack single, so the mechanics could not keep that promise. Promise projectiles from the third purchase on; an attack that already fires several projectiles may still add more without promising it.")
+			if number <= 2 && policy.PreservesEarlyIdentity() && slices.Contains(intent.Improves, "projectiles") {
+				issue(fmt.Sprintf("%s promises projectiles. %s Promise projectiles from the third purchase on; an attack that already fires several projectiles may still add more without promising it.", BuildCode(pathIndex, number), m.EarlyIdentityRule(request.MechanicsDefinition)))
 			}
 			if intent.Unlock == "manual-boost" && number != boostTier {
 				issue(fmt.Sprintf("Manual boost unlocks are supported only at tier %d.", boostTier))
@@ -500,7 +495,24 @@ func DecodeDesignPlan(output any, request *Request) (DesignPlan, error) {
 		}
 	}
 	if policy != nil && len(activePaths) > policy.MaxManualAbilityPaths {
-		issues = append(issues, s.Issue{Code: "custom", Path: []any{"upgradeIntents"}, Message: fmt.Sprintf("The plan requires active boosts on %d paths; the Definition permits at most %d.", len(activePaths), policy.MaxManualAbilityPaths)})
+		var positions []string
+		for _, path := range m.PathKeys {
+			if activePaths[path] {
+				positions = append(positions, m.PathPosition(path))
+			}
+		}
+		count := "1 path"
+		if len(positions) > 1 {
+			count = fmt.Sprintf("%d paths", len(positions))
+		}
+		fix := "Remove manual-boost and every active- improvement from every path."
+		switch {
+		case policy.MaxManualAbilityPaths == 1:
+			fix = "Keep it on 1 path and remove manual-boost and every active- improvement from the others."
+		case policy.MaxManualAbilityPaths > 1:
+			fix = fmt.Sprintf("Keep it on at most %d paths and remove manual-boost and every active- improvement from the others.", policy.MaxManualAbilityPaths)
+		}
+		issues = append(issues, s.Issue{Code: "custom", Path: []any{"upgradeIntents"}, Message: fmt.Sprintf("The plan promises an Active Ability on %s: %s. %s %s", count, joinWith(positions, "and", ""), activeRule, fix)})
 	}
 	if request.MechanicsDefinition != nil {
 		feasibility := append(PlanFeasibilityIssues(plan, *request.MechanicsDefinition), PlanEffectIssues(plan)...)
@@ -579,4 +591,22 @@ func BindDesignPlan(output any, plan DesignPlan) any {
 		}
 	}
 	return bound
+}
+
+// activePromises names what a milestone promises for an Active Ability: its
+// Active unlock and its active- improvements.
+func activePromises(intent *UpgradeIntent) string {
+	var parts, active []string
+	if intent.Unlock == "manual-boost" || intent.Unlock == "active-follow-up" {
+		parts = append(parts, "unlock "+intent.Unlock)
+	}
+	for _, dimension := range intent.Improves {
+		if strings.HasPrefix(dimension, "active-") {
+			active = append(active, dimension)
+		}
+	}
+	if len(active) > 0 {
+		parts = append(parts, "improves "+joinWith(active, "and", ""))
+	}
+	return joinWith(parts, "and", "")
 }

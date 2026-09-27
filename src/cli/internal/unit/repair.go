@@ -184,7 +184,7 @@ func TargetedTierRepair(request *Request, previous any, issues []string) (*TierR
 	for _, path := range pathOrder {
 		tiers := targets[path]
 		changesCapstoneBasis := false
-		if policy != nil && (policy.MinTier5SpecialtyMultiplier != nil || (policy.RequireTier5BehaviorChange != nil && *policy.RequireTier5BehaviorChange)) {
+		if policy != nil && (policy.MinTier5SpecialtyMultiplier != nil || policy.RequiresBehaviorChange(5)) {
 			for _, t := range tiers.keys {
 				if t != "tier5" {
 					changesCapstoneBasis = true

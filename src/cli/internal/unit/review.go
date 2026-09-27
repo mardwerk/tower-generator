@@ -295,7 +295,7 @@ func ReferencePriceFacts(blueprint *m.Blueprint, definition m.Definition) *s.Obj
 		}
 		paths = append(paths, s.NewObject().Set("path", key).Set("prices", prices).Set("equalsReferenceSequence", equal))
 		if equal {
-			position := pathPosition(key)
+			position := m.PathPosition(key)
 			facts = append(facts, fmt.Sprintf("%s path prices (%s to %s) equal the reference sequence %s exactly.",
 				strings.ToUpper(position[:1])+position[1:], BuildCode(index, 1), BuildCode(index, 5), stated))
 		}

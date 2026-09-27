@@ -26,7 +26,7 @@ func withEarlyPolicy(d m.Definition, benefits *bool, first bool) m.Definition {
 func earlyPlanIssues(plan unit.DesignPlan, definition m.Definition) []string {
 	var found []string
 	for _, issue := range unit.PlanFeasibilityIssues(plan, definition) {
-		if strings.Contains(issue.Message, unit.EarlyBenefitsRule) {
+		if strings.Contains(issue.Message, m.EarlyBenefitsRule) {
 			found = append(found, issue.Path+": "+issue.Message)
 		}
 	}
@@ -59,7 +59,7 @@ func TestEarlyBenefitsPlanCheck(t *testing.T) {
 	}{
 		{"fixture", base.Path1.Tier1, base.Path1.Tier2, base.Path3.Tier1, base.Path3.Tier2, def, ""},
 		{"same", intent("none", "range"), intent("none", "damage"), renamed(intent("none", "range")), renamed(intent("none", "damage")), def,
-			"upgradeIntents.path3.tier2: x-x-1 and x-x-2 together promise damage and range, the same as 1-x-x and 2-x-x. " + unit.EarlyBenefitsRule + " Redesign x-x-2 or x-x-1"},
+			"upgradeIntents.path3.tier2: x-x-1 and x-x-2 together promise damage and range, the same as 1-x-x and 2-x-x. " + m.EarlyBenefitsRule + " Redesign x-x-2 or x-x-1"},
 		{"reversed", intent("none", "range"), intent("none", "damage"), intent("none", "damage"), intent("none", "range"), def,
 			"upgradeIntents.path3.tier2: x-x-1 and x-x-2 together promise damage and range, the same as 1-x-x and 2-x-x."},
 		{"split across tiers", intent("none", "range", "damage"), intent("none", "damage"), intent("none", "damage"), intent("none", "range", "damage"), def,
@@ -114,11 +114,11 @@ func TestDistinctFirstUpgradesAloneKeepsItsMeaning(t *testing.T) {
 		t.Errorf("distinctFirstUpgrades rejected matching early benefits: %v", found)
 	}
 	request, err := unit.DesignPlanRequest(prepared)
-	if err != nil || strings.Contains(request.Prompt, unit.EarlyBenefitsRule) {
+	if err != nil || strings.Contains(request.Prompt, m.EarlyBenefitsRule) {
 		t.Errorf("the plan prompt states the early benefits rule without its field: %v", err)
 	}
 	guidance := strings.Join(unit.DesignGuidance(&prepared.Request), "\n")
-	if strings.Contains(guidance, unit.EarlyBenefitsRule) || !strings.Contains(guidance, "No two first purchases (1-x-x, x-1-x, x-x-1) may produce the same resolved attack.") {
+	if strings.Contains(guidance, m.EarlyBenefitsRule) || !strings.Contains(guidance, "No two first purchases (1-x-x, x-1-x, x-x-1) may produce the same resolved attack.") {
 		t.Errorf("draft guidance under distinctFirstUpgrades alone: %s", guidance)
 	}
 	blueprint := *stages.Draft.Candidate.Blueprint
@@ -128,7 +128,7 @@ func TestDistinctFirstUpgradesAloneKeepsItsMeaning(t *testing.T) {
 	}
 	duplicate := false
 	for _, issue := range unit.ValidateBlueprintRequest(blueprint, prepared.Request) {
-		if issue.Path == "paths.path3.tiers.tier1" && strings.HasPrefix(issue.Message, "Resolved tier 1 behavior duplicates path1") {
+		if issue.Path == "paths.path3.tiers.tier1" && strings.HasPrefix(issue.Message, "Resolved x-x-1 behaves exactly like 1-x-x. "+m.DistinctFirstPurchasesRule) {
 			duplicate = true
 		}
 	}
@@ -201,7 +201,7 @@ func TestResolvedEarlyBenefits(t *testing.T) {
 			t.Errorf("%s: rejected: %v", c.name, got)
 		case c.reject && (len(got) != 1 || got[0].Path != "paths.path3.tiers.tier2" ||
 			!strings.HasPrefix(got[0].Message, "Resolved x-x-1 and x-x-2 together improve damage and range, the same as resolved 1-x-x and 2-x-x: 1-x-x gives range, 2-x-x gives damage, ") ||
-			!strings.Contains(got[0].Message, unit.EarlyBenefitsRule+" Change what x-x-2 or x-x-1 improves or unlocks so the two paths' early benefits differ.")):
+			!strings.Contains(got[0].Message, m.EarlyBenefitsRule+" Change what x-x-2 or x-x-1 improves or unlocks so the two paths' early benefits differ.")):
 			t.Errorf("%s: issues %v", c.name, got)
 		}
 	}
@@ -246,7 +246,7 @@ func TestResolvedEarlyBenefitsAreCaughtAndRepaired(t *testing.T) {
 	}
 	scripted = &fixture.Model{Outputs: []any{recordedOutput(t, "plan"), earlyMatchMechanics(t)}}
 	_, _ = unit.DraftUnit(context.Background(), prepared, scripted, unit.Options{})
-	want := "paths.path2.tiers.tier2: " + resolvedEarlyFacts + " " + unit.EarlyBenefitsRule + " " + resolvedEarlyCause
+	want := "paths.path2.tiers.tier2: " + resolvedEarlyFacts + " " + m.EarlyBenefitsRule + " " + resolvedEarlyCause
 	if len(scripted.Requests) != 3 {
 		t.Fatalf("%d requests", len(scripted.Requests))
 	}
@@ -268,7 +268,7 @@ func TestResolvedEarlyBenefitsAreCaughtAndRepaired(t *testing.T) {
 // Action that names no plan (SOL-PR43-01).
 func TestEarlyBenefitsCheckWithoutPlan(t *testing.T) {
 	failed := earlyMatchCheckFailures(t, false)
-	want := "distinct-early-benefits paths.path2.tiers.tier2: " + resolvedEarlyFacts + " " + unit.EarlyBenefitsRule +
+	want := "distinct-early-benefits paths.path2.tiers.tier2: " + resolvedEarlyFacts + " " + m.EarlyBenefitsRule +
 		" Change what x-2-x or x-1-x improves or unlocks so the two paths' early benefits differ."
 	if len(failed) != 1 || failed[0].rule != want ||
 		failed[0].action != "Make the two paths' resolved early benefits distinct and compile again." {
@@ -332,8 +332,8 @@ func earlyMatchCheckFailures(t *testing.T, withPlan bool) []checkFailure {
 // and the resolved issue carries it into the targeted tier repair.
 func TestEarlyBenefitsPromptIssueAndRetryAgree(t *testing.T) {
 	const rule = "Two paths' first two purchases together must differ in what they improve or unlock, whatever their order, names, prices or amounts; lowers do not count."
-	if unit.EarlyBenefitsRule != rule {
-		t.Fatalf("rule changed: %q", unit.EarlyBenefitsRule)
+	if m.EarlyBenefitsRule != rule {
+		t.Fatalf("rule changed: %q", m.EarlyBenefitsRule)
 	}
 	prepared, err := fixture.Prepare()
 	if err != nil {
