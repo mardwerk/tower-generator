@@ -336,7 +336,11 @@ func describeReview(view View) []string {
 		if finding.Action != nil {
 			action = *finding.Action
 		}
-		attention = append(attention, "| "+finding.Outcome+" | "+finding.Method+" | "+Escape(finding.Subject)+" | "+Escape(finding.Message+" "+action)+" |")
+		method := finding.Method
+		if finding.Rule == unit.HumanReviewRule {
+			method = "human review needed"
+		}
+		attention = append(attention, "| "+finding.Outcome+" | "+method+" | "+Escape(finding.Subject)+" | "+Escape(finding.Message+" "+action)+" |")
 	}
 	if len(attention) > 0 {
 		lines = append(lines, "| Outcome | Method | Subject | Finding and next action |", "| --- | --- | --- | --- |")

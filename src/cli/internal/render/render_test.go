@@ -386,3 +386,25 @@ func TestKnockbackResolvesAndReads(t *testing.T) {
 		t.Errorf("control metrics %s", metrics)
 	}
 }
+
+// A Finding code adds when it cannot read a model finding's claim reads as
+// a request for a person, not as a structural check (#57).
+func TestUnreadReviewClaimAsksForHumanReview(t *testing.T) {
+	stages, err := fixture.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	result := stages.Result
+	action := "Read the model finding and decide whether its claim holds."
+	result.Findings = append(result.Findings, unit.Finding{
+		ID: "deterministic.review.path3-t1-fit", Method: "deterministic", Outcome: "unresolved", Severity: "warning",
+		Category: "evidence", Rule: unit.HumanReviewRule, Subject: "x-x-1", Message: "Code could not read this finding's claim.", Action: &action,
+	})
+	text, err := render.Markdown(s.FromGoValue(result), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(text, "| unresolved | human review needed | x-x-1 | Code could not read") {
+		t.Errorf("the unread claim is not marked for human review:\n%s", text)
+	}
+}

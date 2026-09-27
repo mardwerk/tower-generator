@@ -168,9 +168,12 @@ func reviewStatus(view View) string {
 	return fmt.Sprintf("%s %d failed, %d unresolved, %d not checked.", stage, counts["fail"], counts["unresolved"], counts["not_checked"])
 }
 
-func methodName(method string) string {
-	if method == "model" {
+func methodName(finding unit.Finding) string {
+	switch {
+	case finding.Method == "model":
 		return "Model review"
+	case finding.Rule == unit.HumanReviewRule:
+		return "Human review needed"
 	}
 	return "Structural check"
 }
@@ -179,7 +182,7 @@ func failedChecks(findings []unit.Finding) []string {
 	var lines []string
 	for _, finding := range findings {
 		if needsImmediateAttention(finding) {
-			lines = append(lines, "- "+methodName(finding.Method)+", "+Escape(finding.Subject)+": "+prose(&finding.Message, finding.Action))
+			lines = append(lines, "- "+methodName(finding)+", "+Escape(finding.Subject)+": "+prose(&finding.Message, finding.Action))
 		}
 	}
 	if len(lines) == 0 {
@@ -382,7 +385,7 @@ func standaloneOpenFindings(view View) []string {
 				guidance = append(guidance, *part)
 			}
 		}
-		out[i] = methodName(group.finding.Method) + ", " + strings.Join(group.subjects, "; ") + ": " + strings.Join(guidance, " ")
+		out[i] = methodName(group.finding) + ", " + strings.Join(group.subjects, "; ") + ": " + strings.Join(guidance, " ")
 	}
 	return out
 }
