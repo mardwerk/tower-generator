@@ -55,6 +55,7 @@ func ValidateBlueprintRequest(blueprint m.Blueprint, request Request) []m.Issue 
 			issues = append(issues, m.Issue{Path: fmt.Sprintf("sourceFacts.%d", index), Message: "Use a verbatim quote of at least 15 characters from the named source document. Do not paraphrase or cite game rules as character canon."})
 		}
 	}
+	issues = append(issues, proposedMechanicIssues(blueprint, request)...)
 	var expected, actual []string
 	for _, c := range request.Constraints {
 		expected = append(expected, c.ID)

@@ -29,7 +29,7 @@ func VocabularyGuidance(request *Request) []string {
 	if len(request.MechanicsDefinition.Vocabulary.StatusEffects) == 0 {
 		text += "It defines no status effects; express none. "
 	} else {
-		text += "Map source wording to a status effect through its name and aliases and keep within its magnitude, maxSeconds and stacking; describe anything else in unsupportedMechanics. "
+		text += "Map source wording to a status effect through its name and aliases and keep within its magnitude, maxSeconds and stacking; anything else is a proposed mechanic of the purchase that needs it. "
 	}
 	lines := []string{text + "Choose a damage type from its description; ineffectiveAgainst lists the enemy properties it cannot damage. A hidden enemy can be targeted only by an attack with the matching detection trait."}
 	if len(request.MechanicsDefinition.Vocabulary.BonusDamageProperties) > 0 {

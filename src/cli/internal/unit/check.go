@@ -73,7 +73,8 @@ func CheckDraft(input Draft) (Checked, error) {
 			})
 		}
 		if len(issues) == 0 && candidate.Blueprint != nil && draft.Run.DesignPlan != nil && draft.Run.DesignPlan.UpgradeIntents != nil {
-			for _, issue := range PlanIntentIssues(*candidate.Blueprint, draft.Run.DesignPlan.UpgradeIntents, *definition) {
+			intentIssues := PlanIntentIssues(*candidate.Blueprint, draft.Run.DesignPlan.UpgradeIntents, *definition)
+			for _, issue := range append(intentIssues, PlannedProposalIssues(*candidate.Blueprint, draft.Run.DesignPlan.UpgradeIntents)...) {
 				report(checkFinding{
 					Category: "conflict", Outcome: "fail", Subject: issue.Path, Rule: "planned-upgrade-intent", Message: issue.Message,
 					Action: act("Implement the retained typed upgrade promise and compile again. This check does not assess prose, source interpretation or tactical value."),
@@ -99,6 +100,7 @@ func CheckDraft(input Draft) (Checked, error) {
 	}
 	checkEvidence(candidate, request, report)
 	checkDependencies(candidate, request, report)
+	checkProposedMechanics(candidate.Blueprint, request, report)
 	checkProgression(candidate, request.Progression, report)
 	hasRules := false
 	for _, d := range request.Documents {

@@ -5,7 +5,7 @@ import "strings"
 // Model-facing default text. Change it deliberately and raise the version.
 
 // StarterTask is the bundled Profile task.
-const StarterTask = "Adapt the character into one Tower Defense Unit from a faithful subset of the supplied source evidence. Plan the character's repertoire and three behaviorally distinct paths before choosing numbers, then implement one automatic base attack and all fifteen purchases with the supported mechanics. Use build codes such as 0-0-0, 3-x-x and 1-2-0. Preserve source ownership and story period, list behavior the Definition cannot express as unsupported mechanics, and label all numbers and prices as proposals. Do not claim canon verification or balance."
+const StarterTask = "Adapt the character into one Tower Defense Unit from a faithful subset of the supplied source evidence. Plan the character's repertoire and three behaviorally distinct paths before choosing numbers, then implement one automatic base attack and all fifteen purchases with the supported mechanics. Use build codes such as 0-0-0, 3-x-x and 1-2-0. Preserve source ownership and story period, keep behavior the Definition cannot express on the purchase that needs it as a proposed mechanic, and label all numbers and prices as proposals. Do not claim canon verification or balance."
 
 // atlasCapture pins the BTD6 reference values of the default Profile.
 const atlasCapture = "btd6-atlas capture 56.3, Steam build 24829026, repository revision a380413 (https://github.com/KyleDerZweite/btd6-atlas/tree/a380413ed809c98654acec7aa37cba40f80bf5c5/data/56.3-build-24829026)"
@@ -40,7 +40,7 @@ var defaultRulesSections = []string{
 
 	"Burst active, Tack Shooter middle (TackShooter.json and -010 to -050): base 260 Gold, a ring of 8 tacks every 1.12 s, 1 damage and pierce 1 each, range 23. 0-1-0 Long Range Tacks 100, range 26.9. 0-2-0 Super Range Tacks 225, range 30.8 and pierce 4. 0-3-0 Blade Shooter 550: blades with pierce 8, range 46, can hurt Frozen. 0-4-0 Blade Maelstrom 2700: 2 damage; an activated spin for 3 s, recharging in 20 s, fires 2 blades every 0.045 s with pierce 100 and 2 damage. 0-5-0 Super Maelstrom 15000: 5 damage, +5 to Ceramic, every type; the spin lasts 9 s on the same 20 s recharge. Ring damage capacity per second is 7, 29, 57, 114 and 286; the spin far exceeds it while it lasts, and its uptime rises from 15 to 45 percent.",
 
-	"Support, Monkey Village (MonkeyVillage.json, -100, -200 and -020): base 1200 Gold and no attack; allied towers within 40 gain 10 percent range. 1-0-0 Bigger Radius 400, radius 48. 2-0-0 Jungle Drums 1500, allies attack 15 percent faster. 0-2-0 Radar Scanner 2000, allies in the radius can target Camo. Allied buffs and shared detection have no operator here; list them as unsupported mechanics.",
+	"Support, Monkey Village (MonkeyVillage.json, -100, -200 and -020): base 1200 Gold and no attack; allied towers within 40 gain 10 percent range. 1-0-0 Bigger Radius 400, radius 48. 2-0-0 Jungle Drums 1500, allies attack 15 percent faster. 0-2-0 Radar Scanner 2000, allies in the radius can target Camo. Allied buffs and shared detection have no operator here; a purchase that needs them carries them as proposed mechanics.",
 
 	"Roster shape from the atlas patterns (patterns/towers.md and progression.md): 26 standard towers; primary base prices 200 to 400; tier medians about 200 to 275 for a first purchase, 1500 to 2000 for a third, 4000 to 6500 for a fourth and 30000 to 38000 for a fifth. Final-to-previous purchase price ratios range from 1.58 to 19.64 with median 6.15; they describe prices, not output, and are not a capstone multiplier. The middle fourth purchase carries an ability in 25 of 26 towers and the fifth keeps it; top and bottom fourth purchases show one each. No fifth purchase above changes only ordinary damage.",
 
@@ -50,8 +50,8 @@ var defaultRulesSections = []string{
 // defaultRulesText is the bundled rules document text.
 var defaultRulesText = strings.Join(defaultRulesSections, "\n\n")
 
-const defaultRulesID = "default-td-profile-v25"
-const defaultRulesLocation = "mardwerk-unit:default-td-profile:v25"
+const defaultRulesID = "default-td-profile-v26"
+const defaultRulesLocation = "mardwerk-unit:default-td-profile:v26"
 const defaultRulesNote = "Bundled starter preset. Edit or replace it in Inputs and rules before preparing a custom Request."
 const defaultProfileName = "BTD6-inspired (default)"
-const defaultAuthoringRevision = "2026-09-27-atlas-56.3-v25"
+const defaultAuthoringRevision = "2026-09-27-atlas-56.3-v26"
