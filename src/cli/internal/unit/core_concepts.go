@@ -208,12 +208,13 @@ func CoreConceptIssues(plan DesignPlan, request *Request) []m.Issue {
 }
 
 // sourceTechniqueListed reports a source technique that the plan lists: the
-// base attack, a repertoire entry or an omitted technique is named for it
-// (listsByName), or the base attack or a repertoire entry is named for a form
-// and cites a passage that names the technique as a part of that form inside
-// the form's own section (namesSubtechnique), as a Gear 4 entry citing
-// "Python (…): …" under "Gear 4" lists Python. Citing a passage alone lists
-// nothing: a Pistol entry citing a Gear 4 passage does not list Gear 4.
+// base attack, a repertoire entry or an omitted technique is named for it or
+// for one of its aliases (listsByName), or the base attack or a repertoire
+// entry is named for a form and cites a passage that names the technique as
+// a part of that form inside the form's own section (namesSubtechnique), as
+// a Gear 4 entry citing "Python (…): …" under "Gear 4" lists Python. Citing
+// a passage alone lists nothing: a Pistol entry citing a Gear 4 passage does
+// not list Gear 4.
 func sourceTechniqueListed(plan DesignPlan, techniques []SourceTechnique, index int, spans map[string]EvidenceSpan) bool {
 	technique := techniques[index]
 	type entry struct {
@@ -225,31 +226,46 @@ func sourceTechniqueListed(plan DesignPlan, techniques []SourceTechnique, index 
 		citing = append(citing, entry{repertoire.Name, repertoire.SourceIDs})
 	}
 	for _, e := range citing {
-		if listsByName(e.name, technique.Name) {
+		if listsTechnique(e.name, technique) {
 			return true
 		}
 	}
 	for _, omission := range plan.OmittedTechniques {
-		if listsByName(omission.Name, technique.Name) {
+		if listsTechnique(omission.Name, technique) {
 			return true
 		}
 	}
 	for _, e := range citing {
-		if generalizes(e.name, technique.Name) {
+		if slices.ContainsFunc(technique.Names(), func(name string) bool { return generalizes(e.name, name) }) {
 			continue
 		}
 		for formIndex, form := range techniques {
-			if formIndex == index || !listsByName(e.name, form.Name) {
+			if formIndex == index || !listsTechnique(e.name, form) {
 				continue
 			}
 			for _, id := range e.ids {
-				if span, ok := spans[id]; ok && slices.Contains(technique.PassageIDs, id) && namesSubtechnique(span, form.Name, technique.Name) {
-					return true
+				span, ok := spans[id]
+				if !ok || !slices.Contains(technique.PassageIDs, id) {
+					continue
+				}
+				for _, formName := range form.Names() {
+					for _, name := range technique.Names() {
+						if namesSubtechnique(span, formName, name) {
+							return true
+						}
+					}
 				}
 			}
 		}
 	}
 	return false
+}
+
+// listsTechnique reports a plan entry named for a source technique or for
+// one of its aliases (listsByName): an entry named "The Divine Axe Rhitta"
+// lists Rhitta when one passage proves the two names are one axe.
+func listsTechnique(entry string, technique SourceTechnique) bool {
+	return slices.ContainsFunc(technique.Names(), func(name string) bool { return listsByName(entry, name) })
 }
 
 // conceptEqual reports two names with the same words.

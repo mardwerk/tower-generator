@@ -246,7 +246,15 @@ export interface AuthorRequest {
   previous: { resultId: string; draft: UnitCandidate; findings: Finding[] } | null;
   feedback: string | null;
   /** Derived by prepare; present when the request's passages carry their source section. */
-  sourceTechniques?: { name: string; passageIds: string[]; signature: boolean }[];
+  sourceTechniques?: {
+    name: string;
+    /** Other names one passage proves are the same technique. */
+    aliases?: string[];
+    passageIds: string[];
+    signature: boolean;
+    /** Absent in requests prepared under Default v30 and earlier. */
+    salience?: 'strong' | 'normal';
+  }[];
 }
 
 export interface PreparedRequest {

@@ -21,18 +21,26 @@ import (
 // term of a list entry in a power section, a linked technique page, or a
 // sentence that calls it the character's signature. PassageIDs are selected
 // passages that name it in one of these ways or sit in its section, then
-// passages that mention it, at most 12 in page order.
+// passages that mention it, at most 12 in page order for each of its names.
 type SourceTechnique struct {
-	Name       string   `json:"name"`
+	Name string `json:"name"`
+	// Aliases are other names that one passage proves name the same
+	// technique (sourceAliases); absent when it has none.
+	Aliases    []string `json:"aliases,omitempty"`
 	PassageIDs []string `json:"passageIds"`
 	Signature  bool     `json:"signature"`
+	// Salience is "strong" or "normal" (techniqueSalience); absent in a
+	// request prepared before it existed.
+	Salience string `json:"salience,omitempty"`
 }
 
 // SourceTechniqueSchema is one entry of a request's sourceTechniques.
 var SourceTechniqueSchema = s.StrictObject(
 	s.F("name", text()),
+	s.F("aliases", s.Optional(s.Array(text()).Min(1))),
 	s.F("passageIds", s.Array(text()).Min(1)),
 	s.F("signature", s.Bool()),
+	s.F("salience", s.Optional(s.Enum(SalienceStrong, SalienceNormal))),
 )
 
 var (
@@ -271,9 +279,23 @@ func sourceTechniqueName(name string) string {
 // that follows a signature cue ("his signature attack, the Gum-Gum
 // Pistol"). Its passages are those that name it this way or sit in its
 // section, then those that mention its name, at most 12. A technique is a
-// signature one when a sentence with a signature cue names it. The list is
-// empty for a request whose passages carry no sections.
+// signature one when a sentence with a signature cue names it.
+//
+// Two names are one technique when one passage proves it (sourceAliases):
+// the merged technique keeps the first name, lists the other in Aliases
+// and keeps every passage ID of both. Each technique then carries its
+// Salience (techniqueSalience). The list is empty for a request whose
+// passages carry no sections.
 func SourceTechniques(request *Request) []SourceTechnique {
+	return sourceTechniques(request, false)
+}
+
+// sourceTechniques derives the list, or with legacy the form requests were
+// prepared with before aliases and salience (Default v30 and earlier):
+// every name its own technique, without Aliases or Salience. Verifying such
+// a saved request compares it with the legacy form, so its hash and the
+// citations of its draft stay valid.
+func sourceTechniques(request *Request, legacy bool) []SourceTechnique {
 	out := []SourceTechnique{}
 	if !sectionedPassages(request) {
 		return out
@@ -285,14 +307,15 @@ func SourceTechniques(request *Request) []SourceTechnique {
 		first     int
 		defining  map[int]bool
 		mentions  map[int]bool
+		page      bool
 	}
 	var entries []*entry
 	index := map[string]*entry{}
-	add := func(name string, span int, signature bool) {
+	add := func(name string, span int, signature bool) *entry {
 		name = sourceTechniqueName(name)
 		key := techniqueKey(name)
 		if key == "" || key == character || s.UTF16Len(name) > maxTechniqueNameUTF16 {
-			return
+			return nil
 		}
 		e := index[key]
 		if e == nil {
@@ -302,6 +325,7 @@ func SourceTechniques(request *Request) []SourceTechnique {
 		}
 		e.defining[span] = true
 		e.technique.Signature = e.technique.Signature || signature
+		return e
 	}
 	body := make([]string, len(spans))
 	for i, span := range spans {
@@ -317,7 +341,9 @@ func SourceTechniques(request *Request) []SourceTechnique {
 				continue
 			}
 			text = strings.TrimPrefix(text, title+": ")
-			add(title, i, false)
+			if e := add(title, i, false); e != nil {
+				e.page = true
+			}
 		}
 		body[i] = text
 		if rank == PowerSection {
@@ -345,19 +371,16 @@ func SourceTechniques(request *Request) []SourceTechnique {
 		if body[i] == "" {
 			continue
 		}
-		signature := signatureCue.MatchString(body[i])
+		// A signature cue marks only the technique it names (signatureName
+		// above), not every candidate the same passage mentions.
 		for _, e := range entries {
 			if namesTechnique(body[i], e.technique.Name) {
 				e.mentions[i] = true
-				e.technique.Signature = e.technique.Signature || signature
 			}
 		}
 	}
 	sort.SliceStable(entries, func(a, b int) bool { return entries[a].first < entries[b].first })
-	for _, e := range entries {
-		if len(out) == maxSourceTechniques {
-			break
-		}
+	passages := func(e *entry) []int {
 		var chosen []int
 		for _, group := range []map[int]bool{e.defining, e.mentions} {
 			var members []int
@@ -374,12 +397,48 @@ func SourceTechniques(request *Request) []SourceTechnique {
 			}
 		}
 		sort.Ints(chosen)
-		ids := make([]string, len(chosen))
+		return chosen
+	}
+	ids := func(chosen []int) []string {
+		out := make([]string, len(chosen))
 		for n, i := range chosen {
-			ids[n] = spans[i].ID
+			out[n] = spans[i].ID
 		}
-		e.technique.PassageIDs = ids
-		out = append(out, e.technique)
+		return out
+	}
+	if legacy {
+		for _, e := range entries {
+			if len(out) == maxSourceTechniques {
+				break
+			}
+			e.technique.PassageIDs = ids(passages(e))
+			out = append(out, e.technique)
+		}
+		return out
+	}
+	// Merge proven aliases into the technique named first; each keeps the
+	// passages it had on its own.
+	candidates := make([]*sourceCandidate, len(entries))
+	position := map[*entry]int{}
+	for n, e := range entries {
+		position[e] = n
+		candidates[n] = &sourceCandidate{technique: e.technique, key: techniqueKey(e.technique.Name), passages: passages(e), page: e.page}
+	}
+	lookup := func(name string) int {
+		if e := index[techniqueKey(sourceTechniqueName(name))]; e != nil {
+			return position[e]
+		}
+		return -1
+	}
+	merged := mergeSourceAliases(candidates, sourceAliases(request, spans, body, lookup))
+	shares := powerSectionShares(request)
+	for _, c := range merged {
+		if len(out) == maxSourceTechniques {
+			break
+		}
+		c.technique.PassageIDs = ids(c.passages)
+		c.technique.Salience = techniqueSalience(c, shares)
+		out = append(out, c.technique)
 	}
 	return out
 }
@@ -391,6 +450,17 @@ func WithSourceTechniques(request Request) Request {
 	techniques := SourceTechniques(&request)
 	request.SourceTechniques = &techniques
 	return request
+}
+
+// verifiedSourceTechniques is the list a prepared request's
+// sourceTechniques must equal: derived again from its documents, in the
+// legacy form when every stored technique lacks a salience, as in requests
+// prepared under Default v30 and earlier.
+func verifiedSourceTechniques(request Request) []SourceTechnique {
+	stored := *request.SourceTechniques
+	legacy := len(stored) > 0 && !slices.ContainsFunc(stored, func(t SourceTechnique) bool { return t.Salience != "" })
+	request.SourceTechniques = &[]SourceTechnique{}
+	return sourceTechniques(&request, legacy)
 }
 
 // sectionKey identifies a passage's section within its document.
