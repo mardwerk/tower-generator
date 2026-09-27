@@ -60,7 +60,9 @@ func draftWith(t *testing.T, outputs ...any) (unit.Draft, *fixture.Model) {
 // review and render; it grants nothing and changes no resolved stat.
 func TestProposedMechanicsStayOnTheirPurchase(t *testing.T) {
 	plan, design := proposalOutputs(t)
-	review := recordedOutput(t, "review")
+	review := withProposalVerdicts(recordedOutput(t, "review"),
+		proposalVerdict{"x-4-x", "Fan Club transformation", "unresolved", "Allied Dart Monkeys joining the frenzy is a coherent, player-visible capability the Definition cannot express."},
+		proposalVerdict{"x-x-4", "critical bolt", "fail", "The cited passage describes no shot counter, so the proposal does not fit its source."})
 	draft, model := draftWith(t, plan, design, review)
 	baseline, _ := draftWith(t, recordedOutput(t, "plan"), recordedOutput(t, "mechanics"))
 
@@ -140,7 +142,21 @@ func TestProposedMechanicsStayOnTheirPurchase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Each proposal verdict is a model Finding on its purchase and
+	// proposal, after the other verdicts.
+	var verdicts []string
+	for _, finding := range result.Findings {
+		if finding.Rule == unit.ProposalVerdictRule {
+			verdicts = append(verdicts, finding.ID+" "+finding.Outcome+" "+finding.Severity+" "+finding.Subject)
+		}
+	}
+	if got := strings.Join(verdicts, "; "); got != "verdict.proposal.path2.tier4.1 unresolved warning path2, x-4-x Super Monkey Fan Club: Fan Club transformation; verdict.proposal.path3.tier4.1 fail error path3, x-x-4 "+blueprint.Paths.Path3.Tiers.Tier4.Name+": Critical bolt" {
+		t.Errorf("proposal verdicts: %s", got)
+	}
 	reviewPrompt := model.Requests[2].Prompt
+	if !strings.Contains(reviewPrompt, `"proposals":[{"build":"x-4-x","path":"path2","name":"Super Monkey Fan Club","technique":"Fan Club","proposal":"Fan Club transformation","effect":"`) {
+		t.Error("the review context does not require a verdict on x-4-x's proposed mechanic")
+	}
 	if !strings.Contains(reviewPrompt, `"proposedMechanics":[{"name":"Critical bolt","effect":"Every tenth bolt deals five times its damage","sourceIds":["source1:17"]}]`) {
 		t.Error("the review context lacks x-x-4's proposed mechanic")
 	}

@@ -36,8 +36,9 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		documentIDs = append(documentIDs, d.ID)
 	}
 	finding := ReviewFindingSchema().Extend(s.F("evidence", s.Array(s.Enum(documentIDs...))))
-	// The verdicts on each omission and third purchase sit outside the
-	// eight findings, one per subject (SOL-61-08).
+	// The verdicts on each omission, third and fifth purchase and proposed
+	// mechanic sit outside the eight findings, one per subject (SOL-61-08,
+	// SOL-61-13).
 	verdicts := reviewVerdictSubjects(checked)
 	schema := SemanticReviewSchema.Extend(append([]s.Field{s.F("findings", s.Array(finding).Max(8))}, verdicts.schemaFields(s.Enum(documentIDs...))...)...)
 	mechanicsID := "mechanics:undefined"
@@ -70,11 +71,14 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		}
 		context.Set("designPlan", reviewDesignPlan(*checked.Draft.Run.DesignPlan, techniques))
 	}
+	var payoffs map[string]*s.Object
 	if checked.Draft.Run.DesignEvaluation != nil {
 		// The retained evidence plus the time-averaged Active rates and the
 		// absolute side-purchase gains against the capstone derived from it;
 		// the saved draft is unchanged.
-		context.Set("purchaseEvidence", ReviewPurchaseEvidence(checked.Draft.Run.DesignEvaluation, currency))
+		evidence := ReviewPurchaseEvidence(checked.Draft.Run.DesignEvaluation, currency)
+		context.Set("purchaseEvidence", evidence)
+		payoffs = CapstonePayoffs(evidence, currency)
 	}
 	comparisons := []any{}
 	if blueprint != nil {
@@ -177,7 +181,7 @@ func BlueprintReviewRequest(checked Checked) ModelRequest {
 		Set("abilities", s.FromGoValue(candidate.Abilities)).
 		Set("mechanics", s.FromGoValue(candidate.Mechanics)).
 		Set("unresolvedQuestions", s.FromGoValue(candidate.UnresolvedQuestions)))
-	context.Set("requiredVerdicts", verdicts.context())
+	context.Set("requiredVerdicts", verdicts.context(payoffs))
 	failed := []Finding{}
 	for _, f := range checked.Findings {
 		if f.Outcome == "fail" {
@@ -490,7 +494,7 @@ func ReviewDraft(ctx context.Context, input Checked, model Model, options Option
 			var corrected SemanticReview
 			if corrected, err = reviewOnce(ctx, checked, model, request, &calls); err == nil {
 				if review, err = keepCheckedFindings(review, corrected, problems); err == nil {
-					review.OmissionVerdicts, review.ThirdPurchaseVerdicts, review.FifthPurchaseVerdicts = first.OmissionVerdicts, first.ThirdPurchaseVerdicts, first.FifthPurchaseVerdicts
+					review.OmissionVerdicts, review.ThirdPurchaseVerdicts, review.FifthPurchaseVerdicts, review.ProposalVerdicts = first.OmissionVerdicts, first.ThirdPurchaseVerdicts, first.FifthPurchaseVerdicts, first.ProposalVerdicts
 					err = rejectedCitations(citations.problems(review))
 				}
 			}

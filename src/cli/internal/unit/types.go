@@ -322,6 +322,9 @@ type SemanticReview struct {
 	OmissionVerdicts      []OmissionVerdict      `json:"omissionVerdicts,omitempty"`
 	ThirdPurchaseVerdicts []ThirdPurchaseVerdict `json:"thirdPurchaseVerdicts,omitempty"`
 	FifthPurchaseVerdicts []FifthPurchaseVerdict `json:"fifthPurchaseVerdicts,omitempty"`
+	// The verdicts on each purchase-level proposed mechanic, outside the
+	// findings' limit too.
+	ProposalVerdicts []ProposalVerdict `json:"proposalVerdicts,omitempty"`
 }
 
 // Profile is a reusable generation configuration.
