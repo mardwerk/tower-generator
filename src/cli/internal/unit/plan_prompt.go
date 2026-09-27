@@ -29,12 +29,8 @@ const planDistinctEarly = m.EarlyBenefitsRule + " For example, range then damage
 // exclusiveEarlyIssues enforces it.
 const planExclusiveEarly = m.ExclusiveEarlyBenefitsRule + " For example, when 1-x-x adds damage, no first or second purchase of the middle or bottom path adds damage; a second damage purchase belongs on 2-x-x. A path may repeat its own, as x-1-x and x-2-x may both attack faster, and a later purchase may add a little of another path's dimension, as x-3-x may add damage beside a faster attack. Code rejects a plan whose paths share an early benefit."
 
-// planPathIdentity follows the rule under requireTier3PathIdentity; the plan
-// check pathIdentityIssues enforces it.
-const planPathIdentity = "The third purchase defines the path, or at least distinguishes it, and the fourth develops that identity. The identity can be simple, such as the only path whose attack fires more than one projectile, or a new form, such as a creature that adds its own attacks. Promise at the third purchase something from this path's own technique that no milestone of the other two paths promises: an improvement, an unlock or a proposed mechanic. It may add larger numbers beside it. Code rejects a plan whose third purchase only promises what the other paths' purchases promise."
-
 // planTier5Pinnacle follows the rule under requireTier5BehaviorChange.
-const planTier5Pinnacle = "The fifth purchase is the pinnacle of its path: it adds a distinct capability that makes it worth its price, not only larger numbers. Promise the unlock that adds it, or, when the Definition cannot express it, name it in that milestone's proposedMechanics beside the supported promises that approximate it. Raising only the Active Ability's damage, rate, duration or frequency is larger numbers, not a pinnacle. Code rejects a plan without one."
+const planTier5Pinnacle = "The fifth purchase is the pinnacle of its path: it adds a distinct capability that makes it worth its price, not only larger numbers. Promise the supported unlock that adds it. Only when the Definition cannot express the capability the sources describe, name it in that milestone's proposedMechanics beside the supported promises that approximate it: code then reports the capstone as an unresolved design gap, because a proposed mechanic is not playable until the Definition supports it. Raising only the Active Ability's damage, rate, duration or frequency is larger numbers, not a pinnacle. Code rejects a plan whose fifth purchase has neither."
 
 // planActiveForm follows the Active Ability rule when some path may have
 // one.

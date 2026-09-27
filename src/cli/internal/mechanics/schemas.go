@@ -182,7 +182,6 @@ var (
 				s.F("manualAbilityPath", s.Optional(s.Nullable(enum(PathKeys)))),
 				s.F("minTier5SpecialtyMultiplier", s.Optional(s.Number().Gt(1).Max(20))),
 				s.F("requireTier3BehaviorChange", s.Optional(s.Bool())),
-				s.F("requireTier3PathIdentity", s.Optional(s.Bool())),
 				s.F("requireTier5BehaviorChange", s.Optional(s.Bool())),
 				s.F("tier5Uniqueness", lit("one-per-player-unit-type-and-path")),
 			))),

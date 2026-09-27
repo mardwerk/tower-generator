@@ -172,7 +172,7 @@ func TestUnitSheetUsesBuildCodesAndEveryCrosspath(t *testing.T) {
 		// Each purchase labels the plan's intent apart from its resolved
 		// effects (#35): the technique the plan maps it to and, for a named
 		// technique, the plan's description of the adaptation.
-		"## Top path: Juggernaut Line", "**3-x-x Spike-o-pult** (320 Gold). Plan: adapts Spiked Ball. Replaces the dart with a heavier spiked ball that deals more damage and pierces far more enemies, at a slower throw. Resolved: Raises damage from 1 to 2 (+1).",
+		"## Top path: Juggernaut Line", "**3-x-x Spike-o-pult** (320 Gold). Plan: adapts Spiked Ball. Replaces the dart with a heavier spiked ball that deals more damage, reaches farther and pierces far more enemies, at a slower throw. Resolved: Raises damage from 1 to 2 (+1).",
 		"**1-x-x Sharp Shots** (140 Gold). Plan: adapts Dart Throw (base attack). Resolved: Raises pierce from 2 to 3 (+1).",
 		"**x-4-x Super Monkey Fan Club** (7,200 Gold).", "Adds Fan Club Frenzy, this Unit's Active Ability: for 15 s it gives the purchased attack 1500% faster attacks and +8 range",
 		"**x-x-5 Crossbow Master** (21,500 Gold).", "Switches damage from Sharp to Normal.",

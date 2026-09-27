@@ -47,9 +47,6 @@ func DesignGuidance(request *Request) []string {
 	if policy.RequiresBehaviorChange(3) {
 		out = append(out, m.BehaviorChangeRule(3)+" "+guideTier3Promise)
 	}
-	if pathIdentityOn(*definition) {
-		out = append(out, guidePathIdentity)
-	}
 	if policy.RequiresBehaviorChange(5) {
 		out = append(out, m.BehaviorChangeRule(5)+" "+guideTier5Promise)
 	}

@@ -125,7 +125,6 @@ export interface DesignPolicy {
   /** Above 1, at most 20. */
   minTier5SpecialtyMultiplier?: number;
   requireTier3BehaviorChange?: boolean;
-  requireTier3PathIdentity?: boolean;
   requireTier5BehaviorChange?: boolean;
   tier5Uniqueness: 'one-per-player-unit-type-and-path';
 }

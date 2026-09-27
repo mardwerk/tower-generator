@@ -34,15 +34,16 @@ func recordedOutput(t *testing.T, name string) *s.Object {
 	return value.(*s.Object)
 }
 
-// preparedUnder prepares the fixture request under the Default Profile
-// with an edited design policy.
+// preparedUnder prepares the fixture request under the fixture's Profile,
+// the Default without requireTier5BehaviorChange, with an edited design
+// policy.
 func preparedUnder(t *testing.T, edit func(*mechanics.DesignPolicy)) unit.Prepared {
 	t.Helper()
 	request, err := fixture.Request()
 	if err != nil {
 		t.Fatal(err)
 	}
-	profile := unit.DefaultProfile()
+	profile := fixture.Profile()
 	policy := *profile.MechanicsDefinition.Profile.DesignPolicy
 	edit(&policy)
 	profile.MechanicsDefinition.Profile.DesignPolicy = &policy
@@ -51,19 +52,6 @@ func preparedUnder(t *testing.T, edit func(*mechanics.DesignPolicy)) unit.Prepar
 		t.Fatal(err)
 	}
 	return prepared
-}
-
-// planWithoutProposals is the fixture plan output without its proposed
-// mechanics.
-func planWithoutProposals(t *testing.T) *s.Object {
-	t.Helper()
-	plan := recordedOutput(t, "plan")
-	for _, path := range mechanics.PathKeys {
-		for _, tier := range mechanics.TierKeys {
-			at(plan, "paths", path, "milestones", tier).(*s.Object).Delete("proposedMechanics")
-		}
-	}
-	return plan
 }
 
 // retryReason is the part of a retry prompt that names the rejected output's issues.
@@ -257,6 +245,11 @@ func TestVersion2AuthorsWithStackingEffects(t *testing.T) {
 	if _, err := unit.ValidateProfile(s.FromGoValue(profile)); err != nil {
 		t.Fatalf("example Profile: %v", err)
 	}
+	// As in the fixture's Profile, requireTier5BehaviorChange stays off: the
+	// scripted x-5-x only raises its Active Ability's numbers.
+	policy := *profile.MechanicsDefinition.Profile.DesignPolicy
+	policy.RequireTier5BehaviorChange = nil
+	profile.MechanicsDefinition.Profile.DesignPolicy = &policy
 	prepared, err := unit.Prepare(s.FromGoValue(unit.ApplyProfile(request, profile)))
 	if err != nil {
 		t.Fatal(err)

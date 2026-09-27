@@ -77,9 +77,8 @@ func TestPolicyRuleSentencesArePinned(t *testing.T) {
 		{"early identity, no bonus damage", m.EarlyIdentityRule(&noBonus), "The first and second purchase of each path keep the base attack's form: they add no new status, splash, follow-up or distinct-target volley, change no delivery, targeting or damage type, and keep a single-projectile attack single. Improving existing stats and effects and adding personal detection remain allowed."},
 		{"early identity, version 1", m.EarlyIdentityRule(&v1), "The first and second purchase of each path keep the base attack's form: they add no new status, splash, follow-up or distinct-target volley, change no delivery, targeting or damage type, and keep a single-projectile attack single. Improving existing stats and effects and adding personal Camo detection remain allowed."},
 		{"exclusive early benefits", m.ExclusiveEarlyBenefitsRule, "No dimension or capability that one path's first two purchases improve or unlock may be improved or unlocked by another path's first two purchases, whatever their order, names, prices or amounts; a path may repeat its own, any path's third to fifth purchases may improve it, and lowers do not count."},
-		{"path identity", m.PathIdentityRule, "The third purchase of every path must distinguish it: it improves or unlocks a dimension or capability, or carries a proposed mechanic, that no purchase of the other two paths improves, unlocks or proposes; lowers, names, prices, amounts and a targeting change do not count."},
-		{"third purchase", m.BehaviorChangeRule(3), "The third purchase of every path must add a supported behavior or access, or carry a proposed mechanic: a new delivery, a distinct-target volley of more than one projectile, more than one projectile, splash, a status effect, a bounded follow-up, a new damage type, a newly detected trait or new bonus damage against an eligible enemy property; larger existing numbers, the Active Ability's included, a targeting change, a new name or a change with no effect do not count."},
-		{"fifth purchase", m.BehaviorChangeRule(5), "The fifth purchase of every path must add a supported behavior or access, or carry a proposed mechanic: a new delivery, a distinct-target volley of more than one projectile, more than one projectile, splash, a status effect, a bounded follow-up, a new damage type, a newly detected trait or new bonus damage against an eligible enemy property; larger existing numbers, the Active Ability's included, a targeting change, a new name or a change with no effect do not count."},
+		{"third purchase", m.BehaviorChangeRule(3), "The third purchase of every path must add a supported behavior or access: a new delivery, a distinct-target volley of more than one projectile, more than one projectile, splash, a status effect, a bounded follow-up, a new damage type, a newly detected trait or new bonus damage against an eligible enemy property; larger existing numbers, the Active Ability's included, a targeting change, a new name or a change with no effect do not count. A proposed mechanic grants no behavior in any build: a purchase whose only new capability is proposed is an unresolved design gap, not playable until the Definition supports it."},
+		{"fifth purchase", m.BehaviorChangeRule(5), "The fifth purchase of every path must add a supported behavior or access: a new delivery, a distinct-target volley of more than one projectile, more than one projectile, splash, a status effect, a bounded follow-up, a new damage type, a newly detected trait or new bonus damage against an eligible enemy property; larger existing numbers, the Active Ability's included, a targeting change, a new name or a change with no effect do not count. A proposed mechanic grants no behavior in any build: a purchase whose only new capability is proposed is an unresolved design gap, not playable until the Definition supports it."},
 		{"naming", unit.NamingRule, "Name each purchase for what it does. Use the source's own name for what the purchase adapts, even when that name suggests something else: a punch the source calls a pistol keeps that name. Where no source name fits, use a descriptive word, such as Reach or Quick, that matches the purchase's typed changes or proposed mechanics. Never borrow a source concept for a different effect: Farseeing Reach on a purchase that raises range and pierce suggests a prediction the purchase lacks."},
 		{"capstone multiplier", m.CapstoneMultiplierRule(3), "The fifth purchase of every path must improve an established specialty metric of the path's pure fourth purchase by at least 3 times; a gain in active duty fraction alone must also keep the active peak."},
 		{"Active Ability, no Definition", m.ActiveAbilityRule(nil), "An Active Ability exists only where the Definition allows one."},
@@ -250,17 +249,19 @@ func TestEarlyIdentityRuleAgrees(t *testing.T) {
 // requireTier3BehaviorChange and requireTier5BehaviorChange each state their
 // rule only under their field, and the resolved failure carries it. The
 // fifth-purchase rule had a check but no prompt sentence. The Default sets
-// only the fifth-purchase rule (#61). A proposed mechanic of the purchase
-// meets either rule.
+// only the fifth-purchase rule (#61). A proposed mechanic does not meet
+// either rule: a purchase whose only new capability is proposed is no
+// failure but a design gap, and the gap carries the rule too.
 func TestBehaviorChangeRulesAgree(t *testing.T) {
 	stages, err := fixture.Build()
 	if err != nil {
 		t.Fatal(err)
 	}
 	yes := true
+	defaultPolicy := *unit.DefaultAuthoringDefinition().Profile.DesignPolicy
+	defaults := withPolicy(t, func(p *m.DesignPolicy) { *p = defaultPolicy })
 	for _, tier := range []int{3, 5} {
 		rule, other := m.BehaviorChangeRule(tier), m.BehaviorChangeRule(8-tier)
-		defaults := stages.Draft.Prepared
 		if plan, guidance := policyTexts(t, defaults); strings.Contains(plan, rule) != (tier == 5) || strings.Contains(guidance, rule) != (tier == 5) {
 			t.Errorf("tier %d: the Default Profile states %q: %v", tier, rule, tier != 5)
 		}
@@ -286,7 +287,11 @@ func TestBehaviorChangeRulesAgree(t *testing.T) {
 		}
 		upgrade.ProposedMechanics = []m.ProposedMechanic{{Name: "Rebound", Effect: "A ball that hits an obstacle rebounds off it and flies on, hitting enemies it has not hit yet with its remaining pierce.", SourceIDs: []string{"source1:6"}}}
 		if got := messages(unit.ValidateBlueprintRequest(blueprint, prepared.Request)); strings.Contains(got, "paths.path1.tiers.tier"+string(rune('0'+tier))+": Resolved") {
-			t.Errorf("tier %d: a proposed mechanic does not meet the rule:\n%s", tier, got)
+			t.Errorf("tier %d: a purchase whose only new capability is proposed fails:\n%s", tier, got)
+		}
+		gap := "paths.path1.tiers.tier" + string(rune('0'+tier)) + ": Resolved " + code + " adds no supported behavior or access over " + before + ". Its new capability, Rebound, is proposed and not yet playable: until the Definition supports it, no build grants it and " + code + " adds only larger numbers in play. " + rule
+		if got := messages(m.ProposedCapabilityGaps(&blueprint, *prepared.Request.MechanicsDefinition)); got != gap {
+			t.Errorf("tier %d: design gap %q, want %q", tier, got, gap)
 		}
 	}
 }

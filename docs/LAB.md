@@ -32,7 +32,7 @@ A Profile is the set of rules a unit is generated under: a mechanics Definition,
 
 **Design policy** is the Definition's optional `profile.designPolicy`: the typed rules the Engine states to the model and checks ([Default authoring policy](MECHANICS.md#default-authoring-policy)). The Profile view lists them for every Profile. Built-in Profiles only show them; for a saved Profile or a copy, the editor has a control for each field above the Definition JSON:
 
-- a switch for each rule that is on or off: distinct specializations, first purchases, early benefits and capstones, exclusive early benefits, early attack identity, behavior at the third purchase, path identity at the third purchase and behavior at the fifth purchase. Switching off early benefits, exclusive early benefits, early attack identity, path identity or a behavior rule removes its field;
+- a switch for each rule that is on or off: distinct specializations, first purchases, early benefits and capstones, exclusive early benefits, early attack identity, and behavior at the third and fifth purchase. Switching off early benefits, exclusive early benefits, early attack identity or a behavior rule removes its field;
 - **Capstone multiplier**, a number above 1 and at most 20; empty means no minimum;
 - **Active Ability path**: any path (the field is absent), no path (`null`), or only the top, middle or bottom path;
 - **Active Ability paths**, from 0 to 3. The line under the controls states their combined effect; a maximum of 0 means no path, whatever the path choice.
