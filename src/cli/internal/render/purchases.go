@@ -544,11 +544,13 @@ func (sh *sheet) purchaseEffects(changes []m.Change, before, after m.Build) []st
 			}
 		case "followUp":
 			if change.Target == "boost" {
-				name := "the Active Ability"
+				// A boost follow-up scales the boosted hit, so its damage is
+				// worded from the Active's boosted attack, not the ordinary one.
+				name, attack := "the Active Ability", next
 				if ability := newAbilityOrLast(after); ability != nil {
-					name = ability.Name
+					name, attack = ability.Name, ability.BoostedAttack
 				}
-				out = append(out, "While "+name+" is active, adds "+sh.followUp(*change.FollowUp, next)+".")
+				out = append(out, "While "+name+" is active, adds "+sh.followUp(*change.FollowUp, attack)+".")
 			} else if prior.FollowUp != nil {
 				out = append(out, "Replaces "+prior.FollowUp.Name+" with "+sh.followUp(*change.FollowUp, next)+".")
 			} else {
