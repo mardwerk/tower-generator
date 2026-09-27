@@ -41,7 +41,7 @@ func TestDefaultProfileListsHardenedAndBlimpForBonusDamage(t *testing.T) {
 			}
 		}
 	}
-	if profile.Rules.ID != "default-td-profile-v33" || profile.MechanicsDefinition.Revision != "2026-09-27-atlas-56.3-v33" {
+	if profile.Rules.ID != "default-td-profile-v34" || profile.MechanicsDefinition.Revision != "2026-09-27-atlas-56.3-v34" {
 		t.Errorf("rules %s, Definition %s", profile.Rules.ID, profile.MechanicsDefinition.Revision)
 	}
 	for _, want := range []string{
