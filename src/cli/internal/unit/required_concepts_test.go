@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/mardwerk/unit-generator/src/cli/internal/fixture"
+	m "github.com/mardwerk/unit-generator/src/cli/internal/mechanics"
 	s "github.com/mardwerk/unit-generator/src/cli/internal/schema"
 	"github.com/mardwerk/unit-generator/src/cli/internal/unit"
 )
@@ -191,8 +192,10 @@ func TestRequiredConceptsReachThePromptsAndKeepTheHash(t *testing.T) {
 	review := unit.BlueprintReviewRequest(checked).Prompt
 	for _, want := range []string{
 		`"requiredConcepts":[{"name":"Fan Club","reason":"The owner's signature support form.","baseAttack":false,"entries":["Fan Club"],"sourceIds":["source1:12"],"adaptedBy":["x-4-x","x-5-x"],"purchases":[` +
-			`{"build":"x-4-x","name":"Super Monkey Fan Club","changeScope":{"base":["intervalSeconds multiply 0.5"],"boost":["unlocks the Active Ability Fan Club Frenzy"]}},` +
-			`{"build":"x-5-x","name":"Plasma Monkey Fan Club","changeScope":{"base":[],"boost":["boost damageMultiplier set 2","boost durationSeconds add 5"]}}]}]`,
+			`{"build":"x-4-x","name":"Super Monkey Fan Club","changeScope":{"base":["intervalSeconds multiply 0.5"],"boost":["unlocks the Active Ability Fan Club Frenzy"]},` +
+			`"dimensions":[{"dimension":"intervalSeconds lowered","alsoChangedBy":["Spiked Ball","Dart Throw","Triple Throw","Crossbow"]},{"dimension":"Active Ability","alsoChangedBy":[]}]},` +
+			`{"build":"x-5-x","name":"Plasma Monkey Fan Club","changeScope":{"base":[],"boost":["boost damageMultiplier set 2","boost durationSeconds add 5"]},` +
+			`"dimensions":[{"dimension":"boost damageMultiplier raised","alsoChangedBy":[]},{"dimension":"boost durationSeconds raised","alsoChangedBy":[]}]}]}]`,
 		"requiredConcepts lists the concepts the owner requires this character's Unit to adapt",
 		unit.RequiredConceptRule,
 		`"requiredConcepts":[{"concept":"Fan Club"}]`,
@@ -431,15 +434,17 @@ func TestRequiredConceptReviewGetsTheIdentifyingEffectEvidence(t *testing.T) {
 			`"sourceIds":["source4:9","source4:10","source4:13","source4:17","source4:18","source7:42","source7:47","source7:48","source7:49","source7:51","source7:52"],` +
 			`"sourceTechnique":{"name":"Gear 4","passageIds":["source4:9","source4:13","source4:17","source5:18","source7:42","source7:46","source7:47","source7:48","source7:49","source7:51","source7:52","source7:89"]},` +
 			`"adaptedBy":["x-x-1","x-x-2","x-x-3","x-x-4"],"purchases":[` +
-			`{"build":"x-x-1","name":"Gear 4 Reach","changeScope":{"base":["pierce add 1"],"boost":[]}},` +
-			`{"build":"x-x-2","name":"Snakeman Reach","changeScope":{"base":["pierce add 1"],"boost":[]}},` +
-			`{"build":"x-x-3","name":"Snakeman Pistol","changeScope":{"base":["damage add 1","intervalSeconds multiply 0.85"],"boost":[]}},` +
-			`{"build":"x-x-4","name":"Gear 4 Power","changeScope":{"base":["damage add 3"],"boost":[]}}]}`,
+			`{"build":"x-x-1","name":"Gear 4 Reach","changeScope":{"base":["pierce add 1"],"boost":[]},"dimensions":[{"dimension":"pierce raised","alsoChangedBy":["Gear 3"]}]},` +
+			`{"build":"x-x-2","name":"Snakeman Reach","changeScope":{"base":["pierce add 1"],"boost":[]},"dimensions":[{"dimension":"pierce raised","alsoChangedBy":["Gear 3"]}]},` +
+			`{"build":"x-x-3","name":"Snakeman Pistol","changeScope":{"base":["damage add 1","intervalSeconds multiply 0.85"],"boost":[]},` +
+			`"dimensions":[{"dimension":"damage raised","alsoChangedBy":["Gear 3","Gear 2","Gear 5"]},{"dimension":"intervalSeconds lowered","alsoChangedBy":["Gear 2","Gear 5"]}]},` +
+			`{"build":"x-x-4","name":"Gear 4 Power","changeScope":{"base":["damage add 3"],"boost":[]},"dimensions":[{"dimension":"damage raised","alsoChangedBy":["Gear 3","Gear 2","Gear 5"]}]}]}`,
 		`{"name":"Gear 5","reason":"The owner holds it essential to the character.","baseAttack":false,"entries":["Gear 5"],` +
 			`"sourceIds":["source5:9","source5:12","source5:18","source7:53","source7:54","source7:55"],` +
 			`"sourceTechnique":{"name":"Gear 5","passageIds":["source5:9","source5:12","source5:18","source5:28","source7:53","source7:54","source7:55","source7:56"]},` +
 			`"adaptedBy":["x-x-5"],"purchases":[` +
-			`{"build":"x-x-5","name":"Gear 5 Follow-up","changeScope":{"base":["damage add 4","intervalSeconds multiply 0.8","follow-up Gear 5 follow-up strike: 1 hits of 0.5 damage within 6"],"boost":[]}}]}`,
+			`{"build":"x-x-5","name":"Gear 5 Follow-up","changeScope":{"base":["damage add 4","intervalSeconds multiply 0.8","follow-up Gear 5 follow-up strike: 1 hits of 0.5 damage within 6"],"boost":[]},` +
+			`"dimensions":[{"dimension":"damage raised","alsoChangedBy":["Gear 3","Gear 2","Gear 4"]},{"dimension":"intervalSeconds lowered","alsoChangedBy":["Gear 2","Gear 4"]},{"dimension":"follow-up","alsoChangedBy":[]}]}]}`,
 	} {
 		if got := s.Stringify(concepts[i]); got != want {
 			t.Errorf("required concept %d:\n got %s\nwant %s", i, got, want)
@@ -490,7 +495,7 @@ func TestRequiredConceptReviewGetsTheIdentifyingEffectEvidence(t *testing.T) {
 
 	for _, want := range []string{
 		unit.CoreSpiritRule,
-		"the passages those entries cite (sourceIds), the source technique it names with its passageIds, when sourceTechniques has one, and the purchases whose technique those entries are (adaptedBy), each with its name and changeScope (purchases)",
+		"the passages those entries cite (sourceIds), the source technique it names with its passageIds, when sourceTechniques has one, and the purchases whose technique those entries are (adaptedBy), each with its name, changeScope and dimensions",
 		"first name its central effect from its sourceIds and passageIds, against the character's other forms and techniques, then give pass only when a typed change of one of its purchases, or the base attack, carries that effect, naming in the reason that purchase by build code, that change as its changeScope lists it and the passage that makes it the concept's identifying effect",
 		"fail when the Unit adapts it only in name, only for a peripheral effect or only with stats its cited passages do not make its identifying effect, naming that effect and the purchase that should carry it by build code",
 		"unresolved, never pass, when only a coherent, source-fitting proposed mechanic carries its central effect",
@@ -521,6 +526,138 @@ func TestReviewGetsTheNamingEvidenceForSoru(t *testing.T) {
 	}
 	if !strings.Contains(prompt, unit.NamingRule) {
 		t.Error("the review prompt lacks the naming rule")
+	}
+}
+
+// luffyV39Checked is the v39 Luffy Result ce07c903, run b, as a checked
+// draft, with Gear 4 and Gear 5 required as its Request required them: its
+// plan and blueprint (testdata/luffy-v39b.*) are those of the checked draft
+// rebuilt from it (ug-acc/data/runs/v39/luffy-b.checked.json, SHA-256
+// d363ecfb961e45bf), which the low and medium reviews read (OPUS-NET-61-25).
+func luffyV39Checked(t *testing.T) unit.Checked {
+	t.Helper()
+	return luffyChecked(t, "v39b", unit.Run{ID: "c5711ce1-2f62-4e60-947d-687793356dee", ModelID: "openrouter:openai/gpt-6-luna", StartedAt: "2026-09-27T15:20:04.168Z", CompletedAt: "2026-09-27T15:22:00.725Z"}, "Gear 4", "Gear 5")
+}
+
+// Both v39 Luffy reviews, at low and medium reasoning, passed Gear 4 on
+// x-3-x's damage and attack rate and Gear 5 on damage, which Gum-Gum
+// Pistol, Gear 3 and the other form's purchases raise too, and the medium
+// review passed 5-x-x's 15,000-Gold knockback as control, though Blimps and
+// Bosses ignore knockback and x-2-x adds as much for 200 Gold
+// (OPUS-NET-61-25, SOL-61-20). Each purchase of a required concept now
+// lists the dimensions its typed changes change with the other techniques
+// whose purchases change them too, and each fifth purchase its status
+// effects with the enemy properties immune to them. The cue is descriptive:
+// it pins what the review is given and asked, not a verdict.
+func TestReviewGetsSharedDimensionsAndStatusImmunities(t *testing.T) {
+	prompt, context := reviewContext(t, luffyV39Checked(t))
+	dimensions := map[string]string{}
+	for _, concept := range at(context, "requiredConcepts").([]any) {
+		for _, purchase := range at(concept, "purchases").([]any) {
+			dimensions[at(concept, "name").(string)+" "+at(purchase, "build").(string)] = s.Stringify(at(purchase, "dimensions"))
+		}
+	}
+	for key, want := range map[string]string{
+		"Gear 4 x-3-x": `[{"dimension":"damage raised","alsoChangedBy":["Gum-Gum Pistol","Gear 3","Gear 5"]},{"dimension":"intervalSeconds lowered","alsoChangedBy":["Gum-Gum Pistol","Python"]}]`,
+		"Gear 4 x-4-x": `[{"dimension":"Active Ability","alsoChangedBy":[]}]`,
+		"Gear 5 x-x-3": `[{"dimension":"damage raised","alsoChangedBy":["Gum-Gum Pistol","Gear 3","Gear 4"]}]`,
+		"Gear 5 x-x-4": `[{"dimension":"damage raised","alsoChangedBy":["Gum-Gum Pistol","Gear 3","Gear 4"]},{"dimension":"range raised","alsoChangedBy":["Gum-Gum Pistol"]}]`,
+		"Gear 5 x-x-5": `[{"dimension":"damage raised","alsoChangedBy":["Gum-Gum Pistol","Gear 3","Gear 4"]},{"dimension":"splashRadius raised","alsoChangedBy":["Gear 3"]}]`,
+	} {
+		if dimensions[key] != want {
+			t.Errorf("%s dimensions:\n got %s\nwant %s", key, dimensions[key], want)
+		}
+	}
+	if len(dimensions) != 5 {
+		t.Errorf("required concept purchases %v", dimensions)
+	}
+
+	fifth := at(context, "requiredVerdicts", "fifthPurchases").([]any)
+	if at(fifth[0], "build") != "5-x-x" || s.Stringify(at(fifth[0], "statusEffects")) != `[{"effect":"Knockback","immune":["Blimp","Boss"]}]` {
+		t.Errorf("5-x-x %s", s.Stringify(fifth[0]))
+	}
+	if facts := s.Stringify(at(fifth[0], "payoff", "facts")); !strings.Contains(facts, "Adding x-2-x to") || !strings.Contains(facts, "that 5-x-x adds for 15000 Gold") {
+		t.Errorf("5-x-x facts %s", facts)
+	}
+	for _, capstone := range fifth[1:] {
+		if at(capstone, "statusEffects") != nil {
+			t.Errorf("%s changes no status: %s", at(capstone, "build"), s.Stringify(capstone))
+		}
+	}
+
+	for _, want := range []string{unit.SharedDimensionRule, unit.CapstonePayoffRule, "each with its name, changeScope and dimensions, each dimension its typed changes change, such as damage raised or knockback, with alsoChangedBy, the other techniques whose purchases change it too (purchases)"} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("the review prompt lacks %q", want)
+		}
+	}
+}
+
+// A set change takes the direction its purchase moves the stat on its pure
+// path, so a purchase that sets damage higher and another technique's
+// purchase that adds damage list each other in alsoChangedBy, and a set
+// that lowers damage shares nothing with them (SOL-82-01). The v39 Luffy
+// x-3-x, Gear 4 Punch, adds 2 damage to the base attack's 1; here it sets
+// damage to 5, then to 0.5.
+func TestSetChangesShareTheDirectionTheyResolveTo(t *testing.T) {
+	for _, c := range []struct {
+		damage             float64
+		gear4, gear5Shares string
+	}{
+		{5, `{"dimension":"damage raised","alsoChangedBy":["Gum-Gum Pistol","Gear 3","Gear 5"]}`, `["Gum-Gum Pistol","Gear 3","Gear 4"]`},
+		{0.5, `{"dimension":"damage lowered","alsoChangedBy":[]}`, `["Gum-Gum Pistol","Gear 3"]`},
+	} {
+		checked := luffyV39Checked(t)
+		punch := checked.Draft.Candidate.Blueprint.Paths.At(1).Tiers.At(3)
+		if change := punch.Changes[0]; change.Stat != "damage" || change.Operation != "add" {
+			t.Fatalf("x-3-x's first change is %+v", change)
+		}
+		punch.Changes[0].Operation, punch.Changes[0].Number = "set", c.damage
+		_, context := reviewContext(t, checked)
+		dimensions := map[string]string{}
+		for _, concept := range at(context, "requiredConcepts").([]any) {
+			for _, purchase := range at(concept, "purchases").([]any) {
+				dimensions[at(concept, "name").(string)+" "+at(purchase, "build").(string)] = s.Stringify(at(purchase, "dimensions"))
+			}
+		}
+		if got := dimensions["Gear 4 x-3-x"]; !strings.HasPrefix(got, "["+c.gear4+",") {
+			t.Errorf("damage set %v: Gear 4 x-3-x dimensions %s", c.damage, got)
+		}
+		if got, want := dimensions["Gear 5 x-x-3"], `[{"dimension":"damage raised","alsoChangedBy":`+c.gear5Shares+`}]`; got != want {
+			t.Errorf("damage set %v: Gear 5 x-x-3 dimensions\n got %s\nwant %s", c.damage, got, want)
+		}
+	}
+}
+
+// A version 1 Definition changes slow, burn and stun with stat changes;
+// a capstone that raises stunSeconds or sets slowPercent and slowSeconds
+// lists that status effect once, with the immunities of the vocabulary the
+// Definition implies (SOL-82-01).
+func TestLegacyCapstoneStatusEffects(t *testing.T) {
+	blueprint := burstUnit()
+	stat := func(name, operation string, value float64) m.Change {
+		return m.Change{Kind: "stat", Target: "base", Stat: name, Operation: operation, Number: value}
+	}
+	blueprint.Paths.Path1.Tiers.Tier5.Changes = append(blueprint.Paths.Path1.Tiers.Tier5.Changes, stat("stunSeconds", "add", 0.5))
+	blueprint.Paths.Path3.Tiers.Tier5.Changes = append(blueprint.Paths.Path3.Tiers.Tier5.Changes, stat("slowPercent", "set", 30), stat("slowSeconds", "set", 2))
+	definition := m.DefaultDefinition()
+	if definition.IsV2() {
+		t.Fatal("the Default Definition of the mechanics package is no longer version 1")
+	}
+	if issues := m.ValidateTyped(&blueprint, definition); len(issues) > 0 {
+		t.Fatalf("the hand-built unit is invalid: %v", issues)
+	}
+	terms := definition.Terms()
+	effects := unit.CapstoneStatusEffects(&blueprint, &terms)
+	for key, want := range map[string]string{
+		"path1": `[{"effect":"stun","immune":["blimp","boss"]}]`,
+		"path3": `[{"effect":"slow","immune":["blimp","boss"]}]`,
+	} {
+		if got := s.Stringify(effects[key]); got != want {
+			t.Errorf("%s status effects\n got %s\nwant %s", key, got, want)
+		}
+	}
+	if _, ok := effects["path2"]; ok || len(effects) != 2 {
+		t.Errorf("status effects %v", effects)
 	}
 }
 

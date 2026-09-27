@@ -54,3 +54,9 @@ func MechanicsIssues(output any, request *Request, plan DesignPlan) ([]string, b
 func LocalRepair(request *Request, previous any, issues []string) (*TierRepair, error) {
 	return localRepairFor(request, previous, issues)
 }
+
+// CapstoneStatusEffects is the review's statusEffects of each path's fifth
+// purchase, by path key, for tests that build their own unit.
+func CapstoneStatusEffects(blueprint *m.Blueprint, vocabulary *m.Vocabulary) map[string][]any {
+	return capstoneStatusEffects(blueprint, vocabulary)
+}
