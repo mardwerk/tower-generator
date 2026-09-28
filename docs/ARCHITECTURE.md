@@ -1,10 +1,10 @@
 # Architecture
 
-How Unit Generator is structured. Where this document and the code disagree, the code is right; fix the document.
+How Tower Generator is structured. Where this document and the code disagree, the code is right; fix the document.
 
 ## What the Tool does
 
-Unit Generator adapts an existing character into a Tower Defense unit under a selected Profile. The normal input is a character name (or explicit source documents) plus a Profile. The output is a checked unit artifact with its evidence and findings.
+Tower Generator adapts an existing character into a Tower Defense unit under a selected Profile. The normal input is a character name (or explicit source documents) plus a Profile. The output is a checked unit artifact with its evidence and findings.
 
 It researches sources, prepares one explicit request, drafts with a model, checks the draft deterministically, optionally reviews it with a second model call, and renders it.
 

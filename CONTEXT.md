@@ -1,14 +1,15 @@
-# Unit Generator context
+# Tower Generator context
 
 Terms and ownership used across this repository. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) describes how the pieces fit together.
 
-Each term has one meaning here. Use it only with that meaning and do not substitute a synonym. Other Mardwerk documents use some of these words more broadly, so outside this repository name the scope, such as "Unit Generator Result".
+Each term has one meaning here. Use it only with that meaning and do not substitute a synonym. An owner can replace a term; after adoption, update `CONTEXT.md` and affected references. Other Mardwerk documents use some of these words more broadly, so outside this repository name the scope, such as "Tower Generator Result".
 
 ## Terms
 
 | Term | Meaning |
 | --- | --- |
-| Tool | Unit Generator as a whole: the Engine plus its CLI and `serve` API. It keeps no hidden state between calls. |
+| Tower Generator | The Tool that adapts existing characters into Tower Defense defenders under a selected Profile. Its current output contract calls a defender a Unit. |
+| Tool | Tower Generator as a whole: the Engine plus its CLI and `serve` API. It keeps no hidden state between calls. |
 | Engine | The code that prepares, drafts, checks and reviews units. It does not run combat; a Consumer does. |
 | Definition | The rules of one game that the Engine can check: paths, tiers, legal purchases, supported mechanics, currency and scale. |
 | Profile | A reusable, editable file that a user selects for generation. It contains a Definition with the values it allows, plus rules text and the task. The bundled default is read-only; saved Profiles are copies in the Profiles folder (`data/profiles` by default). A game's own Profile ships with that game; a copy saved here is a local copy. |
@@ -58,7 +59,7 @@ Each term has one meaning here. Use it only with that meaning and do not substit
 
 | Owner | Owns | Does not own |
 | --- | --- | --- |
-| Unit Generator | Unit research, preparation, generation, checks, review, rendering, its library and Profiles folders | Project history, orchestration across tools, runtime behavior |
+| Tower Generator | Unit research, preparation, generation, checks, review, rendering, its library and Profiles folders | Project history, orchestration across tools, runtime behavior |
 | Web client | Screens, the user's stage-by-stage orchestration, unsaved session state | Rules, validation, model calls |
 | Towerright | Project history, orchestration, evaluation, acceptance | Unit rules |
 | Consumer | Runtime execution and its evidence | Generation |
