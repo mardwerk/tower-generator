@@ -1,6 +1,6 @@
-# mardwerk-unit
+# Tower Generator
 
-Unit Generator turns a character into a Tower Defense unit: one automatic attack, three upgrade paths of five purchases, and every legal combination of two paths, all with exact numbers. You give it a character (a name to research, or your own source text) and a Profile with the game's rules. A model plans and drafts the unit, code checks every build against the rules, a second model call reviews it, and you get a readable unit sheet with its evidence kept alongside.
+Tower Generator turns a character into a Tower Defense unit: one automatic attack, three upgrade paths of five purchases, and every legal combination of two paths, all with exact numbers. You give it a character (a name to research, or your own source text) and a Profile with the game's rules. A model plans and drafts the unit, code checks every build against the rules, a second model call reviews it, and you get a readable unit sheet with its evidence kept alongside.
 
 Checks show that a unit follows its Profile's rules. They do not show that it is balanced or fun to play.
 
