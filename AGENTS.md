@@ -6,7 +6,7 @@ Read [README.md](README.md), [CONTEXT.md](CONTEXT.md) and [docs/ARCHITECTURE.md]
 
 - Build from scratch; use historical work for design context only, without reusing old code.
 - Keep the Tool runnable from explicit inputs without Towerright state.
-- Use the terms in [CONTEXT.md](CONTEXT.md) with exactly the meanings defined there. Do not introduce synonyms; add a missing term to `CONTEXT.md` before using it.
+- Use the terms in [CONTEXT.md](CONTEXT.md) with exactly the meanings defined there. Do not introduce synonyms; add a missing term to `CONTEXT.md` before using it. An owner can replace a term; after adoption, update `CONTEXT.md` and affected references.
 - Name files and modules after the responsibility or domain object they own.
 - Keep each module focused on one concern and expose explicit interfaces.
 - Keep dependencies directed from interfaces to implementations. Avoid hidden global state.

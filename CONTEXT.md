@@ -2,7 +2,7 @@
 
 Terms and ownership used across this repository. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) describes how the pieces fit together.
 
-Each term has one meaning here. Use it only with that meaning and do not substitute a synonym. Other Mardwerk documents use some of these words more broadly, so outside this repository name the scope, such as "Unit Generator Result".
+Each term has one meaning here. Use it only with that meaning and do not substitute a synonym. An owner can replace a term; after adoption, update `CONTEXT.md` and affected references. Other Mardwerk documents use some of these words more broadly, so outside this repository name the scope, such as "Unit Generator Result".
 
 ## Terms
 
