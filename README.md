@@ -129,9 +129,9 @@ Tested without network access:
 
 Tested live:
 
-- **OpenRouter text generation.** Monkey D. Luffy runs with `openai/gpt-6-luna` from [OPENROUTER.md](docs/OPENROUTER.md), each reporting its usage and cost: four in the [evaluation](docs/PROFILE-EVALUATION.md#not-covered) and eight more on [#27](https://github.com/mardwerk/unit-generator/pull/27#issuecomment-5849136738) ([second set](https://github.com/mardwerk/unit-generator/pull/27#issuecomment-5849199164)).
-- **Codex text generation.** An owner-run Luffy generation through a logged-in `codex` CLI, recorded as `codex:gpt-6-luna:reasoning=medium` ([#27](https://github.com/mardwerk/unit-generator/pull/27#issuecomment-5849462990)).
-- **Character research, for two characters.** Each OpenRouter set above started from a fresh `research "Monkey D. Luffy"`: the Wikipedia article through the MediaWiki API, identity matched through Wikidata, and the One Piece Fandom page and its Abilities and Powers subpage through the MediaWiki parse API. The name resolved without `--choice`. `research "Escanor"` ([#61](https://github.com/mardwerk/unit-generator/issues/61)) found his section of the Wikipedia character list, his page on the work's wiki without a Fandom link on his Wikidata item, and the Sunshine and Rhitta technique pages.
+- **OpenRouter text generation.** Monkey D. Luffy runs with `openai/gpt-6-luna` from [OPENROUTER.md](docs/OPENROUTER.md), each reporting its usage and cost: four in the [evaluation](docs/PROFILE-EVALUATION.md#not-covered) and eight more on [#27](https://github.com/mardwerk/tower-generator/pull/27#issuecomment-5849136738) ([second set](https://github.com/mardwerk/tower-generator/pull/27#issuecomment-5849199164)).
+- **Codex text generation.** An owner-run Luffy generation through a logged-in `codex` CLI, recorded as `codex:gpt-6-luna:reasoning=medium` ([#27](https://github.com/mardwerk/tower-generator/pull/27#issuecomment-5849462990)).
+- **Character research, for two characters.** Each OpenRouter set above started from a fresh `research "Monkey D. Luffy"`: the Wikipedia article through the MediaWiki API, identity matched through Wikidata, and the One Piece Fandom page and its Abilities and Powers subpage through the MediaWiki parse API. The name resolved without `--choice`. `research "Escanor"` ([#61](https://github.com/mardwerk/tower-generator/issues/61)) found his section of the Wikipedia character list, his page on the work's wiki without a Fandom link on his Wikidata item, and the Sunshine and Rhitta technique pages.
 - **Rejected model output.** Live runs whose plan failed validation, or whose draft still failed the mechanics checks after repair, exited with an error, published no Unit, reported the failed attempt's cost and wrote failure evidence.
 
 Not yet tested live:
@@ -143,13 +143,12 @@ Not yet tested live:
 
 Known quality limits:
 
-- **Unit quality.** An owner-run generation of Monkey D. Luffy showed repetitive paths ([#22](https://github.com/mardwerk/unit-generator/issues/22)). The trace found Fandom text cut off before the technique sections, a small evidence selection and no check against a form split between two paths; all three are changed and the Default Profile gained Knockback. Three of four live runs since gave each path its own behavior; the middle path's damage and unused Knockback remain weak ([evaluation](docs/PROFILE-EVALUATION.md#not-covered)). The relayed Dart Monkey comparison is one sample, not a quality measurement.
+- **Unit quality.** An owner-run generation of Monkey D. Luffy showed repetitive paths ([#22](https://github.com/mardwerk/tower-generator/issues/22)). The trace found Fandom text cut off before the technique sections, a small evidence selection and no check against a form split between two paths; all three are changed and the Default Profile gained Knockback. Three of four live runs since gave each path its own behavior; the middle path's damage and unused Knockback remain weak ([evaluation](docs/PROFILE-EVALUATION.md#not-covered)). The relayed Dart Monkey comparison is one sample, not a quality measurement.
 
 ## Documentation
 
 | Document | Answers |
 | --- | --- |
-| [CONTEXT.md](CONTEXT.md) | What do the terms mean, and who owns what? |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How is the Tool structured? |
 | [docs/CLI.md](docs/CLI.md) | How do I use the CLI? |
 | [docs/LAB.md](docs/LAB.md) | How do I use the web app? |

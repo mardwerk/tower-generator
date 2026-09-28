@@ -4,7 +4,7 @@
 
 BTD6 domain facts live in [btd6-atlas](https://github.com/KyleDerZweite/btd6-atlas), validated against a full 56.3 game capture. Treat it as authoritative for tower roster, tiers, costs, crosspath legality and map geometry. Do not add new BTD6 facts to this repository; add them there.
 
-The atlas keeps each capture under `data/<patch>-build-<id>/` with a manifest, and its derived analyses under `patterns/` (towers, maps and progression). Its exported game data and derived tables are licensed CC BY-NC 4.0, so cite them by patch, build and file instead of copying them here. The pinned capture's manifest has an empty `acceptedBy`. The owner accepted capture 56.3 on 2026-09-26 ([#27](https://github.com/mardwerk/unit-generator/pull/27)) as the Default Profile's numerical BTD6 reference only; that does not accept the atlas's incomplete spatial data.
+The atlas keeps each capture under `data/<patch>-build-<id>/` with a manifest, and its derived analyses under `patterns/` (towers, maps and progression). Its exported game data and derived tables are licensed CC BY-NC 4.0, so cite them by patch, build and file instead of copying them here. The pinned capture's manifest has an empty `acceptedBy`. The owner accepted capture 56.3 on 2026-09-26 ([#27](https://github.com/mardwerk/tower-generator/pull/27)) as the Default Profile's numerical BTD6 reference only; that does not accept the atlas's incomplete spatial data.
 
 ## Pinned capture
 
@@ -35,7 +35,7 @@ The atlas itself says per-tier DPS modeling is future work and that price ratios
 
 ### Cross-checks
 
-Medium prices and the local upgrade rule also agree with the reviewed Mardwerk knowledge summary of a September 24 BTD6 price snapshot, which checked every price against this capture ([`knowledge/btd6-snapshot.md`](https://github.com/mardwerk/project/blob/f8b2a47b649f507655ae6a0d4c10fa8850379623/knowledge/btd6-snapshot.md), private and optional). That summary does not validate combat stats or crosspath effects, so none are taken from it. The old default's Perma Charge text (8 extra damage for 15 s) disagrees with this capture's 10.
+Medium prices and the local upgrade rule also agree with the reviewed Mardwerk knowledge summary of a September 24 BTD6 price snapshot, which checked every price against this capture ([`knowledge/btd6-snapshot.md`](https://github.com/mardwerk/planning/blob/f8b2a47b649f507655ae6a0d4c10fa8850379623/knowledge/btd6-snapshot.md), private and optional). That summary does not validate combat stats or crosspath effects, so none are taken from it. The old default's Perma Charge text (8 extra damage for 15 s) disagrees with this capture's 10.
 
 ## Deliberate departures from BTD6
 
@@ -58,4 +58,4 @@ A generated unit records its own departures from its source as proposed-mechanic
 
 ## Retired material
 
-The September 20 research was removed on September 26, 2026: the compiled 26-tower package (`btd6_towers.json`, SHA-256 `a2a5e2bb4591…`), role categories, the design baseline, six detailed tower examples, the pattern analysis, the historical fixed-recipe notes, the Dart and Boomerang page snapshots and their provenance file. They remain in history at [research/btd6 in f19af56](https://github.com/mardwerk/unit-generator/tree/f19af56/research/btd6). No active consumer cites them since default Profile version 12; saved artifacts and Profiles made earlier keep the rules text they were prepared with.
+The September 20 research was removed on September 26, 2026: the compiled 26-tower package (`btd6_towers.json`, SHA-256 `a2a5e2bb4591…`), role categories, the design baseline, six detailed tower examples, the pattern analysis, the historical fixed-recipe notes, the Dart and Boomerang page snapshots and their provenance file. They remain in history at [research/btd6 in f19af56](https://github.com/mardwerk/tower-generator/tree/f19af56/research/btd6). No active consumer cites them since default Profile version 12; saved artifacts and Profiles made earlier keep the rules text they were prepared with.
