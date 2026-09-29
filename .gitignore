@@ -1,6 +1,5 @@
 # Local dependencies and generated files
 node_modules/
 src/web/dist/
-mardwerk-unit
 .env
 .env.*
