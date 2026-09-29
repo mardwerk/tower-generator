@@ -1,18 +1,9 @@
 # Agent instructions
 
-Read [README.md](README.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before changing this repository. Mardwerk agents with access to private [Planning](https://github.com/mardwerk/planning) must also read its [AGENTS.md](https://github.com/mardwerk/planning/blob/main/AGENTS.md) and master [CONTEXT.md](https://github.com/mardwerk/planning/blob/main/CONTEXT.md). Contributors can use this repository without Planning access. When a document and the code disagree, check the code and fix the document.
+Read [README.md](README.md) before changing this repository. Mardwerk agents with access to private [Planning](https://github.com/mardwerk/planning) must also read its [AGENTS.md](https://github.com/mardwerk/planning/blob/main/AGENTS.md) and master [CONTEXT.md](https://github.com/mardwerk/planning/blob/main/CONTEXT.md). Contributors can use this repository without Planning access.
 
-## Rules
+The current product work is the Profile Validator tracked in [#85](https://github.com/mardwerk/tower-generator/issues/85). It is not implemented. A Profile is a directory selected by path. Do not treat the removed generator's schemas, CLI, or workflows as the validator contract. Review the Dart Monkey sample and owner decisions before defining the importer, schema, record placement, or validator behavior.
 
-- Build from scratch; use historical work for design context only, without reusing old code.
-- Keep the Tool runnable from explicit inputs without Towerright state.
-- Keep unit and mechanic rules in the Engine. Keep orchestration and project history in Towerright.
-- Keep CLI and UnitLab in this repository until an independent lifecycle requires a split.
-- Preserve evidence and scoped validation findings in Results.
-- BTD6 domain facts live in [btd6-atlas](https://github.com/KyleDerZweite/btd6-atlas); see [BTD6-REFERENCE.md](docs/BTD6-REFERENCE.md). Do not add new BTD6 facts here; add them there.
+Keep BTD6 facts in [btd6-atlas](https://github.com/KyleDerZweite/btd6-atlas); cite the pinned source in [BTD6-REFERENCE.md](docs/BTD6-REFERENCE.md). Preserve the reusable Lab design files in `src/web/ui/`, `src/web/app/styles.css`, and `src/web/public/mardwerk.png` for a future Lab.
 
-Before any agent-initiated OpenRouter call, read [OPENROUTER.md](docs/OPENROUTER.md). Use only its listed exact model IDs. All other OpenRouter models are disallowed. Ask the user before adding another model, then update the list according to their answer before dispatch. This policy does not cover native Codex CLI models.
-
-## Completion
-
-Before committing, confirm that a changed operation documents its inputs and outcome, module boundaries remain clear, links resolve or are intentionally external, and `gofmt -l src`, `go vet ./...`, `go test ./...` and `git diff --check` pass. After changing the web client, also run `pnpm typecheck`, `pnpm test`, `pnpm format:check` and `pnpm build`, and commit `src/web/dist`.
+Before committing, run `git diff --check` and check changed links. For design file changes, also run `pnpm typecheck` and `pnpm format:check`. Run checks appropriate to any new executable code once it exists.
