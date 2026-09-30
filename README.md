@@ -8,4 +8,4 @@ The former Lab's reusable visual design remains in [`src/web/ui/`](src/web/ui/),
 
 [BTD6 reference and attribution](docs/BTD6-REFERENCE.md) records the pinned atlas source for future Default Profile work. No Default Profile is implemented in current source.
 
-[Issue labels and milestones](docs/ISSUE_LABELS.md) defines the standalone contributor guidance for classifying and tracking work.
+[Issue labels](docs/ISSUE_LABELS.md) explains the label families and local topics used to track work.
