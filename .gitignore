@@ -4,4 +4,6 @@ src/web/dist/
 .env
 .env.*
 .tools/
-game-data/
+/game-data/
+default-profile/validator
+default-profile/validator.exe
