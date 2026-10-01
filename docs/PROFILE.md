@@ -140,6 +140,10 @@ The unchanged Template's dependency SHA256 was `981def0d205941af5535501f93b19abf
 
 ## Next product iteration
 
+The [first authoring experiment](AUTHORING.md) creates an editable Usopp draft with readable output and positive and negative checker reports.
+Run `python3 scripts/author-tower.py examples/usopp.json --check` to regenerate it locally.
+The experiment keeps the current Profile unchanged; it does not establish general generation or design acceptance.
+
 Use the accepted Dart reference and record its source evidence using [BTD6-REFERENCE.md](BTD6-REFERENCE.md).
 Prepare a compact authoring view while keeping the full source available, then generate one different Tower using demonstrated mechanics and explicit state templates.
 Keep the 64 ordinary states, 15 upgrades, purchase links and relevant mechanics explicit; exclude Paragon from that generation example.

@@ -1,7 +1,8 @@
 # Tower Generator
 
 Tower Generator's initial [Default Profile](default-profile/) copies Atlas's verified BTD6 Profile and uses [td-profile](https://github.com/mardwerk/td-profile)'s validator and reusable schemas.
-The character-to-tower generator and additional authoring checks remain to be implemented.
+The first editable [Usopp example](examples/usopp.json) demonstrates local authoring and validation.
+General character generation and additional authoring checks remain to be implemented.
 
 A Profile is a directory that defines a game's Tower format and rules. The shared validator checks a supplied Profile and separate game-data offline.
 [Profile integration](docs/PROFILE.md) provides the pinned release setup and cross-repository iteration commands. [#98](https://github.com/mardwerk/tower-generator/issues/98) tracks this preparation; [#85](https://github.com/mardwerk/tower-generator/issues/85) tracks further Profile and generation work.
@@ -10,6 +11,15 @@ Dart Monkey is the verified Atlas reference. Additional product rules and the fi
 
 Run `python3 scripts/check-default-profile.py` with the sibling Atlas checkout present to check Dart against both Profiles.
 Use `--local-checker` to rebuild the sibling td-profile checker while developing shared checks.
+
+Create and check the Usopp draft with Python 3.10 or newer and the sibling Atlas checkout:
+
+```sh
+python3 scripts/author-tower.py examples/usopp.json --check
+```
+
+Read `game-data/usopp/TOWER.md`, edit the example's costs or upgrade changes, and run the same command again.
+[Authoring](docs/AUTHORING.md) describes the output, mapping and current limits.
 
 The previous generator and UnitLab remain in the [generator-before-validator-reset-2026-09-29 tag](https://github.com/mardwerk/tower-generator/tree/generator-before-validator-reset-2026-09-29), at commit `c157cacdfdaf5e9405a01c8d16a3a6fa1147685b`.
 The former Lab's reusable visual design remains in [`src/web/ui/`](src/web/ui/), [`src/web/app/styles.css`](src/web/app/styles.css), and [`src/web/public/mardwerk.png`](src/web/public/mardwerk.png).
