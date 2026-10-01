@@ -1,13 +1,11 @@
 """Build a small, editable projectile Tower from the verified Dart reference."""
 
-import argparse
 from copy import deepcopy
 import hashlib
 import json
 import math
 from pathlib import Path
 import re
-import runpy
 import shutil
 import subprocess
 import sys
@@ -146,7 +144,7 @@ def generate(design, atlas, output):
     upgrade_template = read("Upgrades/Sharp Shots.json")
     text = read("textTable.json")
     resources = read("resources.json")
-    data = output / "data"
+    data = output / "game-data"
     (output / "checks.json").unlink(missing_ok=True)
     tower_id = design["id"]
     text[tower_id] = design["name"]
@@ -223,15 +221,16 @@ def generate(design, atlas, output):
     return data
 
 
-def check(atlas, output, tower_id):
-    smoke = runpy.run_path(str(PROJECT / "scripts/check-default-profile.py"))
-    binary, schemas = smoke["checker"](argparse.Namespace(local_checker=False, atlas=atlas))
-    smoke["check_schemas"](schemas, [atlas / "profile", PROJECT / "default-profile"])
-    data = output / "data"
+def check(output, tower_id):
+    binary = output / ("profile-validator.exe" if sys.platform == "win32" else "profile-validator")
+    identity = json.loads((output / "validator-release.json").read_text())
+    if hashlib.sha256(binary.read_bytes()).hexdigest() != identity["executableSha256"]:
+        raise ValueError("Installed validator checksum mismatch; run setup.py again")
+    data = output / "game-data"
     tower = f"Towers/{tower_id}/{tower_id}.json"
 
     def report(directory):
-        result = subprocess.run([str(binary), "score-tower", "--profile", str(PROJECT / "default-profile"),
+        result = subprocess.run([str(binary), "score-tower", "--profile", str(output / "profile"),
                                  "--game-data", str(directory), "--tower", tower], capture_output=True, text=True)
         if not result.stdout:
             raise ValueError(result.stderr.strip() or "Checker produced no report")
@@ -257,25 +256,3 @@ def check(atlas, output, tower_id):
         results[label] = invalid
     write_json(output / "checks.json", results)
     print(f"Candidate: {valid['score']['points']}/100, {valid['filesChecked']} files. Missing state and upgrade rejected.")
-
-
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("design", type=Path)
-    parser.add_argument("--atlas", type=Path, default=PROJECT.parent / "btd6-atlas")
-    parser.add_argument("--check", action="store_true", help="validate the candidate and missing-state/upgrade cases")
-    args = parser.parse_args()
-    design = json.loads(args.design.read_text())
-    validate_design(design)
-    output = PROJECT / "game-data" / design["id"].lower()
-    generate(design, args.atlas.resolve(), output)
-    print(f"Authored {design['name']}: {output / 'TOWER.md'}")
-    if args.check:
-        check(args.atlas.resolve(), output, design["id"])
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except (OSError, ValueError, KeyError, StopIteration, subprocess.CalledProcessError) as error:
-        sys.exit(f"author-tower: {error}")

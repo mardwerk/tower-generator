@@ -9,8 +9,8 @@ import unittest
 
 
 PROJECT = Path(__file__).resolve().parents[1]
-AUTHOR = runpy.run_path(str(PROJECT / "scripts/author-tower.py"))
-DESIGN = json.loads((PROJECT / "examples/usopp.json").read_text())
+AUTHOR = runpy.run_path(str(PROJECT / "src/author.py"))
+DESIGN = json.loads((PROJECT / "default/usopp.json").read_text())
 
 
 class AuthoringTests(unittest.TestCase):
@@ -76,7 +76,7 @@ class AuthoringTests(unittest.TestCase):
         revision["base"]["damage"] = 2
         revised = self.output / "revision"
         AUTHOR["generate"](revision, PROJECT.parent / "btd6-atlas", revised)
-        tower = json.loads((revised / "data/Towers/Usopp/Usopp.json").read_text())
+        tower = json.loads((revised / "game-data/Towers/Usopp/Usopp.json").read_text())
         self.assertEqual(next(AUTHOR["models"](tower, "DamageModel"))["damage"], 2)
         self.assertIn("| 0-0-0 | 250 | 2 |", (revised / "TOWER.md").read_text())
 

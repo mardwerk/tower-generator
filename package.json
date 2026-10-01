@@ -1,15 +1,19 @@
 {
-  "name": "@mardwerk/tower-generator-design",
+  "name": "@mardwerk/tower-generator",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Retained Lab visual components and theme",
+  "description": "Tower authoring and inspection",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12"
   },
   "scripts": {
     "typecheck": "tsc -p src/web/tsconfig.json",
-    "format:check": "prettier --check \"src/web/**/*.{ts,tsx,css,json}\" \"*.json\""
+    "format:check": "prettier --check \"src/web/**/*.{ts,tsx,css,json}\" \"*.json\"",
+    "dev": "vite --config src/web/vite.config.ts",
+    "build": "vite build --config src/web/vite.config.ts",
+    "preview": "vite preview --config src/web/vite.config.ts",
+    "test": "python3 -B -m unittest discover -s src -p \"test_*.py\""
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
@@ -18,14 +22,18 @@
     "lucide-react": "^1.47.0",
     "radix-ui": "^1.6.7",
     "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.3",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "prettier": "^3.9.8",
     "tailwindcss": "^4.3.3",
     "tw-animate-css": "^1.4.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "vite": "^8.3.1"
   }
 }

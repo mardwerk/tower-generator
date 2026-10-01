@@ -19,13 +19,12 @@ Upstream checker notices and dependency licenses remain in `licenses/`.
 
 ## Check and iterate
 
-Run `python3 scripts/check-default-profile.py` from the repository root to check Dart against both the Atlas and Default Profiles.
-Use `--local-checker` to rebuild the sibling td-profile checker while developing shared operations.
-See [Profile integration](../docs/PROFILE.md) for paths, candidate checks, release setup and the ownership of changes.
+Run `python3 setup.py` from the repository root to build the latest released native checker, author Usopp and validate the example.
+See [Profile integration](../../docs/PROFILE.md) for commands, local validation and the ownership of changes.
 
-The copied native executable remains local and gitignored; `validator-release.json` records the pinned software identity.
-A clean checkout can use the matching executable shipped by the sibling Atlas repository.
-All Profile dependencies resolve inside this directory. Tower data remains separate and local.
+The executable lives at `default/profile-validator`, outside this Profile directory.
+The installed software identity is recorded in `default/validator-release.json`.
+The Profile and generated game-data stay separate inside the default workspace.
 
 Dart is the verified reference, with 64 ordinary states and 15 ordinary upgrades.
 Its unchanged Atlas scoring scope also includes Paragon and supporting data, for 99 files; a generation example can exclude Paragon explicitly.

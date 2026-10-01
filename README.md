@@ -1,30 +1,49 @@
 # Tower Generator
 
-Tower Generator's initial [Default Profile](default-profile/) copies Atlas's verified BTD6 Profile and uses [td-profile](https://github.com/mardwerk/td-profile)'s validator and reusable schemas.
-The first editable [Usopp example](examples/usopp.json) demonstrates local authoring and validation.
-General character generation and additional authoring checks remain to be implemented.
+Create and inspect the editable [Usopp draft](default/usopp.json) with the [Default Profile](default/profile/).
+The first experiment has 64 ordinary states, 15 upgrades and no Paragon.
+General character generation and game integration remain later work.
 
-A Profile is a directory that defines a game's Tower format and rules. The shared validator checks a supplied Profile and separate game-data offline.
-[Profile integration](docs/PROFILE.md) provides the pinned release setup and cross-repository iteration commands. [#98](https://github.com/mardwerk/tower-generator/issues/98) tracks this preparation; [#85](https://github.com/mardwerk/tower-generator/issues/85) tracks further Profile and generation work.
-Dart Monkey is the verified Atlas reference. Additional product rules and the first generated Tower remain to be developed with Kyle.
-[#92](https://github.com/mardwerk/tower-generator/issues/92) tracks documentation of the resulting product contract.
-
-Run `python3 scripts/check-default-profile.py` with the sibling Atlas checkout present to check Dart against both Profiles.
-Use `--local-checker` to rebuild the sibling td-profile checker while developing shared checks.
-
-Create and check the Usopp draft with Python 3.10 or newer and the sibling Atlas checkout:
+Use Python 3.10 or newer, Go, Git, GitHub CLI and Node.js 22.12 or newer:
 
 ```sh
-python3 scripts/author-tower.py examples/usopp.json --check
+python3 setup.py
+pnpm install
+pnpm dev
 ```
 
-Read `game-data/usopp/TOWER.md`, edit the example's costs or upgrade changes, and run the same command again.
-[Authoring](docs/AUTHORING.md) describes the output, mapping and current limits.
+Open the local URL printed by Vite.
+The web view shows upgrade paths, legal crosspaths, stats, Tower JSON and validation results from the generated files.
+Edit `default/usopp.json`, run `python3 setup.py` again, then click Reload in the web view.
 
-The previous generator and UnitLab remain in the [generator-before-validator-reset-2026-09-29 tag](https://github.com/mardwerk/tower-generator/tree/generator-before-validator-reset-2026-09-29), at commit `c157cacdfdaf5e9405a01c8d16a3a6fa1147685b`.
-The former Lab's reusable visual design remains in [`src/web/ui/`](src/web/ui/), [`src/web/app/styles.css`](src/web/app/styles.css), and [`src/web/public/mardwerk.png`](src/web/public/mardwerk.png).
-These files are design assets for a future Lab. With Node.js 22 or newer, run `pnpm install`, `pnpm typecheck`, and `pnpm format:check` to check the retained components and styles.
+`setup.py` builds the latest published [td-profile](https://github.com/mardwerk/td-profile) release for the current OS and architecture.
+It reuses a verified matching build, generates Usopp using the sibling [Atlas](https://github.com/KyleDerZweite/btd6-atlas) checkout, and checks the candidate and missing-record cases.
+Use `--atlas /path/to/btd6-atlas` for another checkout.
 
-[BTD6 reference and attribution](docs/BTD6-REFERENCE.md) records the Atlas source. Atlas's BTD6 Profile and Tower Generator's Default Profile have independent identities and revisions.
+The default workspace keeps related files together:
 
-[Issue labels](docs/ISSUE_LABELS.md) explains the label families and local topics used to track work.
+```text
+default/
+  usopp.json              Editable design
+  profile/               Self-contained Profile
+  game-data/             Generated Tower and Upgrade records
+  profile-validator      Native checker, .exe on Windows
+  validator-release.json Installed release and build identity
+  checks.json            Candidate and negative-case reports
+  TOWER.md               Readable Tower
+  REFERENCE.md           Compact Dart reference
+  source.json            Atlas provenance
+  licenses/              Installed checker notices
+```
+
+Generated data, reports and executables stay local and ignored by Git.
+[Authoring](docs/AUTHORING.md) explains the mapping and current limits; [Profile integration](docs/PROFILE.md) explains the checker.
+[Reference attribution](docs/BTD6-REFERENCE.md) records the Atlas source and licenses.
+
+Run `pnpm test`, `pnpm typecheck`, `pnpm format:check` and `pnpm build` for the focused checks.
+`pnpm preview` serves the built web view against the same local default files.
+
+The previous generator remains in the [generator-before-validator-reset-2026-09-29 tag](https://github.com/mardwerk/tower-generator/tree/generator-before-validator-reset-2026-09-29).
+The web view reuses its retained Lab theme and components.
+Product work is tracked in [#85](https://github.com/mardwerk/tower-generator/issues/85), documentation in [#92](https://github.com/mardwerk/tower-generator/issues/92), and deferred presentation changes in [#100](https://github.com/mardwerk/tower-generator/issues/100).
+See [issue labels](docs/ISSUE_LABELS.md) for tracking conventions.

@@ -1,6 +1,6 @@
 # First Tower authoring experiment
 
-The [Usopp design](../examples/usopp.json) is an editable draft with Impact, Volley and Marksman upgrade paths.
+The [Usopp design](../default/usopp.json) is an editable draft with Impact, Volley and Marksman upgrade paths.
 Kyle selected this experiment under [#85](https://github.com/mardwerk/tower-generator/issues/85), using the existing Default Profile and checker.
 During this iteration, work directly on `main` and track necessary Profile or dependency changes as issues.
 Atlas and td-profile remain unchanged. The draft still needs design review.
@@ -8,25 +8,27 @@ Atlas and td-profile remain unchanged. The draft still needs design review.
 Run from Tower Generator with Python 3.10 or newer and the sibling Atlas checkout available:
 
 ```sh
-python3 scripts/author-tower.py examples/usopp.json --check
+python3 setup.py
 ```
 
 Use `--atlas /path/to/btd6-atlas` for another checkout.
-Without `--check`, the command only generates the local files and clears any previous check report.
-Generation uses Python's standard library and the pinned local source; it makes no network requests.
-Validation uses the checksum-verified td-profile v1.0.2 executable through the existing [Profile integration](PROFILE.md).
+Setup builds or reuses the latest released native validator, generates the example and runs positive and negative checks.
+[Profile integration](PROFILE.md) records the build and validation behavior.
+Run `pnpm dev` to inspect the same local files in the web view, or `pnpm preview` after `pnpm build`.
+Use the path selectors or upgrade cards to choose a legal state, and inspect all states or the selected Tower JSON.
+Edit the design and rerun setup, then click Reload to refresh the web view.
 
-The generated `game-data/usopp/` directory is ignored by Git:
+Generated outputs under `default/` are ignored by Git; the design and Profile are tracked:
 
 | File | Contents |
 | --- | --- |
 | `TOWER.md` | Description, 15 upgrades and the stats of all 64 states |
 | `REFERENCE.md` | Compact Dart reference showing each state's first weapon |
-| `data/` | 64 Tower states, 15 Upgrade definitions and two supporting tables |
+| `game-data/` | 64 Tower states, 15 Upgrade definitions and two supporting tables |
 | `source.json` | Atlas source commit, capture, build, source files and byte hashes |
 | `checks.json` | Full checker reports for the candidate and two missing-record cases |
 
-Edit the base stats, upgrade names, costs or changes in `examples/usopp.json`, then run the command again.
+Edit the base stats, upgrade names, costs or changes in `default/usopp.json`, then run the command again.
 Files for that Tower are regenerated. New display names use stable Upgrade identifiers so renamed upgrades leave no old records behind.
 The original Atlas source stays available and unchanged.
 
@@ -52,14 +54,14 @@ Inherited Dart art, sounds, animation and immunity settings remain placeholders;
 The authoring input supports only this small projectile design. It is not the general generator interface or an accepted Profile replacement.
 An authoring format without captured presentation requirements is deferred in [#100](https://github.com/mardwerk/tower-generator/issues/100).
 
-`--check` requires a complete candidate score of 100 and a `missing_reference` diagnostic when either a required state or Upgrade definition is removed from a disposable copy.
+Setup requires a complete candidate score of 100 and a `missing_reference` diagnostic when either a required state or Upgrade definition is removed from a disposable copy.
 The candidate files remain unchanged by validation.
-The [deferred shared checks](PROFILE.md#deferred-checks) still apply. The score measures declared compliance, not design quality, balance or gameplay.
+The [deferred shared checks](PROFILE.md#checks-and-deferred-work) still apply. The score measures declared compliance, not design quality, balance or gameplay.
 
 Run the focused authoring checks with:
 
 ```sh
-python3 scripts/test-author-tower.py
+pnpm test
 ```
 
 These checks cover crosspath stats, camo and projectile reach, legal states, purchase-to-upgrade mapping, applied upgrades, revisions and invalid design inputs.
