@@ -21,7 +21,7 @@ The topics below describe this repository's responsibilities, including retained
 | `topic:operations` | Builds, test environments, publishing, deployment and operational data |
 | `topic:interface` | User controls, presentation and interaction |
 | `topic:cli` | CLI commands, flags and serve API |
-| `topic:engine` | Generator schemas, mechanics, checks and prompts, plus the Profile importer and static validator |
+| `topic:engine` | Generator schemas, mechanics, checks and prompts, plus Profile import and product validation |
 | `topic:unitlab` | The local UnitLab client, server, settings and library |
 | `topic:security` | Security boundaries, credentials and access protection |
 
