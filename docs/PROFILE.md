@@ -1,7 +1,7 @@
 # Profile integration
 
-Tower Generator will use [td-profile](https://github.com/mardwerk/td-profile)'s generic validator and reusable schemas.
-This setup establishes a working upstream baseline; the Default Profile and Dart Monkey mapping still need review through [#85](https://github.com/mardwerk/tower-generator/issues/85).
+Tower Generator uses [td-profile](https://github.com/mardwerk/td-profile)'s generic validator and reusable schemas.
+The initial [Default Profile](../default-profile/) copies Atlas's verified BTD6 Profile, with its own identity and revision; further generation work continues through [#85](https://github.com/mardwerk/tower-generator/issues/85).
 
 ## Ownership and contract
 
@@ -18,9 +18,71 @@ The manifest declares the Profile's identity, revision, checker interface and lo
 The checker reads an explicit Profile path and separate game-data without rewriting the records. Validation runs offline after setup.
 Propose shared checker or schema changes in td-profile, then adopt a released version here.
 
-The bundled Template uses one path with tiers 0 through 2 and one Tower file per state, with separate Upgrade definitions.
-These are editable starter settings. Tower Generator's three-path, five-upgrade mapping and record layout still need the Dart Monkey review.
-The Template, Atlas's BTD6 Profile and Tower Generator's future Default Profile remain separate.
+The upstream Template uses one path with tiers 0 through 2. The Default Profile instead inherits Atlas's three-path, five-upgrade ordinary progression, with one Tower file per state and separate Upgrade definitions.
+It preserves raw BTD6 fields, exact source contracts and the broader Atlas settings, including presentation fields and required supporting data.
+The Template, Atlas's BTD6 Profile and Tower Generator's Default Profile remain separate.
+
+## Iterate across the three repositories
+
+Keep the checkouts as siblings and edit each subject in its owning repository.
+
+```text
+mardwerk/
+  btd6-atlas/
+  td-profile/
+  tower-generator/
+    default-profile/
+    scripts/check-default-profile.py
+```
+
+Run the smoke check from Tower Generator's root:
+
+```sh
+python3 scripts/check-default-profile.py
+python3 scripts/check-default-profile.py --local-checker
+```
+
+The first command uses the checksum-verified pinned executable, copied locally with the Profile or supplied by the sibling Atlas checkout.
+It compares the Default Profile's shared schema copies with Atlas's and scores Dart against both Profiles, requiring complete 100/100 results.
+The second command builds the sibling td-profile working tree into ignored `.tools/`, then checks both Profiles against that working tree's shared schemas and runs the same Dart checks.
+Local mode requires Go. Neither mode pulls repositories, rewrites settings or changes source captures.
+
+Use `--atlas /path/to/checkout` and `--td-profile /path/to/checkout` for alternate worktrees.
+The script resolves its own repository paths, so it can also be invoked from another working directory.
+
+| Change | Where to edit | Local verification |
+| --- | --- | --- |
+| BTD6 source facts, bindings or capture contracts | Atlas | Atlas's checks and the cross-repository Dart command |
+| Generic checks or reusable schemas | td-profile | Its tests, vet and build, then `--local-checker` |
+| Default settings, authoring or generated Towers | Tower Generator | The Default Profile command and candidate checks |
+
+Shared schema changes require explicit updates to the consuming Profiles' local copies; the smoke check reports drift instead of copying files automatically.
+Default settings can diverge from Atlas settings as product requirements develop. Keep the inherited raw bindings while using Dart for this baseline.
+Use local checker builds while iterating; publish a td-profile release when a change is ready, then deliberately update the pinned checker metadata and affected schema copies.
+Record the tested checker and Profile revisions in the owning PR. A release is unnecessary for each local edit.
+
+Once a generated candidate exists, check it alongside the reference:
+
+```sh
+python3 scripts/check-default-profile.py \
+  --game-data game-data/probe --tower Towers/Probe/Probe.json
+```
+
+Supply its complete data directory, including declared dependencies. Add `--local-checker` to exercise pending shared changes.
+The command reports checker and Profile identities and leaves diagnostics in the terminal.
+
+The first generated Tower should retain 64 ordinary states and 15 upgrades, with Paragon excluded explicitly.
+The inherited unmodified Dart baseline includes Paragon and supporting data, so it checks 99 files; this does not expand the first generation's scope.
+
+## Deferred checks
+
+Kyle will review the implementation details later. The observed gaps are tracked upstream:
+
+- [Purchase and Upgrade-definition consistency](https://github.com/mardwerk/td-profile/issues/1).
+- [Applied-upgrade consistency](https://github.com/mardwerk/td-profile/issues/2).
+- [Profile-configured numerical limits](https://github.com/mardwerk/td-profile/issues/3).
+
+The current compliance score does not establish these relationships or gameplay balance.
 
 ## Install the pinned baseline
 
@@ -78,11 +140,11 @@ The unchanged Template's dependency SHA256 was `981def0d205941af5535501f93b19abf
 
 ## Next product iteration
 
-Start with one reviewed Dart Monkey example and record its source evidence using [BTD6-REFERENCE.md](BTD6-REFERENCE.md).
-Keep its 64 ordinary states, 15 upgrades, purchase links and relevant mechanics explicit; exclude Paragon from this sample.
-Review how the Atlas data maps into the shared contract before writing the Default Profile or expanding the corpus.
-Keep any supplied data unchanged during validation and keep generated import data out of Git.
+Use the accepted Dart reference and record its source evidence using [BTD6-REFERENCE.md](BTD6-REFERENCE.md).
+Prepare a compact authoring view while keeping the full source available, then generate one different Tower using demonstrated mechanics and explicit state templates.
+Keep the 64 ordinary states, 15 upgrades, purchase links and relevant mechanics explicit; exclude Paragon from that generation example.
+Keep supplied data unchanged during validation and keep generated data out of Git.
 
 The next product checks should demonstrate a valid sample and failures for a missing required state or upgrade.
 Record the release identity, Profile revision and checks actually performed. Document the accepted product contract through [#92](https://github.com/mardwerk/tower-generator/issues/92).
-Character generation and game integration remain later work. Defer SkillOpt until validator evaluation cases are stable.
+The first generation experiment can proceed while the additional checks are deferred. Game integration remains later work; defer SkillOpt until validator evaluation cases are stable.

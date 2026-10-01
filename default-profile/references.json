@@ -1,0 +1,412 @@
+{
+  "references": [
+    {
+      "models": [
+        "UpgradePathModel",
+        "PowerProUpgradePathModel"
+      ],
+      "field": "tower",
+      "target": "towers"
+    },
+    {
+      "models": [
+        "UpgradePathModel",
+        "PowerProUpgradePathModel"
+      ],
+      "field": "upgrade",
+      "target": "upgrades"
+    },
+    {
+      "models": [
+        "TowerModel"
+      ],
+      "field": "appliedUpgrades",
+      "target": "upgrades"
+    },
+    {
+      "models": [
+        "ApplyModModel"
+      ],
+      "field": "mod",
+      "target": "knowledge",
+      "externalSymbols": {
+        "AlchemistTouch": "Referenced in accepted capture 56.3, but no target record is exported in this collection.",
+        "DeepHeat": "Referenced in accepted capture 56.3, but no target record is exported in this collection.",
+        "Heartless": "Referenced in accepted capture 56.3, but no target record is exported in this collection.",
+        "RoyalTreatment": "Referenced in accepted capture 56.3, but no target record is exported in this collection.",
+        "Sharpsplosion": "Referenced in accepted capture 56.3, but no target record is exported in this collection."
+      }
+    },
+    {
+      "models": [
+        "KnowledgeModel"
+      ],
+      "field": "prerequisiteIds",
+      "target": "knowledge"
+    },
+    {
+      "models": [
+        "AbilityModel"
+      ],
+      "field": "addedViaUpgrade",
+      "target": "upgrades"
+    },
+    {
+      "models": [
+        "UpgradeCostModModel"
+      ],
+      "field": "upgradeName",
+      "target": "upgrades"
+    },
+    {
+      "models": [
+        "DiscountZoneModel"
+      ],
+      "field": "upgradeId",
+      "target": "upgrades"
+    },
+    {
+      "models": [
+        "BloonGroupModel"
+      ],
+      "field": "bloon",
+      "target": "enemies"
+    },
+    {
+      "models": [
+        "BloonModel"
+      ],
+      "field": "baseId",
+      "target": "enemyFamilies"
+    },
+    {
+      "models": [
+        "FilterOutBloonModel",
+        "DamageModifierForBloonTypeModel",
+        "MorphBloonModel",
+        "SetHealthForBloonModModel",
+        "BloonAssetChange"
+      ],
+      "field": "bloonId",
+      "target": "enemies"
+    },
+    {
+      "models": [
+        "DamageModifierForBloonTypeModel"
+      ],
+      "field": "bloonIds",
+      "target": "enemies"
+    },
+    {
+      "models": [
+        "DamageModifierForBloonStateAndTypeModel",
+        "ColdChainBuffModel"
+      ],
+      "field": "bloonTypes",
+      "target": "enemies"
+    },
+    {
+      "models": [
+        "BloonTagDamageOverrideModel",
+        "SlowForBloonModel"
+      ],
+      "field": "bloonIds",
+      "target": "enemies"
+    },
+    {
+      "models": [
+        "CreateGreatWhiteEffectModel"
+      ],
+      "field": "maxGrabBloonName",
+      "target": "enemies"
+    },
+    {
+      "models": [
+        "SpawnBloonsActionModel",
+        "LychTombstoneSpawnActionModel",
+        "SpawnBloonsUntilArmourBreaksActionModel"
+      ],
+      "field": "bloonType",
+      "target": "enemies"
+    },
+    {
+      "models": [
+        "SpawnTombstoneBloonsActionModel"
+      ],
+      "field": "bloonTypePerTombstoneTier",
+      "target": "enemies"
+    },
+    {
+      "models": [
+        "DiamondbackBehaviorModel"
+      ],
+      "field": "headSegmentBloonId",
+      "target": "enemies"
+    },
+    {
+      "models": [
+        "DiamondbackBehaviorModel"
+      ],
+      "field": "middleSegmentBloonId",
+      "target": "enemies"
+    },
+    {
+      "models": [
+        "DiamondbackBehaviorModel"
+      ],
+      "field": "tailSegmentBloonId",
+      "target": "enemies"
+    },
+    {
+      "models": [
+        "VigilanteTowerBehaviorModel"
+      ],
+      "field": "oneHealthHighestBloon",
+      "target": "enemies"
+    },
+    {
+      "models": [
+        "GeraldoItemModel"
+      ],
+      "field": "towerId",
+      "target": "towers"
+    },
+    {
+      "models": [
+        "GeraldoUpgradeTowerModel"
+      ],
+      "field": "towerId",
+      "target": "towers"
+    },
+    {
+      "models": [
+        "GeraldoItemModel"
+      ],
+      "field": "blockPurchaseIfTowerPlaced",
+      "target": "towers"
+    },
+    {
+      "models": [
+        "PetRabbitMergeModel"
+      ],
+      "field": "wererabbitTowerId",
+      "target": "towers"
+    },
+    {
+      "models": [
+        "PrimordialWrathModel"
+      ],
+      "field": "treeSubtowerId",
+      "target": "towerFamilies"
+    },
+    {
+      "models": [
+        "MonkeyCityModel",
+        "AddFreeTowerAfterRoundsModel",
+        "TowerAssetChange",
+        "Pet",
+        "Prop",
+        "DestroyChildTowersOnUpgradeModel"
+      ],
+      "field": "towerId",
+      "target": "towerFamilies"
+    },
+    {
+      "models": [
+        "GeraldoChangeTowerBehaviorModel"
+      ],
+      "field": "resultingTowerName",
+      "target": "towerFamilies"
+    },
+    {
+      "models": [
+        "GeraldoChangeTowerBehaviorModel"
+      ],
+      "field": "targetTowerBaseId",
+      "target": "towerFamilies"
+    },
+    {
+      "models": [
+        "GeraldoChangeTowerBehaviorModel"
+      ],
+      "field": "upgradeBlockId",
+      "target": "geraldoItems"
+    },
+    {
+      "models": [
+        "BoostArtifactModel",
+        "CountAllCategoriesBehaviorModel",
+        "AddProjectileBehaviorsArtifactModel",
+        "AddTowerBehaviorsArtifactModel",
+        "ProjectileCarouselBehaviorModel",
+        "FollowMeBehaviorModel",
+        "AbilityStackingBehaviorModel",
+        "AttackSpeedArtifactModel",
+        "AddDisplayArtifactModel",
+        "AddControlledZoneBehaviorsArtifactModel",
+        "DisableAttackArtifactModel"
+      ],
+      "field": "towerTypes",
+      "target": "towerFamilies"
+    },
+    {
+      "models": [
+        "TraitArtifactModel"
+      ],
+      "field": "excludedTowerTypes",
+      "target": "towerFamilies"
+    },
+    {
+      "models": [
+        "AddBehaviorToTowerTypeSupportModel"
+      ],
+      "field": "towerTypeIds",
+      "target": "towerFamilies"
+    },
+    {
+      "models": [
+        "EmitFromSharedTowersModel"
+      ],
+      "field": "sharedTowerTypes",
+      "target": "towerFamilies"
+    },
+    {
+      "models": [
+        "CashPerTowerInRangeModel"
+      ],
+      "field": "towerIds",
+      "target": "towerFamilies"
+    },
+    {
+      "models": [
+        "DiscountZoneModel"
+      ],
+      "field": "towerBaseIdList",
+      "target": "towerFamilies"
+    },
+    {
+      "models": [
+        "SubTowerFilterModel"
+      ],
+      "field": "baseSubTowerIds",
+      "target": "towerFamilies"
+    },
+    {
+      "models": [
+        "TargetCloseSharedRangeModel",
+        "TargetFirstSharedRangeModel",
+        "TargetLastSharedRangeModel",
+        "TargetStrongSharedRangeModel"
+      ],
+      "field": "specificTowerType",
+      "target": "towerFamilies"
+    },
+    {
+      "models": [
+        "TierFiveCountModModel"
+      ],
+      "field": "towerBaseId",
+      "target": "towerFamilies"
+    },
+    {
+      "models": [
+        "FreeTowerModModel"
+      ],
+      "field": "baseTowerID",
+      "target": "towerFamilies"
+    },
+    {
+      "models": [
+        "SkinData"
+      ],
+      "field": "baseTowerName",
+      "target": "towerFamilies"
+    },
+    {
+      "models": [
+        "TowerAssetChange"
+      ],
+      "field": "skinId",
+      "target": "skins"
+    },
+    {
+      "models": [
+        "FilterInHeroSkinIdModel"
+      ],
+      "field": "skinIds",
+      "target": "skins"
+    },
+    {
+      "models": [
+        "PowerAssetChange"
+      ],
+      "field": "powerId",
+      "target": "powers"
+    },
+    {
+      "models": [
+        "MuatorModXpShopMod"
+      ],
+      "field": "modName",
+      "target": "knowledge"
+    },
+    {
+      "models": [
+        "ItemArtifactModel",
+        "TraitArtifactModel",
+        "BoostArtifactModel",
+        "MapArtifactModel",
+        "FrontierMapArtifactModel",
+        "StaminaTraitArtifactModel",
+        "TraitData"
+      ],
+      "field": "ArtifactName",
+      "target": "artifacts"
+    },
+    {
+      "models": [
+        "RemoveArtifactAfterEndOfGameRerollBehaviorModel",
+        "RemoveArtifactIfNoTowerBanAmountBehaviorModel"
+      ],
+      "field": "artifactModelName",
+      "target": "artifacts"
+    },
+    {
+      "models": [
+        "EndOfRoundClearBypassModel"
+      ],
+      "field": "gameModesList",
+      "target": "mods"
+    },
+    {
+      "models": [
+        "GeraldoItemModel"
+      ],
+      "field": "bannedForModesList",
+      "target": "mods",
+      "externalSymbols": {
+        "BossRush": "Referenced in accepted capture 56.3, but no target record is exported in this collection."
+      }
+    },
+    {
+      "models": [
+        "RogueData"
+      ],
+      "field": "bannedBossMaps",
+      "target": "maps",
+      "aliases": {
+        "ProtecttheYacht": "ProtectTheYacht"
+      }
+    },
+    {
+      "models": [
+        "RogueData"
+      ],
+      "field": "bannedBossRushMaps",
+      "target": "maps",
+      "aliases": {
+        "ProtecttheYacht": "ProtectTheYacht"
+      }
+    }
+  ]
+}
