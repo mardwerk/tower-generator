@@ -14,8 +14,8 @@ pnpm install
 pnpm dev
 ```
 
-Open the URL printed by Vite. Create shows the character inputs, Research action and small controls underneath.
-Research inputs opens scope, English references and optional notes; Wiki looks up local entries.
+Open the URL printed by Vite. Create shows the character input, Research action and small controls underneath.
+Research inputs opens series, scope, English references and optional notes; Wiki looks up local entries.
 Edit entry saves readable Markdown with YAML metadata, cited records and suggested classification tags.
 Each page has one heading and no subheadings, using the retained Lab design system.
 The website does not require Go, an installed checker or the sibling Atlas checkout.

@@ -152,6 +152,11 @@ export function App() {
                   setError('Save or discard the edited entry before collecting more evidence.');
                   return;
                 }
+                if (!form.work.trim()) {
+                  setInputsOpen(true);
+                  setError('Add the series in Research inputs to choose the Wiki folder.');
+                  return;
+                }
                 if (!form.scope.trim() || (!form.urls.trim() && !form.supplied.trim())) {
                   setInputsOpen(true);
                   setError('Add a canon scope and English sources in Research inputs.');
@@ -198,19 +203,6 @@ export function App() {
                     onChange={(event) => change('name', event.target.value)}
                   />
                 </Field>
-                <Field
-                  label="Anime or manga"
-                  className="my-0 min-w-0 flex-1 basis-full sm:basis-auto"
-                >
-                  <Input
-                    required
-                    className="h-11 text-base"
-                    placeholder="One Piece"
-                    value={form.work}
-                    disabled={busy}
-                    onChange={(event) => change('work', event.target.value)}
-                  />
-                </Field>
                 <Button
                   type="submit"
                   variant="primary"
@@ -245,6 +237,14 @@ export function App() {
                     Choose English references to collect here. Automatic source search is not
                     available yet.
                   </p>
+                  <Field label="Series">
+                    <Input
+                      placeholder="One Piece"
+                      value={form.work}
+                      disabled={busy}
+                      onChange={(event) => change('work', event.target.value)}
+                    />
+                  </Field>
                   <Field label="Canon scope">
                     <Input
                       placeholder="Manga through Dressrosa"

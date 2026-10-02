@@ -18,9 +18,9 @@ pnpm dev
 Research does not require a checker installation, Go or an Atlas checkout.
 `pnpm preview` uses the same local commands after `pnpm build`. Existing Tower experiment files remain available separately through [Authoring](AUTHORING.md).
 
-Create is the starting page. Its base view shows character and anime/manga inputs, Research, and small Research inputs and Wiki controls.
-Research inputs opens the canon scope, up to ten English source URLs, refresh and optional supplied passages and summary.
-Submitting without scope or evidence opens that panel with a short message. The form retains unsent inputs when switching tabs.
+Create is the starting page. Its base view shows one character input, Research, and small Research inputs and Wiki controls.
+Research inputs opens the series, canon scope, up to ten English source URLs, refresh and optional supplied passages and summary.
+Submitting without a series, scope or evidence opens that panel with a short message. The form retains unsent inputs when switching tabs.
 Collect more evidence opens an existing entry's inputs for editing; evidence, classifications and review stay in Wiki.
 Collection extracts readable page text with Trafilatura and retains the original URL, retrieval date and source passages. It requests English pages and rejects HTML explicitly declaring another language.
 Saved URLs are reused by default; Fetch saved URLs again requests a refresh. A failed batch leaves previously saved evidence intact.
