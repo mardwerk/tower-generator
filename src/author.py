@@ -128,6 +128,12 @@ def write_json(path, value):
 
 def generate(design, atlas, output):
     validate_design(design)
+    character_source = None
+    if design.get("sourceId"):
+        from src.research import load_source
+        character_source = load_source(design["sourceId"])
+        if character_source["character"]["name"].casefold() != design["name"].casefold():
+            raise ValueError("The selected character source does not match the Tower name")
     capture = atlas / CAPTURE
     manifest = json.loads((capture / "manifest.json").read_text())
     provenance = {}
@@ -213,8 +219,18 @@ def generate(design, atlas, output):
             upgrade_rows.append(f"| {'-'.join(code)} | {definition['name']} | {upgrade['name']} | {upgrade['cost']} | {upgrade['description']} |")
     write_json(data / "textTable.json", text)
     write_json(data / "resources.json", resources)
-    write_json(output / "source.json", {"repository": "https://github.com/KyleDerZweite/btd6-atlas", "commit": SOURCE,
-               "capture": manifest["gameVersion"], "build": manifest["steamBuildId"], "files": provenance})
+    source_record = {"repository": "https://github.com/KyleDerZweite/btd6-atlas", "commit": SOURCE,
+                     "capture": manifest["gameVersion"], "build": manifest["steamBuildId"], "files": provenance}
+    if character_source:
+        write_json(output / "character-source.json", character_source)
+        source_record["characterSource"] = {
+            "id": character_source["id"],
+            "sha256": hashlib.sha256((output / "character-source.json").read_bytes()).hexdigest(),
+            "file": "character-source.json",
+        }
+    else:
+        (output / "character-source.json").unlink(missing_ok=True)
+    write_json(output / "source.json", source_record)
     description = [f"# {design['name']}", "", design["description"], "",
                    "Draft projectile design. 64 ordinary states, 15 upgrades, no Paragon or Monkey Knowledge.",
                    "Costs and stats are authored choices. Inherited BTD6 visuals and sounds are placeholders.",

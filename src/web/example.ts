@@ -62,6 +62,9 @@ export function readExample(): Example {
   return {
     design,
     states,
+    characterSource: readJSON(
+      join(defaults, 'character-source.json'),
+    ) as Example['characterSource'],
     checks: readJSON(join(defaults, 'checks.json')) as Example['checks'],
     source: readJSON(join(defaults, 'source.json')) as Example['source'],
   };

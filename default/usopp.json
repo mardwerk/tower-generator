@@ -7,7 +7,7 @@
     "damage": 1,
     "pierce": 2,
     "range": 36,
-    "interval": 1.0,
+    "interval": 1,
     "projectiles": 1,
     "camo": false
   },
@@ -167,5 +167,6 @@
         }
       ]
     }
-  ]
+  ],
+  "sourceId": "usopp"
 }

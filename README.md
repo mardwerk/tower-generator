@@ -14,8 +14,11 @@ pnpm dev
 ```
 
 Open the local URL printed by Vite.
-The web view shows upgrade paths, legal crosspaths, stats, Tower JSON and validation results from the generated files.
-Edit `default/usopp.json`, run `python3 setup.py` again, then click Reload in the web view.
+Create collects character research; Library saves, imports, exports and reuses it; Tower shows the editable Usopp example.
+Use saved Usopp research, open Edit design, then Build and check to save and validate a revision.
+The Tower workspace also shows upgrade paths, legal crosspaths, stats, JSON and validation results.
+[Character research](docs/RESEARCH.md) explains the portable source format and workflow. Sources for other characters can be saved now; general generation remains later work.
+You can also edit `default/usopp.json`, run `python3 setup.py` again, and reload the Tower.
 
 `setup.py` builds the latest published [td-profile](https://github.com/mardwerk/td-profile) release for the current OS and architecture.
 It reuses a verified matching build, generates Usopp using the sibling [Atlas](https://github.com/KyleDerZweite/btd6-atlas) checkout, and checks the candidate and missing-record cases.
@@ -33,11 +36,13 @@ default/
   checks.json            Candidate and negative-case reports
   TOWER.md               Readable Tower
   REFERENCE.md           Compact Dart reference
-  source.json            Atlas provenance
+  source.json            Atlas and character-source provenance
+  character-source.json  Exact research snapshot used for the Tower
   licenses/              Installed checker notices
 ```
 
-Generated data, reports and executables stay local and ignored by Git.
+Character evidence lives separately in `sources/`. The curated Usopp sample is tracked; collected sources stay local.
+Generated data, research snapshots, reports and executables stay local and ignored by Git.
 [Authoring](docs/AUTHORING.md) explains the mapping and current limits; [Profile integration](docs/PROFILE.md) explains the checker.
 [Reference attribution](docs/BTD6-REFERENCE.md) records the Atlas source and licenses.
 
@@ -45,6 +50,6 @@ Run `pnpm test`, `pnpm typecheck`, `pnpm format:check` and `pnpm build` for the 
 `pnpm preview` serves the built web view against the same local default files.
 
 The previous generator remains in the [generator-before-validator-reset-2026-09-29 tag](https://github.com/mardwerk/tower-generator/tree/generator-before-validator-reset-2026-09-29).
-The web view reuses its retained Lab theme and components.
+The simplified Lab reuses its theme, components and Create/Library/Tower flow.
 Product work is tracked in [#85](https://github.com/mardwerk/tower-generator/issues/85), documentation in [#92](https://github.com/mardwerk/tower-generator/issues/92), and deferred presentation changes in [#100](https://github.com/mardwerk/tower-generator/issues/100).
 See [issue labels](docs/ISSUE_LABELS.md) for tracking conventions.

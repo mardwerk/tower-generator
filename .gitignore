@@ -14,3 +14,9 @@ __pycache__/
 /default/REFERENCE.md
 /default/source.json
 /default/checks.json
+
+# Locally collected character evidence; the curated Usopp sample is tracked.
+/sources/*.json
+!/sources/usopp.json
+/sources/*.tmp
+/default/character-source.json

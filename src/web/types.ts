@@ -32,9 +32,34 @@ export type Example = {
     id: string;
     name: string;
     description: string;
+    sourceId?: string;
     paths: { name: string; upgrades: Upgrade[] }[];
   };
+  characterSource?: CharacterSource;
   states: TowerState[];
   checks: Record<'candidate' | 'missingState' | 'missingUpgrade', CheckReport>;
   source: { capture: string; build: string; commit: string };
+};
+
+export type CharacterSource = {
+  formatVersion: 1;
+  kind: 'character-source';
+  id: string;
+  character: { name: string; work: string; scope: string };
+  documents: {
+    id: string;
+    title: string;
+    url: string | null;
+    resolvedUrl?: string;
+    retrievedAt: string | null;
+    access: 'supplied' | 'retrieved';
+    excerpt?: boolean;
+    text: string;
+  }[];
+  notes: string;
+};
+export type SourceEntry = {
+  id: string;
+  character: CharacterSource['character'];
+  documents: number;
 };

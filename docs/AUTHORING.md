@@ -16,7 +16,9 @@ Setup builds or reuses the latest released native validator, generates the examp
 [Profile integration](PROFILE.md) records the build and validation behavior.
 Run `pnpm dev` to inspect the same local files in the web view, or `pnpm preview` after `pnpm build`.
 Use the path selectors or upgrade cards to choose a legal state, and inspect all states or the selected Tower JSON.
-Edit the design and rerun setup, then click Reload to refresh the web view.
+Edit design and Build and check provide the same focused authoring flow in the Lab.
+The Lab validates a temporary candidate before changing saved files. Editing the file directly and rerunning setup remains supported.
+[Character research](RESEARCH.md) explains collecting and reusing saved evidence.
 
 Generated outputs under `default/` are ignored by Git; the design and Profile are tracked:
 
@@ -25,7 +27,8 @@ Generated outputs under `default/` are ignored by Git; the design and Profile ar
 | `TOWER.md` | Description, 15 upgrades and the stats of all 64 states |
 | `REFERENCE.md` | Compact Dart reference showing each state's first weapon |
 | `game-data/` | 64 Tower states, 15 Upgrade definitions and two supporting tables |
-| `source.json` | Atlas source commit, capture, build, source files and byte hashes |
+| `source.json` | Atlas provenance and the character-source snapshot hash |
+| `character-source.json` | Exact reusable research used to author this Tower |
 | `checks.json` | Full checker reports for the candidate and two missing-record cases |
 
 Edit the base stats, upgrade names, costs or changes in `default/usopp.json`, then run the command again.

@@ -1,100 +1,93 @@
-import { useEffect, useState, type CSSProperties } from 'react';
-import {
-  Check,
-  Code,
-  Coins,
-  Crosshair,
-  Eye,
-  Flame,
-  Sprout,
-  Layers,
-  RotateCcw,
-  Sword,
-  Target,
-  Timer,
-} from 'lucide-react';
-import { Badge } from '../ui/badge.js';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, BookOpen, Download, Library, Plus, Upload, UserRound } from 'lucide-react';
+import type { CharacterSource, SourceEntry } from '../types.js';
 import { Alert } from '../ui/alert.js';
-import { IconButton } from '../ui/icon-button.js';
-import { Field } from '../ui/field.js';
+import { Badge } from '../ui/badge.js';
+import { Button } from '../ui/button.js';
 import { Disclosure } from '../ui/disclosure.js';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select.js';
-import { cn } from '../ui/utils.js';
-import { UnitWorkspace } from './workspace.js';
-import type { Example, TowerState } from '../types.js';
+import { Field } from '../ui/field.js';
+import { IconButton } from '../ui/icon-button.js';
+import { Input, Textarea } from '../ui/input.js';
+import { cn, download } from '../ui/utils.js';
+import { api } from './api.js';
+import { SourceEvidence } from './sources.js';
+import { Tower } from './tower.js';
 
-const numbers = new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 });
+type View = 'create' | 'library' | 'tower';
 const views = [
-  { value: 'upgrades', label: 'Upgrade paths', icon: Layers },
-  { value: 'states', label: 'All states', icon: Crosshair },
-  { value: 'data', label: 'Tower JSON', icon: Code },
+  { value: 'create' as const, label: 'Create', icon: Plus },
+  { value: 'library' as const, label: 'Library', icon: Library },
+  { value: 'tower' as const, label: 'Tower', icon: UserRound },
 ];
+const emptyForm = { name: '', work: '', scope: '', urls: '', supplied: '', notes: '' };
 
 export function App() {
-  const [example, setExample] = useState<Example>();
+  const [view, setView] = useState<View>('create');
+  const [form, setForm] = useState(emptyForm);
+  const [entries, setEntries] = useState<SourceEntry[]>([]);
+  const [opened, setOpened] = useState<CharacterSource>();
+  const [chosen, setChosen] = useState<CharacterSource>();
+  const [draft, setDraft] = useState('');
+  const [filter, setFilter] = useState('');
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [revision, setRevision] = useState(0);
-  const [tiers, setTiers] = useState([0, 0, 0]);
-  const [tab, setTab] = useState('upgrades');
-  const [raw, setRaw] = useState('');
-  const [rawError, setRawError] = useState('');
+  const inputFile = useRef<HTMLInputElement>(null);
 
+  async function refresh() {
+    setEntries((await api<{ sources: SourceEntry[] }>('/api/sources')).sources);
+  }
   useEffect(() => {
-    const controller = new AbortController();
+    void refresh().catch((failure: Error) => setError(failure.message));
+  }, []);
+  async function run(task: () => Promise<void>) {
+    setBusy(true);
     setError('');
-    fetch('/api/example', { signal: controller.signal })
-      .then(async (response) => {
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error);
-        setExample(data);
-      })
-      .catch((failure: Error) => {
-        if (failure.name !== 'AbortError') setError(failure.message);
-      });
-    return () => controller.abort();
-  }, [revision]);
-
-  const selected = example?.states.find((state) =>
-    state.tiers.every((tier, path) => tier === tiers[path]),
-  );
+    try {
+      await task();
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : String(failure));
+    } finally {
+      setBusy(false);
+    }
+  }
+  function change(key: keyof typeof form, value: string) {
+    setForm({ ...form, [key]: value });
+  }
+  function show(next: View) {
+    if (busy) return;
+    setView(next);
+    setError('');
+    if (next === 'library') void run(refresh);
+  }
   useEffect(() => {
-    if (tab !== 'data' || !selected) return;
-    const controller = new AbortController();
-    setRaw('');
-    setRawError('');
-    fetch(`/api/tower?state=${encodeURIComponent(selected.name)}`, { signal: controller.signal })
-      .then(async (response) => {
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error);
-        setRaw(JSON.stringify(data, null, 2));
-      })
-      .catch((failure: Error) => {
-        if (failure.name !== 'AbortError') setRawError(failure.message);
-      });
-    return () => controller.abort();
-  }, [tab, selected?.name, revision]);
-
-  const legal = (path: number, tier: number) => {
-    const candidate = tiers.map((value, index) => (index === path ? tier : value));
-    return (
-      example?.states.some((state) =>
-        state.tiers.every((value, index) => value === candidate[index]),
-      ) ?? false
-    );
-  };
-  const choose = (path: number, tier: number) =>
-    setTiers(tiers.map((value, index) => (index === path ? tier : value)));
-  const code = tiers.join('-');
-  const appearance = example?.design.paths
-    .flatMap((path, index) => path.upgrades.slice(0, tiers[index]))
-    .filter((upgrade) => upgrade.appearance)
-    .at(-1)?.appearance;
+    document.title = view === 'tower' ? 'Usopp · Tower Generator' : 'Tower Generator';
+  }, [view]);
+  function refreshResearch() {
+    if (!opened) return;
+    setForm({
+      ...opened.character,
+      urls: opened.documents
+        .map((document) => document.url)
+        .filter(Boolean)
+        .join('\n'),
+      supplied: opened.documents.find((document) => document.id === 'supplied')?.text ?? '',
+      notes: opened.notes,
+    });
+    setView('create');
+  }
+  const matches = entries.filter((entry) =>
+    `${entry.character.name} ${entry.character.work}`.toLowerCase().includes(filter.toLowerCase()),
+  );
 
   return (
     <>
       <header className="sticky top-0 z-40 grid min-h-[70px] grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5 border-b border-border bg-canvas px-3.5 py-2.5 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-3 sm:px-6 sm:py-0">
         <a
-          href="/"
+          href="#"
+          onClick={(event) => {
+            event.preventDefault();
+            show('create');
+          }}
           className="col-start-1 row-start-1 flex items-center gap-2.5 text-foreground hover:no-underline"
         >
           <img
@@ -116,332 +109,245 @@ export function App() {
             <IconButton
               key={value}
               label={label}
-              disabled={!example}
-              aria-pressed={tab === value}
-              className={cn(tab === value && 'bg-accent text-foreground')}
-              onClick={() => setTab(value)}
+              disabled={busy}
+              aria-current={view === value ? 'page' : undefined}
+              className={cn(view === value && 'bg-accent text-foreground')}
+              onClick={() => show(value)}
             >
               <Icon className="size-[19px]" />
             </IconButton>
           ))}
         </nav>
         <div className="col-start-2 row-start-1 justify-self-end sm:col-start-3">
-          <IconButton label="Reload example" onClick={() => setRevision(revision + 1)}>
-            <RotateCcw className="size-[19px]" />
+          <IconButton
+            label="Import character source"
+            disabled={busy}
+            onClick={() => inputFile.current?.click()}
+          >
+            <Upload />
           </IconButton>
         </div>
       </header>
-      <UnitWorkspace
-        gallery={
-          example &&
-          selected && (
-            <>
-              <div className="mb-4 flex items-center justify-between gap-2 text-xs">
-                <span className="font-mono">{code}</span>
-                <IconButton
-                  size="icon-sm"
-                  label="Reset to base state"
-                  onClick={() => setTiers([0, 0, 0])}
-                >
-                  <RotateCcw />
-                </IconButton>
-              </div>
-              {example.design.paths.map((path, index) => (
-                <Field key={path.name} label={path.name}>
-                  <Select
-                    value={String(tiers[index])}
-                    onValueChange={(value) => choose(index, Number(value))}
-                  >
-                    <SelectTrigger aria-label={`${path.name} upgrade`} size="sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[0, 1, 2, 3, 4, 5].map((tier) => (
-                        <SelectItem key={tier} value={String(tier)} disabled={!legal(index, tier)}>
-                          {tier === 0 ? 'No upgrades' : String(tier)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              ))}
-              <p className="my-4 text-xs text-muted-foreground">
-                Up to two paths. The second stops at upgrade 2.
-              </p>
-              <Disclosure bare title="Dart reference">
-                <p className="text-xs text-muted-foreground">
-                  BTD6 {example.source.capture}, build {example.source.build}. Dart art and sounds
-                  are placeholders.
-                </p>
-              </Disclosure>
-            </>
-          )
-        }
-        workflow={
-          example && (
-            <>
-              <div className="mb-5 flex items-center justify-between gap-2 text-xs">
-                <span className="text-muted-foreground">
-                  Default Profile {example.checks.candidate.profile.revision}
-                </span>
-                <Badge variant={example.checks.candidate.score.complete ? 'success' : 'danger'}>
-                  {example.checks.candidate.score.points}/100
-                </Badge>
-              </div>
-              <ul className="space-y-4 text-[13px]" aria-label="Validation results">
-                <li className="flex items-start gap-2.5">
-                  <Check className="mt-0.5 size-4 text-success" />
-                  <div>
-                    {example.checks.candidate.filesChecked} files checked
-                    <p className="text-xs text-muted-foreground">Candidate passed.</p>
-                  </div>
-                </li>
-                {(['missingState', 'missingUpgrade'] as const).map((key) => (
-                  <li key={key} className="flex items-start gap-2.5">
-                    <Check className="mt-0.5 size-4 text-success" />
-                    <div>
-                      {key === 'missingState' ? 'Missing state' : 'Missing upgrade'}
-                      <p className="text-xs text-muted-foreground">
-                        {example.checks[key].errors.length
-                          ? 'Rejected as expected.'
-                          : 'Not rejected.'}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <p className="my-5 text-xs text-muted-foreground">
-                Declared data checks pass. Balance and gameplay are untested.
-              </p>
-              <Disclosure bare title="Check details">
-                <p className="mb-3 text-xs text-muted-foreground">
-                  Checker {example.checks.candidate.checker.version}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {example.states.length} ordinary states, 15 upgrades. No Paragon or Monkey
-                  Knowledge.
-                </p>
-                <a
-                  className="mt-3 inline-block text-xs"
-                  href="https://github.com/mardwerk/tower-generator/issues/100"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Profile follow-up
-                </a>
-              </Disclosure>
-            </>
-          )
-        }
-      >
-        <header className="mt-6 border-b border-border pb-2">
-          <div className="flex items-center gap-3">
-            <h1 className="text-[1.6rem] font-semibold tracking-tight">
-              {example?.design.name ?? 'Usopp'}
+      <input
+        ref={inputFile}
+        type="file"
+        accept=".json,application/json"
+        hidden
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file)
+            void run(async () => {
+              if (file.size > 600_000) throw new Error('The source file is too large.');
+              const source = await api<CharacterSource>(
+                '/api/import-source',
+                JSON.parse(await file.text()),
+              );
+              setOpened(source);
+              await refresh();
+              setView('library');
+            });
+          event.target.value = '';
+        }}
+      />
+      {view === 'tower' ? (
+        <Tower draft={draft} onDraft={setDraft} source={chosen} onBusy={setBusy} />
+      ) : (
+        <main className="px-[18px] py-10 sm:px-6 sm:py-[70px]">
+          <div className={cn('mx-auto', view === 'create' ? 'max-w-[680px]' : 'max-w-[1000px]')}>
+            <h1 className="mb-6 text-[1.6rem] font-semibold tracking-tight">
+              {view === 'create' ? 'Create a Tower' : opened ? opened.character.name : 'Library'}
             </h1>
-            <Badge variant="warning">Draft</Badge>
-          </div>
-          {selected && (
-            <div className="mt-3.5 mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-              <span className="font-mono text-muted-foreground">{code}</span>
-              <Cost value={selected.cost} />
-            </div>
-          )}
-        </header>
-        {error ? (
-          <Alert>{error}</Alert>
-        ) : !example || !selected ? (
-          <p role="status" className="my-5 text-muted-foreground">
-            Loading example…
-          </p>
-        ) : (
-          <>
-            <div
-              className="my-5 rounded-lg border border-border bg-card p-[18px]"
-              aria-label="Selected state"
-            >
-              <div className="mb-3 flex items-center gap-2 text-[13px]">
-                {selected.attack === 'explosion' ? (
-                  <Flame className="size-4 text-warning" />
-                ) : selected.attack === 'spread' ? (
-                  <Sprout className="size-4 text-success" />
-                ) : (
-                  <Crosshair className="size-4 text-muted-foreground" />
-                )}
-                <span>
-                  {
-                    {
-                      pellet: 'Lead Star',
-                      explosion: 'Exploding Star',
-                      spread: 'Leaf shuriken',
-                      sniper: 'Kabuto sniper shot',
-                    }[selected.attack]
-                  }
-                </span>
-              </div>
-              <Stats state={selected} />
-              {appearance && (
-                <p className="mt-3 text-xs text-muted-foreground">
-                  Planned appearance: {appearance}
-                </p>
-              )}
-            </div>
-            {tab === 'upgrades' && (
-              <div
-                className="upgrade-paths grid gap-[18px]"
-                style={{ '--path-count': 3, '--path-rows': 5 } as CSSProperties}
-              >
-                {example.design.paths.map((path, pathIndex) => (
-                  <div key={path.name} className="path-section min-w-0" aria-label={path.name}>
-                    {path.upgrades.map((upgrade, index) => {
-                      const tier = index + 1;
-                      const active = tier <= (tiers[pathIndex] ?? 0);
-                      const upgradeCode = [0, 1, 2]
-                        .map((position) => (position === pathIndex ? tier : 'x'))
-                        .join('-');
-                      return (
-                        <button
-                          key={upgrade.name}
-                          aria-label={`${upgradeCode} ${upgrade.name}`}
-                          aria-pressed={active}
-                          disabled={!legal(pathIndex, tier)}
-                          onClick={() => choose(pathIndex, tier)}
-                          className={cn(
-                            'tier-card grid w-full grid-cols-[auto_minmax(0,1fr)] gap-2.5 border-t border-border px-1.5 py-4 text-left transition-colors outline-none hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring/60 disabled:cursor-not-allowed disabled:opacity-35',
-                            active && 'bg-accent/50',
-                          )}
-                          style={{ '--tier-row': tier } as CSSProperties}
-                        >
-                          <span className="mt-px grid h-[22px] min-w-[22px] place-items-center rounded-[5px] border border-border px-1 font-mono text-[11px] whitespace-nowrap text-muted-foreground">
-                            {upgradeCode}
-                          </span>
-                          <span className="min-w-0">
-                            <span className="flex items-center gap-2 text-[13px]">
-                              {upgrade.name}
-                              {active && <Check className="size-3 text-success" />}
-                            </span>
-                            <Cost value={upgrade.cost} />
-                            <span className="my-2 block text-xs text-muted-foreground">
-                              {upgrade.description}
-                            </span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            )}
-            {tab === 'states' && (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[580px] border-collapse text-left text-xs">
-                  <thead className="text-muted-foreground">
-                    <tr>
-                      {[
-                        'State',
-                        'Cost',
-                        'Damage',
-                        'Pierce',
-                        'Range',
-                        'Interval',
-                        'Pellets',
-                        'Camo',
-                      ].map((label) => (
-                        <th className="py-1.5 pr-3 font-medium" key={label}>
-                          {label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[...example.states]
-                      .sort((a, b) => a.tiers.join('').localeCompare(b.tiers.join('')))
-                      .map((state) => (
-                        <tr
-                          key={state.name}
-                          className={cn(
-                            'border-t border-border',
-                            selected.name === state.name && 'bg-accent',
-                          )}
-                        >
-                          <td className="py-2 pr-3">
-                            <button
-                              className="font-mono text-link hover:underline"
-                              onClick={() => setTiers(state.tiers)}
-                            >
-                              {state.tiers.join('-')}
-                            </button>
-                          </td>
-                          {[
-                            state.cost,
-                            state.damage,
-                            state.pierce,
-                            state.range,
-                            state.interval,
-                            state.projectiles,
-                          ].map((value, index) => (
-                            <td className="py-2 pr-3 tabular-nums" key={index}>
-                              {numbers.format(value)}
-                            </td>
-                          ))}
-                          <td className="py-2">{state.camo ? 'Yes' : 'No'}</td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            {tab === 'data' && (
+            {error && <Alert>{error}</Alert>}
+            {view === 'create' ? (
               <>
-                <p className="my-3 font-mono text-xs text-muted-foreground">{selected.name}.json</p>
-                {rawError ? (
-                  <Alert>{rawError}</Alert>
-                ) : (
-                  <pre className="max-h-[600px] overflow-auto rounded-md bg-muted/60 p-3 font-mono text-xs leading-normal whitespace-pre-wrap [overflow-wrap:anywhere]">
-                    {raw || 'Loading Tower data…'}
-                  </pre>
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void run(async () => {
+                      const source = await api<CharacterSource>('/api/research', {
+                        character: { name: form.name, work: form.work, scope: form.scope },
+                        urls: form.urls
+                          .split('\n')
+                          .map((url) => url.trim())
+                          .filter(Boolean),
+                        supplied: form.supplied,
+                        notes: form.notes,
+                      });
+                      setOpened(source);
+                      await refresh();
+                      setView('library');
+                    });
+                  }}
+                >
+                  <div className="grid gap-x-3 sm:grid-cols-2">
+                    <Field label="Character">
+                      <Input
+                        required
+                        autoComplete="off"
+                        placeholder="Usopp"
+                        value={form.name}
+                        disabled={busy}
+                        onChange={(event) => change('name', event.target.value)}
+                      />
+                    </Field>
+                    <Field label="Work">
+                      <Input
+                        required
+                        placeholder="One Piece"
+                        value={form.work}
+                        disabled={busy}
+                        onChange={(event) => change('work', event.target.value)}
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Canon scope">
+                    <Input
+                      required
+                      placeholder="Manga through Dressrosa"
+                      value={form.scope}
+                      disabled={busy}
+                      onChange={(event) => change('scope', event.target.value)}
+                    />
+                  </Field>
+                  <Field label="Source URLs, one per line">
+                    <Textarea
+                      rows={3}
+                      placeholder="Official character page, manga reference or technique overview"
+                      value={form.urls}
+                      disabled={busy}
+                      onChange={(event) => change('urls', event.target.value)}
+                    />
+                  </Field>
+                  <Disclosure bare title="Supplied evidence and research notes">
+                    <Field label="Evidence">
+                      <Textarea
+                        rows={4}
+                        placeholder="Paste source passages with their references."
+                        value={form.supplied}
+                        disabled={busy}
+                        onChange={(event) => change('supplied', event.target.value)}
+                      />
+                    </Field>
+                    <Field label="Research notes">
+                      <Textarea
+                        rows={3}
+                        placeholder="Summarize the evidence and its limits. Keep Tower mechanics in the design."
+                        value={form.notes}
+                        disabled={busy}
+                        onChange={(event) => change('notes', event.target.value)}
+                      />
+                    </Field>
+                  </Disclosure>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <Button type="submit" variant="primary" disabled={busy}>
+                      {busy ? 'Collecting…' : 'Research and save'}
+                    </Button>
+                    <Button
+                      disabled={busy}
+                      onClick={() => {
+                        setOpened(undefined);
+                        show('library');
+                      }}
+                    >
+                      <Library /> Use saved research
+                    </Button>
+                  </div>
+                </form>
+                <p className="mt-5 text-xs text-muted-foreground">
+                  Research is saved once and can be reused across Tower designs and Profiles. Review
+                  the retained evidence before treating it as canon.
+                </p>
+                <Button variant="ghost" size="sm" className="mt-3" onClick={() => show('tower')}>
+                  Open the Usopp example
+                </Button>
+              </>
+            ) : opened ? (
+              <>
+                <div className="mb-5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span>{opened.character.work}</span>
+                  <Badge>{opened.documents.length} documents</Badge>
+                </div>
+                <p className="mb-4 text-[13px] text-muted-foreground">{opened.character.scope}</p>
+                <div className="mb-5 flex flex-wrap gap-2">
+                  <Button disabled={busy} onClick={() => setOpened(undefined)}>
+                    <ArrowLeft /> Library
+                  </Button>
+                  <Button
+                    onClick={() =>
+                      download(
+                        `${opened.id}.json`,
+                        JSON.stringify(opened, null, 2),
+                        'application/json',
+                      )
+                    }
+                  >
+                    <Download /> Export source
+                  </Button>
+                  <Button disabled={busy} onClick={refreshResearch}>
+                    Update research
+                  </Button>
+                  {opened.character.name.toLowerCase() === 'usopp' &&
+                    opened.character.work.toLowerCase() === 'one piece' && (
+                      <Button
+                        variant="primary"
+                        onClick={() => {
+                          setChosen(opened);
+                          show('tower');
+                        }}
+                      >
+                        Use for Usopp
+                      </Button>
+                    )}
+                </div>
+                <SourceEvidence source={opened} />
+              </>
+            ) : (
+              <>
+                <Field label="Find a character">
+                  <Input
+                    placeholder="Character or work"
+                    value={filter}
+                    onChange={(event) => setFilter(event.target.value)}
+                  />
+                </Field>
+                <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {matches.map((entry) => (
+                    <button
+                      key={entry.id}
+                      disabled={busy}
+                      className="min-w-0 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:border-input hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/60"
+                      onClick={() =>
+                        void run(async () =>
+                          setOpened(
+                            await api<CharacterSource>(
+                              `/api/source?id=${encodeURIComponent(entry.id)}`,
+                            ),
+                          ),
+                        )
+                      }
+                    >
+                      <div className="flex items-center gap-2 text-[13px]">
+                        <BookOpen className="size-4 text-muted-foreground" />
+                        {entry.character.name}
+                      </div>
+                      <p className="mt-2 text-xs text-muted-foreground">{entry.character.work}</p>
+                      <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
+                        {entry.character.scope}
+                      </p>
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        {entry.documents} evidence documents
+                      </p>
+                    </button>
+                  ))}
+                </div>
+                {!matches.length && (
+                  <p className="py-10 text-sm text-muted-foreground">No saved characters match.</p>
                 )}
               </>
             )}
-          </>
-        )}
-      </UnitWorkspace>
+          </div>
+        </main>
+      )}
     </>
-  );
-}
-
-function Cost({ value }: { value: number }) {
-  return (
-    <span
-      className="kit-cost my-1.5 inline-flex items-center gap-1 text-[13px] text-warning tabular-nums"
-      title="Purchase cost"
-    >
-      <Coins className="size-[15px]" aria-hidden="true" />
-      <span>{numbers.format(value)}</span>
-    </span>
-  );
-}
-
-function Stats({ state }: { state: TowerState }) {
-  const stats = [
-    { label: 'Damage', value: numbers.format(state.damage), icon: Sword },
-    { label: 'Pierce', value: numbers.format(state.pierce), icon: Layers },
-    { label: 'Range', value: numbers.format(state.range), icon: Crosshair },
-    { label: 'Attack interval', value: `${numbers.format(state.interval)} s`, icon: Timer },
-    { label: 'Projectiles', value: numbers.format(state.projectiles), icon: Target },
-    { label: 'Camo detection', value: state.camo ? 'Yes' : 'No', icon: Eye },
-  ];
-  if (state.blastRadius)
-    stats.push({ label: 'Blast radius', value: numbers.format(state.blastRadius), icon: Flame });
-  return (
-    <ul className="kit-stats grid gap-2 text-xs sm:grid-cols-2">
-      {stats.map(({ label, value, icon: Icon }) => (
-        <li key={label} className="flex flex-wrap items-center gap-1.5">
-          <Icon className="size-[15px] text-muted-foreground" aria-hidden="true" />
-          <span className="text-muted-foreground">{label}</span>
-          <span className="tabular-nums">{value}</span>
-        </li>
-      ))}
-    </ul>
   );
 }

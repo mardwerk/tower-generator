@@ -1,6 +1,7 @@
 """Check authored crosspaths and purchase mappings independently of the checker."""
 
 from copy import deepcopy
+import hashlib
 import json
 from pathlib import Path
 import runpy
@@ -111,6 +112,13 @@ class AuthoringTests(unittest.TestCase):
         tower = json.loads((revised / "game-data/Towers/Usopp/Usopp.json").read_text())
         self.assertEqual(next(AUTHOR["models"](tower, "DamageModel"))["damage"], 2)
         self.assertIn("| 0-0-0 | 250 | 2 |", (revised / "TOWER.md").read_text())
+
+    def test_character_source_is_pinned_in_generated_provenance(self):
+        snapshot = self.output / "character-source.json"
+        provenance = json.loads((self.output / "source.json").read_text())
+        self.assertEqual(provenance["characterSource"]["id"], "usopp")
+        self.assertEqual(provenance["characterSource"]["sha256"], hashlib.sha256(snapshot.read_bytes()).hexdigest())
+        self.assertEqual(json.loads(snapshot.read_text())["character"]["work"], "One Piece")
 
     def test_invalid_design_fails_before_writing(self):
         for changes in [{"damge": 1}, {"damage": float("nan")}, {"intervalMultiplier": 0}]:
