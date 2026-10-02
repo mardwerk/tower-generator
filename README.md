@@ -1,7 +1,7 @@
 # Tower Generator
 
 The current website focuses on character research and a reusable local Wiki.
-Collect evidence, inspect cited abilities and traits, and record manual review before returning to Tower generation.
+Research a character by name, inspect cited abilities and traits, and record manual review before returning to Tower generation.
 Research stays independent of a game's Profile.
 
 Use Python 3.10 or newer and Node.js 22.12 or newer:
@@ -15,7 +15,8 @@ pnpm dev
 ```
 
 Open the URL printed by Vite. Create shows the character input, Research action and small controls underneath.
-Research inputs opens series, scope, English references and optional notes; Wiki looks up local entries.
+Research finds English sources and resolves the series automatically. Repeating it verifies and expands the saved Wiki entry with the same budget.
+Research inputs provides optional series/scope hints or supplied references; Wiki looks up local entries.
 Edit entry saves readable Markdown with YAML metadata, cited records and suggested classification tags.
 Each page has one heading and no subheadings, using the retained Lab design system.
 The website does not require Go, an installed checker or the sibling Atlas checkout.
@@ -32,16 +33,17 @@ docs/research-categories.yaml Profile-agnostic classification definitions
 
 The [research workflow](docs/RESEARCH.md) explains collection, offline reuse, explicit refresh, editing and manual review.
 The [Wiki format](docs/wiki-format.md) documents the human-readable files and citations.
-Automatic web search, model synthesis and Jev classification are later steps after the first entries have been reviewed.
+Name-only research uses the configured OpenRouter model and web search. Suggested classifications use the broad local categories; specific [Jev benchmarking](https://github.com/mardwerk/tower-generator/issues/105) remains later work.
 
 The CLI owns persistence and validation. The website invokes that same CLI and provides the user interface.
+Run `pnpm wiki research usopp` to research or improve Usopp, using `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` from the environment or ignored local `.env`.
 Use `pnpm wiki --help`, `pnpm wiki list`, `pnpm wiki show one-piece/usopp`, or `pnpm wiki categories` without a browser.
 Use `pnpm wiki migrate` to copy earlier local JSON sources into the new layout; original files and existing Wiki entries are preserved.
 The tool has no hidden session or database. Lookup rebuilds a small index from local files.
 
 Run `pnpm test`, `pnpm typecheck`, `pnpm format:check` and `pnpm build` for the focused checks.
 `pnpm preview` serves the built website with the same local commands.
-Current implementation work is recorded in [#102](https://github.com/mardwerk/tower-generator/issues/102).
+Wiki storage is recorded in [#102](https://github.com/mardwerk/tower-generator/issues/102), and automatic research in [#103](https://github.com/mardwerk/tower-generator/issues/103).
 
 The earlier [Usopp experiment](docs/USOPP.md) and [Default Profile](default/profile/) remain in the repository, outside the website's current focus.
 [Authoring](docs/AUTHORING.md) describes the separate experiment commands; [Profile integration](docs/PROFILE.md) documents its checker setup.

@@ -1,9 +1,17 @@
 # Character research
 
-The local website focuses on collecting, inspecting and manually reviewing character research.
-It uses the retained Lab design system, centered navigation, one visible heading per page and no subheadings.
-The plus opens Create; Create and Wiki are active; Library, Generations and the right-hand Settings control remain visible and disabled. Tower building and Profile controls are outside the website.
-The research implementation is recorded in [#102](https://github.com/mardwerk/tower-generator/issues/102), and the compact Create layout in [#104](https://github.com/mardwerk/tower-generator/issues/104).
+Run name-only research from the CLI or the single-field Create page:
+
+```sh
+pnpm wiki research usopp
+pnpm wiki research Sogeking
+pnpm wiki research "Satoru Gojo"
+pnpm wiki research "Sakura" --series Naruto
+```
+
+Research searches English references, resolves canonical identity, checks local names and aliases, fetches evidence, and saves cited draft findings.
+A repeat verifies and expands the existing entry with the same allocation. It keeps the entry's canon scope, evidence and manual prose.
+The implementation and reviewed scope are recorded in [#103](https://github.com/mardwerk/tower-generator/issues/103).
 
 Install Python 3.10 or newer, Node.js 22.12 or newer, and the research dependencies:
 
@@ -15,61 +23,72 @@ pnpm install
 pnpm dev
 ```
 
-Research does not require a checker installation, Go or an Atlas checkout.
-`pnpm preview` uses the same local commands after `pnpm build`. Existing Tower experiment files remain available separately through [Authoring](AUTHORING.md).
+Set `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` in the process environment or the ignored local `.env`.
+Environment values override the file. `OPENROUTER_REASONING` is optional and defaults to low.
+The key stays in the protected configuration and is sent only to OpenRouter; it never enters Wiki files or prompts.
+Research uses OpenRouter's Exa web plugin and the selected model, with no automatic model fallback or retries.
+It does not require the checker, Go or an Atlas checkout.
 
-Create is the starting page. Its base view shows one character input, Research, and small Research inputs and Wiki controls.
-Research inputs opens the series, canon scope, up to ten English source URLs, refresh and optional supplied passages and summary.
-Submitting without a series, scope or evidence opens that panel with a short message. The form retains unsent inputs when switching tabs.
-Collect more evidence opens an existing entry's inputs for editing; evidence, classifications and review stay in Wiki.
-Collection extracts readable page text with Trafilatura and retains the original URL, retrieval date and source passages. It requests English pages and rejects HTML explicitly declaring another language.
-Saved URLs are reused by default; Fetch saved URLs again requests a refresh. A failed batch leaves previously saved evidence intact.
-Collection creates a draft in `wiki/<work>/<character>/`. It does not automatically search, synthesize canon facts or call Jev.
+Each run allocates at most 10 search results, 10 page attempts and 2 model calls.
+The calls allow 2,500 and 8,000 output tokens; each model input is limited to 100,000 characters including its instructions.
+Use `--pages 1` through `--pages 10` to lower the search/page allocation. Fresh and repeat runs use identical configured limits, not identical actual cost.
+The last run records limits, actual usage/cost reported by the provider, attempted sources, failures, model and category/normalization versions.
+Available sources may consume less than the maximum; a repeat can improve verification without finding a new capability.
 
-Open an entry from Wiki and select Edit entry to add sourced abilities, traits, equipment, limitations and open questions.
-Use the source and passage IDs displayed below the entry. The [Wiki format](wiki-format.md) contains a complete record example.
-Saving validates references and categories before replacing the Markdown file. Mark reviewed records manual review after cited records have been added.
-Tag review is separate from entry review. Suggested categories remain suggestions until their classification status is explicitly changed.
-Export Markdown downloads the entry; copy its character directory to retain the referenced source files for another consumer.
+Existing entries guide search through their inventory, source gaps and follow-up questions.
+Up to three older URLs are rechecked, with the remaining page allocation used for searched references. Up to 20 least-recently checked records are verified per run.
+New cited findings are added; unreviewed drafts can be refined. Source passages cited by findings, verification results and proposed updates survive refresh with their old retrieval date.
+Human-reviewed findings and classifications remain protected across later runs. Proposed changes to those records are kept in `suggestedUpdates` for manual review.
+Model-supported, conflicting and unresolved checks are stored on records as `verification`. These are model assessments, not human acceptance or proof of canon.
+Unsupported findings are not deleted merely because today's sources omit them. New classifications remain suggested; reviewing an entry does not approve its tags.
 
-The CLI owns storage, retrieval, validation, deduplication, refresh and review. The website owns forms, selection and presentation.
-The local Vite server invokes `python3 -B -m src.wiki --json` with structured input and no shell. It contains no separate persistence implementation.
-The same commands work without a browser; use `pnpm wiki --help` or `python3 -B -m src.wiki --help`:
+Identity matching first compares the resolved series and normalized canonical names/aliases against entry metadata.
+Unicode normalization, case folding, accent folding and punctuation removal handle older spellings for matching. Folder naming keeps the existing Unicode lowercase/hyphen rules.
+Research scans older folder spellings and normalizes a confirmed matching directory while preserving all its files. It never merges two existing character folders silently.
+A 99% text match needs a shared identity source URL before reuse; otherwise it is reported as a possible duplicate. Similarity is not an identity probability.
+Ambiguous names require a series hint. Add a confirmed alias to an existing entry when a likely duplicate needs explicit resolution.
+`--scope "Manga through Dressrosa"` sets a new entry's canon boundary; a conflicting scope on an existing entry is rejected.
+
+Direct fetching requests English pages and rejects explicitly non-English HTML. Collection extracts readable text with Trafilatura.
+When a page is blocked, a usable English search excerpt may be retained with `retrievalMethod: search-excerpt` and `excerpt: true`.
+Search excerpts can be incomplete or stale; source failures and limits remain visible. Predominantly Japanese/Chinese excerpts are rejected; untagged or supplied text still needs manual language review.
+Search-selected references are filtered against the returned citations; unsupported URL suggestions are ignored and reported.
+Generated role-play biographies from the DaddyJim site observed during the live test are excluded from model evidence, while any saved originals remain on disk.
+Only source URLs returned by search are accepted for identity evidence, and generated findings must cite passages supplied to the model.
+All fetching, synthesis and validation finish in a temporary directory before replacing the live character directory. Failure or a detected stale edit preserves the existing entry.
+Directory replacement has a short rename window; this is a local tool, not a multi-user database. The browser serializes mutations and CLI callers should avoid overlapping writes.
+
+The website uses the retained Lab styling, centered navigation, one heading per page and no subheadings.
+Create shows a character input and Research. Series/scope hints and manual references stay behind Research inputs.
+Without supplied URLs/passages, Research invokes name-only research. Supplied references use the existing manual collection command and require series and scope.
+Wiki presents entries, evidence and manual editing/review. The CLI owns persistence and validation; the local server invokes that same CLI with structured input and no shell.
+`pnpm preview` uses the same commands after `pnpm build`. The earlier Tower experiment remains separate in [Authoring](AUTHORING.md).
+
+Inspect and manually edit the portable files with the CLI or Wiki:
 
 ```sh
 pnpm wiki list --query Usopp
 pnpm wiki show one-piece/usopp
 pnpm wiki collect --name Usopp --work "One Piece" --scope "Manga through Dressrosa" \
   --url https://en.wikipedia.org/wiki/Usopp
-pnpm wiki collect --name "Example Character" --work "Example Manga" --scope "Chapter 20" \
-  --evidence "Referenced passage supplied by the researcher."
-pnpm wiki save example-manga/example-character --file /path/to/edited-README.md
-pnpm wiki review example-manga/example-character
+pnpm wiki save one-piece/usopp --file /path/to/edited-README.md
+pnpm wiki review one-piece/usopp
 pnpm wiki categories
-```
-
-Use the exact saved scope when adding or refreshing evidence. Add `--refresh` to explicitly fetch saved URLs again.
-`--wiki /path/to/wiki` selects another directory and `--json` returns structured results; put these options before the command.
-`collect --input request.json` and `save <key> --input request.json` accept the same JSON requests as the website. Use `--input -` for standard input.
-Save requests contain `markdown` and optionally the opened `revision`. Review also accepts `--expected-revision`.
-The program keeps no session, database or history outside the selected files; lookup builds its index in memory.
-
-Migrate earlier local JSON sources explicitly:
-
-```sh
 pnpm wiki migrate
 ```
 
-Migration copies valid records from `sources/*.json` into the Wiki as drafts, retains their evidence and skips existing character entries.
-It leaves original files intact. Existing scopes and manually authored Wiki records are not overwritten.
-The tracked [Usopp JSON](../sources/usopp.json) remains a migration example and the earlier Tower experiment's source snapshot input.
+Manual collection reuses saved URLs unless `--refresh` is selected. It does not synthesize findings or automatically search.
+The exact saved scope is required for manual additions. Saving validates references and categories; review records human acceptance of findings without automatically approving tags.
+`research --input request.json` accepts `name`, optional `series`, `scope` and `pages`; `--input -` reads standard input, as used by the website.
+`collect --input request.json` and `save <key> --input request.json` accept their existing structured requests.
+Put `--wiki /path/to/wiki` and `--json` before the command to select another directory and request machine-readable output.
+Lookup is offline and rebuilds its index from local files. There is no hidden session or database.
 
-Start with agent-assisted source discovery and synthesis for Usopp, then Luffy and Gojo. Review the cited findings and tags manually.
-Measure missing facts, source failures, mistaken merges, tag corrections and review time before expanding automation.
-The next automation work in [#103](https://github.com/mardwerk/tower-generator/issues/103) should search for identity and abilities, select up to ten relevant distinct pages, synthesize cited records, and ask a decision model about those records.
-Jev should receive compact facts, relevant passages, the [category definitions](research-categories.yaml) and explicit unknown outcomes.
-Web ranking alone does not determine source quality; source limits and manga/anime/version differences remain visible.
-This current iteration adds no paid model call or provider configuration.
+The [Wiki format](wiki-format.md) describes identity, findings, citations and review metadata.
+Migration copies earlier `sources/*.json` into draft Markdown without deleting originals or overwriting existing entries.
+The tracked [Usopp source](../sources/usopp.json) remains a migration example and the parked Tower experiment's snapshot input.
+Research stays independent of any Profile, Tower upgrade structure or numerical balance. Suggested categories use [research-categories.yaml](research-categories.yaml).
+The separate [Jev comparison](https://github.com/mardwerk/tower-generator/issues/105) can use manually reviewed findings and tags as its baseline; this pipeline uses the already configured model.
 
-`pnpm test` covers Wiki round trips, CLI migration and offline lookup, evidence reuse, failed batches, stable passages, refreshed citations, review changes and invalid references.
-Run `pnpm typecheck`, `pnpm format:check` and `pnpm build` for the website. Browser verification covers evidence collection, saving, review and responsive layout.
+Run `pnpm test`, `pnpm typecheck`, `pnpm format:check` and `pnpm build` for the focused checks.
+Tests cover equal-budget repeat research, normalization/aliases/old folders, protected reviews, failed sources, bad citations, ambiguous identities and stale edits, plus the existing storage/authoring checks.

@@ -152,30 +152,34 @@ export function App() {
                   setError('Save or discard the edited entry before collecting more evidence.');
                   return;
                 }
-                if (!form.work.trim()) {
+                const manual = !!(form.urls.trim() || form.supplied.trim());
+                if (manual && (!form.work.trim() || !form.scope.trim())) {
                   setInputsOpen(true);
-                  setError('Add the series in Research inputs to choose the Wiki folder.');
-                  return;
-                }
-                if (!form.scope.trim() || (!form.urls.trim() && !form.supplied.trim())) {
-                  setInputsOpen(true);
-                  setError('Add a canon scope and English sources in Research inputs.');
+                  setError('Add the series and canon scope for the supplied references.');
                   return;
                 }
                 void run(async () => {
-                  const result = await api<{ entry: WikiEntry; fetched: number; reused: number }>(
-                    '/api/collect',
-                    {
-                      character: { name: form.name, work: form.work, scope: form.scope },
-                      urls: form.urls
-                        .split('\n')
-                        .map((url) => url.trim())
-                        .filter(Boolean),
-                      supplied: form.supplied,
-                      summary: form.summary,
-                      refresh,
-                      revision: researchRevision,
-                    },
+                  const result = await api<{
+                    entry: WikiEntry;
+                    fetched?: number;
+                    reused?: number;
+                    newRecords?: number;
+                    updatedRecords?: number;
+                  }>(
+                    manual ? '/api/collect' : '/api/research',
+                    manual
+                      ? {
+                          character: { name: form.name, work: form.work, scope: form.scope },
+                          urls: form.urls
+                            .split('\n')
+                            .map((url) => url.trim())
+                            .filter(Boolean),
+                          supplied: form.supplied,
+                          summary: form.summary,
+                          refresh,
+                          revision: researchRevision,
+                        }
+                      : { name: form.name, series: form.work, scope: form.scope },
                   );
                   open(result.entry);
                   setForm(emptyForm);
@@ -183,7 +187,9 @@ export function App() {
                   setInputsOpen(false);
                   await loadList();
                   setStatus(
-                    `Evidence saved. ${result.fetched} sources updated, ${result.reused} reused.`,
+                    manual
+                      ? `Evidence saved. ${result.fetched} sources updated, ${result.reused} reused.`
+                      : `Research saved. ${result.newRecords} new records, ${result.updatedRecords} refined drafts.`,
                   );
                 });
               }}
@@ -210,7 +216,7 @@ export function App() {
                   className="flex-1 sm:flex-none"
                   disabled={busy}
                 >
-                  {busy ? 'Collecting…' : 'Research'}
+                  {busy ? 'Researching…' : 'Research'}
                 </Button>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-1">
@@ -234,8 +240,8 @@ export function App() {
                   className="mt-4 rounded-xl border border-border bg-card p-5"
                 >
                   <p className="text-xs text-muted-foreground">
-                    Choose English references to collect here. Automatic source search is not
-                    available yet.
+                    Research finds English references automatically. Add a series or canon scope to
+                    narrow it, or supply your own references below.
                   </p>
                   <Field label="Series">
                     <Input
@@ -419,8 +425,11 @@ export function App() {
                 </>
               ) : (
                 <>
-                  <p className="mb-6 whitespace-pre-wrap text-[13px] leading-relaxed">
-                    {entry.body.replace(/^# [^\n]*\n?/, '').trim()}
+                  <p className="mb-6 whitespace-pre-wrap text-[13px] leading-relaxed [overflow-wrap:anywhere]">
+                    {entry.body
+                      .replace(/^# [^\n]*\n?/, '')
+                      .replace(/<!-- research:(?:begin|end) -->/g, '')
+                      .trim()}
                   </p>
                   <div className="space-y-3">
                     {entry.metadata.abilities.map((ability) => (

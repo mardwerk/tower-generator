@@ -67,7 +67,8 @@ Retrieved sources require a public HTTP(S) URL and a timezone-aware retrieval da
 Supplied evidence must include enough origin information for human review; a passage without a URL is not automatically reliable.
 New passage IDs derive from their content, so unrelated additions do not renumber citations. Keep IDs stable when editing source files by hand.
 
-Collection accepts up to ten URLs and retains up to ten source documents per entry.
+Collection accepts up to ten URLs per run and retains up to 100 source documents per entry.
+Name-only research uses the same page allocation for creation and repeat verification, while preserving older evidence.
 Saved URLs are reused without fetching unless refresh is explicitly selected. Repeated URLs and exact repeated passages are deduplicated.
 Fetches and validation finish before file writes begin. Each file replacement is atomic; the entire directory is not a transactional database.
 A failed fetch preserves the saved files. Collection preserves existing findings and summary unless a replacement summary is supplied.
@@ -89,3 +90,18 @@ This is a bounded review record, not proof that a character catalog is complete 
 
 The reader returns a structured object in memory for the website and later consumers. Markdown files remain the only source of truth.
 A consumer supplies the Wiki directory and character key. Profile mappings, upgrade choices, numerical stats and game adaptations remain outside this format.
+
+Name-only research records its last allocation and outcome in the optional `research` metadata.
+It contains `runs`, `lastRunAt`, `model`, `normalizationVersion`, `categoryVersion`, `budget`, `usage`, source counts, warnings, identity URLs and `nextQuestions`.
+Each allocation is a limit, not a promise of equal actual cost or new facts. Follow-up questions guide later research within the saved canon scope.
+The normalization version is 1: folder slugs use NFKC, case folding and hyphens; identity comparison also folds accents and removes punctuation.
+
+A finding may have `reviewStatus: reviewed` after human review, and `verification` with a model verdict, date, note and evidence.
+New model findings have `reviewStatus: draft` and suggested classification tags. Human-reviewed records survive later research unchanged except for model verification metadata.
+`suggestedUpdates` contains cited proposed replacements for protected findings; apply an accepted replacement through ordinary editing.
+The current entry becomes draft after research because new or rechecked evidence needs human review. The reviewed record markers remain available across repeat runs.
+
+Generated summaries live between `<!-- research:begin -->` and `<!-- research:end -->` markers in the Markdown body.
+Research replaces that block on the next run and preserves manual prose outside it. Keep manual notes outside those markers.
+Source files can include `retrievalMethod: search-excerpt` when the search provider supplied a retained excerpt instead of an accessible page.
+Its URL and retrieval date describe that excerpt; it is not proof that the full source page was read or is current.

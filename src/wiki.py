@@ -138,8 +138,8 @@ def validate_entry(meta, body, documents, key):
     if meta.get("status") not in {"draft", "reviewed"}:
         raise ValueError("Entry status must be draft or reviewed")
     source_ids = meta.get("sources")
-    if not isinstance(source_ids, list) or not 1 <= len(source_ids) <= 10 or len(set(source_ids)) != len(source_ids):
-        raise ValueError("An entry needs 1 to 10 unique sources")
+    if not isinstance(source_ids, list) or not 1 <= len(source_ids) <= 100 or len(set(source_ids)) != len(source_ids):
+        raise ValueError("An entry needs 1 to 100 unique sources")
     if set(source_ids) != set(documents):
         raise ValueError("The entry's source files are missing")
     abilities = meta.get("abilities", [])
@@ -188,12 +188,17 @@ def fingerprint(meta, body, files):
     return hashlib.sha256(json.dumps([metadata, body, files], sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 
-def read_entry(key, root=WIKI):
-    path = entry_path(key, root)
+def read_entry(key, root=WIKI, *, legacy=False):
+    if legacy:
+        if not isinstance(key, str) or len(key.split('/')) != 2:
+            raise ValueError('Invalid legacy Wiki key')
+        path = safe_path(root, key)
+    else:
+        path = entry_path(key, root)
     raw = read_text(safe_path(root, f"{key}/README.md"))
     meta, body = parse_markdown(raw)
     source_ids = meta.get("sources", [])
-    if not isinstance(source_ids, list) or len(source_ids) > 10:
+    if not isinstance(source_ids, list) or len(source_ids) > 100:
         raise ValueError("Invalid source list")
     files = {}
     documents = {}
@@ -202,7 +207,7 @@ def read_entry(key, root=WIKI):
             raise ValueError("Invalid source id")
         files[identifier] = read_text(safe_path(root, f"{key}/sources/{identifier}.md"))
         documents[identifier] = parse_source(files[identifier], identifier)
-    validate_entry(meta, body, documents, key)
+    validate_entry(meta, body, documents, entry_key(meta) if legacy else key)
     revision = hashlib.sha256(json.dumps([raw, files], sort_keys=True).encode()).hexdigest()
     stale = meta["status"] == "reviewed" and meta.get("reviewedHash") != fingerprint(meta, body, files)
     return {"key": key, "path": str(path), "metadata": {**meta, "status": "draft" if stale else meta["status"]},
@@ -269,13 +274,15 @@ def review_entry(key, expected=None, root=WIKI):
     if not current or not current["metadata"].get("abilities"):
         raise ValueError("Add cited abilities or traits before reviewing the entry")
     meta = current["metadata"]
+    for ability in meta.get("abilities", []):
+        ability["reviewStatus"] = "reviewed"
     files = {identifier: read_text(safe_path(root, f"{key}/sources/{identifier}.md")) for identifier in meta["sources"]}
     meta.update(status="reviewed", reviewedAt=datetime.now(timezone.utc).isoformat(), reviewedHash=fingerprint(meta, current["body"], files))
     atomic_write(safe_path(root, f"{key}/README.md"), markdown(meta, current["body"]))
     return read_entry(key, root)
 
 
-def collect(character, urls, supplied="", summary="", refresh=False, expected=None, root=WIKI):
+def collect(character, urls, supplied="", summary="", refresh=False, expected=None, root=WIKI, *, fetcher=None):
     for field, limit in [("name", 120), ("work", 120), ("scope", 500)]:
         character[field] = text(character.get(field), field, limit)
     key = entry_key(character)
@@ -298,7 +305,7 @@ def collect(character, urls, supplied="", summary="", refresh=False, expected=No
         validate_url(url)
     # Reuse saved pages; fetch independent new pages with bounded concurrency.
     with ThreadPoolExecutor(max_workers=4) as pool:
-        fetched = dict(zip(pending, pool.map(fetch_document, pending)))
+        fetched = dict(zip(pending, pool.map(fetcher or fetch_document, pending)))
     for url in urls:
         validate_url(url)
         existing = next((d for d in documents.values() if d.get("url") == url), None)
@@ -312,8 +319,10 @@ def collect(character, urls, supplied="", summary="", refresh=False, expected=No
         value = source_document(document)
         if existing and current:
             fresh = parse_source(value, identifier)
-            cited = {r["passage"] for a in current["metadata"].get("abilities", [])
-                     for r in a["evidence"] if r["source"] == f"sources/{identifier}.md"}
+            records = current["metadata"].get("abilities", []) + current["metadata"].get("suggestedUpdates", [])
+            cited = {r["passage"] for a in records
+                     for r in a.get("evidence", []) + a.get("verification", {}).get("evidence", [])
+                     if r["source"] == f"sources/{identifier}.md"}
             missing = [p for p in existing["passages"] if p["id"] in cited
                        and not any(n["id"] == p["id"] for n in fresh["passages"])]
             if missing:
@@ -400,6 +409,12 @@ def main():
     review.add_argument("--expected-revision")
     migration = commands.add_parser("migrate", help="Copy legacy JSON into Markdown without deleting originals")
     migration.add_argument("--sources", type=Path, default=PROJECT / "sources")
+    research = commands.add_parser("research", help="Research a name, or verify and expand its existing Wiki entry")
+    research.add_argument("name", nargs="?")
+    research.add_argument("--series", default="", help="Optional identity disambiguation")
+    research.add_argument("--scope", default="", help="Optional canon scope for a new entry")
+    research.add_argument("--pages", type=int, default=10, help="Same 1 to 10 page budget for creation and repeat research")
+    research.add_argument("--input", type=Path, help="JSON request file, or - for stdin")
     commands.add_parser("categories", help="Read profile-agnostic classification definitions")
     args = parser.parse_args()
     try:
@@ -414,6 +429,10 @@ def main():
         if args.action == "list": result = list_entries(args.query, args.wiki)
         elif args.action == "show": result = read_entry(args.key, args.wiki)
         elif args.action == "categories": result = categories()
+        elif args.action == "research":
+            from src.character_research import research
+            result = research(value.get("name", args.name), series=value.get("series", args.series),
+                              scope=value.get("scope", args.scope), pages=value.get("pages", args.pages), root=args.wiki)
         elif args.action == "migrate": result = migrate(args.sources, args.wiki)
         elif args.action == "review": result = review_entry(args.key, args.expected_revision, args.wiki)
         elif args.action == "save":
@@ -426,7 +445,7 @@ def main():
                              value.get("revision", args.expected_revision), args.wiki)
         if args.json: print(json.dumps(result, ensure_ascii=False))
         elif args.action in {"show", "save", "review"}: print(result["markdown"], end="")
-        elif args.action == "collect": print(result["entry"]["path"] + "/README.md")
+        elif args.action in {"collect", "research"}: print(result["entry"]["path"] + "/README.md")
         else: print(yaml.safe_dump(result, allow_unicode=True, sort_keys=False), end="")
     except Exception as error:
         print(json.dumps({"error": str(error)}) if args.json else f"Error: {error}", file=sys.stdout if args.json else sys.stderr)

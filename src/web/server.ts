@@ -9,6 +9,7 @@ const routes = [
   '/api/entry',
   '/api/categories',
   '/api/collect',
+  '/api/research',
   '/api/save',
   '/api/review',
 ];
@@ -17,14 +18,14 @@ function operation(action: string, input: Record<string, unknown> = {}): Promise
   const args = ['-B', '-m', 'src.wiki', '--json', action];
   if (['show', 'save', 'review'].includes(action)) args.push(String(input.key ?? ''));
   if (action === 'list') args.push('--query', String(input.query ?? ''));
-  if (['collect', 'save'].includes(action)) args.push('--input', '-');
+  if (['collect', 'research', 'save'].includes(action)) args.push('--input', '-');
   if (action === 'review' && input.revision)
     args.push('--expected-revision', String(input.revision));
   return new Promise((resolve, reject) => {
     const child = execFile(
       'python3',
       args,
-      { cwd: project, timeout: 180_000, maxBuffer: 8_000_000 },
+      { cwd: project, timeout: 480_000, maxBuffer: 16_000_000 },
       (error, stdout) => {
         try {
           const result = JSON.parse(stdout) as { error?: string };
@@ -40,6 +41,7 @@ function operation(action: string, input: Record<string, unknown> = {}): Promise
         }
       },
     );
+    if (action === 'research') child.stderr?.on('data', (chunk) => process.stderr.write(chunk));
     child.stdin!.end(JSON.stringify(input));
   });
 }
@@ -88,6 +90,7 @@ export const labAPI: Connect.NextHandleFunction = (request, response, next) => {
   }
   const actions: Record<string, string> = {
     '/api/collect': 'collect',
+    '/api/research': 'research',
     '/api/save': 'save',
     '/api/review': 'review',
   };
