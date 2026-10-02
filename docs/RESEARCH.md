@@ -13,7 +13,9 @@ Research searches English references, resolves canonical identity, checks local 
 A repeat verifies and expands the existing entry with the same allocation. It keeps the entry's canon scope, evidence and manual prose.
 The implementation and reviewed scope are recorded in [#103](https://github.com/mardwerk/tower-generator/issues/103).
 
-Install Python 3.10 or newer, Node.js 22.12 or newer, and the research dependencies:
+The CLI requires Python 3.10 or newer and the research dependencies. Node.js 22.12 or newer is needed for website development.
+`python3 -B -m src.wiki research usopp` runs directly; the `pnpm wiki` examples below are convenience shortcuts.
+For the website development environment:
 
 ```sh
 python3 -m venv .venv

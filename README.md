@@ -3,8 +3,10 @@
 The current website focuses on character research and a reusable local Wiki.
 Research a character by name, inspect cited abilities and traits, and record manual review before returning to Tower generation.
 Research stays independent of a game's Profile.
+The [product outline](docs/PRODUCT.md) records the rough rules under review before further implementation.
+It separates owner requirements from proposed screens, shared CLI/API responsibilities and open technology choices.
 
-Use Python 3.10 or newer and Node.js 22.12 or newer:
+For website development, use Python 3.10 or newer and Node.js 22.12 or newer:
 
 ```sh
 python3 -m venv .venv
@@ -35,7 +37,13 @@ The [research workflow](docs/RESEARCH.md) explains collection, offline reuse, ex
 The [Wiki format](docs/wiki-format.md) documents the human-readable files and citations.
 Name-only research uses the configured OpenRouter model and web search. Suggested classifications use the broad local categories; specific [Jev benchmarking](https://github.com/mardwerk/tower-generator/issues/105) remains later work.
 
-The CLI owns persistence and validation. The website invokes that same CLI and provides the user interface.
+The Python CLI owns persistence and validation and can run without Node or the website:
+
+```sh
+python3 -B -m src.wiki research usopp
+```
+
+`pnpm wiki` is a convenience shortcut. Node currently runs the website tooling and local API bridge, which invokes the Python CLI.
 Run `pnpm wiki research usopp` to research or improve Usopp, using `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` from the environment or ignored local `.env`.
 Use `pnpm wiki --help`, `pnpm wiki list`, `pnpm wiki show one-piece/usopp`, or `pnpm wiki categories` without a browser.
 Use `pnpm wiki migrate` to copy earlier local JSON sources into the new layout; original files and existing Wiki entries are preserved.
