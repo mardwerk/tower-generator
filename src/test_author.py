@@ -39,14 +39,46 @@ class AuthoringTests(unittest.TestCase):
 
     def test_sniper_camo_and_range_reach(self):
         tower = self.tower("Usopp-025")
-        self.assertEqual(tower["range"], 76)
+        self.assertEqual(tower["range"], 86)
         self.assertTrue(all(not model["isActive"] for model in AUTHOR["models"](tower, "FilterInvisibleModel")))
         travel = next(AUTHOR["models"](tower, "TravelStraitModel"))
         self.assertGreaterEqual(travel["speed"] * travel["lifespan"], tower["range"])
         weapon = next(AUTHOR["models"](tower, "WeaponModel"))
         damage = next(AUTHOR["models"](weapon, "DamageModel"))
-        self.assertEqual(damage["damage"], 6)
+        self.assertEqual(damage["damage"], 7)
         self.assertEqual(damage["CappedDamage"], damage["damage"])
+
+    def test_third_purchases_replace_the_attack(self):
+        base = next(AUTHOR["models"](self.tower("Usopp"), "WeaponModel"))
+        blast = next(AUTHOR["models"](self.tower("Usopp-300"), "WeaponModel"))
+        contact = next(AUTHOR["models"](blast, "CreateProjectileOnContactModel"))
+        self.assertEqual(blast["projectile"]["pierce"], 1)
+        self.assertEqual(contact["projectile"]["radius"], 12)
+        self.assertEqual(contact["projectile"]["pierce"], 14)
+        self.assertFalse(list(AUTHOR["models"](self.tower("Usopp-200"), "CreateProjectileOnContactModel")))
+        spread = next(AUTHOR["models"](self.tower("Usopp-030"), "WeaponModel"))
+        self.assertEqual(spread["emission"]["count"], 3)
+        sniper = next(AUTHOR["models"](self.tower("Usopp-003"), "WeaponModel"))
+        self.assertNotEqual(sniper["projectile"]["display"], base["projectile"]["display"])
+        self.assertEqual(next(AUTHOR["models"](sniper, "TravelStraitModel"))["speed"], 400)
+        self.assertEqual(self.tower("Usopp-003")["range"], 66)
+        self.assertEqual(sniper["projectile"]["pierce"], 6)
+
+    def test_explosion_crosspaths_and_capstone(self):
+        for tier, capacity, radius, damage in [(3, 14, 12, 1), (4, 20, 16, 2), (5, 32, 22, 5)]:
+            for secondary in [0, 1, 2]:
+                tower = self.tower(f"Usopp-{tier}{secondary}0")
+                weapon = next(AUTHOR["models"](tower, "WeaponModel"))
+                blast = next(AUTHOR["models"](weapon, "CreateProjectileOnContactModel"))["projectile"]
+                self.assertEqual(blast["pierce"], capacity)
+                self.assertEqual(blast["radius"], radius)
+                self.assertEqual(next(AUTHOR["models"](blast, "DamageModel"))["damage"], damage)
+                self.assertAlmostEqual(weapon["rate"], [1, .85, .68][secondary])
+                ranged = self.tower(f"Usopp-{tier}0{secondary}")
+                ranged_blast = next(AUTHOR["models"](ranged, "CreateProjectileOnContactModel"))["projectile"]
+                self.assertEqual(ranged_blast["pierce"], capacity + (1 if secondary == 2 else 0))
+                self.assertEqual(ranged_blast["radius"], radius)
+                self.assertEqual(ranged["range"], [36, 44, 48][secondary])
 
     def test_complete_legal_states_and_matching_purchases(self):
         states = [self.tower(path.stem) for path in (self.data / "Towers/Usopp").glob("*.json")]

@@ -2,6 +2,7 @@
 
 Create and inspect the editable [Usopp draft](default/usopp.json) with the [Default Profile](default/profile/).
 The first experiment has 64 ordinary states, 15 upgrades and no Paragon.
+[Usopp canon and adaptations](docs/USOPP.md) explains the exploding stars, Pop Greens and Sogeking Styles.
 General character generation and game integration remain later work.
 
 Use Python 3.10 or newer, Go, Git, GitHub CLI and Node.js 22.12 or newer:

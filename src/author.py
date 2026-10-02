@@ -16,7 +16,8 @@ PROJECT = Path(__file__).resolve().parents[1]
 CAPTURE = "data/56.3-build-24829026"
 SOURCE = "de829684232157967fd66f0e999a45df3a669c63"
 STATS = {"cost", "damage", "pierce", "range", "interval", "projectiles", "camo"}
-CHANGES = {"damage", "pierce", "range", "intervalMultiplier", "projectiles", "camo"}
+CHANGES = {"damage", "pierce", "range", "intervalMultiplier", "projectiles", "camo", "blastRadius"}
+ATTACKS = {"explosion", "spread", "sniper"}
 
 
 def models(value, kind):
@@ -37,10 +38,14 @@ def validate_design(design):
         raise ValueError(f"Base stats must be {sorted(STATS)}")
     if len(design["paths"]) != 3 or any(len(p["upgrades"]) != 5 for p in design["paths"]):
         raise ValueError("This experiment requires three paths with five upgrades each")
+    if {p["upgrades"][2].get("attack") for p in design["paths"]} != ATTACKS:
+        raise ValueError("The third purchases must establish explosion, spread and sniper attacks")
     for key, value in design["base"].items():
         validate_value(key, value)
     for path in design["paths"]:
-        for upgrade in path["upgrades"]:
+        for tier, upgrade in enumerate(path["upgrades"], 1):
+            if "attack" in upgrade and (tier != 3 or upgrade["attack"] not in ATTACKS):
+                raise ValueError("Attack replacements belong on the third purchase and must be explosion, spread or sniper")
             if not upgrade["name"].strip() or not upgrade["description"].strip():
                 raise ValueError("Every upgrade needs a name and description")
             validate_value("cost", upgrade["cost"])
@@ -74,10 +79,12 @@ def upgrade_id(tower_id, path, tier):
 
 
 def stats_for(design, tiers):
-    stats = dict(design["base"])
+    stats = dict(design["base"], attack="pellet", blastRadius=0)
     for path, count in zip(design["paths"], tiers):
         for upgrade in path["upgrades"][:count]:
             stats["cost"] += upgrade["cost"]
+            if "attack" in upgrade:
+                stats["attack"] = upgrade["attack"]
             for key, value in upgrade["changes"].items():
                 if key == "intervalMultiplier":
                     stats["interval"] *= value
@@ -88,18 +95,24 @@ def stats_for(design, tiers):
     return stats
 
 
-def apply_stats(tower, stats, arc):
+def apply_stats(tower, stats, arc, projectiles):
     tower["cost"], tower["range"] = stats["cost"], stats["range"]
     attack = next(models(tower, "AttackModel"))
     attack["range"] = stats["range"]
     weapon = attack["weapons"][0]
+    weapon["projectile"] = deepcopy(projectiles[stats["attack"]])
     weapon["rate"] = weapon["Rate"] = stats["interval"]
     if stats["projectiles"] > 1:
         weapon["emission"] = deepcopy(arc)
         weapon["emission"]["count"] = weapon["emission"]["Count"] = stats["projectiles"]
     projectile = weapon["projectile"]
-    projectile["pierce"] = projectile["CappedPierce"] = stats["pierce"]
-    damage = next(models(projectile, "DamageModel"))
+    hit = projectile
+    if stats["attack"] == "explosion":
+        # The carrier expires at first contact; purchased pierce belongs to its blast.
+        hit = next(models(projectile, "CreateProjectileOnContactModel"))["projectile"]
+        hit["radius"] = stats["blastRadius"]
+    hit["pierce"] = hit["CappedPierce"] = stats["pierce"]
+    damage = next(models(hit, "DamageModel"))
     damage["damage"] = damage["CappedDamage"] = stats["damage"]
     # Keep the demonstrated straight projectile alive beyond the selected range.
     travel = next(models(projectile, "TravelStraitModel"))
@@ -141,6 +154,10 @@ def generate(design, atlas, output):
         raise ValueError("Expected 64 distinct ordinary Dart states")
     root = next(s for s in states if s["IsBaseTower"])
     arc = next(models(next(s for s in states if s["tiers"] == [0, 3, 0]), "ArcEmissionModel"))
+    projectiles = {"pellet": next(models(root, "WeaponModel"))["projectile"],
+                   "spread": next(models(root, "WeaponModel"))["projectile"],
+                   "sniper": next(models(next(s for s in states if s["tiers"] == [0, 0, 3]), "WeaponModel"))["projectile"],
+                   "explosion": next(models(read("Towers/BombShooter/BombShooter.json"), "WeaponModel"))["projectile"]}
     upgrade_template = read("Upgrades/Sharp Shots.json")
     text = read("textTable.json")
     resources = read("resources.json")
@@ -175,7 +192,7 @@ def generate(design, atlas, output):
         tower["appliedUpgrades"] = [upgrade_id(tower_id, path, tier)
                                      for path, count in enumerate(tiers) for tier in range(1, count + 1)]
         stats = stats_for(design, tiers)
-        apply_stats(tower, stats, arc)
+        apply_stats(tower, stats, arc, projectiles)
         write_json(data / "Towers" / tower_id / (tower["name"] + ".json"), tower)
         rows.append((tiers, stats))
         weapon = next(models(source, "WeaponModel"))
@@ -200,16 +217,20 @@ def generate(design, atlas, output):
                "capture": manifest["gameVersion"], "build": manifest["steamBuildId"], "files": provenance})
     description = [f"# {design['name']}", "", design["description"], "",
                    "Draft projectile design. 64 ordinary states, 15 upgrades, no Paragon or Monkey Knowledge.",
-                   "Costs and stats are authored choices. Inherited Dart visuals and sounds are placeholders.",
-                   "Damage uses Dart's existing immunity rules. No active abilities, plant effects, or game integration are included.", "",
+                   "Costs and stats are authored choices. Inherited BTD6 visuals and sounds are placeholders.",
+                   "Gunpowder stars use Bomb Shooter contact explosions. Leaf shuriken use Dart spread; Kabuto shots use Dart Crossbow projectiles.",
+                   "Inherited BTD6 immunity rules remain. Pop Greens are adapted as projectiles, without persistent plants or active abilities.", "",
                    "Changes accumulate in top-middle-bottom order. Interval multipliers multiply; camo detection stays enabled once gained.",
-                   "Cost is the base purchase plus every applied upgrade. The interval is seconds per volley; damage and pierce are per projectile.", "",
+                   "Cost is the base purchase plus every applied upgrade. The interval is seconds per volley.",
+                   "Damage and pierce are per projectile, or per explosion for Gunpowder Star. Its carrier expires on first contact.",
+                   "Crosspath pierce increases the explosion capacity or the leaf/sniper projectile capacity; reload and range apply to the selected attack.",
+                   "Actual Usopp art is pending. The third purchases specify gunpowder shots, Black Kabuto with leaf shuriken, and Sogeking with Kabuto.", "",
                    "| Upgrade | Path | Name | Cost | Effect |", "| --- | --- | --- | --- | --- |", *upgrade_rows, "",
-                   "| State | Cost | Damage | Pierce | Range | Interval | Projectiles | Camo |",
-                   "| --- | --- | --- | --- | --- | --- | --- | --- |"]
+                   "| State | Cost | Damage | Pierce | Range | Interval | Projectiles | Camo | Attack | Blast radius |",
+                   "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
     for tiers, stats in sorted(rows):
         description.append(f"| {'-'.join(map(str, tiers))} | {stats['cost']:g} | {stats['damage']:g} | {stats['pierce']:g} | "
-                           f"{stats['range']:g} | {stats['interval']:.6g} | {stats['projectiles']} | {stats['camo']} |")
+                           f"{stats['range']:g} | {stats['interval']:.6g} | {stats['projectiles']} | {stats['camo']} | {stats['attack']} | {stats['blastRadius']:g} |")
     (output / "TOWER.md").write_text("\n".join(description) + "\n")
     (output / "REFERENCE.md").write_text("\n".join([
         "# Dart reference", "", f"Atlas commit {SOURCE}, capture {manifest['gameVersion']}, Steam build {manifest['steamBuildId']}.",

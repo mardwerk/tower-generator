@@ -1,9 +1,9 @@
 # First Tower authoring experiment
 
-The [Usopp design](../default/usopp.json) is an editable draft with Impact, Volley and Marksman upgrade paths.
+The [Usopp design](../default/usopp.json) is an editable draft with Exploding stars, Pop Greens and Sogeking Styles.
 Kyle selected this experiment under [#85](https://github.com/mardwerk/tower-generator/issues/85), using the existing Default Profile and checker.
 During this iteration, work directly on `main` and track necessary Profile or dependency changes as issues.
-Atlas and td-profile remain unchanged. The draft still needs design review.
+Atlas and td-profile remain unchanged. The draft still needs design review. [Canon and adaptations](USOPP.md) records the sources and the three attack identities.
 
 Run from Tower Generator with Python 3.10 or newer and the sibling Atlas checkout available:
 
@@ -39,18 +39,23 @@ It also verifies the supporting tables against the capture manifest's hashes.
 The source is BTD6 56.3, Steam build 24829026. See [reference attribution](BTD6-REFERENCE.md).
 
 The 64 ordinary Dart states supply the legal state list and purchase transitions.
-Each authored state starts with Dart's base model, then receives the designed stats and explicit purchase links.
-Dart's `0-3-0` supplies the demonstrated spread emission; its count is authored.
+Each authored state starts with Dart's base model, then receives the selected projectile, designed stats and explicit purchase links.
+The third purchases select Bomb Shooter's contact explosion, Dart's `0-3-0` spread emission, or Dart's `0-0-3` Crossbow projectile.
+The Bomb Shooter base record is verified against the same pinned source commit. Its blast uses authored radius, damage and hit capacity.
+Its carrier expires at first contact; purchased pierce applies to the explosion. Pop Green volley counts are authored adaptations.
 The `Sharp Shots` Upgrade model supplies the record shape, with authored identifiers, costs, path indices and zero-based tiers.
 
 Upgrade changes accumulate in top-middle-bottom order.
-Damage, pierce, range and projectile counts add; interval multipliers multiply; camo detection stays enabled once gained.
+Damage, pierce, range, blast radius and projectile counts add; interval multipliers multiply; camo detection stays enabled once gained.
+The selected attack retains every early purchase. Pierce applies to the blast or each leaf/sniper projectile; range extends targeting and carrier travel, and reload affects firing.
+Range upgrades do not enlarge a blast.
 State cost is the base purchase plus every applied upgrade.
 The mapping updates captured stat aliases, attack range and all invisible-target filters together.
 Straight-projectile lifespan is extended when needed to reach the authored range.
 
 Paragon and Monkey Knowledge are excluded.
-Inherited Dart art, sounds, animation and immunity settings remain placeholders; there are no plant effects, active abilities or game runtime integration.
+Inherited BTD6 art, sounds and animation remain placeholders. Each third purchase records its intended Usopp appearance.
+Dart projectiles retain Dart immunities; contact explosions retain Bomb Shooter immunities. No persistent plants, active abilities or game runtime integration are included.
 The authoring input supports only this small projectile design. It is not the general generator interface or an accepted Profile replacement.
 An authoring format without captured presentation requirements is deferred in [#100](https://github.com/mardwerk/tower-generator/issues/100).
 
@@ -64,5 +69,5 @@ Run the focused authoring checks with:
 pnpm test
 ```
 
-These checks cover crosspath stats, camo and projectile reach, legal states, purchase-to-upgrade mapping, applied upgrades, revisions and invalid design inputs.
+These checks cover distinct third-purchase projectiles, explosion crosspaths, camo and projectile reach, legal states, purchase-to-upgrade mapping, applied upgrades, revisions and invalid design inputs.
 They require the same Atlas checkout and do not modify it.

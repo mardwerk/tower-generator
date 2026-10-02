@@ -5,6 +5,8 @@ import {
   Coins,
   Crosshair,
   Eye,
+  Flame,
+  Sprout,
   Layers,
   RotateCcw,
   Sword,
@@ -83,6 +85,10 @@ export function App() {
   const choose = (path: number, tier: number) =>
     setTiers(tiers.map((value, index) => (index === path ? tier : value)));
   const code = tiers.join('-');
+  const appearance = example?.design.paths
+    .flatMap((path, index) => path.upgrades.slice(0, tiers[index]))
+    .filter((upgrade) => upgrade.appearance)
+    .at(-1)?.appearance;
 
   return (
     <>
@@ -254,7 +260,31 @@ export function App() {
               className="my-5 rounded-lg border border-border bg-card p-[18px]"
               aria-label="Selected state"
             >
+              <div className="mb-3 flex items-center gap-2 text-[13px]">
+                {selected.attack === 'explosion' ? (
+                  <Flame className="size-4 text-warning" />
+                ) : selected.attack === 'spread' ? (
+                  <Sprout className="size-4 text-success" />
+                ) : (
+                  <Crosshair className="size-4 text-muted-foreground" />
+                )}
+                <span>
+                  {
+                    {
+                      pellet: 'Lead Star',
+                      explosion: 'Exploding Star',
+                      spread: 'Leaf shuriken',
+                      sniper: 'Kabuto sniper shot',
+                    }[selected.attack]
+                  }
+                </span>
+              </div>
               <Stats state={selected} />
+              {appearance && (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Planned appearance: {appearance}
+                </p>
+              )}
             </div>
             {tab === 'upgrades' && (
               <div
@@ -401,6 +431,8 @@ function Stats({ state }: { state: TowerState }) {
     { label: 'Projectiles', value: numbers.format(state.projectiles), icon: Target },
     { label: 'Camo detection', value: state.camo ? 'Yes' : 'No', icon: Eye },
   ];
+  if (state.blastRadius)
+    stats.push({ label: 'Blast radius', value: numbers.format(state.blastRadius), icon: Flame });
   return (
     <ul className="kit-stats grid gap-2 text-xs sm:grid-cols-2">
       {stats.map(({ label, value, icon: Icon }) => (

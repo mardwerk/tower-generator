@@ -2,6 +2,7 @@ export type Upgrade = {
   name: string;
   description: string;
   cost: number;
+  appearance?: string;
 };
 
 export type TowerState = {
@@ -14,6 +15,8 @@ export type TowerState = {
   interval: number;
   projectiles: number;
   camo: boolean;
+  attack: 'pellet' | 'explosion' | 'spread' | 'sniper';
+  blastRadius: number;
 };
 
 export type CheckReport = {

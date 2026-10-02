@@ -1,7 +1,7 @@
 {
   "id": "Usopp",
   "name": "Usopp",
-  "description": "A slingshot sniper who trades heavy shots, rapid volleys, or precision range against a modest base attack. This is a first design draft inspired by Usopp, not a canonical ability catalog.",
+  "description": "Usopp fires lead stars from his slingshot. His Styles develop exploding ammunition, Pop Green shuriken volleys, or Sogeking's long-range Kabuto shots.",
   "base": {
     "cost": 250,
     "damage": 1,
@@ -13,59 +13,64 @@
   },
   "paths": [
     {
-      "name": "Impact",
+      "name": "Exploding stars",
       "upgrades": [
         {
-          "name": "Dense Pellets",
+          "name": "Packed Ammunition",
           "cost": 150,
-          "description": "Heavier ammunition passes through one more target.",
+          "description": "Adds one hit of projectile pierce.",
           "changes": {
             "pierce": 1
           }
         },
         {
-          "name": "Reinforced Sling",
+          "name": "Stronger Draw",
           "cost": 250,
-          "description": "A stronger draw adds two pierce.",
+          "description": "Adds two hits of projectile pierce.",
           "changes": {
             "pierce": 2
           }
         },
         {
-          "name": "Heavy Shot",
+          "name": "Gunpowder Star",
           "cost": 700,
-          "description": "Each pellet deals one more damage.",
+          "description": "Replaces lead stars with gunpowder stars that burst on contact. Damage and pierce bonuses apply to the explosion.",
           "changes": {
-            "damage": 1
-          }
+            "pierce": 9,
+            "blastRadius": 12
+          },
+          "attack": "explosion",
+          "appearance": "Usopp loads round gunpowder stars; each shot ends in a visible blast."
         },
         {
-          "name": "Hammer Pellet",
+          "name": "Fire Star",
           "cost": 2200,
-          "description": "Dense ammunition adds two damage and three pierce.",
+          "description": "Increases blast damage, hit capacity and radius.",
           "changes": {
-            "damage": 2,
-            "pierce": 3
+            "damage": 1,
+            "pierce": 6,
+            "blastRadius": 4
           }
         },
         {
-          "name": "Siege Sling",
+          "name": "Fire Bird Star",
           "cost": 9000,
-          "description": "A heavy final shot adds four damage and four pierce.",
+          "description": "Fires a bird-shaped flame shot that bursts into a larger, stronger blast.",
           "changes": {
-            "damage": 4,
-            "pierce": 4
+            "damage": 3,
+            "pierce": 12,
+            "blastRadius": 6
           }
         }
       ]
     },
     {
-      "name": "Volley",
+      "name": "Pop Greens",
       "upgrades": [
         {
           "name": "Quick Reload",
           "cost": 180,
-          "description": "Reload time falls by 15 percent.",
+          "description": "Reduces reload time by 15 percent.",
           "changes": {
             "intervalMultiplier": 0.85
           }
@@ -73,83 +78,91 @@
         {
           "name": "Rapid Reload",
           "cost": 300,
-          "description": "Reload time falls by another 20 percent.",
+          "description": "Reduces reload time by another 20 percent.",
           "changes": {
             "intervalMultiplier": 0.8
           }
         },
         {
-          "name": "Triple Pellet",
+          "name": "Green Star: Platanus Shuriken",
           "cost": 800,
-          "description": "Fire three pellets in a spread.",
+          "description": "Equips Black Kabuto and replaces lead stars with a spread of three leaf shuriken.",
           "changes": {
             "projectiles": 2
-          }
+          },
+          "attack": "spread",
+          "appearance": "Usopp wears his post-timeskip hat and goggles, holds Black Kabuto, and fires green leaf shuriken."
         },
         {
-          "name": "Barrage",
+          "name": "Pop Green Volley",
           "cost": 2500,
-          "description": "Reload time falls by another 25 percent.",
+          "description": "Reduces leaf-shuriken reload time by another 25 percent.",
           "changes": {
             "intervalMultiplier": 0.75
           }
         },
         {
-          "name": "Slingstorm",
+          "name": "Pop Green Arsenal",
           "cost": 10000,
-          "description": "Fire five pellets with another 20 percent faster reload.",
+          "description": "Fires five leaf shuriken per volley, each with one more damage. Reduces reload time by another 20 percent.",
           "changes": {
             "projectiles": 2,
+            "damage": 1,
             "intervalMultiplier": 0.8
           }
         }
       ]
     },
     {
-      "name": "Marksman",
+      "name": "Sogeking",
       "upgrades": [
         {
-          "name": "Steady Aim",
+          "name": "Sniper Goggles",
           "cost": 120,
-          "description": "Add eight range.",
+          "description": "Adds eight targeting range.",
           "changes": {
             "range": 8
           }
         },
         {
-          "name": "Watchful Eye",
+          "name": "Steady Aim",
           "cost": 280,
-          "description": "Add four range and detect camouflaged targets.",
+          "description": "Adds four targeting range and one hit of projectile pierce.",
           "changes": {
             "range": 4,
-            "camo": true
+            "pierce": 1
           }
         },
         {
-          "name": "Sniper Sling",
+          "name": "Sogeking",
           "cost": 900,
-          "description": "Add ten range and one damage.",
+          "description": "Equips Kabuto and fires faster piercing stars over a much longer distance.",
           "changes": {
-            "range": 10,
-            "damage": 1
-          }
+            "range": 18,
+            "damage": 2,
+            "pierce": 3
+          },
+          "attack": "sniper",
+          "appearance": "Usopp puts on Sogeking's mask and cape and switches to the tall, five-pronged Kabuto."
         },
         {
-          "name": "Distant Mark",
+          "name": "Long-range Shot",
           "cost": 2800,
-          "description": "Add eight range and one damage.",
+          "description": "Adds ten targeting range, one damage and two hits of projectile pierce.",
           "changes": {
-            "range": 8,
-            "damage": 1
+            "range": 10,
+            "damage": 1,
+            "pierce": 2
           }
         },
         {
-          "name": "Sogeking Shot",
+          "name": "Observation Haki",
           "cost": 11000,
-          "description": "Add ten range and three damage.",
+          "description": "Uses Observation Haki to target camouflaged enemies. Adds ten range and three damage.",
           "changes": {
             "range": 10,
-            "damage": 3
+            "damage": 3,
+            "camo": true
           }
         }
       ]

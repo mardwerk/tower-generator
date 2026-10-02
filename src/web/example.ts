@@ -34,14 +34,25 @@ export function readExample(): Example {
       const tower = readJSON(join(directory, name)) as Model;
       const weapon = models(tower, 'WeaponModel')[0]!;
       const projectile = weapon.projectile as Model;
-      const damage = models(projectile, 'DamageModel')[0]!;
+      const contact = models(projectile, 'CreateProjectileOnContactModel')[0];
+      const hit = (contact?.projectile ?? projectile) as Model;
+      const damage = models(hit, 'DamageModel')[0]!;
+      const travel = models(projectile, 'TravelStraitModel')[0]!;
       const emission = weapon.emission as Model;
       return {
         name: String(tower.name),
         tiers: tower.tiers as number[],
         cost: Number(tower.cost),
         damage: Number(damage.damage),
-        pierce: Number(projectile.pierce),
+        pierce: Number(hit.pierce),
+        blastRadius: contact ? Number(hit.radius) : 0,
+        attack: contact
+          ? 'explosion'
+          : Number(emission.count ?? 1) > 1
+            ? 'spread'
+            : Number(travel.speed) >= 400
+              ? 'sniper'
+              : 'pellet',
         range: Number(tower.range),
         interval: Number(weapon.rate),
         projectiles: Number(emission.count ?? 1),
