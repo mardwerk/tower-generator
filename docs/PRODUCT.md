@@ -3,7 +3,8 @@
 Working outline for review, recorded on 2026-10-02 in [#106](https://github.com/mardwerk/tower-generator/issues/106).
 Kyle selected defining rough rules before further implementation.
 The owner requirements below come from his requests; the proposed sections remain open for review.
-This document does not select a backend language or authorize a rewrite.
+Kyle selected Go for the backend, independent CLI and `serve` API on 2026-10-02.
+Implementation remains pending the workflow specification.
 
 ## Purpose and current focus
 
@@ -27,7 +28,7 @@ The existing application is an experiment that can inform the specification.
    The tool may read and update those files without keeping a hidden session or requiring a database.
 9. Suggested generalized classifications may use Jev or a comparable decision model.
    Model classification and verification do not establish canon acceptance or game mechanics.
-10. The CLI must work independently of the website. Its implementation language is open.
+10. Use Go for the backend and independent CLI. A `serve` command exposes one API capable of handling concurrent clients and requests.
 
 ## Proposed responsibilities
 
@@ -36,10 +37,27 @@ The CLI and web API call that core so they have the same behavior and storage ru
 The website handles forms, navigation, readable evidence and user actions; the backend owns durable files, provider access and validation.
 Browser memory may hold an unsaved edit, but it must not be the only copy of saved research.
 
-A CLI with a `serve` command could expose the local API and serve the built website.
-Go is a candidate because a compiled binary can simplify installation and include the web assets.
-Python can reuse the existing extraction code; Node can share TypeScript code and packages with the web application.
-Choose the language after defining packaging and behavior, rather than treating the current bridge as a permanent architecture.
+## Agreed backend direction
+
+Use one Go executable with independent CLI commands and `serve` for the web API.
+Both interfaces call the same Go core directly; the website uses that API.
+Go supports concurrent network work and a compiled executable; the current Python CLI and Node API bridge remain the working experiment until migration.
+The target CLI and API must run without Node or Python. Frontend build tooling can remain separate.
+Serving the built website from the executable is a packaging proposal, not yet a specified requirement.
+
+## Proposed concurrency rules
+
+Handle multiple API connections while allowing independent characters and source fetches to progress concurrently.
+Connection capacity and active research capacity are separate: more clients must not create unlimited provider calls.
+
+- Bound concurrent research and source/model requests, respect provider limits, and keep each research budget independent of scheduling.
+- Coordinate writes by canonical character identity across API and CLI callers. Different characters should not need a single global write lock.
+- If two requests resolve to the same character, coordinate them before updating files and recheck the saved revision before committing changes.
+- Keep offline lookup and reading responsive while research runs. Validate and commit each character update as a complete operation.
+- Expose queued, running, completed and failed work through the API. Define admission limits, cancellation and progress delivery with the workflow contract.
+
+Start with concurrency inside one local Go process and portable files; choose numerical limits from measured provider and extraction behavior.
+Distributed workers and a database are not required by this direction.
 
 ## Proposed screen responsibilities
 
@@ -93,7 +111,8 @@ Keep credentials in protected local configuration and out of saved research, bro
 
 ## Choices to leave open
 
-Backend language and distribution, executable name, exact command names, HTTP routes and schemas remain undecided.
+Distribution, executable name, exact command names beyond `serve`, HTTP routes and schemas remain undecided.
+Go is selected; extraction dependencies, concurrency limits and coordination between separate CLI/server processes still need specification.
 Detailed screen controls, progress transport, cancellation, generation storage and Settings contents also need workflow-specific review.
 The current search provider, model-call count and numerical limits are implementation choices, not permanent product rules.
 Use [research behavior](RESEARCH.md) and the [Wiki format](wiki-format.md) for current commands and file contracts.

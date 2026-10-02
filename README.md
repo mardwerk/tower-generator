@@ -4,7 +4,8 @@ The current website focuses on character research and a reusable local Wiki.
 Research a character by name, inspect cited abilities and traits, and record manual review before returning to Tower generation.
 Research stays independent of a game's Profile.
 The [product outline](docs/PRODUCT.md) records the rough rules under review before further implementation.
-It separates owner requirements from proposed screens, shared CLI/API responsibilities and open technology choices.
+It records Go as the selected backend direction, with proposed screens, shared CLI/API responsibilities and bounded concurrency.
+The current implementation below still uses Python and a Node web bridge; the Go migration awaits its workflow specification.
 
 For website development, use Python 3.10 or newer and Node.js 22.12 or newer:
 
