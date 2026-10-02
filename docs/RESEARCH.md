@@ -2,8 +2,8 @@
 
 The local website focuses on collecting, inspecting and manually reviewing character research.
 It uses the retained Lab design system, centered navigation, one visible heading per page and no subheadings.
-The plus opens Research; Wiki is active; Library, Generations and the right-hand Settings control remain visible and disabled. Tower building and Profile controls are outside the website.
-The implementation and reviewed scope are recorded in [#102](https://github.com/mardwerk/tower-generator/issues/102).
+The plus opens Create; Create and Wiki are active; Library, Generations and the right-hand Settings control remain visible and disabled. Tower building and Profile controls are outside the website.
+The research implementation is recorded in [#102](https://github.com/mardwerk/tower-generator/issues/102), and the compact Create layout in [#104](https://github.com/mardwerk/tower-generator/issues/104).
 
 Install Python 3.10 or newer, Node.js 22.12 or newer, and the research dependencies:
 
@@ -18,7 +18,10 @@ pnpm dev
 Research does not require a checker installation, Go or an Atlas checkout.
 `pnpm preview` uses the same local commands after `pnpm build`. Existing Tower experiment files remain available separately through [Authoring](AUTHORING.md).
 
-Open Research, enter a character, work and canon scope, and provide up to ten relevant English URLs or supplied passages.
+Create is the starting page. Its base view shows character and anime/manga inputs, Research, and small Research inputs and Wiki controls.
+Research inputs opens the canon scope, up to ten English source URLs, refresh and optional supplied passages and summary.
+Submitting without scope or evidence opens that panel with a short message. The form retains unsent inputs when switching tabs.
+Collect more evidence opens an existing entry's inputs for editing; evidence, classifications and review stay in Wiki.
 Collection extracts readable page text with Trafilatura and retains the original URL, retrieval date and source passages. It requests English pages and rejects HTML explicitly declaring another language.
 Saved URLs are reused by default; Fetch saved URLs again requests a refresh. A failed batch leaves previously saved evidence intact.
 Collection creates a draft in `wiki/<work>/<character>/`. It does not automatically search, synthesize canon facts or call Jev.

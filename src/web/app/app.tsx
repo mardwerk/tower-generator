@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BookOpen, Download, FilePenLine, Plus, RotateCcw } from 'lucide-react';
+import {
+  ArrowLeft,
+  BookOpen,
+  Download,
+  FilePenLine,
+  Plus,
+  RotateCcw,
+  SlidersHorizontal,
+} from 'lucide-react';
 import type { Categories, WikiEntry, WikiSummary } from '../types.js';
 import { Alert } from '../ui/alert.js';
 import { Badge } from '../ui/badge.js';
@@ -15,13 +23,14 @@ import { Topbar } from './topbar.js';
 const emptyForm = { name: '', work: '', scope: '', urls: '', supplied: '', summary: '' };
 
 export function App() {
-  const [view, setView] = useState<'wiki' | 'research'>('wiki');
+  const [view, setView] = useState<'wiki' | 'create'>('create');
   const [entries, setEntries] = useState<WikiSummary[]>([]);
   const [reading, setReading] = useState(true);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [entry, setEntry] = useState<WikiEntry>();
   const [form, setForm] = useState(emptyForm);
   const [refresh, setRefresh] = useState(false);
+  const [inputsOpen, setInputsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState('');
   const [editing, setEditing] = useState(false);
@@ -49,11 +58,13 @@ export function App() {
     }
   }
   useEffect(() => {
-    document.title = 'Wiki · Tower Generator';
     void Promise.all([loadList(), api<Categories>('/api/categories').then(setCategories)]).catch(
       (failure: Error) => setError(failure.message),
     );
   }, []);
+  useEffect(() => {
+    document.title = `${view === 'create' ? 'Create' : 'Wiki'} · Tower Generator`;
+  }, [view]);
   async function run(task: () => Promise<void>) {
     setBusy(true);
     setError('');
@@ -83,6 +94,12 @@ export function App() {
     setStatus('');
     void run(loadList);
   }
+  function showCreate() {
+    setView('create');
+    setInputsOpen(false);
+    setError('');
+    setStatus('');
+  }
   function updateEvidence() {
     if (!entry) return;
     setForm({
@@ -97,7 +114,8 @@ export function App() {
       summary: '',
     });
     setRefresh(false);
-    setView('research');
+    setInputsOpen(true);
+    setView('create');
     setError('');
     setStatus('');
   }
@@ -114,20 +132,11 @@ export function App() {
 
   return (
     <>
-      <Topbar
-        view={view}
-        busy={busy}
-        onWiki={showWiki}
-        onResearch={() => {
-          setView('research');
-          setError('');
-          setStatus('');
-        }}
-      />
+      <Topbar view={view} busy={busy} onWiki={showWiki} onCreate={showCreate} />
       <main className="px-[18px] py-10 sm:px-6 sm:py-[60px]">
-        <div className={cn('mx-auto', view === 'research' ? 'max-w-[680px]' : 'max-w-[1000px]')}>
+        <div className={cn('mx-auto', view === 'create' ? 'max-w-[680px]' : 'max-w-[1000px]')}>
           <h1 className="mb-6 text-[1.6rem] font-semibold tracking-tight">
-            {view === 'research' ? 'Research' : entry ? entry.metadata.name : 'Wiki'}
+            {view === 'create' ? 'Create' : entry ? entry.metadata.name : 'Wiki'}
           </h1>
           {error && <Alert>{error}</Alert>}
           {status && (
@@ -135,12 +144,17 @@ export function App() {
               {status}
             </p>
           )}
-          {view === 'research' ? (
+          {view === 'create' ? (
             <form
               onSubmit={(event) => {
                 event.preventDefault();
                 if (dirty) {
                   setError('Save or discard the edited entry before collecting more evidence.');
+                  return;
+                }
+                if (!form.scope.trim() || (!form.urls.trim() && !form.supplied.trim())) {
+                  setInputsOpen(true);
+                  setError('Add a canon scope and English sources in Research inputs.');
                   return;
                 }
                 void run(async () => {
@@ -161,6 +175,7 @@ export function App() {
                   open(result.entry);
                   setForm(emptyForm);
                   setRefresh(false);
+                  setInputsOpen(false);
                   await loadList();
                   setStatus(
                     `Evidence saved. ${result.fetched} sources updated, ${result.reused} reused.`,
@@ -168,85 +183,116 @@ export function App() {
                 });
               }}
             >
-              <div className="grid gap-x-3 sm:grid-cols-2">
-                <Field label="Character">
+              <div className="flex flex-wrap items-end gap-2 sm:flex-nowrap">
+                <Field
+                  label="Character name"
+                  className="my-0 min-w-0 flex-1 basis-full sm:basis-auto"
+                >
                   <Input
                     required
+                    autoComplete="off"
+                    className="h-11 text-base"
                     placeholder="Usopp"
                     value={form.name}
                     disabled={busy}
                     onChange={(event) => change('name', event.target.value)}
                   />
                 </Field>
-                <Field label="Anime or manga">
+                <Field
+                  label="Anime or manga"
+                  className="my-0 min-w-0 flex-1 basis-full sm:basis-auto"
+                >
                   <Input
                     required
+                    className="h-11 text-base"
                     placeholder="One Piece"
                     value={form.work}
                     disabled={busy}
                     onChange={(event) => change('work', event.target.value)}
                   />
                 </Field>
-              </div>
-              <Field label="Canon scope">
-                <Input
-                  required
-                  placeholder="Manga through Dressrosa"
-                  value={form.scope}
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  className="flex-1 sm:flex-none"
                   disabled={busy}
-                  onChange={(event) => change('scope', event.target.value)}
-                />
-              </Field>
-              <Field label="Source URLs, one per line">
-                <Textarea
-                  rows={4}
-                  placeholder="Up to 10 relevant English sources"
-                  value={form.urls}
-                  disabled={busy}
-                  onChange={(event) => change('urls', event.target.value)}
-                />
-              </Field>
-              <label className="my-4 flex items-start gap-2 text-xs text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={refresh}
-                  disabled={busy}
-                  onChange={(event) => setRefresh(event.target.checked)}
-                />
-                Fetch saved URLs again. Otherwise their local evidence is reused.
-              </label>
-              <Disclosure bare title="Supplied evidence and summary">
-                <Field label="Evidence">
-                  <Textarea
-                    rows={5}
-                    placeholder="Paste source passages with their origin when pages cannot be fetched."
-                    value={form.supplied}
-                    disabled={busy}
-                    onChange={(event) => change('supplied', event.target.value)}
-                  />
-                </Field>
-                <Field label="Summary">
-                  <Textarea
-                    rows={4}
-                    placeholder="Findings, source limits and open questions. Leave empty to preserve a saved summary."
-                    value={form.summary}
-                    disabled={busy}
-                    onChange={(event) => change('summary', event.target.value)}
-                  />
-                </Field>
-              </Disclosure>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <Button type="submit" variant="primary" disabled={busy}>
-                  {busy ? 'Collecting…' : 'Collect evidence'}
-                </Button>
-                <Button disabled={busy} onClick={showWiki}>
-                  Wiki
+                >
+                  {busy ? 'Collecting…' : 'Research'}
                 </Button>
               </div>
-              <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
-                Choose references with your research assistant, then collect them here. Collection
-                saves evidence; cited findings and tags are added and reviewed separately.
-              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  disabled={busy}
+                  aria-expanded={inputsOpen}
+                  aria-controls="research-inputs"
+                  onClick={() => setInputsOpen(!inputsOpen)}
+                >
+                  <SlidersHorizontal /> Research inputs
+                </Button>
+                <Button variant="ghost" size="xs" disabled={busy} onClick={showWiki}>
+                  <BookOpen /> Wiki
+                </Button>
+              </div>
+              {inputsOpen && (
+                <div
+                  id="research-inputs"
+                  className="mt-4 rounded-xl border border-border bg-card p-5"
+                >
+                  <p className="text-xs text-muted-foreground">
+                    Choose English references to collect here. Automatic source search is not
+                    available yet.
+                  </p>
+                  <Field label="Canon scope">
+                    <Input
+                      placeholder="Manga through Dressrosa"
+                      value={form.scope}
+                      disabled={busy}
+                      onChange={(event) => change('scope', event.target.value)}
+                    />
+                  </Field>
+                  <Field label="Source URLs, one per line">
+                    <Textarea
+                      rows={3}
+                      placeholder="Up to 10 relevant English sources"
+                      value={form.urls}
+                      disabled={busy}
+                      onChange={(event) => change('urls', event.target.value)}
+                    />
+                  </Field>
+                  <label className="my-4 flex items-start gap-2 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={refresh}
+                      disabled={busy}
+                      onChange={(event) => setRefresh(event.target.checked)}
+                    />
+                    Fetch saved URLs again
+                  </label>
+                  <Disclosure bare title="Supplied evidence and summary">
+                    <Field label="Evidence">
+                      <Textarea
+                        rows={4}
+                        placeholder="Paste source passages with their origin when pages cannot be fetched."
+                        value={form.supplied}
+                        disabled={busy}
+                        onChange={(event) => change('supplied', event.target.value)}
+                      />
+                    </Field>
+                    <Field label="Summary">
+                      <Textarea
+                        rows={3}
+                        placeholder="Findings, source limits and open questions. Leave empty to preserve a saved summary."
+                        value={form.summary}
+                        disabled={busy}
+                        onChange={(event) => change('summary', event.target.value)}
+                      />
+                    </Field>
+                  </Disclosure>
+                </div>
+              )}
             </form>
           ) : entry ? (
             <>
@@ -575,15 +621,8 @@ export function App() {
                   </p>
                 )
               )}
-              <Button
-                className="mt-6"
-                disabled={busy}
-                onClick={() => {
-                  setView('research');
-                  setError('');
-                }}
-              >
-                <Plus /> Research a character
+              <Button className="mt-6" disabled={busy} onClick={showCreate}>
+                <Plus /> Create
               </Button>
             </>
           )}
