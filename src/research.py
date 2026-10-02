@@ -8,7 +8,6 @@ import json
 from pathlib import Path
 import re
 import socket
-import unicodedata
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
@@ -53,47 +52,28 @@ class PublicRedirect(HTTPRedirectHandler):
         return super().redirect_request(request, fp, code, message, headers, newurl)
 
 
-# ponytail: add site-specific extraction only when a needed source loses evidence.
-class PageText(HTMLParser):
-    """Retain readable page text without scripts or navigation."""
+class PageTitle(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
-        self.parts = []
-        self.skipped = 0
         self.title = ""
         self.in_title = False
+        self.language = ""
 
     def handle_starttag(self, tag, attrs):
-        if tag in {"script", "style", "nav", "header", "footer", "aside", "noscript"}:
-            self.skipped += 1
-        if tag == "title":
-            self.in_title = True
-        if tag in {"p", "div", "section", "li", "br", "h1", "h2", "h3", "h4"}:
-            self.parts.append("\n")
+        if tag == "title": self.in_title = True
+        if tag == "html": self.language = (dict(attrs).get("lang") or "").split("-")[0].lower()
 
     def handle_endtag(self, tag):
-        if tag in {"script", "style", "nav", "header", "footer", "aside", "noscript"}:
-            self.skipped = max(0, self.skipped - 1)
-        if tag == "title":
-            self.in_title = False
-        if tag in {"p", "div", "section", "li", "h1", "h2", "h3", "h4"}:
-            self.parts.append("\n")
+        if tag == "title": self.in_title = False
 
     def handle_data(self, data):
-        if self.in_title:
-            self.title += data
-        elif not self.skipped:
-            self.parts.append(data)
-
-    def result(self):
-        lines = [re.sub(r"\s+", " ", line).strip() for line in "".join(self.parts).splitlines()]
-        return "\n".join(line for line in lines if line)
+        if self.in_title: self.title += data
 
 
 def fetch_document(url):
     public_url(url)
     opener = build_opener(ProxyHandler({}), PublicRedirect())
-    request = Request(url, headers={"User-Agent": "Mozilla/5.0 TowerGenerator/0.1"})
+    request = Request(url, headers={"User-Agent": "Mozilla/5.0 TowerGenerator/0.1", "Accept-Language": "en"})
     with opener.open(request, timeout=15) as response:
         content_type = response.headers.get_content_type()
         if content_type not in {"text/html", "text/plain"}:
@@ -103,19 +83,25 @@ def fetch_document(url):
             raise ValueError("Source page is larger than 2 MB; supply a smaller excerpt")
         body = raw.decode(response.headers.get_content_charset() or "utf-8", errors="replace")
         final_url = response.url
-    parser = PageText()
+    parser = PageTitle()
     if content_type == "text/html":
         parser.feed(body)
-        body = parser.result()
+        if parser.language and parser.language != "en":
+            raise ValueError("Use an English source page for character research")
+        from trafilatura import extract
+        body = extract(body, include_comments=False, include_tables=True)
+        if not body:
+            raise ValueError("No readable source text found; supply a focused excerpt")
     if len(body) > MAX_DOCUMENT:
         raise ValueError("Source text is too long; supply a focused excerpt")
     return {
-        "id": hashlib.sha256(url.encode()).hexdigest()[:12],
+        "id": re.sub(r"[^a-z0-9]+", "-", urlsplit(url).hostname.lower()).strip("-")[:70] + "-" + hashlib.sha256(url.encode()).hexdigest()[:12],
         "title": parser.title.strip()[:300] or urlsplit(url).hostname,
         "url": url,
         "resolvedUrl": final_url,
         "retrievedAt": datetime.now(timezone.utc).isoformat(),
         "access": "retrieved",
+        "language": "en",
         "text": text(body, "Source text", MAX_DOCUMENT),
     }
 
@@ -160,48 +146,3 @@ def validate_source(source):
 
 def load_source(identifier, directory=SOURCES):
     return validate_source(json.loads(source_path(identifier, directory).read_text()))
-
-
-def list_sources(directory=SOURCES):
-    return [validate_source(json.loads(path.read_text())) for path in sorted(directory.glob("*.json"))]
-
-
-def identity(character):
-    return tuple(unicodedata.normalize("NFKC", character[key]).strip().casefold() for key in ["name", "work", "scope"])
-
-
-def save_source(source, directory=SOURCES):
-    validate_source(source)
-    path = source_path(source["id"], directory)
-    if path.exists() and identity(load_source(source["id"], directory)["character"]) != identity(source["character"]):
-        raise ValueError("This source identifier already belongs to another character or scope")
-    directory.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(".tmp")
-    temporary.write_text(json.dumps(source, indent=2, ensure_ascii=False) + "\n")
-    temporary.replace(path)
-    return source
-
-
-def collect_source(character, urls, supplied="", notes="", directory=SOURCES):
-    for key, limit in [("name", 120), ("work", 120), ("scope", 500)]:
-        character[key] = text(character.get(key), f"Character {key}", limit)
-    if not isinstance(urls, list) or len(urls) > 5:
-        raise ValueError("Collect at most five URLs at a time")
-    urls = list(dict.fromkeys(url.strip() for url in urls if isinstance(url, str) and url.strip()))
-    supplied = text(supplied, "Supplied evidence", MAX_DOCUMENT, required=False)
-    if not urls and not supplied:
-        raise ValueError("Provide source URLs or paste evidence to research this character")
-    existing = next((s for s in list_sources(directory) if identity(s["character"]) == identity(character)), None)
-    identifier = existing["id"] if existing else "character-" + hashlib.sha256(json.dumps(identity(character)).encode()).hexdigest()[:16]
-    documents = {document["id"]: document for document in existing["documents"]} if existing else {}
-    for url in urls:
-        document = fetch_document(url)
-        # Replace a refreshed page even when an imported record gave it another id.
-        documents = {key: value for key, value in documents.items() if value.get("url") != url}
-        documents[document["id"]] = document
-    if supplied:
-        documents["supplied"] = {"id": "supplied", "title": "Supplied evidence", "url": None,
-                                 "retrievedAt": None, "access": "supplied", "text": supplied}
-    source = {"formatVersion": 1, "kind": "character-source", "id": identifier,
-              "character": character, "documents": list(documents.values()), "notes": notes}
-    return save_source(source, directory)

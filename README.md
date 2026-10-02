@@ -1,55 +1,49 @@
 # Tower Generator
 
-Create and inspect the editable [Usopp draft](default/usopp.json) with the [Default Profile](default/profile/).
-The first experiment has 64 ordinary states, 15 upgrades and no Paragon.
-[Usopp canon and adaptations](docs/USOPP.md) explains the exploding stars, Pop Greens and Sogeking Styles.
-General character generation and game integration remain later work.
+The current website focuses on character research and a reusable local Wiki.
+Collect evidence, inspect cited abilities and traits, and record manual review before returning to Tower generation.
+Research stays independent of a game's Profile.
 
-Use Python 3.10 or newer, Go, Git, GitHub CLI and Node.js 22.12 or newer:
+Use Python 3.10 or newer and Node.js 22.12 or newer:
 
 ```sh
-python3 setup.py
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
 pnpm install
 pnpm dev
 ```
 
-Open the local URL printed by Vite.
-Create collects character research; Library saves, imports, exports and reuses it; Tower shows the editable Usopp example.
-Use saved Usopp research, open Edit design, then Build and check to save and validate a revision.
-The Tower workspace also shows upgrade paths, legal crosspaths, stats, JSON and validation results.
-[Character research](docs/RESEARCH.md) explains the portable source format and workflow. Sources for other characters can be saved now; general generation remains later work.
-You can also edit `default/usopp.json`, run `python3 setup.py` again, and reload the Tower.
-
-`setup.py` builds the latest published [td-profile](https://github.com/mardwerk/td-profile) release for the current OS and architecture.
-It reuses a verified matching build, generates Usopp using the sibling [Atlas](https://github.com/KyleDerZweite/btd6-atlas) checkout, and checks the candidate and missing-record cases.
-Use `--atlas /path/to/btd6-atlas` for another checkout.
-
-The default workspace keeps related files together:
+Open the URL printed by Vite. Wiki looks up local entries; Research collects supplied URLs or passages.
+Edit entry saves readable Markdown with YAML metadata, cited records and suggested classification tags.
+Each page has one heading and no subheadings, using the retained Lab design system.
+The website does not require Go, an installed checker or the sibling Atlas checkout.
 
 ```text
-default/
-  usopp.json              Editable design
-  profile/               Self-contained Profile
-  game-data/             Generated Tower and Upgrade records
-  profile-validator      Native checker, .exe on Windows
-  validator-release.json Installed release and build identity
-  checks.json            Candidate and negative-case reports
-  TOWER.md               Readable Tower
-  REFERENCE.md           Compact Dart reference
-  source.json            Atlas and character-source provenance
-  character-source.json  Exact research snapshot used for the Tower
-  licenses/              Installed checker notices
+wiki/                         Local, Git ignored
+  one-piece/
+    usopp/
+      README.md               Character summary, cited records and review status
+      sources/*.md            Retained source metadata and passages
+docs/wiki-format.md           Portable file contract
+docs/research-categories.yaml Profile-agnostic classification definitions
 ```
 
-Character evidence lives separately in `sources/`. The curated Usopp sample is tracked; collected sources stay local.
-Generated data, research snapshots, reports and executables stay local and ignored by Git.
-[Authoring](docs/AUTHORING.md) explains the mapping and current limits; [Profile integration](docs/PROFILE.md) explains the checker.
-[Reference attribution](docs/BTD6-REFERENCE.md) records the Atlas source and licenses.
+The [research workflow](docs/RESEARCH.md) explains collection, offline reuse, explicit refresh, editing and manual review.
+The [Wiki format](docs/wiki-format.md) documents the human-readable files and citations.
+Automatic web search, model synthesis and Jev classification are later steps after the first entries have been reviewed.
+
+The CLI owns persistence and validation. The website invokes that same CLI and provides the user interface.
+Use `pnpm wiki --help`, `pnpm wiki list`, `pnpm wiki show one-piece/usopp`, or `pnpm wiki categories` without a browser.
+Use `pnpm wiki migrate` to copy earlier local JSON sources into the new layout; original files and existing Wiki entries are preserved.
+The tool has no hidden session or database. Lookup rebuilds a small index from local files.
 
 Run `pnpm test`, `pnpm typecheck`, `pnpm format:check` and `pnpm build` for the focused checks.
-`pnpm preview` serves the built web view against the same local default files.
+`pnpm preview` serves the built website with the same local commands.
+Current implementation work is recorded in [#102](https://github.com/mardwerk/tower-generator/issues/102).
 
+The earlier [Usopp experiment](docs/USOPP.md) and [Default Profile](default/profile/) remain in the repository, outside the website's current focus.
+[Authoring](docs/AUTHORING.md) describes the separate experiment commands; [Profile integration](docs/PROFILE.md) documents its checker setup.
+The [reference attribution](docs/BTD6-REFERENCE.md) records Atlas provenance and licenses.
 The previous generator remains in the [generator-before-validator-reset-2026-09-29 tag](https://github.com/mardwerk/tower-generator/tree/generator-before-validator-reset-2026-09-29).
-The simplified Lab reuses its theme, components and Create/Library/Tower flow.
-Product work is tracked in [#85](https://github.com/mardwerk/tower-generator/issues/85), documentation in [#92](https://github.com/mardwerk/tower-generator/issues/92), and deferred presentation changes in [#100](https://github.com/mardwerk/tower-generator/issues/100).
 See [issue labels](docs/ISSUE_LABELS.md) for tracking conventions.

@@ -1,63 +1,72 @@
 # Character research
 
-The Lab has Create, Library and Tower views using the retained pre-cleanup design system.
-Each page has one visible heading and no subheadings. Create collects character evidence; Library opens it for reuse; Tower inspects and edits the Usopp experiment.
+The local website focuses on collecting, inspecting and manually reviewing character research.
+It uses the retained Lab design system, centered navigation, one visible heading per page and no subheadings.
+The plus opens Research; Wiki is active; Library, Generations and the right-hand Settings control remain visible and disabled. Tower building and Profile controls are outside the website.
+The implementation and reviewed scope are recorded in [#102](https://github.com/mardwerk/tower-generator/issues/102).
 
-Enter a character, work and canon scope, then provide source URLs or paste evidence under Supplied evidence and research notes.
-Research and save retrieves the supplied public HTML or plain-text pages, retains their text and metadata, and saves a character source.
-This is evidence collection, rather than an automatic judgment that a page matches the character or proves canon. Review the identity, scope, passages and source quality.
-Research notes can summarize findings with document IDs, as the Usopp sample does; keep prices, Profile rules and Tower adaptations in the Tower design.
+Install Python 3.10 or newer, Node.js 22.12 or newer, and the research dependencies:
 
-Library opens saved sources without fetching the web again. Export source downloads the portable JSON; the top-bar Import control validates and saves that same format.
-Update research opens the existing character and source URLs in Create. Nothing is fetched until Research and save is selected.
-Refresh replaces requested pages and retains other evidence documents. A failed fetch leaves the previously saved source unchanged.
-Source-page size limits fail visibly instead of silently cropping evidence; a focused supplied excerpt can be used when a page is inaccessible or too large.
-
-Sources live in `sources/<id>.json`. The curated [Usopp source](../sources/usopp.json) is tracked; newly collected files stay local and ignored by Git.
-A character with the same name, work and scope reuses its source ID. A different scope gets another source, so research periods stay distinguishable.
-Files are UTF-8 JSON with `formatVersion: 1` and `kind: character-source`:
-
-```json
-{
-  "formatVersion": 1,
-  "kind": "character-source",
-  "id": "example-character",
-  "character": {
-    "name": "Character name",
-    "work": "Source work",
-    "scope": "Selected canon period"
-  },
-  "documents": [
-    {
-      "id": "reference-1",
-      "title": "Source title",
-      "url": "https://example.com/character",
-      "retrievedAt": "2026-10-02T10:00:00+00:00",
-      "access": "retrieved",
-      "text": "Retained source passage."
-    }
-  ],
-  "notes": "Findings and evidence limits, citing reference-1."
-}
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
+pnpm install
+pnpm dev
 ```
 
-Retrieved documents need a URL and timezone-aware retrieval date. Supplied documents use `access: supplied` and can use null for those fields.
-`resolvedUrl` records the final page after redirects; `excerpt: true` identifies a deliberately retained excerpt.
-Source documents need unique IDs. The loader checks the format, evidence, dates, URLs, size limits and safe source identifiers without accessing the network.
-This format is Tower Generator's small consumer interface. It does not replace the shared research workstream's future dossier contract.
+Research does not require a checker installation, Go or an Atlas checkout.
+`pnpm preview` uses the same local commands after `pnpm build`. Existing Tower experiment files remain available separately through [Authoring](AUTHORING.md).
 
-Use for Usopp opens the matching source in the Tower workspace. Edit design changes the editable JSON; Build and check uses the installed validator and the sibling Atlas checkout.
-The complete candidate is generated and checked in a temporary directory before the saved design or game-data changes. Invalid inputs preserve the last saved draft.
-General character generation remains later work; sources for other characters can already be collected, inspected and exported.
+Open Research, enter a character, work and canon scope, and provide up to ten relevant English URLs or supplied passages.
+Collection extracts readable page text with Trafilatura and retains the original URL, retrieval date and source passages. It requests English pages and rejects HTML explicitly declaring another language.
+Saved URLs are reused by default; Fetch saved URLs again requests a refresh. A failed batch leaves previously saved evidence intact.
+Collection creates a draft in `wiki/<work>/<character>/`. It does not automatically search, synthesize canon facts or call Jev.
 
-The design's `sourceId` selects a saved character source. Generation retains its exact JSON in `default/character-source.json` and its SHA-256 identity in `default/source.json`.
-Research updates do not change that snapshot until another build. The Profile and game-data stay separate from character evidence.
-A saved source is reusable independently of the Profile; another consumer can read the exported JSON without a Tower Generator installation.
+Open an entry from Wiki and select Edit entry to add sourced abilities, traits, equipment, limitations and open questions.
+Use the source and passage IDs displayed below the entry. The [Wiki format](wiki-format.md) contains a complete record example.
+Saving validates references and categories before replacing the Markdown file. Mark reviewed records manual review after cited records have been added.
+Tag review is separate from entry review. Suggested categories remain suggestions until their classification status is explicitly changed.
+Export Markdown downloads the entry; copy its character directory to retain the referenced source files for another consumer.
 
-The Lab uses the existing local Vite middleware and Python standard library. It writes only source files and the fixed Usopp workspace.
-No database, provider settings, paid model call or old generation engine is required.
-`python3 setup.py` installs the checker once; `pnpm dev` starts the Lab. `pnpm preview` supports the same local operations after `pnpm build`.
+The CLI owns storage, retrieval, validation, deduplication, refresh and review. The website owns forms, selection and presentation.
+The local Vite server invokes `python3 -B -m src.wiki --json` with structured input and no shell. It contains no separate persistence implementation.
+The same commands work without a browser; use `pnpm wiki --help` or `python3 -B -m src.wiki --help`:
 
-Run `pnpm test` for source round trips, offline reuse, refresh and identity boundaries, plus authoring and source-snapshot checks.
-Browser checks cover the Library flow, evidence collection, design persistence across views, positive and failed builds, and one heading on desktop and mobile.
-Work and the reviewed implementation plan are recorded in [#101](https://github.com/mardwerk/tower-generator/issues/101).
+```sh
+pnpm wiki list --query Usopp
+pnpm wiki show one-piece/usopp
+pnpm wiki collect --name Usopp --work "One Piece" --scope "Manga through Dressrosa" \
+  --url https://en.wikipedia.org/wiki/Usopp
+pnpm wiki collect --name "Example Character" --work "Example Manga" --scope "Chapter 20" \
+  --evidence "Referenced passage supplied by the researcher."
+pnpm wiki save example-manga/example-character --file /path/to/edited-README.md
+pnpm wiki review example-manga/example-character
+pnpm wiki categories
+```
+
+Use the exact saved scope when adding or refreshing evidence. Add `--refresh` to explicitly fetch saved URLs again.
+`--wiki /path/to/wiki` selects another directory and `--json` returns structured results; put these options before the command.
+`collect --input request.json` and `save <key> --input request.json` accept the same JSON requests as the website. Use `--input -` for standard input.
+Save requests contain `markdown` and optionally the opened `revision`. Review also accepts `--expected-revision`.
+The program keeps no session, database or history outside the selected files; lookup builds its index in memory.
+
+Migrate earlier local JSON sources explicitly:
+
+```sh
+pnpm wiki migrate
+```
+
+Migration copies valid records from `sources/*.json` into the Wiki as drafts, retains their evidence and skips existing character entries.
+It leaves original files intact. Existing scopes and manually authored Wiki records are not overwritten.
+The tracked [Usopp JSON](../sources/usopp.json) remains a migration example and the earlier Tower experiment's source snapshot input.
+
+Start with agent-assisted source discovery and synthesis for Usopp, then Luffy and Gojo. Review the cited findings and tags manually.
+Measure missing facts, source failures, mistaken merges, tag corrections and review time before expanding automation.
+The next automation work in [#103](https://github.com/mardwerk/tower-generator/issues/103) should search for identity and abilities, select up to ten relevant distinct pages, synthesize cited records, and ask a decision model about those records.
+Jev should receive compact facts, relevant passages, the [category definitions](research-categories.yaml) and explicit unknown outcomes.
+Web ranking alone does not determine source quality; source limits and manga/anime/version differences remain visible.
+This current iteration adds no paid model call or provider configuration.
+
+`pnpm test` covers Wiki round trips, CLI migration and offline lookup, evidence reuse, failed batches, stable passages, refreshed citations, review changes and invalid references.
+Run `pnpm typecheck`, `pnpm format:check` and `pnpm build` for the website. Browser verification covers evidence collection, saving, review and responsive layout.

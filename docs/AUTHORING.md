@@ -14,11 +14,9 @@ python3 setup.py
 Use `--atlas /path/to/btd6-atlas` for another checkout.
 Setup builds or reuses the latest released native validator, generates the example and runs positive and negative checks.
 [Profile integration](PROFILE.md) records the build and validation behavior.
-Run `pnpm dev` to inspect the same local files in the web view, or `pnpm preview` after `pnpm build`.
-Use the path selectors or upgrade cards to choose a legal state, and inspect all states or the selected Tower JSON.
-Edit design and Build and check provide the same focused authoring flow in the Lab.
-The Lab validates a temporary candidate before changing saved files. Editing the file directly and rerunning setup remains supported.
-[Character research](RESEARCH.md) explains collecting and reusing saved evidence.
+The current website focuses on the [character Wiki](RESEARCH.md). It does not expose Tower inspection, editing or building.
+The earlier experiment remains reproducible through the command above. Edit `default/usopp.json` and rerun setup to generate and check it.
+Its `sourceId` continues to select the original JSON input under `sources/`; the new Wiki is independent of that parked experiment.
 
 Generated outputs under `default/` are ignored by Git; the design and Profile are tracked:
 

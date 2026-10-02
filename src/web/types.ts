@@ -1,65 +1,58 @@
-export type Upgrade = {
+export type Classification = {
+  delivery: string;
+  functions: string[];
+  status: 'suggested' | 'reviewed';
+};
+export type Ability = {
+  id: string;
+  kind: 'ability' | 'trait' | 'equipment';
   name: string;
   description: string;
-  cost: number;
-  appearance?: string;
+  scope: string;
+  limitations?: string;
+  evidence: { source: string; passage: string }[];
+  classification?: Classification;
 };
-
-export type TowerState = {
-  name: string;
-  tiers: number[];
-  cost: number;
-  damage: number;
-  pierce: number;
-  range: number;
-  interval: number;
-  projectiles: number;
-  camo: boolean;
-  attack: 'pellet' | 'explosion' | 'spread' | 'sniper';
-  blastRadius: number;
-};
-
-export type CheckReport = {
-  filesChecked: number;
-  score: { points: number; complete: boolean };
-  errors: { code: string; message: string; file: string; pointer: string }[];
-  checker: { version: string };
-  profile: { id: string; revision: string };
-};
-
-export type Example = {
-  design: {
-    id: string;
+export type WikiEntry = {
+  key: string;
+  path: string;
+  metadata: {
     name: string;
-    description: string;
-    sourceId?: string;
-    paths: { name: string; upgrades: Upgrade[] }[];
+    work: string;
+    scope: string;
+    aliases: string[];
+    status: 'draft' | 'reviewed';
+    reviewedAt?: string;
+    abilities: Ability[];
+    sources: string[];
   };
-  characterSource?: CharacterSource;
-  states: TowerState[];
-  checks: Record<'candidate' | 'missingState' | 'missingUpgrade', CheckReport>;
-  source: { capture: string; build: string; commit: string };
-};
-
-export type CharacterSource = {
-  formatVersion: 1;
-  kind: 'character-source';
-  id: string;
-  character: { name: string; work: string; scope: string };
+  body: string;
+  markdown: string;
+  revision: string;
+  reviewStale: boolean;
   documents: {
     id: string;
     title: string;
     url: string | null;
-    resolvedUrl?: string;
     retrievedAt: string | null;
     access: 'supplied' | 'retrieved';
     excerpt?: boolean;
-    text: string;
+    passages: { id: string; text: string }[];
+    retainedPassages?: { id: string; retrievedAt: string | null }[];
   }[];
-  notes: string;
 };
-export type SourceEntry = {
-  id: string;
-  character: CharacterSource['character'];
-  documents: number;
+export type WikiSummary = {
+  aliases: string[];
+  key: string;
+  name: string;
+  work: string;
+  scope: string;
+  status: 'draft' | 'reviewed';
+  abilities: number;
+  sources: number;
+};
+export type Categories = {
+  version: number;
+  delivery: Record<string, string>;
+  functions: Record<string, string>;
 };

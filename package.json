@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Tower authoring and inspection",
+  "description": "Local character research and reusable Markdown Wiki",
   "engines": {
     "node": ">=22.12"
   },
@@ -13,7 +13,8 @@
     "dev": "vite --config src/web/vite.config.ts",
     "build": "vite build --config src/web/vite.config.ts",
     "preview": "vite preview --config src/web/vite.config.ts",
-    "test": "python3 -B -m unittest discover -s src -p \"test_*.py\""
+    "test": "python3 -B -m unittest discover -s src -p \"test_*.py\"",
+    "wiki": "python3 -B -m src.wiki"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

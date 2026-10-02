@@ -1,34 +1,42 @@
 import { execFile } from 'node:child_process';
-import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Connect } from 'vite';
-import { defaults, readExample, readJSON } from './example.js';
 
 let writing = false;
-const project = join(defaults, '..');
+const project = fileURLToPath(new URL('../../', import.meta.url));
 const routes = [
-  '/api/example',
-  '/api/tower',
-  '/api/sources',
-  '/api/source',
-  '/api/research',
-  '/api/import-source',
-  '/api/build',
+  '/api/wiki',
+  '/api/entry',
+  '/api/categories',
+  '/api/collect',
+  '/api/save',
+  '/api/review',
 ];
 
-function operation(action: string, input: unknown): Promise<unknown> {
+function operation(action: string, input: Record<string, unknown> = {}): Promise<unknown> {
+  const args = ['-B', '-m', 'src.wiki', '--json', action];
+  if (['show', 'save', 'review'].includes(action)) args.push(String(input.key ?? ''));
+  if (action === 'list') args.push('--query', String(input.query ?? ''));
+  if (['collect', 'save'].includes(action)) args.push('--input', '-');
+  if (action === 'review' && input.revision)
+    args.push('--expected-revision', String(input.revision));
   return new Promise((resolve, reject) => {
     const child = execFile(
       'python3',
-      ['-B', '-m', 'src.lab', action],
-      { cwd: project, timeout: 120_000, maxBuffer: 8_000_000 },
+      args,
+      { cwd: project, timeout: 180_000, maxBuffer: 8_000_000 },
       (error, stdout) => {
         try {
           const result = JSON.parse(stdout) as { error?: string };
           if (error || result.error)
-            reject(new Error(result.error || 'The local operation failed.'));
+            reject(new Error(result.error || 'The research command failed.'));
           else resolve(result);
         } catch {
-          reject(new Error('The local operation failed. Check the terminal.'));
+          reject(
+            new Error(
+              'The research command failed. Check the terminal and installed Python requirements.',
+            ),
+          );
         }
       },
     );
@@ -49,49 +57,39 @@ export const labAPI: Connect.NextHandleFunction = (request, response, next) => {
   try {
     host = new URL(`http://${request.headers.host}`);
   } catch {
-    send(403, { error: 'The Lab accepts local requests only.' });
+    send(403, { error: 'The Wiki accepts local requests only.' });
     return;
   }
   if (
     !['localhost', '127.0.0.1', '[::1]'].includes(host.hostname) ||
     (request.headers.origin && request.headers.origin !== host.origin)
   ) {
-    send(403, { error: 'The Lab accepts local requests only.' });
+    send(403, { error: 'The Wiki accepts local requests only.' });
     return;
   }
   if (request.method === 'GET') {
-    void (async () => {
-      if (url.pathname === '/api/sources') return operation('list', {});
-      if (url.pathname === '/api/source')
-        return operation('load', { id: url.searchParams.get('id') });
-      if (!['/api/example', '/api/tower'].includes(url.pathname))
-        throw new Error('Use POST for this operation.');
-      const example = readExample();
-      if (url.pathname === '/api/example') return example;
-      const name = url.searchParams.get('state');
-      if (!example.states.some((state) => state.name === name)) {
-        send(404, { error: 'Unknown Tower state.' });
-        return;
-      }
-      return readJSON(join(defaults, 'game-data/Towers', example.design.id, `${name}.json`));
-    })()
-      .then((value) => {
-        if (!response.writableEnded) send(200, value);
-      })
-      .catch((error: Error) =>
-        send(url.pathname === '/api/example' ? 503 : 400, {
-          error:
-            url.pathname === '/api/example'
-              ? 'The Tower is not prepared. Run python3 setup.py.'
-              : error.message,
-        }),
-      );
+    const actions: Record<string, string> = {
+      '/api/wiki': 'list',
+      '/api/entry': 'show',
+      '/api/categories': 'categories',
+    };
+    const action = actions[url.pathname];
+    if (!action) {
+      send(405, { error: 'Use POST for this operation.' });
+      return;
+    }
+    void operation(action, {
+      key: url.searchParams.get('key'),
+      query: url.searchParams.get('query') ?? '',
+    })
+      .then((value) => send(200, value))
+      .catch((error: Error) => send(400, { error: error.message }));
     return;
   }
   const actions: Record<string, string> = {
-    '/api/research': 'collect',
-    '/api/import-source': 'import',
-    '/api/build': 'build',
+    '/api/collect': 'collect',
+    '/api/save': 'save',
+    '/api/review': 'review',
   };
   const action = actions[url.pathname];
   if (request.method !== 'POST' || !action) {
@@ -127,7 +125,9 @@ export const labAPI: Connect.NextHandleFunction = (request, response, next) => {
         send(413, { error: 'Request is too large.' });
         return;
       }
-      const input: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      const input = JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>;
+      if (!input || typeof input !== 'object' || Array.isArray(input))
+        throw new Error('Expected a JSON object.');
       send(200, await operation(action, input));
     })()
       .catch((error: Error) => send(400, { error: error.message }))

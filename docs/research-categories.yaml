@@ -1,0 +1,19 @@
+version: 1
+delivery:
+  contact: Requires direct physical contact with the target.
+  projectile: Launches a physical object that travels to the target.
+  beam: Emits a continuous or directed stream of energy.
+  remote: Acts at a distance without a described projectile or beam.
+  self: Acts on the character's own body or state.
+  other: The evidence describes a delivery outside these categories.
+  unknown: The evidence does not establish delivery.
+functions:
+  damage: Injures, destroys or attacks a target.
+  control: Restricts or changes another target's actions or position.
+  defense: Prevents or reduces harm to the character or others.
+  support: Helps others or restores their condition.
+  mobility: Changes the character's location or movement capability.
+  perception: Detects or interprets information unavailable to ordinary senses.
+  transformation: Changes the character's form or persistent capabilities.
+  other: The evidence describes a function outside these categories.
+  unknown: The evidence does not establish a function.

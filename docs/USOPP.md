@@ -32,3 +32,6 @@ This iteration establishes distinct attacks and an art direction, rather than fi
 
 The three roles offer understandable choices for crowd damage, projectile coverage and distant precision.
 Whether players enjoy their timing, prices and power still needs a playable prototype. A complete validator score cannot answer that question.
+
+The current research Wiki uses selected English [Usopp overview passages](https://en.wikipedia.org/wiki/Usopp).
+The earlier references above explain the Tower experiment; the research-only workflow now collects English evidence and needs further named-technique review.

@@ -82,7 +82,7 @@ def main():
     design = json.loads((DEFAULT / "usopp.json").read_text())
     generate(design, args.atlas.resolve(), DEFAULT)
     check(DEFAULT, design["id"])
-    print("Ready. Run pnpm dev to inspect Usopp.")
+    print("Ready. See docs/AUTHORING.md to inspect the Usopp Tower experiment.")
 
 
 if __name__ == "__main__":
