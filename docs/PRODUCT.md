@@ -110,10 +110,17 @@ Accepted research returns a server-generated operation ID.
 Expose read-only operation status and SSE access, plus a simple bounded recent-operation list from the same in-process records.
 Operation reads report the outcome, known usage and any published character revision needed for inspection.
 
+Kyle selected configurable in-memory history and SSE reconnects to current status in #118 on 2026-10-03.
+Keep all queued and running operation records plus the latest 100 finished outcomes, ordered by completion.
+Make the limit for finished outcomes configurable at startup; use no time expiry.
+Later completions evict the oldest finished records when the limit is exceeded; server restart loses the in-process records.
+On SSE reconnect, send the operation's current complete status, including its final outcome if retained.
+Do not replay missed progress updates.
+
 Clients may reconnect SSE and repeat status reads, but must not automatically resubmit research after an uncertain response or failure.
 A person inspects the available outcome and deliberately chooses any new research attempt, which passes normal admission checks and may spend another budget.
 An unavailable record or absence from the recent list does not prove that research never ran.
-Lost admission responses, record expiry and server restart can leave the outcome uncertain; the list supports inspection without guaranteeing exact recovery.
+Lost admission responses, record eviction and server restart can leave the outcome uncertain; the list supports inspection without guaranteeing exact recovery.
 
 Defer caller retry IDs until a named client needs automatic submission replay.
 
@@ -194,6 +201,6 @@ The following choices remain open; earlier proposals and merged proposal text do
 | --- | --- |
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | Revision coverage, review invalidation and complete save/review schemas. |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Entry format, offline validation, review staleness, historical retention and single-writer enforcement. |
-| [#118](https://github.com/mardwerk/tower-generator/issues/118) and [#113](https://github.com/mardwerk/tower-generator/issues/113) | Queue configuration validation, scheduling and refusal responses, cancellation, clarification continuation, unknown-identity coordination, discovery scope, scope-hint representation and matching, operation/SSE retention and provider-call retries. |
+| [#118](https://github.com/mardwerk/tower-generator/issues/118) and [#113](https://github.com/mardwerk/tower-generator/issues/113) | Queue and history configuration validation, scheduling and refusal responses, cancellation, clarification continuation, unknown-identity coordination, discovery scope, scope-hint representation and matching, SSE framing and observer limits, and provider-call retries. |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Exact Host authorities, address families and numeric-port behavior. |
 | [#106](https://github.com/mardwerk/tower-generator/issues/106) | Routes, strict request decoding, operation records, provider/model selection, budgets, extraction dependencies, packaging and implementation verification. |
