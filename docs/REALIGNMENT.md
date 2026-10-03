@@ -46,12 +46,16 @@ File and directory synchronization is required; failure after replacement report
 Initial verification targets tested local Linux filesystems; power loss and other platforms require their own evidence.
 Historical entry retention can be added around this boundary, but previous entry retrieval is not currently promised.
 Exact format, offline validation, retention and implementation verification remain work in #116.
+Kyle accepted the [save and review policy](PRODUCT.md#selected-save-and-review-policy) in #115.
+Saves and reviews use saved character keys and JSON `expectedRevision`; missing revisions return 400 and stale revisions return 409 without changing saved work.
+Competing writes serialize per character, only explicit review requests record human review, and clients retain refused drafts.
+Complete schemas and revision coverage remain to be specified and verified.
 Non-loopback binding is being reconsidered in #119; it must not be recommended, and its behavior remains undecided.
 
 | Record | Current scope |
 | --- | --- |
 | [#113](https://github.com/mardwerk/tower-generator/issues/113) | Same-character coordination; busy-mark details remain proposed |
-| [#115](https://github.com/mardwerk/tower-generator/issues/115) | API save and review revision preconditions |
+| [#115](https://github.com/mardwerk/tower-generator/issues/115) | Save and review policy selected; complete schemas and implementation verification pending |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Markdown authority, direct-edit boundary and publication selected; format and verification pending |
 | [#117](https://github.com/mardwerk/tower-generator/issues/117) | Completed by retirement and documentation repair |
 | [#118](https://github.com/mardwerk/tower-generator/issues/118) | Research revision preconditions; original website-field claim corrected |

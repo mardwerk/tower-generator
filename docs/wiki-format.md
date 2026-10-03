@@ -41,8 +41,12 @@ Generated summaries occupied a marked block, while manual prose outside that blo
 
 Saved edits reset entry review to draft, and a content fingerprint detected later changes to entry or source files.
 Revision hashes let callers detect stale edits when the expected revision was supplied.
-Mandatory API revision details remain under review in [PRODUCT.md](PRODUCT.md).
-Complete-update publication is selected there, but these historical files do not establish its implementation guarantees.
+[Complete-update publication](PRODUCT.md#selected-wiki-publication) is selected, but these historical files do not establish its implementation guarantees.
+
+Kyle selected the [save and review policy](PRODUCT.md#selected-save-and-review-policy) for the new API.
+Saves and reviews use saved character keys and require JSON `expectedRevision`; missing revisions return 400 and stale revisions return 409 without changing saved content or review state.
+Only explicit review requests record human review; ordinary saves cannot make changed content appear approved by an earlier decision.
+Exact revision coverage and review invalidation details remain to be specified for the new format.
 
 ## Storage boundaries
 

@@ -47,17 +47,18 @@ Character evidence, manual notes and human-review records belong to the Markdown
 Offline lookup reads saved evidence without network research.
 The [research rules](RESEARCH.md), [candidate Wiki format](wiki-format.md) and [classification definitions](research-categories.yaml) retain useful prototype evidence for the new contract.
 
-## Proposed API workflow
+## API workflow outline
 
-These operation contracts remain proposals; route names and JSON schemas are not selected.
+The outline combines selected requirements with operations still awaiting review.
+Route names and complete JSON schemas are not selected.
 The backend owns provider access, validation and file commits, using one Wiki location chosen at startup.
 
 | Operation | Input | Outcome |
 | --- | --- | --- |
 | Lookup and read | Query or saved character key | Saved identity, evidence, review state and revision without research |
 | Research | Character query or saved identity, optional scope hints and lower budget | Saved evidence and change summary, or an explicit clarification, busy or failure outcome |
-| Save edit | Character key, edited content and expected revision | Validated update or refusal without overwriting saved work |
-| Record review | Character key, expected revision and explicit target | Human decision tied to that content; findings and classifications remain distinct |
+| Save edit | Saved character key, edited content and JSON `expectedRevision` | Validated update or refusal without overwriting saved work |
+| Record review | Saved character key, JSON `expectedRevision` and explicit target | Human decision tied to that content; findings and classifications remain distinct |
 | Read configuration | Selected safe settings | Effective configuration and categories without secret values |
 | Generate, later | Character revision and selected Profile | Tower content and provenance under a future generation contract |
 
@@ -65,13 +66,29 @@ Keep progress separate from the final outcome.
 Queue limits and admission when the queue is full, cancellation, duplicate-request handling, clarification continuation, retries and operation retention need review.
 Report known consumed usage even when identity discovery ends in ambiguity or a busy outcome.
 
+## Selected save and review policy
+
+Kyle accepted the [#115](https://github.com/mardwerk/tower-generator/issues/115) policy on 2026-10-03.
+Saves and reviews address a saved character by its key and require the caller's revision in a JSON `expectedRevision` field.
+A missing revision returns `400 revision_required`; a stale revision returns `409 revision_conflict`.
+Both refusals leave saved content and human-review state unchanged.
+
+Serialize competing saves and reviews briefly per character, checking the research reservation and revision before committing through the selected Wiki publication boundary.
+Two writes based on the same revision cannot both commit; independent characters do not share a lock through file synchronization.
+Only explicit review requests record human review.
+Ordinary saves cannot supply human approval or make changed content appear approved by an earlier review.
+
+Clients retain refused drafts and read the latest saved state separately for reconciliation.
+They must not silently replace `expectedRevision` and retry the write.
+Routes, complete request schemas, exact revision coverage and review invalidation details remain specification work.
+
 ## Proposed coordination and storage
 
 [#113](https://github.com/mardwerk/tower-generator/issues/113) and merged [PR #114](https://github.com/mardwerk/tower-generator/pull/114) propose a per-character busy mark and revision checks.
 Their merged proposal text is evidence for discussion, not blanket acceptance of every design choice.
 
 The proposed policy refuses a second change to a busy character, including another research request.
-Saves and reviews require the revision they read; missing or stale revisions cause no write.
+The selected save and review policy above requires the revision the caller read.
 Research reserves the confirmed identity and reads its current revision before evidence work.
 Cooperative same-character research remains a preference; combining evidence and budgets is not a selected design.
 
