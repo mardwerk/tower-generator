@@ -23,7 +23,7 @@ The [Tower design skill](.agents/skills/tower-generator/SKILL.md) supports cited
 The retained research documents are reference evidence, not current product instructions or a runtime.
 
 [td-profile](https://github.com/mardwerk/td-profile) owns the generic Profile Validator and reusable schemas.
-[Profile ownership](docs/PROFILE.md) and [BTD6 attribution](docs/BTD6-REFERENCE.md) remain separate from the research backend.
+[Profile ownership and BTD6 attribution](docs/PROFILE.md) remain separate from the research backend.
 A new Profile and its generation integration are deferred.
 See [issue labels](docs/ISSUE_LABELS.md) for tracking conventions.
 

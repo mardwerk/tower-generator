@@ -56,7 +56,7 @@ The backend owns provider access, validation and file commits, using one Wiki lo
 | Operation | Input | Outcome |
 | --- | --- | --- |
 | Lookup and read | Query or saved character key | Saved identity, evidence, review state and revision without research |
-| Research | Character query or saved identity, optional scope hints and lower budget | Saved evidence and change summary, or an explicit clarification, busy or failure outcome |
+| Research | Character query for discovery, or saved character key and JSON `expectedRevision`; scope and budget inputs need review | Saved evidence and change summary, existing identity to read, or an explicit clarification, busy or failure outcome |
 | Save edit | Saved character key, edited content and JSON `expectedRevision` | Validated update or refusal without overwriting saved work |
 | Record review | Saved character key, JSON `expectedRevision` and explicit target | Human decision tied to that content; findings and classifications remain distinct |
 | Read configuration | Selected safe settings | Effective configuration and categories without secret values |
@@ -82,14 +82,30 @@ Clients retain refused drafts and read the latest saved state separately for rec
 They must not silently replace `expectedRevision` and retry the write.
 Routes, complete request schemas, exact revision coverage and review invalidation details remain specification work.
 
+## Selected research preconditions
+
+Kyle accepted the [#118](https://github.com/mardwerk/tower-generator/issues/118) revision rule on 2026-10-03.
+Research on a saved character requires its saved key and the caller's revision in JSON `expectedRevision`, using the same convention as saves and reviews.
+A missing revision returns `400 revision_required`; a stale revision returns `409 revision_conflict`.
+These precondition refusals happen before provider work and leave saved state unchanged.
+
+Name queries first check saved names and confirmed aliases locally, before any provider call.
+A saved match returns the existing key and revision so the client can read the saved character and request research deliberately.
+Discovery must not silently become paid research on an existing character.
+This supersedes the earlier proposal that existing-character research simply starts from the current server revision.
+
+Queue reservation timing and retry handling remain separate choices.
+Scope hints on saved characters, revision advancement after research without new findings, complete schemas and strict request decoding still need specification.
+This decision does not establish request deduplication or guarantee that retrying a failed or interrupted operation avoids another paid call.
+
 ## Proposed coordination and storage
 
 [#113](https://github.com/mardwerk/tower-generator/issues/113) and merged [PR #114](https://github.com/mardwerk/tower-generator/pull/114) propose a per-character busy mark and revision checks.
 Their merged proposal text is evidence for discussion, not blanket acceptance of every design choice.
 
 The proposed policy refuses a second change to a busy character, including another research request.
-The selected save and review policy above requires the revision the caller read.
-Research reserves the confirmed identity and reads its current revision before evidence work.
+The selected save, review and existing-character research policies require the revision the caller read.
+Research reservation timing remains under review; research must not substitute the latest revision for the caller's revision.
 Cooperative same-character research remains a preference; combining evidence and budgets is not a selected design.
 
 Validate each complete update before committing it.
@@ -153,13 +169,13 @@ The reset removes their implementation and does not add frontend work to backend
 
 Research never names a Profile or stores Tower choices and numerical adaptations.
 Generation consumes a recorded character revision and selects a Profile directory by path.
-Preserve [td-profile ownership and Profile rules](PROFILE.md) and [Atlas attribution](BTD6-REFERENCE.md) when generation resumes.
+Preserve [Profile ownership and BTD6 attribution](PROFILE.md) when generation resumes.
 
 ## Workflow acceptance review
 
 Review a fresh character, confirmed alias, ambiguous identity, failed source and repeated research before implementation.
 Specify inputs, outcomes, progress, saved files and budget behavior together for each case.
-Add concurrent same-character requests, independent characters, missing and stale save revisions, external edits and interruption during commit.
+Add concurrent same-character requests, independent characters, missing and stale save, review and research revisions, external edits and interruption during commit.
 Review disconnect and restart behavior separately; successful saved Wiki content must not depend on a browser remaining connected.
 
 [#106](https://github.com/mardwerk/tower-generator/issues/106) remains the coordination record.

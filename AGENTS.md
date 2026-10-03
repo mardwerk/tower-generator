@@ -24,7 +24,7 @@ Review current product rules and the research/Wiki workflow with Kyle through [#
 When generation resumes, review new mappings and generation rules with Kyle in the issue that owns the proposed change before implementation.
 
 Keep BTD6 facts, source cleanup and the BTD6 Profile in [btd6-atlas](https://github.com/KyleDerZweite/btd6-atlas).
-Cite capture, build, source commit and files as described in [BTD6-REFERENCE.md](docs/BTD6-REFERENCE.md).
+Cite capture, build, source commit and files as described in [Profile attribution](docs/PROFILE.md#btd6-source-attribution).
 Keep downloaded bundles, runtime binaries and generated game-data out of Git.
 Put progress and skip reasons in the terminal rather than Tower JSON.
 

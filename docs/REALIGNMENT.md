@@ -50,6 +50,10 @@ Kyle accepted the [save and review policy](PRODUCT.md#selected-save-and-review-p
 Saves and reviews use saved character keys and JSON `expectedRevision`; missing revisions return 400 and stale revisions return 409 without changing saved work.
 Competing writes serialize per character, only explicit review requests record human review, and clients retain refused drafts.
 Complete schemas and revision coverage remain to be specified and verified.
+Kyle accepted the [research preconditions](PRODUCT.md#selected-research-preconditions) in #118.
+Saved-character research requires its saved key and JSON `expectedRevision`; missing revisions return 400 and stale revisions return 409 before provider work, leaving saved state unchanged.
+Name queries check saved names and confirmed aliases locally and return an existing key and revision instead of silently commissioning research.
+Queue reservation timing and retry handling remain separate owner choices.
 Non-loopback binding is being reconsidered in #119; it must not be recommended, and its behavior remains undecided.
 
 | Record | Current scope |
@@ -58,5 +62,5 @@ Non-loopback binding is being reconsidered in #119; it must not be recommended, 
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | Save and review policy selected; complete schemas and implementation verification pending |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Markdown authority, direct-edit boundary and publication selected; format and verification pending |
 | [#117](https://github.com/mardwerk/tower-generator/issues/117) | Completed by retirement and documentation repair |
-| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Research revision preconditions; original website-field claim corrected |
+| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Research revision rule selected; reservation timing, retries and full specification pending |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Host, Origin and separate browser-client behavior |
