@@ -40,14 +40,19 @@ Review safe Wiki updates and browser-client access separately from research exec
 Kyle requested proposals for revision refusal, research preconditions and Markdown versus SQLite storage, followed by Palme's review.
 After that review, Kyle selected authoritative Markdown with immutable source captures for evidence, notes and human-review records.
 Direct file edits require stopping `serve`; viewing files remains unrestricted, and live changes use the API.
-Publication details, offline edit validation and durability remain decisions in #116; these selections do not accept the full storage proposal.
+Kyle authorized the single-entry publication approach after a comparison focused on long-term maintenance and extension.
+The [selected publication rules](PRODUCT.md#selected-wiki-publication) install immutable captures first, serialize writers and atomically replace the entry while readers use a complete old or new version.
+File and directory synchronization is required; failure after replacement reports visible publication with durability unconfirmed.
+Initial verification targets tested local Linux filesystems; power loss and other platforms require their own evidence.
+Historical entry retention can be added around this boundary, but previous entry retrieval is not currently promised.
+Exact format, offline validation, retention and implementation verification remain work in #116.
 Non-loopback binding is being reconsidered in #119; it must not be recommended, and its behavior remains undecided.
 
 | Record | Current scope |
 | --- | --- |
 | [#113](https://github.com/mardwerk/tower-generator/issues/113) | Same-character coordination; busy-mark details remain proposed |
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | API save and review revision preconditions |
-| [#116](https://github.com/mardwerk/tower-generator/issues/116) | Markdown authority and direct-edit boundary selected; publication and durability pending |
+| [#116](https://github.com/mardwerk/tower-generator/issues/116) | Markdown authority, direct-edit boundary and publication selected; format and verification pending |
 | [#117](https://github.com/mardwerk/tower-generator/issues/117) | Completed by retirement and documentation repair |
 | [#118](https://github.com/mardwerk/tower-generator/issues/118) | Research revision preconditions; original website-field claim corrected |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Host, Origin and separate browser-client behavior |

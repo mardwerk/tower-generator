@@ -76,21 +76,46 @@ Research reserves the confirmed identity and reads its current revision before e
 Cooperative same-character research remains a preference; combining evidence and budgets is not a selected design.
 
 Validate each complete update before committing it.
-Markdown authority and the direct-edit boundary are selected; publication, revision coverage and durability remain under review in [#116](https://github.com/mardwerk/tower-generator/issues/116).
 A persistent execution queue is not selected.
-Review whether API readers may wait briefly during commit, and how startup recovers an interrupted multi-file replacement.
-These file guarantees are needed independently of research restart recovery and independently of Temporal.
 
 Use the API for changes while `serve` runs; stop it before directly editing Wiki files.
 Viewing the files remains unrestricted.
 Offline edit validation and review-staleness handling still need the storage specification.
 A proposed fingerprint must cover every file the backend can replace, or the backend must leave unrelated files untouched.
 Revision checks cannot guarantee preservation of an uncoordinated edit made after the final check and before replacement.
-Enforcement of one backend writer per Wiki directory and supported durability guarantees remain specification choices.
+Enforcement of one backend writer per Wiki directory remains a specification choice.
 
 Keep connection capacity, active research capacity, per-run budget and provider limits separate.
 A capacity queue is different from waiting for a busy character.
 Never silently reduce a research budget, change the model or omit verification because another run or provider limit intervenes.
+
+## Selected Wiki publication
+
+Kyle authorized the [#116](https://github.com/mardwerk/tower-generator/issues/116) publication approach after comparing its long-term maintenance and extension options.
+One versioned entry document is the commit point for mutable character state, with explicit references to immutable source captures.
+Keep publication and integrity checks in one storage component; research, review and HTTP handlers must not write Wiki files independently.
+
+Install and validate new captures before publishing the entry that references them.
+Synchronize capture files and directory entries, including newly created parent directories, before entry publication.
+Serialize writers for the same character and check the revision before replacement.
+Prepare and synchronize the new entry file on the same filesystem, atomically replace the current entry, then synchronize its containing directory before acknowledging durable completion.
+
+Readers read the entry once and use that complete version's immutable references without read locks.
+Keep those captures available while readers can still use them; do not rewrite or delete them while serving.
+Do not replace or move a character directory during publication.
+
+A failure before entry replacement leaves the previous entry current, possibly with unused captures.
+After replacement, a synchronization failure leaves the new revision visible with durability unconfirmed.
+Report that revision and the storage failure; do not claim no write occurred, silently roll back or repeat paid research.
+
+Initial verification covers process interruption and publication on tested local Linux filesystems.
+File and directory synchronization is required, but the reported process-kill tests do not establish power-loss behavior or other platform guarantees.
+The product implementation must verify its own publication and error handling before claiming those guarantees.
+
+A revision token detects stale changes; it does not promise later retrieval of an overwritten entry.
+Select complete entry-snapshot retention before promising historical lookup, rollback or generation from an earlier version.
+Snapshots can be retained around the same publication boundary; a derived search index can be rebuilt from authoritative Markdown when needed.
+Exact field layouts, revision coverage, offline validation, retention and writer-ownership enforcement remain specification work.
 
 ## Selected transport and execution
 

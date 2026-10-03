@@ -2,7 +2,8 @@
 
 The retired prototype stored readable Markdown and YAML under `wiki/<series>/<character>/`, with `README.md` and retained passages in `sources/*.md`.
 The local Markdown Wiki is an owner requirement; the prototype's detailed schema is a candidate baseline for the Go specification.
-Field names, format versions, identity normalization, review fingerprints and commit guarantees remain subject to that review.
+Field names, format versions, identity normalization and review fingerprints remain subject to that review.
+The [selected publication rules](PRODUCT.md#selected-wiki-publication) define one entry commit point with immutable captures; the exact schema and implementation verification remain open.
 No current reader, validator or migration command is provided by this reset.
 
 The [complete prototype format](https://github.com/mardwerk/tower-generator/blob/ea114b2139abf46318a59f632a58fc035f64a5a7/docs/wiki-format.md) preserves examples and implementation details.
@@ -40,7 +41,8 @@ Generated summaries occupied a marked block, while manual prose outside that blo
 
 Saved edits reset entry review to draft, and a content fingerprint detected later changes to entry or source files.
 Revision hashes let callers detect stale edits when the expected revision was supplied.
-Mandatory API revisions and complete-update visibility remain proposed behavior in [PRODUCT.md](PRODUCT.md), not guarantees established by these historical files.
+Mandatory API revision details remain under review in [PRODUCT.md](PRODUCT.md).
+Complete-update publication is selected there, but these historical files do not establish its implementation guarantees.
 
 ## Storage boundaries
 
