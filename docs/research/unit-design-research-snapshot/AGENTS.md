@@ -1,0 +1,10 @@
+# Research repository instructions
+
+Read [README.md](README.md), [docs/SEARCH_LOG.md](docs/SEARCH_LOG.md), and the relevant research document before making a durable change.
+
+- Keep this repository self-contained. Do not import neighboring projects' requirements, terminology, designs, or case selections. In particular, do not inspect or reuse `unit-generator/` implementation, prompts, schemas, architecture, outputs, or evaluation design, including copies in other material. If a workspace inventory is explicitly requested, limit that checkout's inspection to its repository instructions and minimal metadata.
+- Keep all retained scholarly papers in [docs/RESEARCH_LIBRARY.md](docs/RESEARCH_LIBRARY.md), with stable identifiers, publication metadata, primary links, inspection depth, and claims matched to the material actually read. Other documents cite those identifiers. Label non-paper sources separately.
+- Distinguish source reported findings, cross-source inferences, and open questions. Verify important claims against original works. Record inaccessible sources and incomplete searches in [docs/SEARCH_LOG.md](docs/SEARCH_LOG.md).
+- Preserve the full user supplied [game and character corpora](docs/CORPORA.md). Preserve uncertain names rather than silently substituting titles or characters.
+- During the foundation phase, inventory and synthesize evidence only. Keep the shared representation, unfamiliar mechanics, training, knowledge acquisition, generation architecture, scientific contribution, and experimental cases open. A later, explicit research planning phase can compare proposals.
+- Keep project research and decisions here. Cite primary public sources and local evidence records so another project is not required to understand or continue the research. Retain external project references only when needed to explain source provenance. Do not create `.scratch/`; remove temporary files after use. Check links, metadata, contradictions, and `git diff --check` before committing documentation.
