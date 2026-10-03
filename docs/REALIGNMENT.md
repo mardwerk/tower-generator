@@ -2,13 +2,16 @@
 
 Review prepared on 2026-10-03 from ten parallel GPT-6.1-sol reviews, followed by focused recovery comparisons.
 The [product rules](PRODUCT.md) own the public requirements; [#106](https://github.com/mardwerk/tower-generator/issues/106) coordinates acceptance.
-This document records decisions, evidence and proposals without selecting an execution engine.
+Kyle selected pure Go with REST, SSE and a bounded in-process research queue after the recovery evaluation.
+This document preserves the earlier comparison and distinguishes the selected backend from remaining workflow proposals.
 
 ## Owner decisions and reset boundary
 
 Kyle selected one Go `serve` backend for research, lookup, saving and review, with all operational clients using its API.
 No browser session is required; the backend retains Wiki files and tracks running research.
 Ambiguous identities require clarification, and each frontend decides how to obtain the answer.
+The selected backend uses pure Go, REST, SSE and a bounded in-process research queue.
+Restart recovery is not a major requirement; detailed interruption and retention behavior remains open.
 
 Kyle confirmed removing the entire old product implementation, including all `src/`, the Lab files, Node packages and the Python research/Wiki CLI.
 He selected retirement of the old Usopp experiment and deleted Default Profile rather than restoration.
@@ -47,8 +50,8 @@ Replaying every missed event needs explicit event retention and cursor expiry.
 
 ## Execution comparison
 
-Kyle requested further evaluation before choosing restart guarantees.
-These are alternatives for execution behind the same API, not accepted architecture.
+Kyle first requested further evaluation of restart guarantees, then selected pure Go with REST, SSE and an in-process queue.
+The alternatives below preserve that evaluation; the checkpoint and Temporal runners are independent experiments.
 
 | Choice | Stored operation state | Restart behavior | Runtime ownership |
 | --- | --- | --- | --- |
@@ -83,16 +86,17 @@ Temporal handles execution history but still requires [replay-compatible code an
 Prefer process-local execution only if repeating interrupted paid work is acceptable.
 Consider narrow durable Go for one fixed workflow and one local writer if its recovery rules remain small.
 Consider Temporal when durable human waits, independent retries, deployments and multiple Workers make custom recovery and versioning substantial.
-These are review recommendations, not a selection.
+Kyle's subsequent choice is pure Go with REST, SSE and a bounded in-process queue.
+The optional checkpoint experiment does not become an initial product requirement.
 
 [Temporal Cloud pricing](https://temporal.io/pricing), checked on 2026-10-03, lists no base monthly fee, usage-based Actions and history storage, and Developer support at 10% of usage.
 Worker hosting and research-provider charges remain separate.
 Self-hosting adds persistence, backups and upgrades; the [embedded SQLite server](https://docs.temporal.io/self-hosted-guide/embedded-server) is for development and testing.
 Measure research cost, duration, response sizes, clarification delays, restart frequency and expected concurrency before relying on cost estimates.
 
-## Proposed comparative experiment
+## Comparative experiment
 
-A small experiment can test recovery before a product architecture is selected.
+The small comparative experiment tested recovery before the backend choice was settled.
 Use a fake paid provider with its own invocation ledger and the same small research sequence in narrow Go and Temporal implementations.
 Do not call a paid model or build the product API.
 
@@ -100,12 +104,17 @@ Inject interruption after admission, after provider success but before recording
 Replay the same request ID and inspect provider call counts, operation state and Wiki hashes.
 Add an overnight clarification wait and a code-version change while work is pending.
 Compare recovery correctness, custom application code, migration obligations and deployment setup.
-This experiment remains proposed; the reset does not introduce either runner.
+The subsequent fake-provider experiment passed all four Go and Temporal restart cases.
+Both reused recorded results; the chosen Temporal retry policy repeated an unrecorded paid response, while the Go demonstration stopped with uncertain spend.
+These are different policies, not an inherent billing advantage for either framework.
+The independent experiment introduces no product runner or runtime dependency.
+The [evaluation PR](https://github.com/mardwerk/tower-generator/pull/121) preserves the measured outcomes, reproducible helpers and scope limits.
 
 ## Coordination and browser review
 
 The simplest proposed same-character policy is a busy mark plus mandatory save/review revisions.
-Admission at overall capacity may refuse immediately or use a bounded visible queue; this is separate from queueing a busy character.
+Research uses the selected bounded in-process queue.
+Its limits and refusal when the queue is full need specification; this is separate from queueing a busy character.
 Cooperative research requires evidence merging and budget rules beyond the busy mark.
 
 API reads can remain coherent with a short storage lock during final commit, while network work stages outside it.
@@ -143,7 +152,8 @@ The [pinned frontend](https://github.com/mardwerk/tower-generator/blob/ea114b213
 
 ## Next owner review
 
-Review this reset PR independently of the execution-engine choice.
-Before implementing Go, decide restart guarantees, clarification continuation, admission at capacity, cancellation, progress retention and browser-client access.
+The approved reset is on main through [PR #120](https://github.com/mardwerk/tower-generator/pull/120).
+Pure Go, REST, SSE and a bounded in-process research queue are selected.
+Before implementing the product, specify interruption behavior, clarification continuation, full-queue admission, cancellation, progress retention and browser-client access.
 Then specify one name-to-Wiki workflow and its concrete acceptance cases.
-No unresolved architecture choice becomes accepted merely by merging the reset documentation.
+The owner's explicit choice establishes the backend; merging proposal text alone does not accept remaining workflow details.

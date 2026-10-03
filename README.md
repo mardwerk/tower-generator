@@ -10,8 +10,8 @@ There is no runnable product backend in this reset.
 
 The [product rules](docs/PRODUCT.md) distinguish owner requirements from proposed design.
 The [realignment plan](docs/REALIGNMENT.md) records the reset and remaining decisions.
-REST and SSE communication, queue admission, and Go or Temporal execution remain under evaluation.
-Restart durability is undecided.
+Kyle selected pure Go with REST, SSE and a bounded in-process research queue.
+Restart recovery is not a major requirement; detailed interruption and retention behavior remains to be specified.
 
 The backend will own local, human-readable Markdown files under `wiki/<series>/<character>/`, ignored by Git.
 Research remains in English and independent of game Profiles.

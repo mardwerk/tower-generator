@@ -12,7 +12,8 @@ Follow [product rules](docs/PRODUCT.md) and the [realignment plan](docs/REALIGNM
 Go `serve` is the selected API-only direction; there is no independent operational CLI.
 The old Python product, Node tooling, full web/Lab and Default Profile/Usopp experiment are retired and preserved in Git history.
 Do not present historical commands, schemas or proposals as the new backend contract.
-Workflow architecture and restart durability remain under review.
+Use the selected pure Go backend with REST, SSE and a bounded in-process research queue.
+Specify queue limits, interruption, retention and the research workflow before product implementation.
 
 Use [td-profile](https://github.com/mardwerk/td-profile) for the generic Profile Validator and reusable schemas.
 Propose shared checker or schema changes upstream.

@@ -6,8 +6,8 @@ The previous Python/Node product is retired; this reset provides no runnable res
 
 [PRODUCT.md](PRODUCT.md) records owner requirements and proposals.
 [REALIGNMENT.md](REALIGNMENT.md) records the reset and workflow decisions still needed before implementation.
-REST and SSE communication, queue admission, and Go or Temporal execution remain under evaluation.
-Restart durability is undecided.
+Kyle selected pure Go with REST, SSE and a bounded in-process research queue.
+Restart recovery is not a major requirement; queue limits and detailed interruption and retention behavior remain open.
 
 ## Durable research rules
 
