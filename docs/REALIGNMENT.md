@@ -56,6 +56,9 @@ Name queries check saved names and confirmed aliases locally and return an exist
 Kyle selected [reservation at admission](PRODUCT.md#selected-research-admission) for known characters, including time waiting in the queue.
 While reserved, another research, save or review is refused until the operation finishes or stops; reads and other characters remain available.
 Full execution and queue capacity causes refusal without provider work or a character reservation.
+Kyle selected [a new revision for every successful research publication](PRODUCT.md#selected-research-publication-revisions), including runs with no new findings.
+The entry records research provenance and known usage while preserving applicable human reviews.
+An unpublished failure can leave the old revision valid, so retry handling remains separate.
 Retry handling, unknown-identity coordination and numerical queue limits remain owner choices.
 Non-loopback binding is being reconsidered in #119; it must not be recommended, and its behavior remains undecided.
 
@@ -65,5 +68,5 @@ Non-loopback binding is being reconsidered in #119; it must not be recommended, 
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | Save and review policy selected; complete schemas and implementation verification pending |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Markdown authority, direct-edit boundary and publication selected; format and verification pending |
 | [#117](https://github.com/mardwerk/tower-generator/issues/117) | Completed by retirement and documentation repair |
-| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Research revision and admission reservation selected; retries and full specification pending |
+| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Research preconditions, admission reservation and publication revisions selected; retries and full specification pending |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Host, Origin and separate browser-client behavior |

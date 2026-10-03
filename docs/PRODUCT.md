@@ -95,7 +95,7 @@ Discovery must not silently become paid research on an existing character.
 This supersedes the earlier proposal that existing-character research simply starts from the current server revision.
 
 Admission-time reservation is selected below; retry handling remains a separate choice.
-Scope hints on saved characters, revision advancement after research without new findings, complete schemas and strict request decoding still need specification.
+Scope hints on saved characters, complete schemas and strict request decoding still need specification.
 This decision does not establish request deduplication or guarantee that retrying a failed or interrupted operation avoids another paid call.
 
 ## Selected research admission
@@ -111,6 +111,17 @@ Coordinate revision checks, capacity checks and reservation so a refused request
 
 This prevents API edits from invalidating accepted queued research, at the cost of blocking edits during the wait.
 Exact queue limits, busy and full-queue responses, unknown-identity coordination, cancellation and retry handling remain specification work.
+
+## Selected research publication revisions
+
+Kyle selected a new character revision for every successful research publication in [#118](https://github.com/mardwerk/tower-generator/issues/118) on 2026-10-03.
+Advance the revision even when a run finds nothing new; the entry still records research provenance and known provider usage.
+Preserve applicable human reviews and retained evidence; a new revision does not itself record human approval.
+A new research request using the prior revision is then refused as stale before provider work.
+
+Failure or interruption before entry replacement can leave the old revision valid, so revision checks alone do not prevent another paid attempt.
+After replacement, follow the [selected Wiki publication failure rules](#selected-wiki-publication), including reporting the visible new revision when durability is unconfirmed.
+Retry handling remains a separate decision; this publication rule does not select caller request IDs, automatic retries or historical entry retention.
 
 ## Coordination and remaining storage choices
 
