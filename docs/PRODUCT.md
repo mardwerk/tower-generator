@@ -42,6 +42,8 @@ Missing fresh evidence does not itself refute or delete a prior finding.
 Report blocked sources, incomplete excerpts, contradictions, effective budget and known provider usage.
 
 Keep local human-readable files under `wiki/<series>/<character>/`, ignored by Git, with retained passages beside the character.
+Kyle selected authoritative Markdown with immutable source captures in [#116](https://github.com/mardwerk/tower-generator/issues/116).
+Character evidence, manual notes and human-review records belong to the Markdown Wiki; SQLite authority is not selected.
 Offline lookup reads saved evidence without network research.
 The [research rules](RESEARCH.md), [candidate Wiki format](wiki-format.md) and [classification definitions](research-categories.yaml) retain useful prototype evidence for the new contract.
 
@@ -74,15 +76,17 @@ Research reserves the confirmed identity and reads its current revision before e
 Cooperative same-character research remains a preference; combining evidence and budgets is not a selected design.
 
 Validate each complete update before committing it.
-Kyle requested comparing authoritative Markdown with SQLite and a readable Markdown projection in [#116](https://github.com/mardwerk/tower-generator/issues/116).
-That storage choice remains pending; a persistent execution queue is not selected.
+Markdown authority and the direct-edit boundary are selected; publication, revision coverage and durability remain under review in [#116](https://github.com/mardwerk/tower-generator/issues/116).
+A persistent execution queue is not selected.
 Review whether API readers may wait briefly during commit, and how startup recovers an interrupted multi-file replacement.
 These file guarantees are needed independently of research restart recovery and independently of Temporal.
 
-External edits require a stated boundary.
+Use the API for changes while `serve` runs; stop it before directly editing Wiki files.
+Viewing the files remains unrestricted.
+Offline edit validation and review-staleness handling still need the storage specification.
 A proposed fingerprint must cover every file the backend can replace, or the backend must leave unrelated files untouched.
 Revision checks cannot guarantee preservation of an uncoordinated edit made after the final check and before replacement.
-One writer per Wiki directory, enforcement of that rule and supported durability guarantees remain specification choices.
+Enforcement of one backend writer per Wiki directory and supported durability guarantees remain specification choices.
 
 Keep connection capacity, active research capacity, per-run budget and provider limits separate.
 A capacity queue is different from waiting for a busy character.

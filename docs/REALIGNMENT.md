@@ -38,13 +38,16 @@ The experiment code, generated reports and downloaded runtime were discarded; Te
 Specify queue limits and full-queue admission, cancellation, clarification, progress retention and interruption outcomes before implementation.
 Review safe Wiki updates and browser-client access separately from research execution.
 Kyle requested proposals for revision refusal, research preconditions and Markdown versus SQLite storage, followed by Palme's review.
+After that review, Kyle selected authoritative Markdown with immutable source captures for evidence, notes and human-review records.
+Direct file edits require stopping `serve`; viewing files remains unrestricted, and live changes use the API.
+Publication details, offline edit validation and durability remain decisions in #116; these selections do not accept the full storage proposal.
 Non-loopback binding is being reconsidered in #119; it must not be recommended, and its behavior remains undecided.
 
 | Record | Current scope |
 | --- | --- |
 | [#113](https://github.com/mardwerk/tower-generator/issues/113) | Same-character coordination; busy-mark details remain proposed |
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | API save and review revision preconditions |
-| [#116](https://github.com/mardwerk/tower-generator/issues/116) | Coherent reads and interrupted Wiki commit recovery |
+| [#116](https://github.com/mardwerk/tower-generator/issues/116) | Markdown authority and direct-edit boundary selected; publication and durability pending |
 | [#117](https://github.com/mardwerk/tower-generator/issues/117) | Completed by retirement and documentation repair |
 | [#118](https://github.com/mardwerk/tower-generator/issues/118) | Research revision preconditions; original website-field claim corrected |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Host, Origin and separate browser-client behavior |
