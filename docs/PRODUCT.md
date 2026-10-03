@@ -8,7 +8,7 @@ The [realignment record](REALIGNMENT.md) contains reset history and the recovery
 Tower Generator owns reusable character research, its portable local Wiki and later Tower design for a selected Profile.
 Complete the Go research and Wiki workflow first; Tower design follows later.
 
-One backend owns research, Wiki lookup, saving and review through the same API.
+One backend owns research, Wiki lookup and saving through the same API.
 Websites, scripts and possibly Towerright later are clients; requests need no browser session.
 Add behavior or dependencies for a defined workflow.
 
@@ -25,11 +25,11 @@ Treat Markdown and YAML as data, not executable page content; keep dependencies 
 
 | Operation | Contract |
 | --- | --- |
-| Lookup and read | Return saved identity, evidence, review state and revision by query or key, without network research. |
+| Lookup and read | Return saved identity, evidence, verification results, confidence and revision by query or key, without network research. |
 | Research | Apply [preconditions](#selected-research-preconditions), [admission](#selected-research-admission), [paid provider retry rules](#selected-paid-provider-retry-policy), [publication eligibility](#selected-research-publication-eligibility) and [revision rules](#selected-research-publication-revisions). |
 | Cancel research | Apply the [cancellation policy](#selected-research-cancellation). |
 | Inspect operations | Use [read-only status, SSE and the recent list](#selected-operation-visibility-and-manual-recovery). |
-| Save edit or record review | Apply the [save and review policy](#selected-save-and-review-policy). |
+| Save edit | Apply the [save policy](#selected-save-policy). |
 | Read configuration | Return effective safe settings and categories without secret values. |
 | Generate, later | Follow the future [generation contract](#later-clients-and-generation). |
 
@@ -39,35 +39,38 @@ Report known consumed usage even when identity discovery ends in ambiguity or a 
 
 ## Revision preconditions
 
-Saves, reviews and research on a saved character require its saved key and the caller's revision in JSON `expectedRevision`.
+Saves and research on a saved character require its saved key and the caller's revision in JSON `expectedRevision`.
 A missing revision returns `400 revision_required`; a stale revision returns `409 revision_conflict`.
-Both refusals leave saved content and human-review state unchanged; research checks them before provider work.
+Both refusals leave saved content unchanged; research checks them before provider work.
 Never substitute the latest server revision for the caller's revision.
 
-## Selected save and review policy
+<a id="selected-save-and-review-policy"></a>
+
+## Selected save policy
 
 Kyle accepted the [#115](https://github.com/mardwerk/tower-generator/issues/115) policy on 2026-10-03.
-Apply the [revision preconditions](#revision-preconditions) before saving or reviewing.
+Apply the [revision preconditions](#revision-preconditions) before saving.
 
 Check the [research reservation](#selected-research-admission) and commit through the [Wiki publication boundary](#selected-wiki-publication).
 Two writes based on the same revision cannot both commit.
-Only explicit review requests record human review.
-Ordinary saves cannot supply human approval or make changed content appear approved by an earlier review.
 
 Clients retain refused drafts and read the latest saved state separately for reconciliation.
 They must not silently replace `expectedRevision` and retry the write.
 
-## Selected human review scope
+<a id="selected-human-review-scope"></a>
 
-Kyle selected separate human review for each finding and each classification tag in [#115](https://github.com/mardwerk/tower-generator/issues/115) on 2026-10-04.
-The normal successful workflow aims to turn user input into usable output without mandatory human review.
-Eligible research publishes after the required [verification and entry validation](#selected-research-publication-eligibility); human review is optional and separate from automated verification.
+## Selected automated verification
 
-A finding review does not approve its classification tags, and a classification-tag review does not approve the finding.
-Changing one finding or classification tag does not by itself invalidate applicable reviews of other findings or classification tags.
-Preserve manual notes and protected human-reviewed work under the [research rules](RESEARCH.md#durable-research-rules), keeping proposed changes separate.
+Kyle selected automated verification with confidence for findings and classification tags in [#115](https://github.com/mardwerk/tower-generator/issues/115) on 2026-10-04.
+The product aims to turn user input into usable output without asking a person to verify findings or classifications.
+The initial backend has no human-approval endpoint, approval queue or human-review state workflow.
+This supersedes the earlier optional human-approval scope.
 
-The content covered by optional human review, its invalidation after evidence changes and its exact representation remain undecided.
+Eligible research still completes the required [verification and entry validation](#selected-research-publication-eligibility).
+Follow the [research rules](RESEARCH.md#durable-research-rules) for evidence, confidence and protection of saved work.
+
+Confidence criteria, representation and automated correction of protected saved claims remain to be specified.
+Identity and scope clarification, deliberate recovery after uncertain paid work, and engineering workflow acceptance retain their selected policies.
 
 ## Selected research preconditions
 
@@ -142,7 +145,7 @@ Additional paid lookup may be needed; the new request is not a guaranteed free c
 Kyle selected reservation at admission in [#118](https://github.com/mardwerk/tower-generator/issues/118) on 2026-10-03.
 Reserve a known character when its research request is accepted, including time waiting in the queue.
 Keep the reservation until the operation finishes or stops, including its publication work.
-Refuse another research, save or review for that character while reserved; reads and work on other characters remain available.
+Refuse another research or save for that character while reserved; reads and work on other characters remain available.
 
 Accept research only when execution capacity or a queue slot is available.
 If both are full, refuse without provider work or a character reservation.
@@ -153,7 +156,7 @@ The planned `serve` command defaults to two executing operations and ten queued 
 Set these limits at startup with `--worker-size <Y>` and `--queue-size <X>`, for example `serve --worker-size 2 --queue-size 10`.
 Queue size counts waiting operations separately from executing workers.
 These are initial defaults, not measured capacity; revisit them using operation durations, queue waits, capacity refusals and provider limits.
-A larger queue reserves more known characters while they wait, which can delay saves and reviews without increasing execution concurrency.
+A larger queue reserves more known characters while they wait, which can delay saves without increasing execution concurrency.
 Scope clarification follows the [selected lifecycle](#selected-scope-clarification).
 
 Keep connection capacity, active research capacity, per-run budget and provider limits separate.
@@ -179,9 +182,15 @@ Disconnecting the submitting request or SSE does not cancel accepted research.
 
 Kyle selected these publication rules through [#106](https://github.com/mardwerk/tower-generator/issues/106) on 2026-10-04.
 An ordinary source fetch failure permits publication when all required verification and entry validation complete successfully.
-Record the failed source and resulting limitations, preserving retained evidence, manual notes and applicable reviews under the [research rules](RESEARCH.md#durable-research-rules).
+Record the failed source and resulting limitations, preserving saved work under the [research rules](RESEARCH.md#durable-research-rules).
 If required verification or entry validation cannot complete successfully, leave the saved entry unchanged.
 The concrete required checks still need specification; a failure does not permit omitting or redefining them.
+
+Kyle selected retaining clearly marked low-confidence findings and classification tags in Wiki/API research output on 2026-10-04.
+Follow the [research rules](RESEARCH.md#durable-research-rules) for cited evidence and explanations of uncertainty.
+Low confidence alone does not prevent an otherwise valid publication or require human review.
+Completed verification may report uncertainty; a failed or incomplete required check still leaves the saved entry unchanged.
+Consumers must respect the recorded uncertainty; later generation behavior remains unselected.
 
 If a paid step may have run but its usable result is unknown, stop without beginning publication and leave the saved entry unchanged.
 Report known and unknown usage and stop further paid work under the [paid provider retry policy](#selected-paid-provider-retry-policy).
@@ -195,7 +204,7 @@ Decide eligibility before final publication; accepted [cancellation](#selected-r
 
 Kyle selected a new character revision for every successful research publication in [#118](https://github.com/mardwerk/tower-generator/issues/118) on 2026-10-03.
 Advance the revision even when a run finds nothing new; the entry still records research provenance and known provider usage.
-Preserve applicable human reviews and retained evidence; a new revision does not itself record human approval.
+Preserve retained evidence, manual notes and prior provenance under the [research rules](RESEARCH.md#durable-research-rules).
 A new research request using the prior revision is then refused as stale before provider work.
 
 Failure or interruption before entry replacement can leave the old revision valid, so revision checks alone do not prevent another paid attempt.
@@ -236,10 +245,10 @@ Verify SDK retry settings and transport replay before claiming adapter complianc
 ## Selected Wiki publication
 
 Kyle authorized the [#116](https://github.com/mardwerk/tower-generator/issues/116) publication approach after comparing its long-term maintenance and extension options.
-Authoritative Markdown owns character evidence, manual notes and human-review records, with immutable source captures.
+Authoritative Markdown owns character evidence, automated assessments and manual notes, with immutable source captures.
 Keep readable local files and retained passages under `wiki/<series>/<character>/`, ignored by Git; SQLite authority is not selected.
 One versioned entry document is the commit point for mutable character state, with explicit references to immutable source captures.
-Keep publication and integrity checks in one storage component; research, review and HTTP handlers must not write Wiki files independently.
+Keep publication and integrity checks in one storage component; research and HTTP handlers must not write Wiki files independently.
 Validate each complete update before committing it.
 
 Use the API for changes while `serve` runs; stop it before directly editing Wiki files.
@@ -298,10 +307,11 @@ Generation consumes a recorded character revision under the [Profile ownership a
 
 Review a fresh character, confirmed alias, ambiguous identity, failed source and repeated research before implementation.
 Specify inputs, outcomes, progress, saved files and budget behavior together for each case.
-Add concurrent same-character requests, independent characters, missing and stale save, review and research revisions, external edits and interruption during commit.
+Add concurrent same-character requests, independent characters, missing and stale save and research revisions, external edits and interruption during commit.
 Test omitted, matching and conflicting saved-scope hints, malformed Host authorities, IPv6, hostname access, script/native callers and SSE reconnects.
 Include separate cases for an unclear continuity and a source from another medium with facts inside and outside the selected scope.
 Review an unavailable source with completed verification, a failed required check, a valid response without usage data and a paid step with an unknown usable result.
+Include findings with strong evidence and uncertain classifications, low-confidence findings and contradictory sources without routing evidence assessment to a human.
 These cases must not imply support for unselected API access.
 Review disconnect and restart behavior separately; successful saved Wiki content must not depend on a browser remaining connected.
 
@@ -310,8 +320,8 @@ The following choices remain open; earlier proposals and merged proposal text do
 
 | Review | Remaining choices |
 | --- | --- |
-| [#115](https://github.com/mardwerk/tower-generator/issues/115) | Revision coverage, review invalidation and complete save/review schemas. |
-| [#116](https://github.com/mardwerk/tower-generator/issues/116) | Entry format, offline validation, review staleness, historical retention and single-writer enforcement. |
+| [#115](https://github.com/mardwerk/tower-generator/issues/115) | Revision coverage and complete save schemas. |
+| [#116](https://github.com/mardwerk/tower-generator/issues/116) | Entry format, offline validation, assessment bindings, historical retention and single-writer enforcement. |
 | [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation response and terminal handling, ambiguity configuration validation, identity matching and key format, scope-hint representation and matching, and SSE framing and observer limits. |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Exact Host authorities, address families and numeric-port behavior. |
-| [#106](https://github.com/mardwerk/tower-generator/issues/106) | Required research verification and entry validation, routes, strict request decoding, operation records, provider/model selection, budgets, provider deadlines, extraction dependencies, packaging and implementation verification. |
+| [#106](https://github.com/mardwerk/tower-generator/issues/106) | Required research verification and entry validation, confidence criteria and representation, automated correction of protected saved claims, routes, strict request decoding, operation records, provider/model selection, budgets, provider deadlines, extraction dependencies, packaging and implementation verification. |
