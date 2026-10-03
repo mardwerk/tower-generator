@@ -12,6 +12,7 @@ The [product rules](docs/PRODUCT.md) distinguish owner requirements from propose
 The [realignment plan](docs/REALIGNMENT.md) records the reset and remaining decisions.
 Kyle selected pure Go with REST, SSE and a bounded in-process research queue.
 Restart recovery is not a major requirement; detailed interruption and retention behavior remains to be specified.
+Initial API access will be [loopback-only](docs/PRODUCT.md#selected-local-api-access), with a configurable numeric port and a same-origin proxy for local browser clients.
 
 The backend will own local, human-readable Markdown files under `wiki/<series>/<character>/`, ignored by Git.
 Research remains in English and independent of game Profiles.

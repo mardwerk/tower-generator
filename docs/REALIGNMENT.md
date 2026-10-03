@@ -60,7 +60,10 @@ Kyle selected [a new revision for every successful research publication](PRODUCT
 The entry records research provenance and known usage while preserving applicable human reviews.
 An unpublished failure can leave the old revision valid, so retry handling remains separate.
 Retry handling, unknown-identity coordination and numerical queue limits remain owner choices.
-Non-loopback binding is being reconsidered in #119; it must not be recommended, and its behavior remains undecided.
+Kyle accepted [loopback-only API access](PRODUCT.md#selected-local-api-access) in #119, with a configurable numeric port, Host validation and browser-origin protection.
+Writes require JSON, GET and SSE are read-only, and a local website uses a same-origin proxy.
+Non-loopback binding and direct cross-origin access are deferred until a named client needs them, followed by authentication and trusted-origin review.
+Exact Host authorities, address-family behavior and implementation verification remain specification work.
 
 | Record | Current scope |
 | --- | --- |
@@ -69,4 +72,4 @@ Non-loopback binding is being reconsidered in #119; it must not be recommended, 
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Markdown authority, direct-edit boundary and publication selected; format and verification pending |
 | [#117](https://github.com/mardwerk/tower-generator/issues/117) | Completed by retirement and documentation repair |
 | [#118](https://github.com/mardwerk/tower-generator/issues/118) | Research preconditions, admission reservation and publication revisions selected; retries and full specification pending |
-| [#119](https://github.com/mardwerk/tower-generator/issues/119) | Host, Origin and separate browser-client behavior |
+| [#119](https://github.com/mardwerk/tower-generator/issues/119) | Loopback-only access selected; exact Host/address behavior and implementation verification pending |

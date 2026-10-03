@@ -14,7 +14,7 @@ Complete the Go research and Wiki workflow first; Tower design follows later.
 - One pure Go executable exposes REST operations and SSE progress through `serve`, with a bounded in-process research queue. Startup and configuration remain; there is no independent operational CLI.
 - Research, Wiki lookup, saving and review all use the same API. Websites, scripts and possibly Towerright later are clients.
 - Requests need no browser session. The backend retains Wiki files and tracks research; detailed interruption and retention behavior remains open.
-- Default binding is `localhost:<port>` without authentication. Optional non-loopback binding is under review in [#119](https://github.com/mardwerk/tower-generator/issues/119) and must not be recommended.
+- Initial serving is loopback-only without authentication, with a configurable numeric port. Non-loopback binding and direct cross-origin browser access are deferred under the selected [local API scope](#selected-local-api-access).
 - Accepted research reserves a known character through queueing and execution, blocking another research, save or review until it finishes or stops. Reading and work on other characters remain available.
 - Ambiguous names return a clarification-needed outcome. Each frontend decides how to ask the person.
 - Remove the old Python application, Node tooling and entire web tree. Git history preserves the former generator and Lab.
@@ -183,8 +183,21 @@ Temporal remains an evaluated alternative rather than the current backend.
 The [comparison](REALIGNMENT.md) separates client disconnect, backend restart, uncertain paid calls and interrupted Wiki commits.
 
 HTTP routes, SSE event retention, queue limits and refusal responses, numerical limits, extraction dependencies and packaging remain open.
-Hostname access and trusted browser origins need review in [#119](https://github.com/mardwerk/tower-generator/issues/119).
-Same-origin checks alone would reject a separate frontend on another port; browser clients need an agreed proxy or CORS policy.
+
+## Selected local API access
+
+Kyle accepted the [#119](https://github.com/mardwerk/tower-generator/issues/119) scope on 2026-10-03.
+Initially bind only to loopback addresses, with a configurable numeric port and no authentication.
+Keep Host validation and browser-origin protection even on loopback.
+Require JSON for writes; GET and SSE are read-only.
+
+A local website uses a same-origin proxy to reach the API.
+Direct cross-origin browser access and non-loopback binding are deferred until a named client needs them.
+Review authentication and trusted origins before expanding that access.
+This supersedes earlier issue text that called explicit unauthenticated LAN binding settled.
+
+Exact Host authorities, address-family behavior, port handling and implementation verification remain specification work.
+Retain malformed authorities, IPv6, hostname access, script/native callers and SSE reconnects in the acceptance cases without implying unselected access is supported.
 
 ## Later clients and generation
 
