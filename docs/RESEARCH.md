@@ -37,10 +37,12 @@ Saved evidence must remain reusable without a Profile or a browser session.
 The [candidate Wiki format](wiki-format.md) preserves the prototype baseline, not an accepted future Go schema.
 
 The backend owns persistent files and validation.
-While research is active for a character, API saves and reviews for that character are refused; reading and other characters remain available.
+Accepted research reserves a known character during queueing and execution until the operation finishes or stops.
+Another research, save or review for that character is refused; reading and other characters remain available.
 The selected [Wiki publication rules](PRODUCT.md#selected-wiki-publication) and [save and review policy](PRODUCT.md#selected-save-and-review-policy) govern updates.
 Use the API for changes while `serve` runs; stop it before direct file edits, while viewing remains unrestricted.
-Queue reservation timing, exact format and implementation verification remain open; the [#113 recommendation](https://github.com/mardwerk/tower-generator/issues/113) is not blanket acceptance.
+The [admission policy](PRODUCT.md#selected-research-admission) refuses when both execution and queue capacity are full, without provider work or a character reservation.
+Numerical queue limits, exact format and implementation verification remain open; the [#113 recommendation](https://github.com/mardwerk/tower-generator/issues/113) is not blanket acceptance.
 
 Generation will read character evidence at a recorded revision.
 Profile mappings, Tower choices, upgrades and numerical balance belong to generation, not the Wiki.
@@ -50,7 +52,7 @@ Profile mappings, Tower choices, upgrades and numerical balance belong to genera
 Research on a saved character requires its saved key and JSON `expectedRevision`, as selected in [#118](https://github.com/mardwerk/tower-generator/issues/118).
 Missing revisions return 400 and stale revisions return 409 before provider work; saved state remains unchanged.
 Name queries check saved names and confirmed aliases locally and return an existing key and revision rather than silently commissioning more research.
-The [product policy](PRODUCT.md#selected-research-preconditions) retains reservation timing, retry handling and complete request schemas as separate specification work.
+The [product policy](PRODUCT.md#selected-research-preconditions) retains retry handling and complete request schemas as separate specification work.
 
 ## Historical implementation and independent evidence
 

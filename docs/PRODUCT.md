@@ -15,7 +15,7 @@ Complete the Go research and Wiki workflow first; Tower design follows later.
 - Research, Wiki lookup, saving and review all use the same API. Websites, scripts and possibly Towerright later are clients.
 - Requests need no browser session. The backend retains Wiki files and tracks research; detailed interruption and retention behavior remains open.
 - Default binding is `localhost:<port>` without authentication. Optional non-loopback binding is under review in [#119](https://github.com/mardwerk/tower-generator/issues/119) and must not be recommended.
-- Research blocks saves and reviews for that character. Reading and work on other characters remain available.
+- Accepted research reserves a known character through queueing and execution, blocking another research, save or review until it finishes or stops. Reading and work on other characters remain available.
 - Ambiguous names return a clarification-needed outcome. Each frontend decides how to ask the person.
 - Remove the old Python application, Node tooling and entire web tree. Git history preserves the former generator and Lab.
 - Retire the old Usopp experiment and deleted Default Profile packaging, including its setup script. A new Profile is deferred.
@@ -63,7 +63,7 @@ The backend owns provider access, validation and file commits, using one Wiki lo
 | Generate, later | Character revision and selected Profile | Tower content and provenance under a future generation contract |
 
 Keep progress separate from the final outcome.
-Queue limits and admission when the queue is full, cancellation, duplicate-request handling, clarification continuation, retries and operation retention need review.
+Queue limits and refusal responses, cancellation, duplicate-request handling, clarification continuation, retries and operation retention need review.
 Report known consumed usage even when identity discovery ends in ambiguity or a busy outcome.
 
 ## Selected save and review policy
@@ -94,18 +94,32 @@ A saved match returns the existing key and revision so the client can read the s
 Discovery must not silently become paid research on an existing character.
 This supersedes the earlier proposal that existing-character research simply starts from the current server revision.
 
-Queue reservation timing and retry handling remain separate choices.
+Admission-time reservation is selected below; retry handling remains a separate choice.
 Scope hints on saved characters, revision advancement after research without new findings, complete schemas and strict request decoding still need specification.
 This decision does not establish request deduplication or guarantee that retrying a failed or interrupted operation avoids another paid call.
 
-## Proposed coordination and storage
+## Selected research admission
+
+Kyle selected reservation at admission in [#118](https://github.com/mardwerk/tower-generator/issues/118) on 2026-10-03.
+Reserve a known character when its research request is accepted, including time waiting in the queue.
+Keep the reservation until the operation finishes or stops, including its publication work.
+Refuse another research, save or review for that character while reserved; reads and work on other characters remain available.
+
+Accept research only when execution capacity or a queue slot is available.
+If both are full, refuse without provider work or a character reservation.
+Coordinate revision checks, capacity checks and reservation so a refused request leaves no reservation or occupied queue slot.
+
+This prevents API edits from invalidating accepted queued research, at the cost of blocking edits during the wait.
+Exact queue limits, busy and full-queue responses, unknown-identity coordination, cancellation and retry handling remain specification work.
+
+## Coordination and remaining storage choices
 
 [#113](https://github.com/mardwerk/tower-generator/issues/113) and merged [PR #114](https://github.com/mardwerk/tower-generator/pull/114) propose a per-character busy mark and revision checks.
 Their merged proposal text is evidence for discussion, not blanket acceptance of every design choice.
 
-The proposed policy refuses a second change to a busy character, including another research request.
+The selected admission policy refuses a second change to a reserved character, including another research request.
 The selected save, review and existing-character research policies require the revision the caller read.
-Research reservation timing remains under review; research must not substitute the latest revision for the caller's revision.
+Research must not substitute the latest revision for the caller's revision.
 Cooperative same-character research remains a preference; combining evidence and budgets is not a selected design.
 
 Validate each complete update before committing it.
@@ -157,7 +171,7 @@ Kyle selected pure Go execution with REST, SSE and a bounded in-process research
 Temporal remains an evaluated alternative rather than the current backend.
 The [comparison](REALIGNMENT.md) separates client disconnect, backend restart, uncertain paid calls and interrupted Wiki commits.
 
-HTTP routes, SSE event retention, queue limits and full-queue admission, numerical limits, extraction dependencies and packaging remain open.
+HTTP routes, SSE event retention, queue limits and refusal responses, numerical limits, extraction dependencies and packaging remain open.
 Hostname access and trusted browser origins need review in [#119](https://github.com/mardwerk/tower-generator/issues/119).
 Same-origin checks alone would reject a separate frontend on another port; browser clients need an agreed proxy or CORS policy.
 

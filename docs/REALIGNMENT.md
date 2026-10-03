@@ -35,7 +35,7 @@ The experiment code, generated reports and downloaded runtime were discarded; Te
 
 ## Remaining workflow review
 
-Specify queue limits and full-queue admission, cancellation, clarification, progress retention and interruption outcomes before implementation.
+Specify queue limits and refusal responses, cancellation, clarification, progress retention and interruption outcomes before implementation.
 Review safe Wiki updates and browser-client access separately from research execution.
 Kyle requested proposals for revision refusal, research preconditions and Markdown versus SQLite storage, followed by Palme's review.
 After that review, Kyle selected authoritative Markdown with immutable source captures for evidence, notes and human-review records.
@@ -53,14 +53,17 @@ Complete schemas and revision coverage remain to be specified and verified.
 Kyle accepted the [research preconditions](PRODUCT.md#selected-research-preconditions) in #118.
 Saved-character research requires its saved key and JSON `expectedRevision`; missing revisions return 400 and stale revisions return 409 before provider work, leaving saved state unchanged.
 Name queries check saved names and confirmed aliases locally and return an existing key and revision instead of silently commissioning research.
-Queue reservation timing and retry handling remain separate owner choices.
+Kyle selected [reservation at admission](PRODUCT.md#selected-research-admission) for known characters, including time waiting in the queue.
+While reserved, another research, save or review is refused until the operation finishes or stops; reads and other characters remain available.
+Full execution and queue capacity causes refusal without provider work or a character reservation.
+Retry handling, unknown-identity coordination and numerical queue limits remain owner choices.
 Non-loopback binding is being reconsidered in #119; it must not be recommended, and its behavior remains undecided.
 
 | Record | Current scope |
 | --- | --- |
-| [#113](https://github.com/mardwerk/tower-generator/issues/113) | Same-character coordination; busy-mark details remain proposed |
+| [#113](https://github.com/mardwerk/tower-generator/issues/113) | Known-character admission reservation selected; remaining coordination details need specification |
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | Save and review policy selected; complete schemas and implementation verification pending |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Markdown authority, direct-edit boundary and publication selected; format and verification pending |
 | [#117](https://github.com/mardwerk/tower-generator/issues/117) | Completed by retirement and documentation repair |
-| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Research revision rule selected; reservation timing, retries and full specification pending |
+| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Research revision and admission reservation selected; retries and full specification pending |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Host, Origin and separate browser-client behavior |
