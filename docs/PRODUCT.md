@@ -62,9 +62,10 @@ They must not silently replace `expectedRevision` and retry the write.
 Kyle accepted the [#118](https://github.com/mardwerk/tower-generator/issues/118) revision rule on 2026-10-03.
 Apply the [revision preconditions](#revision-preconditions) to existing-character research.
 
-Name queries first check saved names and confirmed aliases locally, before any provider call.
+Ordinary name queries first check saved names and confirmed aliases locally, before any provider call.
 A saved match returns the existing key and revision so the client can read the saved character and request research deliberately.
 Discovery must not silently become paid research on an existing character.
+The [explicit namesake discovery policy](#requested-ambiguity-handling) also permits deliberate discovery alongside saved matches.
 
 Kyle selected keeping the saved canon scope for research on an existing character in #118.
 Use the entry's saved scope; an omitted or matching scope hint is allowed.
@@ -95,7 +96,10 @@ Admit all their new research only when ordinary execution and queue capacity can
 If capacity is insufficient, return the choices and a capacity outcome without starting candidate research or retaining hidden waiting work.
 Each admitted operation finishes independently.
 
-How discovery handles a saved local match alongside possible unsaved namesakes also remains open.
+Kyle selected explicit additional discovery when a name matches saved characters.
+Ordinary lookup returns the saved characters without provider work.
+A frontend or script can deliberately request paid discovery of other characters with that name, for example through a "Find other characters" action.
+Reuse saved entries without refreshing them; new candidates follow the selected budgets, limit and admission policy.
 
 ## Selected research admission
 
@@ -254,6 +258,6 @@ The following choices remain open; earlier proposals and merged proposal text do
 | --- | --- |
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | Revision coverage, review invalidation and complete save/review schemas. |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Entry format, offline validation, review staleness, historical retention and single-writer enforcement. |
-| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation response and terminal handling, ambiguity configuration validation, saved-name discovery, unknown-identity coordination, discovery scope, scope-hint representation and matching, and SSE framing and observer limits. |
+| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation response and terminal handling, ambiguity configuration validation, unknown-identity coordination and busy candidates, discovery scope, scope-hint representation and matching, and SSE framing and observer limits. |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Exact Host authorities, address families and numeric-port behavior. |
 | [#106](https://github.com/mardwerk/tower-generator/issues/106) | Routes, strict request decoding, operation records, provider/model selection, budgets, provider deadlines, extraction dependencies, packaging and implementation verification. |
