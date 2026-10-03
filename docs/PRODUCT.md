@@ -81,6 +81,14 @@ Accept research only when execution capacity or a queue slot is available.
 If both are full, refuse without provider work or a character reservation.
 Coordinate revision checks, capacity checks and reservation so a refused request leaves no reservation or occupied queue slot.
 
+Kyle selected configurable research limits in #118 on 2026-10-03.
+The planned `serve` command defaults to two executing operations and ten queued operations.
+Set these limits at startup with `--worker-size <Y>` and `--queue-size <X>`, for example `serve --worker-size 2 --queue-size 10`.
+Queue size counts waiting operations separately from executing workers.
+These are initial defaults, not measured capacity; revisit them using operation durations, queue waits, capacity refusals and provider limits.
+A larger queue reserves more known characters while they wait, which can delay saves and reviews without increasing execution concurrency.
+These counts do not select the lifecycle or capacity of clarification waits.
+
 Keep connection capacity, active research capacity, per-run budget and provider limits separate.
 A capacity queue is different from waiting for a busy character.
 Cooperative same-character research remains a preference; combining evidence and budgets is not a selected design.
@@ -186,6 +194,6 @@ The following choices remain open; earlier proposals and merged proposal text do
 | --- | --- |
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | Revision coverage, review invalidation and complete save/review schemas. |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Entry format, offline validation, review staleness, historical retention and single-writer enforcement. |
-| [#118](https://github.com/mardwerk/tower-generator/issues/118) and [#113](https://github.com/mardwerk/tower-generator/issues/113) | Queue limits and refusal responses, cancellation, clarification continuation, unknown-identity coordination, discovery scope, scope-hint representation and matching, operation/SSE retention and provider-call retries. |
+| [#118](https://github.com/mardwerk/tower-generator/issues/118) and [#113](https://github.com/mardwerk/tower-generator/issues/113) | Queue configuration validation, scheduling and refusal responses, cancellation, clarification continuation, unknown-identity coordination, discovery scope, scope-hint representation and matching, operation/SSE retention and provider-call retries. |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Exact Host authorities, address families and numeric-port behavior. |
 | [#106](https://github.com/mardwerk/tower-generator/issues/106) | Routes, strict request decoding, operation records, provider/model selection, budgets, extraction dependencies, packaging and implementation verification. |
