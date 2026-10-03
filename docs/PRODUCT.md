@@ -57,6 +57,18 @@ Ordinary saves cannot supply human approval or make changed content appear appro
 Clients retain refused drafts and read the latest saved state separately for reconciliation.
 They must not silently replace `expectedRevision` and retry the write.
 
+## Selected human review scope
+
+Kyle selected separate human review for each finding and each classification tag in [#115](https://github.com/mardwerk/tower-generator/issues/115) on 2026-10-04.
+The normal successful workflow aims to turn user input into usable output without mandatory human review.
+Eligible research publishes after the required [verification and entry validation](#selected-research-publication-eligibility); human review is optional and separate from automated verification.
+
+A finding review does not approve its classification tags, and a classification-tag review does not approve the finding.
+Changing one finding or classification tag does not by itself invalidate applicable reviews of other findings or classification tags.
+Preserve manual notes and protected human-reviewed work under the [research rules](RESEARCH.md#durable-research-rules), keeping proposed changes separate.
+
+The content covered by optional human review, its invalidation after evidence changes and its exact representation remain undecided.
+
 ## Selected research preconditions
 
 Kyle accepted the [#118](https://github.com/mardwerk/tower-generator/issues/118) revision rule on 2026-10-03.
