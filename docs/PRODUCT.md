@@ -26,7 +26,7 @@ Treat Markdown and YAML as data, not executable page content; keep dependencies 
 | Operation | Contract |
 | --- | --- |
 | Lookup and read | Return saved identity, evidence, review state and revision by query or key, without network research. |
-| Research | Apply [preconditions](#selected-research-preconditions), [admission](#selected-research-admission) and [publication](#selected-research-publication-revisions). |
+| Research | Apply [preconditions](#selected-research-preconditions), [admission](#selected-research-admission), [paid provider retry rules](#selected-paid-provider-retry-policy) and [publication](#selected-research-publication-revisions). |
 | Inspect operations | Use [read-only status, SSE and the recent list](#selected-operation-visibility-and-manual-recovery). |
 | Save edit or record review | Apply the [save and review policy](#selected-save-and-review-policy). |
 | Read configuration | Return effective safe settings and categories without secret values. |
@@ -124,6 +124,17 @@ Lost admission responses, record eviction and server restart can leave the outco
 
 Defer caller retry IDs until a named client needs automatic submission replay.
 
+## Selected paid provider retry policy
+
+Kyle selected no automatic application or SDK retries for paid calls in [#118](https://github.com/mardwerk/tower-generator/issues/118) on 2026-10-03.
+Do not automatically repeat a paid call after a timeout, a dropped or invalid response, `429` or `5xx` errors.
+If a paid step's outcome is uncertain, stop further paid work in that operation.
+Report known usage separately from unknown usage; unknown usage does not mean zero.
+
+A transient failure may require a deliberate new attempt under the [manual recovery policy](#selected-operation-visibility-and-manual-recovery).
+Revisit narrowly defined retries when a selected provider documents that a rejected request performed no paid work.
+Verify SDK retry settings and transport replay before claiming adapter compliance; exact adapter behavior remains implementation-verification work.
+
 ## Selected Wiki publication
 
 Kyle authorized the [#116](https://github.com/mardwerk/tower-generator/issues/116) publication approach after comparing its long-term maintenance and extension options.
@@ -201,6 +212,6 @@ The following choices remain open; earlier proposals and merged proposal text do
 | --- | --- |
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | Revision coverage, review invalidation and complete save/review schemas. |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Entry format, offline validation, review staleness, historical retention and single-writer enforcement. |
-| [#118](https://github.com/mardwerk/tower-generator/issues/118) and [#113](https://github.com/mardwerk/tower-generator/issues/113) | Queue and history configuration validation, scheduling and refusal responses, cancellation, clarification continuation, unknown-identity coordination, discovery scope, scope-hint representation and matching, SSE framing and observer limits, and provider-call retries. |
+| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation, clarification continuation, unknown-identity coordination, discovery scope, scope-hint representation and matching, and SSE framing and observer limits. |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Exact Host authorities, address families and numeric-port behavior. |
 | [#106](https://github.com/mardwerk/tower-generator/issues/106) | Routes, strict request decoding, operation records, provider/model selection, budgets, extraction dependencies, packaging and implementation verification. |
