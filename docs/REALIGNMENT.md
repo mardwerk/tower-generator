@@ -13,7 +13,8 @@ The deleted Default Profile is retired; a new Profile and Tower design follow th
 The Usopp authoring scope in [#85](https://github.com/mardwerk/tower-generator/issues/85) is retired; it no longer receives new generation reviews.
 
 Git history preserves the retired implementation.
-Independent research evidence and helpers remain; all 56 imported snapshot files retain their original bytes and hashes.
+Independent research documents remain under [docs/research](research/README.md).
+Kyle's subsequent cleanup removed the snapshot wrapper, manifest and Gojo experiment; Git history preserves them.
 Local credentials and collected Wiki data were untouched, and known retired local tooling was removed.
 System Python is the default for independent helpers; uv is optional, without a required project virtual environment.
 
@@ -36,6 +37,8 @@ The experiment code, generated reports and downloaded runtime were discarded; Te
 
 Specify queue limits and full-queue admission, cancellation, clarification, progress retention and interruption outcomes before implementation.
 Review safe Wiki updates and browser-client access separately from research execution.
+Kyle requested proposals for revision refusal, research preconditions and Markdown versus SQLite storage, followed by Palme's review.
+Non-loopback binding is being reconsidered in #119; it must not be recommended, and its behavior remains undecided.
 
 | Record | Current scope |
 | --- | --- |

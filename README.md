@@ -20,7 +20,7 @@ See the [research rules](docs/RESEARCH.md) and [candidate Wiki format](docs/wiki
 
 The [Tower design skill](.agents/skills/tower-generator/SKILL.md) supports cited concepts without claiming an implemented exporter.
 [Research evidence](docs/research/README.md) and independent helpers under [scripts/](scripts/) remain available for review.
-The archived research snapshot is historical evidence, not current instructions or a runtime.
+The retained research documents are reference evidence, not current product instructions or a runtime.
 
 [td-profile](https://github.com/mardwerk/td-profile) owns the generic Profile Validator and reusable schemas.
 [Profile ownership](docs/PROFILE.md) and [BTD6 attribution](docs/BTD6-REFERENCE.md) remain separate from the research backend.

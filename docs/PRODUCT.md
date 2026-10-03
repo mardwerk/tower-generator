@@ -14,7 +14,7 @@ Complete the Go research and Wiki workflow first; Tower design follows later.
 - One pure Go executable exposes REST operations and SSE progress through `serve`, with a bounded in-process research queue. Startup and configuration remain; there is no independent operational CLI.
 - Research, Wiki lookup, saving and review all use the same API. Websites, scripts and possibly Towerright later are clients.
 - Requests need no browser session. The backend retains Wiki files and tracks research; detailed interruption and retention behavior remains open.
-- Default binding is `localhost:<port>`. Explicit `0.0.0.0:<port>` is allowed; neither binding uses authentication.
+- Default binding is `localhost:<port>` without authentication. Optional non-loopback binding is under review in [#119](https://github.com/mardwerk/tower-generator/issues/119) and must not be recommended.
 - Research blocks saves and reviews for that character. Reading and work on other characters remain available.
 - Ambiguous names return a clarification-needed outcome. Each frontend decides how to ask the person.
 - Remove the old Python application, Node tooling and entire web tree. Git history preserves the former generator and Lab.
@@ -74,6 +74,8 @@ Research reserves the confirmed identity and reads its current revision before e
 Cooperative same-character research remains a preference; combining evidence and budgets is not a selected design.
 
 Validate each complete update before committing it.
+Kyle requested comparing authoritative Markdown with SQLite and a readable Markdown projection in [#116](https://github.com/mardwerk/tower-generator/issues/116).
+That storage choice remains pending; a persistent execution queue is not selected.
 Review whether API readers may wait briefly during commit, and how startup recovers an interrupted multi-file replacement.
 These file guarantees are needed independently of research restart recovery and independently of Temporal.
 

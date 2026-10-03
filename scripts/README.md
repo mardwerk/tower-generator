@@ -12,8 +12,3 @@ No Python project, dependency installation or repository virtual environment is 
 If a helper needs a third-party package, declare that dependency in the script with PEP 723 metadata.
 uv manages the script's isolated environment automatically; isolation still uses a virtual environment.
 Do not add dependencies or Python project files before a helper needs them.
-
-The archived Python experiment stays in [the research snapshot](../docs/research/unit-design-research-snapshot/README.md).
-Its eight Python files use only the standard library and bundled modules.
-Keep them in their original locations and preserve their bytes so the snapshot manifest remains valid.
-They are historical research evidence, not active product code or maintenance helpers.

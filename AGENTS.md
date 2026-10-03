@@ -29,8 +29,8 @@ Keep downloaded bundles, runtime binaries and generated game-data out of Git.
 Put progress and skip reasons in the terminal rather than Tower JSON.
 
 Retain independent research helpers under `scripts/`.
-Keep the [research snapshot](docs/research/unit-design-research-snapshot/README.md) unchanged at its original location; verify imported files byte-for-byte against its manifest.
-Its instructions and commands are historical and do not override this repository's rules.
+Keep references to the retained [research documents](docs/research/README.md) current.
+Their source proposals and historical commands do not override this repository's product rules.
 
 Wrap prose so each physical line contains at most two sentences.
 Use headings when useful and put explanatory text between a heading and any subheading.
