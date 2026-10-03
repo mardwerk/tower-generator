@@ -1,17 +1,11 @@
 # Research for Tower Generator
 
-Research should answer a concrete question needed to research a character or design a Tower.
-Start with the [research rules](../RESEARCH.md), available cited evidence and any selected Profile.
-The [Tower design skill](../../.agents/skills/tower-generator/SKILL.md) supports a reviewable concept; no generic exporter is implemented.
+Use this archive to answer a concrete character-research or Tower-design question.
+Follow the [research rules](../RESEARCH.md) and the [Tower design skill](../../.agents/skills/tower-generator/SKILL.md) for those workflows.
 The [SkillOpt proposal](SKILLOPT.md) describes later measured improvement.
 
 Kyle selected this focused transfer on 2026-10-03 in [#108](https://github.com/mardwerk/tower-generator/issues/108).
-The [product outline](../PRODUCT.md) and [realignment](../REALIGNMENT.md) govern the current product direction.
-Independent research evidence and helpers remain; the Python product, website and Usopp authoring experiment are retired.
-
-Reuse cited findings, canon scope, limitations and human review records before collecting more evidence.
-Fetch additional evidence when its absence blocks a specific choice.
-Keep character facts separate from game adaptations, declared Profile compliance and gameplay judgments.
+The [product rules](../PRODUCT.md) own current behavior; the [realignment record](../REALIGNMENT.md) preserves reset history.
 
 ## Retained research
 

@@ -6,10 +6,10 @@ Tower Generator owns its product rules and any future generation integration.
 
 A Profile is a directory selected by its local path.
 Keep its dependencies inside that directory and its governed Tower records separate.
-Research and Wiki entries do not select a Profile or store game adaptations.
+Follow the [research boundary](RESEARCH.md#storage-and-update-boundaries) when reusing character evidence.
 A new Tower Generator Profile is deferred until generation work resumes.
 
-The Default Profile/Usopp authoring experiment and its setup are retired in the [realignment](REALIGNMENT.md).
+The [realignment record](REALIGNMENT.md) documents retirement of the Default Profile/Usopp experiment and its setup.
 There is no current validator installation or authoring command in this checkout.
 Do not treat its removed schemas, CLI or setup workflow as the future backend contract.
 Propose generic checker or reusable schema changes upstream in td-profile; game-specific rules belong to the owning Profile.
