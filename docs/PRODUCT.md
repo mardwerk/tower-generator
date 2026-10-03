@@ -56,7 +56,7 @@ The backend owns provider access, validation and file commits, using one Wiki lo
 | Operation | Input | Outcome |
 | --- | --- | --- |
 | Lookup and read | Query or saved character key | Saved identity, evidence, review state and revision without research |
-| Research | Character query for discovery, or saved character key and JSON `expectedRevision`; scope and budget inputs need review | Accepted operation ID followed by its outcome, existing identity to read, or an explicit refusal |
+| Research | Character query for discovery, or saved character key and JSON `expectedRevision` using the saved canon scope; discovery scope and budget inputs need review | Accepted operation ID followed by its outcome, existing identity to read, or an explicit refusal |
 | Read operations | Server-generated operation ID for one record, or a request for the bounded recent list | Read-only progress and outcome inspection without starting research |
 | Save edit | Saved character key, edited content and JSON `expectedRevision` | Validated update or refusal without overwriting saved work |
 | Record review | Saved character key, JSON `expectedRevision` and explicit target | Human decision tied to that content; findings and classifications remain distinct |
@@ -95,8 +95,13 @@ A saved match returns the existing key and revision so the client can read the s
 Discovery must not silently become paid research on an existing character.
 This supersedes the earlier proposal that existing-character research simply starts from the current server revision.
 
+Kyle selected keeping the saved canon scope for research on an existing character in #118.
+Use the entry's saved scope; an omitted or matching scope hint is allowed.
+Refuse a conflicting scope hint before provider work and leave saved content unchanged.
+Changing the canon boundary requires a separate explicit workflow; repeat research does not change it.
+
 Admission-time reservation and manual submission recovery are selected below; provider-call retries remain a separate choice.
-Scope hints on saved characters, complete schemas and strict request decoding still need specification.
+Exact scope matching and refusal responses, complete schemas and strict request decoding still need specification.
 This decision does not establish request deduplication or guarantee that retrying a failed or interrupted operation avoids another paid call.
 
 ## Selected research admission

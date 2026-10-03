@@ -52,6 +52,9 @@ Profile mappings, Tower choices, upgrades and numerical balance belong to genera
 Research on a saved character requires its saved key and JSON `expectedRevision`, as selected in [#118](https://github.com/mardwerk/tower-generator/issues/118).
 Missing revisions return 400 and stale revisions return 409 before provider work; saved state remains unchanged.
 Name queries check saved names and confirmed aliases locally and return an existing key and revision rather than silently commissioning more research.
+Research on a saved character uses the entry's saved canon scope; omitted or matching scope hints are allowed.
+A conflicting hint is refused before provider work and leaves saved content unchanged.
+Changing the canon boundary requires a separate explicit workflow.
 Every [successful research publication](PRODUCT.md#selected-research-publication-revisions) advances the character revision, including a run with no new findings.
 The entry records research provenance and known usage while preserving applicable human reviews.
 An unpublished failure can leave the prior revision valid, so this does not guarantee that resubmission avoids another paid call.

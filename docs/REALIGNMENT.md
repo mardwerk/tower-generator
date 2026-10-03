@@ -53,6 +53,8 @@ Complete schemas and revision coverage remain to be specified and verified.
 Kyle accepted the [research preconditions](PRODUCT.md#selected-research-preconditions) in #118.
 Saved-character research requires its saved key and JSON `expectedRevision`; missing revisions return 400 and stale revisions return 409 before provider work, leaving saved state unchanged.
 Name queries check saved names and confirmed aliases locally and return an existing key and revision instead of silently commissioning research.
+Kyle selected keeping the saved canon scope for existing-character research; omitted or matching hints are allowed, while conflicting hints are refused before provider work without changing saved content.
+Changing the canon boundary requires a separate explicit workflow; exact matching and refusal responses remain specification work.
 Kyle selected [reservation at admission](PRODUCT.md#selected-research-admission) for known characters, including time waiting in the queue.
 While reserved, another research, save or review is refused until the operation finishes or stops; reads and other characters remain available.
 Full execution and queue capacity causes refusal without provider work or a character reservation.
@@ -74,5 +76,5 @@ Exact Host authorities, address-family behavior and implementation verification 
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | Save and review policy selected; complete schemas and implementation verification pending |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Markdown authority, direct-edit boundary and publication selected; format and verification pending |
 | [#117](https://github.com/mardwerk/tower-generator/issues/117) | Completed by retirement and documentation repair |
-| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Research preconditions, admission, publication revisions and manual recovery selected; remaining research contract and verification pending |
+| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Research preconditions and saved scope, admission, publication revisions and manual recovery selected; remaining research contract and verification pending |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Loopback-only access selected; exact Host/address behavior and implementation verification pending |
