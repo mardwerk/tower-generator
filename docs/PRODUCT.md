@@ -3,16 +3,17 @@
 Kyle selected an API-only Go backend in [#106](https://github.com/mardwerk/tower-generator/issues/106#issuecomment-5969964581) and [#113](https://github.com/mardwerk/tower-generator/issues/113).
 This outline records the 2026-10-03 realignment and separates owner decisions from proposals awaiting review.
 The [reset and architecture review](REALIGNMENT.md) records the removal scope, evidence and open choices.
-Go implementation waits for an agreed research workflow.
+Kyle subsequently selected pure Go with REST, SSE and a bounded in-process queue on 2026-10-03.
+Product implementation waits for an agreed research workflow.
 
 ## Established direction
 
 Tower Generator owns reusable character research, its portable local Wiki and later Tower design for a selected Profile.
 Complete the Go research and Wiki workflow first; Tower design follows later.
 
-- One Go executable exposes operations through `serve`. Startup and configuration remain; there is no independent operational CLI.
+- One pure Go executable exposes REST operations and SSE progress through `serve`, with a bounded in-process research queue. Startup and configuration remain; there is no independent operational CLI.
 - Research, Wiki lookup, saving and review all use the same API. Websites, scripts and possibly Towerright later are clients.
-- Requests need no browser session. The backend retains Wiki files and tracks research; research lifetime across restarts is undecided.
+- Requests need no browser session. The backend retains Wiki files and tracks research; detailed interruption and retention behavior remains open.
 - Default binding is `localhost:<port>`. Explicit `0.0.0.0:<port>` is allowed; neither binding uses authentication.
 - Research blocks saves and reviews for that character. Reading and work on other characters remain available.
 - Ambiguous names return a clarification-needed outcome. Each frontend decides how to ask the person.
@@ -21,7 +22,8 @@ Complete the Go research and Wiki workflow first; Tower design follows later.
 - Retain independent research evidence and helper scripts. Helpers are outside the main product.
 
 Keep the product simple and add behavior or dependencies for a defined workflow.
-API-only does not mean data-free, and it does not select a queue, execution engine or deployment service.
+The selected queue runs inside the Go backend.
+Restart recovery is not a major requirement; no automatic job-resumption guarantee is established by this choice.
 
 ## Research and evidence rules
 
@@ -58,7 +60,7 @@ The backend owns provider access, validation and file commits, using one Wiki lo
 | Generate, later | Character revision and selected Profile | Tower content and provenance under a future generation contract |
 
 Keep progress separate from the final outcome.
-Research admission, cancellation, duplicate-request handling, clarification continuation, retries and operation retention need review.
+Queue limits and admission when the queue is full, cancellation, duplicate-request handling, clarification continuation, retries and operation retention need review.
 Report known consumed usage even when identity discovery ends in ambiguity or a busy outcome.
 
 ## Proposed coordination and storage
@@ -84,14 +86,14 @@ Keep connection capacity, active research capacity, per-run budget and provider 
 A capacity queue is different from waiting for a busy character.
 Never silently reduce a research budget, change the model or omit verification because another run or provider limit intervenes.
 
-## Transport and execution choices
+## Selected transport and execution
 
 REST and SSE describe communication; Temporal can manage execution behind the same API.
-Compare a process-local Go runner, a narrow durable checkpoint runner and Temporal before selecting restart guarantees.
-Kyle requested further evaluation of both lightweight execution and Temporal on 2026-10-03.
-The [comparison](REALIGNMENT.md) identifies client disconnect, backend restart, uncertain paid calls and interrupted Wiki commits separately.
+Kyle selected pure Go execution with REST, SSE and a bounded in-process research queue after reviewing the recovery tradeoffs.
+Temporal remains an evaluated alternative rather than the current backend.
+The [comparison](REALIGNMENT.md) separates client disconnect, backend restart, uncertain paid calls and interrupted Wiki commits.
 
-HTTP routes, SSE event retention, queue admission, numerical limits, extraction dependencies and packaging remain open.
+HTTP routes, SSE event retention, queue limits and full-queue admission, numerical limits, extraction dependencies and packaging remain open.
 Hostname access and trusted browser origins need review in [#119](https://github.com/mardwerk/tower-generator/issues/119).
 Same-origin checks alone would reject a separate frontend on another port; browser clients need an agreed proxy or CORS policy.
 
