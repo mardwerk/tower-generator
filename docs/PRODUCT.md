@@ -27,6 +27,7 @@ Treat Markdown and YAML as data, not executable page content; keep dependencies 
 | --- | --- |
 | Lookup and read | Return saved identity, evidence, review state and revision by query or key, without network research. |
 | Research | Apply [preconditions](#selected-research-preconditions), [admission](#selected-research-admission), [paid provider retry rules](#selected-paid-provider-retry-policy) and [publication](#selected-research-publication-revisions). |
+| Cancel research | Apply the [cancellation policy](#selected-research-cancellation). |
 | Inspect operations | Use [read-only status, SSE and the recent list](#selected-operation-visibility-and-manual-recovery). |
 | Save edit or record review | Apply the [save and review policy](#selected-save-and-review-policy). |
 | Read configuration | Return effective safe settings and categories without secret values. |
@@ -92,6 +93,21 @@ These counts do not select the lifecycle or capacity of clarification waits.
 Keep connection capacity, active research capacity, per-run budget and provider limits separate.
 A capacity queue is different from waiting for a busy character.
 Cooperative same-character research remains a preference; combining evidence and budgets is not a selected design.
+
+## Selected research cancellation
+
+Kyle selected cooperative cancellation for queued and running research in [#118](https://github.com/mardwerk/tower-generator/issues/118) on 2026-10-03.
+Cancel queued work atomically against worker dispatch; remove it before provider work and release its queue slot and character reservation.
+For running work, record the cancellation request and prevent new paid calls.
+Let in-flight paid calls finish within their deadlines to report responses and usage.
+Keep the worker slot and character reservation until the worker has stopped and cannot publish.
+A cancellation request is not confirmation that work has stopped; cancellation can take time and cannot promise a refund.
+
+Serialize accepting cancellation against the start of final publication.
+If cancellation is accepted first, entry replacement cannot begin.
+Once final publication begins, refuse cancellation as too late and report the actual publication outcome under the [Wiki publication rules](#selected-wiki-publication).
+This cutoff precedes entry replacement, which makes the new revision visible.
+Disconnecting the submitting request or SSE does not cancel accepted research.
 
 ## Selected research publication revisions
 
@@ -212,6 +228,6 @@ The following choices remain open; earlier proposals and merged proposal text do
 | --- | --- |
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | Revision coverage, review invalidation and complete save/review schemas. |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Entry format, offline validation, review staleness, historical retention and single-writer enforcement. |
-| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation, clarification continuation, unknown-identity coordination, discovery scope, scope-hint representation and matching, and SSE framing and observer limits. |
+| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation response and terminal handling, clarification continuation, unknown-identity coordination, discovery scope, scope-hint representation and matching, and SSE framing and observer limits. |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Exact Host authorities, address families and numeric-port behavior. |
-| [#106](https://github.com/mardwerk/tower-generator/issues/106) | Routes, strict request decoding, operation records, provider/model selection, budgets, extraction dependencies, packaging and implementation verification. |
+| [#106](https://github.com/mardwerk/tower-generator/issues/106) | Routes, strict request decoding, operation records, provider/model selection, budgets, provider deadlines, extraction dependencies, packaging and implementation verification. |
