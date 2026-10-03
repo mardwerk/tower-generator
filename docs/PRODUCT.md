@@ -101,6 +101,17 @@ Ordinary lookup returns the saved characters without provider work.
 A frontend or script can deliberately request paid discovery of other characters with that name, for example through a "Find other characters" action.
 Reuse saved entries without refreshing them; new candidates follow the selected budgets, limit and admission policy.
 
+Kyle selected independent discovery followed by reservation of the confirmed character identity before candidate research.
+Separate submissions can each consume lookup usage before resolving to the same identity.
+If the character has become saved before candidate admission, reuse its key and revision without refreshing it.
+Otherwise, if another operation has reserved that identity, report the candidate as busy and return its operation ID for read-only status and SSE inspection.
+Do not join budgets or queue another attempt; the existing operation keeps its own settings and outcome.
+Identity matching and key format still need specification; name similarity alone does not establish a shared identity.
+
+Kyle selected proceeding with available candidates when another candidate is busy.
+Busy candidates receive no new research budget or waiting work from this submission and do not count toward its candidate limit.
+Consider the remaining available candidates for admission together under the selected limit and ordinary capacity rules.
+
 ## Selected research admission
 
 Kyle selected reservation at admission in [#118](https://github.com/mardwerk/tower-generator/issues/118) on 2026-10-03.
@@ -122,7 +133,7 @@ These counts do not select the lifecycle or capacity of clarification waits.
 
 Keep connection capacity, active research capacity, per-run budget and provider limits separate.
 A capacity queue is different from waiting for a busy character.
-Cooperative same-character research remains a preference; combining evidence and budgets is not a selected design.
+Apply the [resolved-identity reservation policy](#requested-ambiguity-handling) when discovery finds a character already under research.
 
 ## Selected research cancellation
 
@@ -258,6 +269,6 @@ The following choices remain open; earlier proposals and merged proposal text do
 | --- | --- |
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | Revision coverage, review invalidation and complete save/review schemas. |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Entry format, offline validation, review staleness, historical retention and single-writer enforcement. |
-| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation response and terminal handling, ambiguity configuration validation, unknown-identity coordination and busy candidates, discovery scope, scope-hint representation and matching, and SSE framing and observer limits. |
+| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation response and terminal handling, ambiguity configuration validation, identity matching and key format, discovery scope, scope-hint representation and matching, and SSE framing and observer limits. |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Exact Host authorities, address families and numeric-port behavior. |
 | [#106](https://github.com/mardwerk/tower-generator/issues/106) | Routes, strict request decoding, operation records, provider/model selection, budgets, provider deadlines, extraction dependencies, packaging and implementation verification. |
