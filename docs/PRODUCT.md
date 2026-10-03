@@ -26,7 +26,7 @@ Treat Markdown and YAML as data, not executable page content; keep dependencies 
 | Operation | Contract |
 | --- | --- |
 | Lookup and read | Return saved identity, evidence, review state and revision by query or key, without network research. |
-| Research | Apply [preconditions](#selected-research-preconditions), [admission](#selected-research-admission), [paid provider retry rules](#selected-paid-provider-retry-policy) and [publication](#selected-research-publication-revisions). |
+| Research | Apply [preconditions](#selected-research-preconditions), [admission](#selected-research-admission), [paid provider retry rules](#selected-paid-provider-retry-policy), [publication eligibility](#selected-research-publication-eligibility) and [revision rules](#selected-research-publication-revisions). |
 | Cancel research | Apply the [cancellation policy](#selected-research-cancellation). |
 | Inspect operations | Use [read-only status, SSE and the recent list](#selected-operation-visibility-and-manual-recovery). |
 | Save edit or record review | Apply the [save and review policy](#selected-save-and-review-policy). |
@@ -163,6 +163,22 @@ Once final publication begins, refuse cancellation as too late and report the ac
 This cutoff precedes entry replacement, which makes the new revision visible.
 Disconnecting the submitting request or SSE does not cancel accepted research.
 
+## Selected research publication eligibility
+
+Kyle selected these publication rules through [#106](https://github.com/mardwerk/tower-generator/issues/106) on 2026-10-04.
+An ordinary source fetch failure permits publication when all required verification and entry validation complete successfully.
+Record the failed source and resulting limitations, preserving retained evidence, manual notes and applicable reviews under the [research rules](RESEARCH.md#durable-research-rules).
+If required verification or entry validation cannot complete successfully, leave the saved entry unchanged.
+The concrete required checks still need specification; a failure does not permit omitting or redefining them.
+
+If a paid step may have run but its usable result is unknown, stop without beginning publication and leave the saved entry unchanged.
+Report known and unknown usage and stop further paid work under the [paid provider retry policy](#selected-paid-provider-retry-policy).
+Earlier useful findings may remain unpublished, and a deliberate new attempt can spend again under the [manual recovery policy](#selected-operation-visibility-and-manual-recovery).
+Access to unpublished findings after record eviction or restart is not promised.
+
+A complete valid provider response with missing usage data remains eligible for publication; report that usage as unknown.
+Decide eligibility before final publication; accepted [cancellation](#selected-research-cancellation) prevents publication, and [storage failure rules](#selected-wiki-publication) govern failures after entry replacement.
+
 ## Selected research publication revisions
 
 Kyle selected a new character revision for every successful research publication in [#118](https://github.com/mardwerk/tower-generator/issues/118) on 2026-10-03.
@@ -273,6 +289,7 @@ Specify inputs, outcomes, progress, saved files and budget behavior together for
 Add concurrent same-character requests, independent characters, missing and stale save, review and research revisions, external edits and interruption during commit.
 Test omitted, matching and conflicting saved-scope hints, malformed Host authorities, IPv6, hostname access, script/native callers and SSE reconnects.
 Include separate cases for an unclear continuity and a source from another medium with facts inside and outside the selected scope.
+Review an unavailable source with completed verification, a failed required check, a valid response without usage data and a paid step with an unknown usable result.
 These cases must not imply support for unselected API access.
 Review disconnect and restart behavior separately; successful saved Wiki content must not depend on a browser remaining connected.
 
@@ -285,4 +302,4 @@ The following choices remain open; earlier proposals and merged proposal text do
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Entry format, offline validation, review staleness, historical retention and single-writer enforcement. |
 | [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation response and terminal handling, ambiguity configuration validation, identity matching and key format, scope-hint representation and matching, and SSE framing and observer limits. |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Exact Host authorities, address families and numeric-port behavior. |
-| [#106](https://github.com/mardwerk/tower-generator/issues/106) | Routes, strict request decoding, operation records, provider/model selection, budgets, provider deadlines, extraction dependencies, packaging and implementation verification. |
+| [#106](https://github.com/mardwerk/tower-generator/issues/106) | Required research verification and entry validation, routes, strict request decoding, operation records, provider/model selection, budgets, provider deadlines, extraction dependencies, packaging and implementation verification. |
