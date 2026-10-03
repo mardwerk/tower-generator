@@ -34,7 +34,7 @@ Treat Markdown and YAML as data, not executable page content; keep dependencies 
 | Generate, later | Follow the future [generation contract](#later-clients-and-generation). |
 
 Keep progress separate from the final outcome.
-Ambiguous names return a clarification-needed outcome; each frontend decides how to ask the person.
+Ambiguous names expose identity candidates for a frontend selector under the [requested ambiguity handling](#requested-ambiguity-handling).
 Report known consumed usage even when identity discovery ends in ambiguity or a busy outcome.
 
 ## Revision preconditions
@@ -70,6 +70,17 @@ Kyle selected keeping the saved canon scope for research on an existing characte
 Use the entry's saved scope; an omitted or matching scope hint is allowed.
 Refuse a conflicting scope hint before provider work and leave saved content unchanged.
 Changing the canon boundary requires a separate explicit workflow; repeat research does not change it.
+
+## Requested ambiguity handling
+
+Kyle requested configurable ambiguity handling in [#118](https://github.com/mardwerk/tower-generator/issues/118) on 2026-10-03.
+After identity lookup exposes distinct characters with the same name, support researching multiple candidate identities while the frontend presents a selector.
+Choosing or switching the displayed character should leave the other candidate research running so its result can also be used.
+Keep each identity's evidence and Wiki entry separate.
+Apply the [saved-character research preconditions](#selected-research-preconditions) to research on saved candidates.
+
+The default mode, candidate limit, budget allocation and admission behavior remain owner choices.
+How discovery handles a saved local match alongside possible unsaved namesakes also remains open.
 
 ## Selected research admission
 
@@ -228,6 +239,6 @@ The following choices remain open; earlier proposals and merged proposal text do
 | --- | --- |
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | Revision coverage, review invalidation and complete save/review schemas. |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Entry format, offline validation, review staleness, historical retention and single-writer enforcement. |
-| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation response and terminal handling, clarification continuation, unknown-identity coordination, discovery scope, scope-hint representation and matching, and SSE framing and observer limits. |
+| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation response and terminal handling, ambiguity defaults, candidate limits and budget allocation, candidate admission, saved-name discovery, unknown-identity coordination, discovery scope, scope-hint representation and matching, and SSE framing and observer limits. |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Exact Host authorities, address families and numeric-port behavior. |
 | [#106](https://github.com/mardwerk/tower-generator/issues/106) | Routes, strict request decoding, operation records, provider/model selection, budgets, provider deadlines, extraction dependencies, packaging and implementation verification. |
