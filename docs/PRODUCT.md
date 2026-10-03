@@ -86,7 +86,15 @@ Kyle selected a full configured research budget for every admitted candidate.
 Count shared identity-lookup usage once, separately from candidate research usage.
 Two new candidates can consume two complete research allocations plus lookup usage.
 
-Candidate limits and admission behavior remain owner choices.
+Kyle selected a configurable default limit of two candidates needing new paid research per name query in `research-candidates` mode.
+Saved candidates do not count toward this limit.
+If discovery finds more, return the choices for narrowing before starting any candidate research; lookup usage still counts.
+
+Kyle selected admission together for candidates within that limit.
+Admit all their new research only when ordinary execution and queue capacity can accommodate all of it.
+If capacity is insufficient, return the choices and a capacity outcome without starting candidate research or retaining hidden waiting work.
+Each admitted operation finishes independently.
+
 How discovery handles a saved local match alongside possible unsaved namesakes also remains open.
 
 ## Selected research admission
@@ -246,6 +254,6 @@ The following choices remain open; earlier proposals and merged proposal text do
 | --- | --- |
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | Revision coverage, review invalidation and complete save/review schemas. |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Entry format, offline validation, review staleness, historical retention and single-writer enforcement. |
-| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation response and terminal handling, ambiguity configuration validation, candidate limits and admission, saved-name discovery, unknown-identity coordination, discovery scope, scope-hint representation and matching, and SSE framing and observer limits. |
+| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation response and terminal handling, ambiguity configuration validation, saved-name discovery, unknown-identity coordination, discovery scope, scope-hint representation and matching, and SSE framing and observer limits. |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Exact Host authorities, address families and numeric-port behavior. |
 | [#106](https://github.com/mardwerk/tower-generator/issues/106) | Routes, strict request decoding, operation records, provider/model selection, budgets, provider deadlines, extraction dependencies, packaging and implementation verification. |
