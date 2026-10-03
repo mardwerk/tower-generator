@@ -27,7 +27,9 @@ The executable is a local build of the released source, so its bytes may differ 
 Upstream notices are installed in `default/licenses/`. Imported Profile notices remain in `default/profile/licenses/`.
 
 Setup then generates and validates the [Usopp experiment](AUTHORING.md).
-The sibling Atlas checkout is an authoring source; validation after setup uses only the local default workspace and runs offline.
+The Atlas checkout is an authoring source; setup finds a sibling checkout or one directory above the workspace.
+Use `--atlas /path/to/btd6-atlas` to select another location.
+Validation after setup uses only the local default workspace and runs offline.
 No code or files in Atlas or td-profile are changed.
 
 Check the local example directly on Linux or macOS:

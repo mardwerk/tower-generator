@@ -19,7 +19,7 @@ class AuthoringTests(unittest.TestCase):
     def setUpClass(cls):
         cls.temporary = tempfile.TemporaryDirectory(prefix="tower-authoring-test-")
         cls.output = Path(cls.temporary.name)
-        cls.data = AUTHOR["generate"](DESIGN, PROJECT.parent / "btd6-atlas", cls.output)
+        cls.data = AUTHOR["generate"](DESIGN, AUTHOR["default_atlas"](), cls.output)
 
     @classmethod
     def tearDownClass(cls):
@@ -108,7 +108,7 @@ class AuthoringTests(unittest.TestCase):
         revision = deepcopy(DESIGN)
         revision["base"]["damage"] = 2
         revised = self.output / "revision"
-        AUTHOR["generate"](revision, PROJECT.parent / "btd6-atlas", revised)
+        AUTHOR["generate"](revision, AUTHOR["default_atlas"](), revised)
         tower = json.loads((revised / "game-data/Towers/Usopp/Usopp.json").read_text())
         self.assertEqual(next(AUTHOR["models"](tower, "DamageModel"))["damage"], 2)
         self.assertIn("| 0-0-0 | 250 | 2 |", (revised / "TOWER.md").read_text())

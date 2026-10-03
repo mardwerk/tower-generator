@@ -13,7 +13,7 @@ import tempfile
 
 sys.dont_write_bytecode = True
 
-from src.author import PROJECT, check, generate, write_json
+from src.author import PROJECT, check, default_atlas, generate, write_json
 
 
 DEFAULT = PROJECT / "default"
@@ -76,7 +76,7 @@ def install_validator():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--atlas", type=Path, default=PROJECT.parent / "btd6-atlas")
+    parser.add_argument("--atlas", type=Path, default=default_atlas())
     args = parser.parse_args()
     install_validator()
     design = json.loads((DEFAULT / "usopp.json").read_text())

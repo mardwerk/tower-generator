@@ -20,6 +20,11 @@ CHANGES = {"damage", "pierce", "range", "intervalMultiplier", "projectiles", "ca
 ATTACKS = {"explosion", "spread", "sniper"}
 
 
+def default_atlas():
+    sibling = PROJECT.parent / "btd6-atlas"
+    return sibling if sibling.is_dir() else PROJECT.parent.parent / "btd6-atlas"
+
+
 def models(value, kind):
     if isinstance(value, dict):
         if value.get("$type", "").split(",")[0].split(".")[-1] == kind:

@@ -5,12 +5,14 @@ Kyle selected this experiment under [#85](https://github.com/mardwerk/tower-gene
 During this iteration, work directly on `main` and track necessary Profile or dependency changes as issues.
 Atlas and td-profile remain unchanged. The draft still needs design review. [Canon and adaptations](USOPP.md) records the sources and the three attack identities.
 
-Run from Tower Generator with Python 3.10 or newer and the sibling Atlas checkout available:
+Run from Tower Generator with Python 3.10 or newer and an Atlas checkout available:
 
 ```sh
 python3 setup.py
 ```
 
+Setup uses a sibling `btd6-atlas` directory when present, otherwise it looks one directory above the workspace.
+For the Mardwerk layout, that is `~/CodingProjects/btd6-atlas/`.
 Use `--atlas /path/to/btd6-atlas` for another checkout.
 Setup builds or reuses the latest released native validator, generates the example and runs positive and negative checks.
 [Profile integration](PROFILE.md) records the build and validation behavior.
