@@ -10,6 +10,7 @@ Product implementation remains pending that workflow review.
 Kyle approved [PR #120](https://github.com/mardwerk/tower-generator/pull/120), applied directly to main at `b085ba8`.
 The old Python product, complete web/Lab tree, Node tooling, Usopp experiment and broken setup are removed.
 The deleted Default Profile is retired; a new Profile and Tower design follow the research/Wiki workflow.
+The Usopp authoring scope in [#85](https://github.com/mardwerk/tower-generator/issues/85) is retired; it no longer receives new generation reviews.
 
 Git history preserves the retired implementation.
 Independent research evidence and helpers remain; all 56 imported snapshot files retain their original bytes and hashes.

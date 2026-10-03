@@ -9,7 +9,7 @@ Keep generated records local and ignored by Git; do not publish the BTD6 corpus 
 Atlas's BTD6 Profile describes BTD6 data and is separate from td-profile's generic Profile Template.
 Tower Generator's Default Profile/Usopp experiment is retired; [Profile ownership](PROFILE.md) records the remaining boundaries.
 Dart Monkey's Atlas verification remains accepted reference evidence.
-New generation mappings and product rules require review with Kyle through [#85](https://github.com/mardwerk/tower-generator/issues/85).
+Follow the [review instructions](../AGENTS.md) for Kyle's review of future generation mappings and product rules.
 
 The [complete historical Default Profile](https://github.com/mardwerk/tower-generator/tree/c7a71f25147ee871bf48790e6e5b0cd6515d8cfa/default/profile) copied Atlas commit [`de82968`](https://github.com/KyleDerZweite/btd6-atlas/tree/de829684232157967fd66f0e999a45df3a669c63/profile), with its own identity and revision.
 Its model contracts retain capture 56.3, build 24829026 provenance and [imported notices](https://github.com/mardwerk/tower-generator/tree/c7a71f25147ee871bf48790e6e5b0cd6515d8cfa/default/profile/licenses).

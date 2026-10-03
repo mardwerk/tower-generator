@@ -6,7 +6,8 @@ Public contributors do not need Planning access.
 
 When managing issues, labels or milestones, read [local topic definitions](docs/ISSUE_LABELS.md).
 Agents with Planning access must also read its [issue labels standard](https://github.com/mardwerk/planning/blob/main/10_docs/ISSUE_LABELS.md), using the local checkout when available.
-Derive work state from recorded owner decisions.
+Derive work state from explicit, recorded owner decisions.
+Relabelling alone does not select work or accept a specification.
 
 Follow [product rules](docs/PRODUCT.md) and the [realignment plan](docs/REALIGNMENT.md).
 Go `serve` is the selected API-only direction; there is no independent operational CLI.
@@ -19,7 +20,8 @@ Use [td-profile](https://github.com/mardwerk/td-profile) for the generic Profile
 Propose shared checker or schema changes upstream.
 Follow [Profile ownership](docs/PROFILE.md); a new Profile and its integration are deferred.
 A Profile is a directory selected by path, with local dependencies and separate governed Tower records.
-Review new generation mappings and product rules with Kyle through [#85](https://github.com/mardwerk/tower-generator/issues/85).
+Review current product rules and the research/Wiki workflow with Kyle through [#106](https://github.com/mardwerk/tower-generator/issues/106).
+When generation resumes, review new mappings and generation rules with Kyle in the issue that owns the proposed change before implementation.
 
 Keep BTD6 facts, source cleanup and the BTD6 Profile in [btd6-atlas](https://github.com/KyleDerZweite/btd6-atlas).
 Cite capture, build, source commit and files as described in [BTD6-REFERENCE.md](docs/BTD6-REFERENCE.md).

@@ -23,5 +23,5 @@ This evidence does not establish execution on other platforms or acceptance of g
 
 See [BTD6-REFERENCE.md](BTD6-REFERENCE.md) for source attribution.
 Retain source notices when reusing historical material.
-Review new generation mappings and product rules with Kyle through [#85](https://github.com/mardwerk/tower-generator/issues/85).
+Follow the [review instructions](../AGENTS.md) for Kyle's review of future generation mappings and product rules.
 Propose generic checker or reusable schema changes upstream in td-profile; game-specific rules belong to the owning Profile.
