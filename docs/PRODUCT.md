@@ -113,6 +113,18 @@ Kyle selected proceeding with available candidates when another candidate is bus
 Busy candidates receive no new research budget or waiting work from this submission and do not count toward its candidate limit.
 Consider the remaining available candidates for admission together under the selected limit and ordinary capacity rules.
 
+## Selected scope clarification
+
+Kyle selected independent progress during scope clarification in [#118](https://github.com/mardwerk/tower-generator/issues/118) on 2026-10-04.
+Apply the [candidate limit](#requested-ambiguity-handling) before checking scope readiness; candidates with unresolved scopes still count toward it.
+Within that limit, `research-candidates` admits clear-scope candidates together through ordinary [admission checks](#selected-research-admission).
+Finish discovery with scope choices for the unresolved candidates and report lookup usage.
+An unresolved candidate holds no running or waiting job or character reservation after discovery.
+Retain the finished discovery outcome under the [operation history policy](#selected-operation-visibility-and-manual-recovery).
+
+After choosing a scope, the person deliberately submits a new research request with normal checks and a full configured research budget.
+Additional paid lookup may be needed; the new request is not a guaranteed free continuation.
+
 ## Selected research admission
 
 Kyle selected reservation at admission in [#118](https://github.com/mardwerk/tower-generator/issues/118) on 2026-10-03.
@@ -130,7 +142,7 @@ Set these limits at startup with `--worker-size <Y>` and `--queue-size <X>`, for
 Queue size counts waiting operations separately from executing workers.
 These are initial defaults, not measured capacity; revisit them using operation durations, queue waits, capacity refusals and provider limits.
 A larger queue reserves more known characters while they wait, which can delay saves and reviews without increasing execution concurrency.
-These counts do not select the lifecycle or capacity of clarification waits.
+Scope clarification follows the [selected lifecycle](#selected-scope-clarification).
 
 Keep connection capacity, active research capacity, per-run budget and provider limits separate.
 A capacity queue is different from waiting for a busy character.
@@ -271,6 +283,6 @@ The following choices remain open; earlier proposals and merged proposal text do
 | --- | --- |
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | Revision coverage, review invalidation and complete save/review schemas. |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Entry format, offline validation, review staleness, historical retention and single-writer enforcement. |
-| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation response and terminal handling, ambiguity configuration validation, identity matching and key format, scope clarification lifecycle, scope-hint representation and matching, and SSE framing and observer limits. |
+| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation response and terminal handling, ambiguity configuration validation, identity matching and key format, scope-hint representation and matching, and SSE framing and observer limits. |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Exact Host authorities, address families and numeric-port behavior. |
 | [#106](https://github.com/mardwerk/tower-generator/issues/106) | Routes, strict request decoding, operation records, provider/model selection, budgets, provider deadlines, extraction dependencies, packaging and implementation verification. |
