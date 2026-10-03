@@ -1,182 +1,117 @@
-# Tower Generator product outline
+# Tower Generator product rules
 
-Working outline for review, recorded on 2026-10-02 in [#106](https://github.com/mardwerk/tower-generator/issues/106).
-Kyle selected defining rough rules before further implementation.
-The owner requirements below come from his requests; the proposed sections remain open for review.
-Kyle selected Go for the backend on 2026-10-02.
-On 2026-10-03 he replaced the independent operational CLI with an API-only `serve` backend ([#106](https://github.com/mardwerk/tower-generator/issues/106#issuecomment-5969964581), [#113](https://github.com/mardwerk/tower-generator/issues/113)).
-Implementation remains pending the workflow specification.
-Proposals from the [#107 review](https://github.com/mardwerk/tower-generator/issues/107) leave the owner requirements and the agreed backend direction unchanged.
-The [#113 review](https://github.com/mardwerk/tower-generator/issues/113) proposes the same-character update policy in the concurrency rules.
+Kyle selected an API-only Go backend in [#106](https://github.com/mardwerk/tower-generator/issues/106#issuecomment-5969964581) and [#113](https://github.com/mardwerk/tower-generator/issues/113).
+This outline records the 2026-10-03 realignment and separates owner decisions from proposals awaiting review.
+The [reset and architecture review](REALIGNMENT.md) records the removal scope, evidence and open choices.
+Go implementation waits for an agreed research workflow.
 
-## Purpose and current focus
+## Established direction
 
-Tower Generator should turn reusable character evidence into Towers that a person can understand, inspect and revise for a selected Profile.
-The immediate focus is reliable research and local storage; generation remains later work.
-Specify the product's behavior before further implementation or screen changes.
-The existing application is an experiment that can inform the specification.
+Tower Generator owns reusable character research, its portable local Wiki and later Tower design for a selected Profile.
+Complete the Go research and Wiki workflow first; Tower design follows later.
 
-## Established owner requirements
+- One Go executable exposes operations through `serve`. Startup and configuration remain; there is no independent operational CLI.
+- Research, Wiki lookup, saving and review all use the same API. Websites, scripts and possibly Towerright later are clients.
+- Requests need no browser session. The backend retains Wiki files and tracks research; research lifetime across restarts is undecided.
+- Default binding is `localhost:<port>`. Explicit `0.0.0.0:<port>` is allowed; neither binding uses authentication.
+- Research blocks saves and reviews for that character. Reading and work on other characters remain available.
+- Ambiguous names return a clarification-needed outcome. Each frontend decides how to ask the person.
+- Remove the old Python application, Node tooling and entire web tree. Git history preserves the former generator and Lab.
+- Retire the old Usopp experiment and deleted Default Profile packaging, including its setup script. A new Profile is deferred.
+- Retain independent research evidence and helper scripts. Helpers are outside the main product.
 
-1. Keep the product clean and simple. Add a feature or dependency only for a defined workflow.
-2. Keep Create minimal: character input, primary action and small controls below it. Put optional inputs behind an explicit expansion.
-3. Resolve the character's canonical name and series from research. Ask for disambiguation only when necessary; do not require a series field by default.
-4. Retain the previous Lab design system and centered navigation: Create plus, Library, Wiki and Generations, with Settings on the right.
-   Keep unused destinations disabled in place. Each page has one visible heading and no subheadings.
-5. Research in English and retain reusable abilities, traits, equipment, evidence, limitations and uncertainty independently of game Profiles.
-6. Reuse a confirmed existing character despite aliases or older normalized folder names. Similar names alone must not silently merge different identities.
-7. Repeated research spends the same allocated budget on verification, correction and expansion.
-   It must preserve prior evidence and human-reviewed work; an improvement is not guaranteed on every run.
-8. Keep local, human-readable character files under `wiki/<series>/<character>/`, ignored by Git.
-   The tool may read and update those files without keeping a hidden session or requiring a database.
-9. Suggested generalized classifications may use Jev or a comparable decision model.
-   Model classification and verification do not establish canon acceptance or game mechanics.
-10. Use Go for the backend. A `serve` command exposes one API capable of handling concurrent clients and requests; there is no independent operational CLI.
+Keep the product simple and add behavior or dependencies for a defined workflow.
+API-only does not mean data-free, and it does not select a queue, execution engine or deployment service.
 
-## Proposed responsibilities
+## Research and evidence rules
 
-Use one core for character identity, research, lookup, file validation, saving and review.
-Every client reaches it through the `serve` API, so all clients have the same behavior and storage rules.
-The website handles forms, navigation, readable evidence and user actions; the backend owns durable files, provider access and validation.
-Browser memory may hold an unsaved edit, but it must not be the only copy of saved research.
-`serve` uses one Wiki location chosen when it starts, so API requests cannot write to other paths.
-Both bindings keep today's browser protection, widened to IP addresses: reject a request whose browser origin differs from its host, or whose host name is neither localhost nor an IP address.
-This stops a web page from driving the API through DNS rebinding.
-Without authentication, anyone who can reach a `0.0.0.0` binding can read, edit, review and spend the research budget, so use it only on a trusted network.
+Research in English independently of Profiles and game mechanics.
+Resolve the canonical character and series without requiring a series input by default.
+Reuse confirmed identities despite aliases or older folder names; similarity alone must not merge different characters.
+Make canon scope explicit and distinguish versions where the evidence requires it.
 
-## Agreed backend direction
+Retain abilities, traits, equipment, named techniques, conditions, limitations and uncertainty with cited passages.
+Keep source facts, model verification, generalized classifications and human review distinct.
+Jev or a comparable classification method remains a possible approach, not established canon or a game mapping.
 
-Kyle recorded this direction in [#106](https://github.com/mardwerk/tower-generator/issues/106#issuecomment-5969964581) and [#113](https://github.com/mardwerk/tower-generator/issues/113) on 2026-10-03.
-Use one Go executable whose `serve` command exposes the API. There is no independent operational CLI; process startup and configuration remain.
-Research, lookup, edit and review clients call the API without a browser session: the website, scripts and possibly Towerright later.
-`serve` binds to `localhost:<port>` by default and to `0.0.0.0:<port>` only when explicitly configured. Neither binding uses authentication.
-While a character is being researched through the API, edits are disabled and saves and reviews for that character are refused. Reading and other characters remain available.
-The backend keeps the local portable Markdown Wiki and protects manual notes, retained evidence and human-reviewed records.
-Complete the Go Wiki and research workflow first; Tower design follows later.
-Parallel requests that research one character cooperatively are a preference, not an accepted design.
-Go supports concurrent network work and a compiled executable; the current Python CLI and Node API bridge remain the working experiment until migration.
-The target API must run without Node or Python. Frontend build tooling can remain separate.
-Serving the built website from the executable is a packaging proposal, not yet a specified requirement.
+Repeated research receives the same allocated budget for verification, correction and expansion.
+It preserves retained evidence, manual notes and human-reviewed records; every run need not produce an improvement.
+Missing fresh evidence does not itself refute or delete a prior finding.
+Report blocked sources, incomplete excerpts, contradictions, effective budget and known provider usage.
 
-## Proposed concurrency rules
+Keep local human-readable files under `wiki/<series>/<character>/`, ignored by Git, with retained passages beside the character.
+Offline lookup reads saved evidence without network research.
+The [research rules](RESEARCH.md), [candidate Wiki format](wiki-format.md) and [classification definitions](research-categories.yaml) retain useful prototype evidence for the new contract.
 
-Handle multiple API connections while allowing independent characters and source fetches to progress concurrently.
-Keep four limits separate, so more clients never create unlimited provider calls and load never changes what a run may spend:
+## Proposed API workflow
 
-- Connection capacity: the API connections and requests the server handles at once. Lookup and reading use it and never wait for research.
-- Research capacity: the research runs active at once in one process, with bounded concurrent fetches and model calls across them. Work beyond it waits in a visible queue or is refused with a clear outcome.
-- Research budget: the per-run limits on search results, page attempts, model calls and output tokens. Configuration sets it; a caller may lower it but not exceed it, and queueing or other runs never change it.
-- Provider limits: the provider's rate limits, quotas and account credit. Reaching one delays or fails a run visibly; it never silently lowers the budget, switches the model or skips verification.
+These operation contracts remain proposals; route names and JSON schemas are not selected.
+The backend owns provider access, validation and file commits, using one Wiki location chosen at startup.
 
-Safe updates to the same character are a separate rule, not a capacity limit.
-Today the Node bridge in `src/web/server.ts` allows one change at a time across all characters and refuses the others.
-The Python CLI checks the revision only when one is supplied. Research compares revisions before replacing the folder and refuses a new folder that appeared meanwhile.
-The [#113 review](https://github.com/mardwerk/tower-generator/issues/113) proposes this policy instead:
-
-- `serve` is the only Tower Generator writer for its Wiki directory. It keeps an in-memory set of characters with a change in progress, with no lock files or database.
-- Research marks a character once identity resolution, the first networked step, reveals its key. It also marks a matched older folder that it renames.
-- Saves, reviews and manual collection mark the character while they run.
-- A change to a marked character, including a second research request, is refused with a busy outcome and changes nothing. The caller can repeat it after the first change ends.
-- Reading, lookup and other characters stay available. Read results show the mark, so the website can disable editing.
-- Before committing, each change checks that the files still have the revision it read. Otherwise it changes nothing and reports a stale revision.
-- A missing entry counts as a revision, so two fresh runs cannot both create the same character.
-- Saves and reviews must send the revision they read; a request without one is refused.
-- Validate and commit each character update as a complete operation. Readers always see the last committed revision, never a partial update.
-
-Direct edits to the Markdown files, such as in a text editor or through Git, need no coordination with `serve`.
-`serve` keeps no cached copy and reads the files again for every request and before every commit.
-The revision is a hash of the entry and its source files, as today. An external edit therefore makes an older save, review or research commit fail as stale instead of overwriting it.
-An edited reviewed entry reads as draft again, as today. An external edit that lands between the final check and the file replacement is not detected, so avoid editing a character's files while it is being researched.
-Run one `serve` per Wiki directory; writes by any other process count as external edits.
-
-A failed, refused or ambiguous research run writes no Wiki files, as today.
-Its outcome goes only to the caller and the server terminal. A new character has no file to hold it, and an existing entry keeps the `research` metadata of its last successful run.
-
-Long-running work reports queued, running, completed or failed. This is transient process state, not a session: it ends with the process, while outcomes of successful work are recorded in the character files.
-
-Start with concurrency inside one local Go process and portable files; choose numerical limits from measured provider and extraction behavior.
-Distributed workers and a database are not required by this direction.
-
-## Proposed screen responsibilities
-
-The table defines each screen's job, not its final layout or complete control list.
-Research is the current workflow; the other destinations remain visible according to the established navigation rule.
-
-| Screen | What the person does | Default presentation | Secondary controls or later scope |
-| --- | --- | --- | --- |
-| Create | Enter a character and start research | One character input, Research action, small controls beneath it | Optional identity/scope hints and supplied evidence; generation inputs later |
-| Wiki | Find and open locally researched characters | Search and a concise list of characters | Opening a saved entry performs offline lookup |
-| Character entry within Wiki | Understand the evidence and improve or review the entry | Readable summary, capabilities, limitations and review state | Source passages, research again, editing and explicit human review |
-| Library | Intended home for saved Towers | Disabled during the research focus | Define its contents and distinction from Generations before enabling |
-| Generations | Intended home for inspecting generation work | Disabled during the research focus | Define retained history and revision behavior before enabling |
-| Settings | Configure the local tool | Disabled until its required settings are specified | Model/provider references, storage location and later Profile selection |
-
-Keep paths, token limits, raw metadata and provider diagnostics behind details unless they help the person resolve a problem.
-Show a concise busy state, completion summary or actionable error where the action occurred.
-Changes to the layout must follow an agreed screen contract, not introduce unrelated controls while implementing a backend feature.
-
-## Proposed operation contracts
-
-Define operations independently of HTTP route names.
-Use the same validation and outcomes for every client; the table describes the minimum information rather than a fixed JSON schema.
-
-| Operation | Input | Output or effect |
+| Operation | Input | Outcome |
 | --- | --- | --- |
-| Lookup | Optional character query and selected Wiki location | Saved identities, summaries and review states; no network research |
-| Read character | Saved character key | Portable content, retained evidence and current revision |
-| Research or improve | Character query, optional series/scope hints and an optional lower research budget | Resolved identity, saved key, revision, changes, unavailable or incomplete sources, effective budget and reported usage |
-| Save edit | Character key, edited content and expected revision | Validated files and a new revision, or an error preserving the saved entry |
-| Record review | Character key, expected revision and explicit review target | Human review recorded for that target; finding and classification review remain distinct |
-| Read categories/configuration | Selected local configuration | Broad classification definitions and safe effective settings; no secret values |
-| Generate and validate, later | Character entry at a recorded revision and a selected Profile | Tower content, provenance including that revision, and declared checks; contract remains to be specified |
+| Lookup and read | Query or saved character key | Saved identity, evidence, review state and revision without research |
+| Research | Character query or saved identity, optional scope hints and lower budget | Saved evidence and change summary, or an explicit clarification, busy or failure outcome |
+| Save edit | Character key, edited content and expected revision | Validated update or refusal without overwriting saved work |
+| Record review | Character key, expected revision and explicit target | Human decision tied to that content; findings and classifications remain distinct |
+| Read configuration | Selected safe settings | Effective configuration and categories without secret values |
+| Generate, later | Character revision and selected Profile | Tower content and provenance under a future generation contract |
 
-API responses should distinguish success, identity ambiguity, invalid input, a busy character, stale revisions and provider failure.
-Keep progress separate from the final result, so tools can parse results without interpreting terminal messages.
-Long operations report the work states defined in the concurrency rules; polling, streaming and cancellation remain open.
-Do not require a browser session for any core operation.
+Keep progress separate from the final outcome.
+Research admission, cancellation, duplicate-request handling, clarification continuation, retries and operation retention need review.
+Report known consumed usage even when identity discovery ends in ambiguity or a busy outcome.
 
-## Proposed storage and evidence rules
+## Proposed coordination and storage
 
-Kyle selected the local Markdown Wiki in [#102](https://github.com/mardwerk/tower-generator/issues/102); the existing [Wiki format](wiki-format.md) is the implementation baseline.
-Its `work` field and first folder level hold the series named in owner requirement 8.
-Retain source passages beside each character; avoid database or MDX requirements.
-File layout and schema versions are separate from the choice of programming language.
+[#113](https://github.com/mardwerk/tower-generator/issues/113) and merged [PR #114](https://github.com/mardwerk/tower-generator/pull/114) propose a per-character busy mark and revision checks.
+Their merged proposal text is evidence for discussion, not blanket acceptance of every design choice.
 
-Preserve manual notes and reviewed findings when research refreshes evidence.
-Keep suggested replacements separate, retain cited passages and disclose blocked sources or incomplete excerpts.
-Validate the complete update before replacing saved content, and reject a conflicting revision instead of overwriting a newer edit.
-Research does not delete a finding only because current sources omit it.
-Make inputs such as storage location, canon boundary and research budget explicit and reproducible.
-Keep credentials in protected local configuration and out of saved research, browser responses and prompts.
+The proposed policy refuses a second change to a busy character, including another research request.
+Saves and reviews require the revision they read; missing or stale revisions cause no write.
+Research reserves the confirmed identity and reads its current revision before evidence work.
+Cooperative same-character research remains a preference; combining evidence and budgets is not a selected design.
 
-Research requests, Wiki entries and classification categories never name a Profile.
-Generation reads a character entry; Profile mappings, Tower choices and numbers stay with the generation, not in the entry.
+Validate each complete update before committing it.
+Review whether API readers may wait briefly during commit, and how startup recovers an interrupted multi-file replacement.
+These file guarantees are needed independently of research restart recovery and independently of Temporal.
 
-## Choices to leave open
+External edits require a stated boundary.
+A proposed fingerprint must cover every file the backend can replace, or the backend must leave unrelated files untouched.
+Revision checks cannot guarantee preservation of an uncoordinated edit made after the final check and before replacement.
+One writer per Wiki directory, enforcement of that rule and supported durability guarantees remain specification choices.
 
-Distribution, executable name, startup options, HTTP routes and schemas remain undecided.
-[#89](https://github.com/mardwerk/tower-generator/issues/89) records `mardwerk-tower` as the preferred executable name.
-Go is selected; extraction dependencies and numerical limits still need specification.
-Admission when research capacity is full and retries after provider throttling remain open.
-Whether the tool needs a spending limit across runs, beyond the provider account's own limits, remains open.
-The [#113 review](https://github.com/mardwerk/tower-generator/issues/113) defers these until a demonstrated need:
+Keep connection capacity, active research capacity, per-run budget and provider limits separate.
+A capacity queue is different from waiting for a busy character.
+Never silently reduce a research budget, change the model or omit verification because another run or provider limit intervenes.
 
-- Cooperative research, where parallel requests for one character split the evidence and return one combined result.
-- Waiting or queueing for a busy character instead of refusing the request.
-- Reapplying stale research output to a newer revision; stale output is discarded, as today.
-- Enforcing one `serve` per Wiki directory, for example with a lock file at startup.
-- Watching the files for external edits; the commit-time revision check handles them.
-- Authentication, user accounts and per-user spending limits for a `0.0.0.0` binding.
-- A stored record of failed research.
+## Transport and execution choices
 
-Detailed screen controls, progress transport, cancellation, generation storage and Settings contents also need workflow-specific review.
-The current search provider, model-call count and numerical limits are implementation choices, not permanent product rules.
-Use [research behavior](RESEARCH.md) and the [Wiki format](wiki-format.md) for current commands and file contracts.
+REST and SSE describe communication; Temporal can manage execution behind the same API.
+Compare a process-local Go runner, a narrow durable checkpoint runner and Temporal before selecting restart guarantees.
+Kyle requested further evaluation of both lightweight execution and Temporal on 2026-10-03.
+The [comparison](REALIGNMENT.md) identifies client disconnect, backend restart, uncertain paid calls and interrupted Wiki commits separately.
 
-## How to expand this into the detailed specification
+HTTP routes, SSE event retention, queue admission, numerical limits, extraction dependencies and packaging remain open.
+Hostname access and trusted browser origins need review in [#119](https://github.com/mardwerk/tower-generator/issues/119).
+Same-origin checks alone would reject a separate frontend on another port; browser clients need an agreed proxy or CORS policy.
 
-First review these rough rules and responsibility boundaries.
-Then specify the name-to-character-entry workflow end to end before revising its implementation.
-For each workflow, record the screen's visible controls, user action, core operation, inputs, outputs, progress, failures and saved files together.
-Use a fresh character, an existing alias, an ambiguous name and a failed source as concrete examples.
-Mark each choice as an established requirement, an agreed design or an open proposal, and link implementation issues to that contract.
+## Later clients and generation
+
+Earlier frontend preferences remain context for a future client contract: minimal Create, optional inputs behind an expansion, centered Create, Library, Wiki and Generations navigation, and Settings on the right.
+Each page has one visible heading and no subheadings; unused destinations were to remain disabled.
+The reset removes their implementation and does not add frontend work to backend acceptance.
+
+Research never names a Profile or stores Tower choices and numerical adaptations.
+Generation consumes a recorded character revision and selects a Profile directory by path.
+Preserve [td-profile ownership and Profile rules](PROFILE.md) and [Atlas attribution](BTD6-REFERENCE.md) when generation resumes.
+
+## Workflow acceptance review
+
+Review a fresh character, confirmed alias, ambiguous identity, failed source and repeated research before implementation.
+Specify inputs, outcomes, progress, saved files and budget behavior together for each case.
+Add concurrent same-character requests, independent characters, missing and stale save revisions, external edits and interruption during commit.
+Review disconnect and restart behavior separately; successful saved Wiki content must not depend on a browser remaining connected.
+
+[#106](https://github.com/mardwerk/tower-generator/issues/106) remains the coordination record.
+[#115](https://github.com/mardwerk/tower-generator/issues/115), [#116](https://github.com/mardwerk/tower-generator/issues/116), [#118](https://github.com/mardwerk/tower-generator/issues/118) and [#119](https://github.com/mardwerk/tower-generator/issues/119) retain relevant contract questions after prototype removal.
+Retirement and documentation repair address [#117](https://github.com/mardwerk/tower-generator/issues/117); they do not implement a replacement Profile.

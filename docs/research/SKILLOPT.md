@@ -1,68 +1,51 @@
-# Improve the initial skill with SkillOpt
+# SkillOpt evaluation proposal
 
-Start with the [initial Tower Generator skill](../../.agents/skills/tower-generator/SKILL.md) and a few frozen tasks.
-Improve its instructions when observed failures justify a change.
-The current skill can produce reviewable designs; general generation/export still needs the contract review in [#106](https://github.com/mardwerk/tower-generator/issues/106).
+Improve the [Tower design skill](../../.agents/skills/tower-generator/SKILL.md) only when observed failures justify a change.
+This proposal is independent of the API-only backend and does not select its workflow architecture.
+There is no installed adapter, scored Tower Generator benchmark or optimization run from this transfer.
 
 The upstream review used [microsoft/SkillOpt commit fa4ca184573e42ec11472959dd57422381418096](https://github.com/microsoft/SkillOpt/tree/fa4ca184573e42ec11472959dd57422381418096), dated 2026-09-30.
-These findings describe that source revision, which includes changes after release v0.2.0.
-No package installation or optimization run was performed for this transfer.
+The observations describe that revision, including changes after release v0.2.0.
 
-## What it does
+## Evaluation approach
 
 SkillOpt changes Markdown instructions rather than model weights.
-A target model performs scored tasks; an optimizer reflects on the trajectories and proposes bounded additions, deletions or replacements.
-The default validation gate retains a candidate when its selection score improves.
-It can start with an empty file, but still needs tasks, a runner and an evaluator.
-For this product, an explicit seed is easier to review.
+A target model performs scored tasks; an optimizer proposes bounded edits from their trajectories.
+Its default selection gate retains a candidate when its selection score improves.
+It still needs tasks, a runner and an evaluator; an explicit initial skill is easier to review.
 
-The [first experiment guide](https://github.com/microsoft/SkillOpt/blob/fa4ca184573e42ec11472959dd57422381418096/docs/guide/first-experiment.md) describes output including `best_skill.md`, resolved configuration, versions, step records and trajectories.
-Use the [source installation guide](https://github.com/microsoft/SkillOpt/blob/fa4ca184573e42ec11472959dd57422381418096/docs/guide/installation.md) for Python 3.10 or newer and model backend setup.
-Model settings are explicit; support for a compatible backend does not establish that `gpt-6.1-sol` has been tested upstream.
-
-## First evaluation scope
-
-Use frozen character evidence and Profile inputs, with network research disabled, to make failures reproducible.
+Use frozen evidence and Profile inputs, with network research disabled, to make failures reproducible.
 Keep development, selection and final test examples separate.
-The selection set is used repeatedly by optimization and is not an untouched final test.
+Repeated optimization uses the selection set, so it is not an untouched final test.
 
 | Task family | Required behavior |
 | --- | --- |
-| Useful beam evidence plus unsupported teleportation | Keep the supported beam, identify the teleportation gap and invent no mechanic. |
+| Supported beam evidence and unsupported teleportation | Preserve the beam and identify the teleportation gap without inventing mechanics. |
 | Ability names without operational evidence | Explain the evidence gap without inventing attacks. |
-| A source describing several characters | Attribute capabilities to the correct actor. |
-| A technique limited by equipment or story period | Preserve the condition in the design. |
-| Persistent plants requested in the Usopp experiment | Report the authoring limit while preserving supported changes. |
-| Usopp explosion crosspath revision | Keep contact behavior, blast pierce, firing interval and range consistent. |
+| Sources describing several characters | Attribute capabilities to the correct actor. |
+| Equipment or story-period limitations | Preserve those conditions in the design. |
+| Requested export without an implemented contract | Produce supported design work and identify the exact interface gap. |
+| Historical Usopp crosspath case | Use a frozen historical fixture and state its authoring limits. |
 
-These are task families for fixture creation, not scored benchmark results.
-Use different concrete examples in each split and review their expected outcomes before training.
+These families describe potential fixtures, not benchmark results.
+Review expected outcomes and use different examples in each split.
 Record fabricated claims, wrong actors, lost conditions, false refusals and structural failures separately.
-Report provider failures separately from design errors.
-Run deterministic authoring/Profile checks where supported; use an explicit human rubric for fidelity and design quality.
-Do not replace those judgments with a validator score.
+Separate provider failures from design errors.
+Use deterministic checks only where an implemented contract supports them, and an explicit human rubric for fidelity and design quality.
+A validator score does not establish those judgments.
 
 ## Integration still needed
 
-The [custom benchmark guide](https://github.com/microsoft/SkillOpt/blob/fa4ca184573e42ec11472959dd57422381418096/docs/guide/new-benchmark.md) requires split loading, target rollouts, scoring, persisted conversations, a registered `EnvAdapter` and configuration.
-Each result contains `id`, `hard` and `soft`; learning also needs `predictions/<id>/conversation.json`.
-The adapter must inject the candidate skill into the target's prompt.
-Existing Tower Generator commands do not automatically load this skill.
+The [custom benchmark guide](https://github.com/microsoft/SkillOpt/blob/fa4ca184573e42ec11472959dd57422381418096/docs/guide/new-benchmark.md) requires split loading, target rollouts, scoring, persisted conversations, an `EnvAdapter` and configuration.
+The adapter must inject the candidate skill into the target prompt.
+Product requests do not automatically load a repository skill.
 
-After that adapter and configuration exist in a separate SkillOpt checkout, the proposed invocation is:
+The [installation guide](https://github.com/microsoft/SkillOpt/blob/fa4ca184573e42ec11472959dd57422381418096/docs/guide/installation.md) describes upstream setup.
+The [first experiment guide](https://github.com/microsoft/SkillOpt/blob/fa4ca184573e42ec11472959dd57422381418096/docs/guide/first-experiment.md) describes retained configuration, versions, trajectories and candidate skills.
+Any pilot belongs in a separate SkillOpt checkout with reviewed fixtures and fixed model settings.
+No runnable Tower Generator training command is specified here.
 
-```sh
-python scripts/train.py \
-  --config configs/tower_generator/default.yaml \
-  --out_root outputs/tower_generator_first_run
-```
-
-Those paths do not exist yet; this is not a runnable Tower Generator command.
-Start with one epoch, a small edit budget, fixed model settings and reviewed selection criteria.
-Review the resulting skill against the final test set and the product contract before adoption.
+Review a candidate against the final test set and product contract before adoption.
 Keep training artifacts outside product runtime files.
-
-[SkillOpt-Sleep](https://github.com/microsoft/SkillOpt/blob/fa4ca184573e42ec11472959dd57422381418096/docs/sleep/README.md) can later learn from recurring sessions and target a repository skill.
-Its default replay is textual, so it does not prove that Tower authoring works in a fresh checkout.
-Disable memory evolution for a skill-only pilot.
-Input-count limits do not cap spend, and real-backend dry runs can make provider calls; establish an independent provider limit before a paid pilot.
+[SkillOpt-Sleep](https://github.com/microsoft/SkillOpt/blob/fa4ca184573e42ec11472959dd57422381418096/docs/sleep/README.md) is a later option for recurring sessions; textual replay does not prove executable behavior.
+For a skill-only pilot, disable memory evolution and establish a provider spending limit before paid calls.

@@ -1,24 +1,35 @@
 # Agent instructions
 
-Read [README.md](README.md) before changing this repository. Mardwerk agents with access to private [Planning](https://github.com/mardwerk/planning) must also read its [AGENTS.md](https://github.com/mardwerk/planning/blob/main/AGENTS.md) and master [CONTEXT.md](https://github.com/mardwerk/planning/blob/main/CONTEXT.md).
-Contributors can use this repository without Planning access.
+Read [README.md](README.md) before changing this repository.
+Mardwerk agents with private Planning access must also read its [AGENTS.md](https://github.com/mardwerk/planning/blob/main/AGENTS.md) and master [CONTEXT.md](https://github.com/mardwerk/planning/blob/main/CONTEXT.md).
+Public contributors do not need Planning access.
 
-When managing issues, labels or milestones, Mardwerk agents with Planning access must read its internal [issue labels standard](https://github.com/mardwerk/planning/blob/main/10_docs/ISSUE_LABELS.md), using `planning/10_docs/ISSUE_LABELS.md` in the local Planning checkout when available and the GitHub link otherwise. Also read the [local topic definitions](docs/ISSUE_LABELS.md) and derive work state from recorded owner decisions.
+When managing issues, labels or milestones, read [local topic definitions](docs/ISSUE_LABELS.md).
+Agents with Planning access must also read its [issue labels standard](https://github.com/mardwerk/planning/blob/main/10_docs/ISSUE_LABELS.md), using the local checkout when available.
+Derive work state from recorded owner decisions.
 
-Use [td-profile](https://github.com/mardwerk/td-profile) for the generic Profile Validator and reusable schemas. Follow the pinned contract and setup in [docs/PROFILE.md](docs/PROFILE.md); propose shared checker or schema changes upstream.
-Tower Generator owns [default/profile/](default/profile/), authoring and product checks. Dart Monkey's Atlas verification is accepted; review new generation mappings and product rules with Kyle through [#85](https://github.com/mardwerk/tower-generator/issues/85).
-A Profile is a directory selected by path. Keep its dependencies local and its governed Tower records separate.
-Do not treat the removed generator's schemas, CLI or workflows as the validator contract.
+Follow [product rules](docs/PRODUCT.md) and the [realignment plan](docs/REALIGNMENT.md).
+Go `serve` is the selected API-only direction; there is no independent operational CLI.
+The old Python product, Node tooling, full web/Lab and Default Profile/Usopp experiment are retired and preserved in Git history.
+Do not present historical commands, schemas or proposals as the new backend contract.
+Workflow architecture and restart durability remain under review.
 
-Keep BTD6 facts, source cleanup and the BTD6 Profile in [btd6-atlas](https://github.com/KyleDerZweite/btd6-atlas); cite the capture, build, source commit and files as described in [BTD6-REFERENCE.md](docs/BTD6-REFERENCE.md).
-Keep downloaded bundles, runtime binaries and generated game-data out of Git. Put progress and skip reasons in the terminal rather than Tower JSON.
-Use the retained Lab design system for the web UI. Each page has one visible heading and no subheadings.
-Preserve the reusable Lab design files in `src/web/ui/`, `src/web/app/styles.css`, and `src/web/public/mardwerk.png` for a future Lab.
+Use [td-profile](https://github.com/mardwerk/td-profile) for the generic Profile Validator and reusable schemas.
+Propose shared checker or schema changes upstream.
+Follow [Profile ownership](docs/PROFILE.md); a new Profile and its integration are deferred.
+A Profile is a directory selected by path, with local dependencies and separate governed Tower records.
+Review new generation mappings and product rules with Kyle through [#85](https://github.com/mardwerk/tower-generator/issues/85).
+
+Keep BTD6 facts, source cleanup and the BTD6 Profile in [btd6-atlas](https://github.com/KyleDerZweite/btd6-atlas).
+Cite capture, build, source commit and files as described in [BTD6-REFERENCE.md](docs/BTD6-REFERENCE.md).
+Keep downloaded bundles, runtime binaries and generated game-data out of Git.
+Put progress and skip reasons in the terminal rather than Tower JSON.
+
+Retain independent research helpers under `scripts/`.
+Keep the [research snapshot](docs/research/unit-design-research-snapshot/README.md) unchanged at its original location; verify imported files byte-for-byte against its manifest.
+Its instructions and commands are historical and do not override this repository's rules.
 
 Wrap prose so each physical line contains at most two sentences.
 Use headings when useful and put explanatory text between a heading and any subheading.
-
-Before committing, run `git diff --check` and check changed links. For design file changes, also run `pnpm typecheck` and `pnpm format:check`.
-Run checks appropriate to executable changes. For td-profile setup changes, verify the documented empty-data and synthetic-example commands and a missing Profile dependency.
-For Default Profile or checker integration changes, run `python3 setup.py` and `pnpm test`.
-For web changes, also run `pnpm build` and inspect the local view in the browser.
+Before committing, run `git diff --check` and check changed links.
+Run checks appropriate to executable changes; document what each check establishes.

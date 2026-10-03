@@ -1,26 +1,14 @@
-# Local dependencies and generated files
-node_modules/
-src/web/dist/
+# Local credentials
 .env
 .env.*
+
+# Local research and artifacts from the retired implementation
+/wiki/
+/sources/
+/default/
+/node_modules/
+
+# Optional Python environments and caches
 __pycache__/
 .ruff_cache/
-/default/game-data/
-/default/profile-validator
-/default/profile-validator.exe
-/default/validator-release.json
-/default/licenses/
-/default/TOWER.md
-/default/REFERENCE.md
-/default/source.json
-/default/checks.json
-
-# Locally collected character evidence; the curated Usopp sample is tracked.
-/sources/*.json
-!/sources/usopp.json
-/sources/*.tmp
-/default/character-source.json
-
-# Human-readable local character research.
-/wiki/
 /.venv/

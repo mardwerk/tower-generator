@@ -1,107 +1,54 @@
-# Local character Wiki
+# Candidate Wiki format
 
-A character entry is `wiki/<work>/<character>/README.md`, with retained source documents in `sources/*.md` beside it.
-Folder names are readable Unicode slugs. The local Wiki is ignored by Git; the format, category definitions and tests are tracked.
-Markdown and YAML are data. No MDX, executable page content, database or saved search index is required.
+The retired prototype stored readable Markdown and YAML under `wiki/<series>/<character>/`, with `README.md` and retained passages in `sources/*.md`.
+The local Markdown Wiki is an owner requirement; the prototype's detailed schema is a candidate baseline for the Go specification.
+Field names, format versions, identity normalization, review fingerprints and commit guarantees remain subject to that review.
+No current reader, validator or migration command is provided by this reset.
 
-The entry's YAML frontmatter contains identity, canon scope, aliases, cited abilities and review metadata.
-Its Markdown body contains the readable summary, evidence limits, contradictions and open questions.
-Abilities, traits and equipment use the same record shape. Every record needs cited source passages and its applicable scope.
+The [complete prototype format](https://github.com/mardwerk/tower-generator/blob/ea114b2139abf46318a59f632a58fc035f64a5a7/docs/wiki-format.md) preserves examples and implementation details.
+The [product rules](PRODUCT.md) and [research rules](RESEARCH.md) establish the requirements that the future format must serve.
 
-```markdown
----
-formatVersion: 1
-kind: character-wiki
-name: Example Character
-work: Example Manga
-scope: Manga through chapter 20
-language: en
-aliases: []
-status: draft
-reviewedAt: null
-sources: [supplied]
-abilities:
-  - id: distant-presence
-    kind: ability
-    name: Distant presence sensing
-    description: Senses another person's presence at a distance.
-    scope: Demonstrated in chapter 20
-    limitations: The source does not establish continuous use or exact range.
-    evidence:
-      - source: sources/supplied.md
-        passage: p-EXAMPLE
-    classification:
-      delivery: remote
-      functions: [perception]
-      status: suggested
----
+## Evidence and identity baseline
 
-# Example Character
+The entry frontmatter recorded the canonical name, series, canon scope, aliases, source references and review metadata.
+Its Markdown body held a readable summary, evidence limits, contradictions and open questions.
+Abilities, traits and equipment shared a cited-record shape with scope and limitations.
 
-A readable summary of the cited findings. Record unresolved questions here.
-```
+Source files retained titles, URLs, retrieval dates, access information and individually addressable passages.
+Redirects and intentionally retained excerpts were explicit; a search excerpt did not imply the full page had been read.
+Supplied passages needed origin information for human review.
+Content-derived passage IDs avoided renumbering unrelated citations when evidence was added.
 
-Use the actual passage ID shown by the Wiki in place of `p-EXAMPLE`.
-A source file has YAML metadata with `id`, `title`, `url`, `retrievedAt` and `access`, followed by retained passages:
+The prototype kept one declared scope per entry and allowed narrower scopes on individual records.
+It rejected conflicting identities or scopes rather than silently merging them.
+Its normalization and older-folder matching are historical implementation choices, not a new Go identity contract.
 
-```markdown
----
-id: supplied
-title: Supplied evidence
-url: null
-retrievedAt: null
-access: supplied
-language: en
----
+Retain older cited passages when refreshed sources omit them, with their original retrieval dates.
+Preserve separate references when different sources repeat a claim.
+Research must preserve prior evidence and cannot delete a finding solely because a current source omits it.
 
-# Supplied evidence
+## Review and classification baseline
 
-<!-- passage:p-example -->
-The retained passage, with its original reference when supplied manually.
-```
+Suggested classification tags described generalized delivery and functions independently of any Profile.
+A suggested tag or model verification verdict was not a canon fact, human review or game rule.
+Review of findings did not automatically approve classifications.
+The retained [category definitions](research-categories.yaml) remain evidence for the new classification contract.
 
-Research entries and source documents use English. Collection requests English pages and rejects HTML pages explicitly declaring another language.
-English reference pages may retain original-language character names; their research text and summaries remain English.
-Retrieved sources require a public HTTP(S) URL and a timezone-aware retrieval date stored as text.
-`resolvedUrl` records redirects; `excerpt: true` identifies an intentionally retained excerpt.
-Supplied evidence must include enough origin information for human review; a passage without a URL is not automatically reliable.
-New passage IDs derive from their content, so unrelated additions do not renumber citations. Keep IDs stable when editing source files by hand.
+The prototype recorded human review separately from model verification.
+Human-reviewed records survived repeat research, with proposed replacements kept separately for a person to accept.
+Generated summaries occupied a marked block, while manual prose outside that block was preserved.
 
-Collection accepts up to ten URLs per run and retains up to 100 source documents per entry.
-Name-only research uses the same page allocation for creation and repeat verification, while preserving older evidence.
-Saved URLs are reused without fetching unless refresh is explicitly selected. Repeated URLs and exact repeated passages are deduplicated.
-Fetches and validation finish before file writes begin. Each file replacement is atomic; the entire directory is not a transactional database.
-A failed fetch preserves the saved files. Collection preserves existing findings and summary unless a replacement summary is supplied.
-If refresh removes a cited passage, retain that older passage with its original retrieval date in `retainedPassages` and reset the entry to draft.
-The reader presents these passages as older evidence. Repeated claims across different sources retain their separate references.
+Saved edits reset entry review to draft, and a content fingerprint detected later changes to entry or source files.
+Revision hashes let callers detect stale edits when the expected revision was supplied.
+Mandatory API revisions and complete-update visibility remain proposed behavior in [PRODUCT.md](PRODUCT.md), not guarantees established by these historical files.
 
-One entry has one declared scope. Collection rejects a conflicting scope or another identity that normalizes to the same folder.
-Use a distinct character/version name, such as `Usopp (anime)`, when separate entries are needed. Record narrower scopes on individual abilities.
-Invalid entries appear as warnings in lookup; they do not hide valid entries. Paths outside the selected Wiki and child symbolic links are rejected.
+## Storage boundaries
 
-[research-categories.yaml](research-categories.yaml) defines delivery and function categories independently of any Profile.
-Classifications may have several functions, with `other` and `unknown` available. `suggested` tags are interpretations, not cited facts or game rules.
-Set a classification to `reviewed` only after reviewing that classification. Manual review of an entry does not automatically approve its tags.
+Markdown and YAML are data, not executable page content.
+Keep dependencies and citations within the selected Wiki; the prototype rejected paths outside it and child symbolic links.
+Keep credential values out of entry metadata, source files and prompts.
+Profile mappings, upgrades, numerical stats and game adaptations belong outside the Wiki.
 
-Saving an entry resets its review status to draft. Mark reviewed records an explicit human review of the cited findings and a content fingerprint.
-Lookup detects later changes to entry or source files and presents the entry as a draft again. It performs no network request.
-Concurrent editors send the opened revision; saving with a stale revision fails and preserves the files.
-This is a bounded review record, not proof that a character catalog is complete or its sources are canon.
-
-The reader returns a structured object in memory for the website and later consumers. Markdown files remain the only source of truth.
-A consumer supplies the Wiki directory and character key. Profile mappings, upgrade choices, numerical stats and game adaptations remain outside this format.
-
-Name-only research records its last allocation and outcome in the optional `research` metadata.
-It contains `runs`, `lastRunAt`, `model`, `normalizationVersion`, `categoryVersion`, `budget`, `usage`, source counts, warnings, identity URLs and `nextQuestions`.
-Each allocation is a limit, not a promise of equal actual cost or new facts. Follow-up questions guide later research within the saved canon scope.
-The normalization version is 1: folder slugs use NFKC, case folding and hyphens; identity comparison also folds accents and removes punctuation.
-
-A finding may have `reviewStatus: reviewed` after human review, and `verification` with a model verdict, date, note and evidence.
-New model findings have `reviewStatus: draft` and suggested classification tags. Human-reviewed records survive later research unchanged except for model verification metadata.
-`suggestedUpdates` contains cited proposed replacements for protected findings; apply an accepted replacement through ordinary editing.
-The current entry becomes draft after research because new or rechecked evidence needs human review. The reviewed record markers remain available across repeat runs.
-
-Generated summaries live between `<!-- research:begin -->` and `<!-- research:end -->` markers in the Markdown body.
-Research replaces that block on the next run and preserves manual prose outside it. Keep manual notes outside those markers.
-Source files can include `retrievalMethod: search-excerpt` when the search provider supplied a retained excerpt instead of an accessible page.
-Its URL and retrieval date describe that excerpt; it is not proof that the full source page was read or is current.
+Prototype research metadata recorded its last successful allocation, usage, model, source limits, warnings and follow-up questions.
+The future operation contract must define progress, failure outcomes and restart behavior separately from saved character evidence.
+A research workflow engine or API transport choice does not by itself select a new file schema.
