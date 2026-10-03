@@ -1,0 +1,347 @@
+{
+  "character": "Satoru Gojo",
+  "version": "jujutsu-kaisen-manga-main",
+  "claims": [
+    {
+      "claim_id": "G001",
+      "statement": "Wields 'The Limitless' (Makyo), a innate technique derived from the Six Eyes that manipulates space on an atomic scale.",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Satoru_Gojo#Cursed_Techniques",
+        "jujutsu-kaisen.fandom.com/wiki/Limitless"
+      ],
+      "confidence": "source-verified",
+      "category": "abilities"
+    },
+    {
+      "claim_id": "G002",
+      "statement": "Blue: attracts matter and creates a void-like collapse; functions as a gravity-well attraction attack.",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Satoru_Gojo#Cursed_Techniques",
+        "jujutsu-kaisen.fandom.com/wiki/Blue_(technique)"
+      ],
+      "confidence": "source-verified",
+      "category": "abilities"
+    },
+    {
+      "claim_id": "G003",
+      "statement": "Red: reverses Blue's polarity to repel targets with high-velocity force.",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Satoru_Gojo#Cursed_Techniques",
+        "jujutsu-kaisen.fandom.com/wiki/Red_(technique)"
+      ],
+      "confidence": "source-verified",
+      "category": "abilities"
+    },
+    {
+      "claim_id": "G004",
+      "statement": "Purple: combines Blue and Red into 'Nothingness', an erased-spatiality beam that deletes matter on contact.",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Satoru_Gojo#Cursed_Techniques",
+        "jujutsu-kaisen.fandom.com/wiki/Purple_(technique)"
+      ],
+      "confidence": "source-verified",
+      "category": "abilities"
+    },
+    {
+      "claim_id": "G005",
+      "statement": "Hollow Purple is a singular, continuous erasure beam (not an explosive blast); direct hits remove targets from existence.",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Purple_(technique)"
+      ],
+      "confidence": "plausibly-inferred",
+      "category": "abilities"
+    },
+    {
+      "claim_id": "G006",
+      "statement": "Domain Expansion: Unlimited Void floods the target's senses with infinite information, immobilizing them while their bodies cannot move.",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Satoru_Gojo#Cursed_Techniques",
+        "jujutsu-kaisen.fandom.com/wiki/Unlimited_Void"
+      ],
+      "confidence": "source-verified",
+      "category": "abilities"
+    },
+    {
+      "claim_id": "G007",
+      "statement": "Domain is a guaranteed-hit, inescapable zone while within range and while the cast completes.",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Unlimited_Void"
+      ],
+      "confidence": "plausibly-inferred",
+      "category": "abilities"
+    },
+    {
+      "claim_id": "G008",
+      "statement": "Six Eyes: hyper-perceptive cognition that reads cursed energy in extreme detail and minimizes its consumption.",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Satoru_Gojo#Cursed_Techniques",
+        "jujutsu-kaisen.fandom.com/wiki/Six_Eyes"
+      ],
+      "confidence": "source-verified",
+      "category": "abilities"
+    },
+    {
+      "claim_id": "G009",
+      "statement": "Holds the title 'Strongest Jujutsu Sorcerer'; designated Special Grade.",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Satoru_Gojo",
+        "jujutsu-kaisen.fandom.com/wiki/Grade_(power_level)"
+      ],
+      "confidence": "source-verified",
+      "category": "stats"
+    },
+    {
+      "claim_id": "G010",
+      "statement": "Combat range spans from point-blank throws to building/neighborhood-scale destruction via Purple and Unlimited Void.",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Satoru_Gojo"
+      ],
+      "confidence": "plausibly-inferred",
+      "category": "stats"
+    },
+    {
+      "claim_id": "G011",
+      "statement": "Limitless is passively active; the Six Eyes must continually filter input, which causes fatigue under extreme stress or when the technique is sealed.",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Satoru_Gojo"
+      ],
+      "confidence": "plausibly-inferred",
+      "category": "weaknesses"
+    },
+    {
+      "claim_id": "G012",
+      "statement": "Domain cast time exists: the technique must be activated before its effect applies.",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Unlimited_Void"
+      ],
+      "confidence": "plausibly-inferred",
+      "category": "weaknesses"
+    },
+    {
+      "claim_id": "G013",
+      "statement": "Can be sealed with cursed tools that bypass or suppress the Limitless (notably the Finger Bearer technique and Special Grade cursed tool bindings).",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Satoru_Gojo"
+      ],
+      "confidence": "plausibly-inferred",
+      "category": "weaknesses"
+    },
+    {
+      "claim_id": "G014",
+      "statement": "Acts as teacher/mentor and protective barrier for students; functions as a shield more than an offensive frontline unit.",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Satoru_Gojo#Role_and_Characteristics"
+      ],
+      "confidence": "source-verified",
+      "category": "narrative_role"
+    },
+    {
+      "claim_id": "G015",
+      "statement": "Student/teacher hierarchy defines his role with Yuji Itadori, Megumi Fushiguro, Nobara Kugisaki, and Maki Zenin.",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Satoru_Gojo#Relationships"
+      ],
+      "confidence": "source-verified",
+      "category": "relationships"
+    },
+    {
+      "claim_id": "G016",
+      "statement": "Power scale increases across the story as restrictions are removed and technique mastery deepens.",
+      "provenance": [
+        "jujutsu-kaisen.fandom.com/wiki/Satoru_Gojo"
+      ],
+      "confidence": "plausibly-inferred",
+      "category": "progression"
+    }
+  ],
+  "elements": [
+    {
+      "kind": "claim",
+      "source_id": "G001",
+      "statement": "Wields 'The Limitless' (Makyo), a innate technique derived from the Six Eyes that manipulates space on an atomic scale.",
+      "confidence": "source-verified",
+      "category": "abilities",
+      "provenance": []
+    },
+    {
+      "kind": "claim",
+      "source_id": "G002",
+      "statement": "Blue: attracts matter and creates a void-like collapse; functions as a gravity-well attraction attack.",
+      "confidence": "source-verified",
+      "category": "abilities",
+      "provenance": []
+    },
+    {
+      "kind": "claim",
+      "source_id": "G003",
+      "statement": "Red: reverses Blue's polarity to repel targets with high-velocity force.",
+      "confidence": "source-verified",
+      "category": "abilities",
+      "provenance": []
+    },
+    {
+      "kind": "claim",
+      "source_id": "G004",
+      "statement": "Purple: combines Blue and Red into 'Nothingness', an erased-spatiality beam that deletes matter on contact.",
+      "confidence": "source-verified",
+      "category": "abilities",
+      "provenance": []
+    },
+    {
+      "kind": "claim",
+      "source_id": "G005",
+      "statement": "Hollow Purple is a singular, continuous erasure beam (not an explosive blast); direct hits remove targets from existence.",
+      "confidence": "plausibly-inferred",
+      "category": "abilities",
+      "provenance": []
+    },
+    {
+      "kind": "claim",
+      "source_id": "G006",
+      "statement": "Domain Expansion: Unlimited Void floods the target's senses with infinite information, immobilizing them while their bodies cannot move.",
+      "confidence": "source-verified",
+      "category": "abilities",
+      "provenance": []
+    },
+    {
+      "kind": "claim",
+      "source_id": "G007",
+      "statement": "Domain is a guaranteed-hit, inescapable zone while within range and while the cast completes.",
+      "confidence": "plausibly-inferred",
+      "category": "abilities",
+      "provenance": []
+    },
+    {
+      "kind": "claim",
+      "source_id": "G008",
+      "statement": "Six Eyes: hyper-perceptive cognition that reads cursed energy in extreme detail and minimizes its consumption.",
+      "confidence": "source-verified",
+      "category": "abilities",
+      "provenance": []
+    },
+    {
+      "kind": "claim",
+      "source_id": "G009",
+      "statement": "Holds the title 'Strongest Jujutsu Sorcerer'; designated Special Grade.",
+      "confidence": "source-verified",
+      "category": "stats",
+      "provenance": []
+    },
+    {
+      "kind": "claim",
+      "source_id": "G010",
+      "statement": "Combat range spans from point-blank throws to building/neighborhood-scale destruction via Purple and Unlimited Void.",
+      "confidence": "plausibly-inferred",
+      "category": "stats",
+      "provenance": []
+    },
+    {
+      "kind": "claim",
+      "source_id": "G011",
+      "statement": "Limitless is passively active; the Six Eyes must continually filter input, which causes fatigue under extreme stress or when the technique is sealed.",
+      "confidence": "plausibly-inferred",
+      "category": "weaknesses",
+      "provenance": []
+    },
+    {
+      "kind": "claim",
+      "source_id": "G012",
+      "statement": "Domain cast time exists: the technique must be activated before its effect applies.",
+      "confidence": "plausibly-inferred",
+      "category": "weaknesses",
+      "provenance": []
+    },
+    {
+      "kind": "claim",
+      "source_id": "G013",
+      "statement": "Can be sealed with cursed tools that bypass or suppress the Limitless (notably the Finger Bearer technique and Special Grade cursed tool bindings).",
+      "confidence": "plausibly-inferred",
+      "category": "weaknesses",
+      "provenance": []
+    },
+    {
+      "kind": "claim",
+      "source_id": "G014",
+      "statement": "Acts as teacher/mentor and protective barrier for students; functions as a shield more than an offensive frontline unit.",
+      "confidence": "source-verified",
+      "category": "narrative_role",
+      "provenance": []
+    },
+    {
+      "kind": "claim",
+      "source_id": "G015",
+      "statement": "Student/teacher hierarchy defines his role with Yuji Itadori, Megumi Fushiguro, Nobara Kugisaki, and Maki Zenin.",
+      "confidence": "source-verified",
+      "category": "relationships",
+      "provenance": []
+    },
+    {
+      "kind": "claim",
+      "source_id": "G016",
+      "statement": "Power scale increases across the story as restrictions are removed and technique mastery deepens.",
+      "confidence": "plausibly-inferred",
+      "category": "progression",
+      "provenance": []
+    },
+    {
+      "kind": "effect",
+      "source_id": "base_effect_0",
+      "statement": "Blue pulls adjacent zombies toward the tower, clustering enemies for follow-up damage.",
+      "confidence": "plausibly-inferred",
+      "category": "abilities",
+      "provenance": [
+        "G002"
+      ]
+    },
+    {
+      "kind": "effect",
+      "source_id": "base_effect_1",
+      "statement": "On hit, briefly warps target position, delaying advancement.",
+      "confidence": "plausibly-inferred",
+      "category": "abilities",
+      "provenance": [
+        "G002"
+      ]
+    },
+    {
+      "kind": "branch",
+      "source_id": "branch:hollow_purple",
+      "statement": "upgrade branch 'hollow_purple', cost 600",
+      "confidence": "generator-inferred",
+      "category": "",
+      "provenance": [
+        "G003"
+      ]
+    },
+    {
+      "kind": "effect",
+      "source_id": "branch:hollow_purple:erasure_beam",
+      "statement": "Purple erases matter on contact; the beam pierces through zombies dealing massive damage per tile.",
+      "confidence": "plausibly-inferred",
+      "category": "abilities",
+      "provenance": [
+        "G003"
+      ]
+    },
+    {
+      "kind": "branch",
+      "source_id": "branch:unlimited_void",
+      "statement": "upgrade branch 'unlimited_void', cost 900",
+      "confidence": "generator-inferred",
+      "category": "",
+      "provenance": [
+        "G004"
+      ]
+    },
+    {
+      "kind": "effect",
+      "source_id": "branch:unlimited_void:domain_zone",
+      "statement": "Creates a guaranteed-hit domain zone; enemies inside are immobilized by infinite sensory input.",
+      "confidence": "plausibly-inferred",
+      "category": "abilities",
+      "provenance": [
+        "G004"
+      ]
+    }
+  ]
+}

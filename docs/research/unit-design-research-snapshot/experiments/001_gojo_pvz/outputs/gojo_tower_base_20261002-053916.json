@@ -1,0 +1,106 @@
+{
+  "name": "Domain Anchor: Limitless (Blue)",
+  "tier": "premium",
+  "cost": 325,
+  "range": 5,
+  "cooldown": 1.6,
+  "dps": 37.5,
+  "cost_efficiency": 0.11538461538461539,
+  "damage": 60,
+  "damage_type": "magic",
+  "target_type": "ground",
+  "projectile": "normal",
+  "effects": [
+    {
+      "name": "attract_on_hit",
+      "effect_type": "attract",
+      "damage": 60,
+      "damage_type": null,
+      "target_type": "ground",
+      "projectile": "normal",
+      "range": null,
+      "duration": null,
+      "cooldown_reduction": null,
+      "cost_delta": null,
+      "provenance": [
+        "G002"
+      ],
+      "explanation": "Blue pulls adjacent zombies toward the tower, clustering enemies for follow-up damage."
+    },
+    {
+      "name": "space_warp_hit",
+      "effect_type": "impact",
+      "damage": 60,
+      "damage_type": null,
+      "target_type": "ground",
+      "projectile": "normal",
+      "range": null,
+      "duration": null,
+      "cooldown_reduction": null,
+      "cost_delta": null,
+      "provenance": [
+        "G002"
+      ],
+      "explanation": "On hit, briefly warps target position, delaying advancement."
+    }
+  ],
+  "branches": {
+    "hollow_purple": {
+      "name": "Hollow Purple (Erasure)",
+      "cost": 600,
+      "effects": [
+        {
+          "name": "erasure_beam",
+          "effect_type": "splash",
+          "damage": 400,
+          "damage_type": null,
+          "target_type": "ground",
+          "projectile": "penetrating",
+          "range": null,
+          "duration": null,
+          "cooldown_reduction": null,
+          "cost_delta": null,
+          "provenance": [
+            "G003"
+          ],
+          "explanation": "Purple erases matter on contact; the beam pierces through zombies dealing massive damage per tile."
+        }
+      ],
+      "unlock_requirement": "place Domain Anchor and defeat 25 zombies",
+      "provenance": [
+        "G003"
+      ]
+    },
+    "unlimited_void": {
+      "name": "Unlimited Void (Domain)",
+      "cost": 900,
+      "effects": [
+        {
+          "name": "domain_zone",
+          "effect_type": "attract",
+          "damage": 0,
+          "damage_type": null,
+          "target_type": "ground",
+          "projectile": "zero",
+          "range": null,
+          "duration": null,
+          "cooldown_reduction": null,
+          "cost_delta": null,
+          "provenance": [
+            "G004"
+          ],
+          "explanation": "Creates a guaranteed-hit domain zone; enemies inside are immobilized by infinite sensory input."
+        }
+      ],
+      "unlock_requirement": null,
+      "provenance": [
+        "G004"
+      ]
+    }
+  },
+  "description": "Anchors space around a chosen tile like the Limitless. Hits attract adjacent zombies inward, grouping them for team damage while slowing the front line. The Special Grade 'Strongest' barrier holds a chokepoint.",
+  "provenance_summary": [
+    "G001",
+    "G002"
+  ]
+}

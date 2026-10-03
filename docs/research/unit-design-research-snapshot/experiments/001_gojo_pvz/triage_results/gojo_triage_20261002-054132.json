@@ -1,0 +1,149 @@
+{
+  "Domain Anchor: Limitless (Blue)": {
+    "win_rate": 0.0,
+    "visits": 35,
+    "top_placement": [
+      0,
+      3
+    ],
+    "avg_dps": 51.5,
+    "avg_max_pressure": 6.0,
+    "avg_survival_rate": 0.833,
+    "detailed_outcomes": [
+      {
+        "outcome": "defeat",
+        "waves": 3,
+        "dps": 51.472471190782564
+      },
+      {
+        "outcome": "defeat",
+        "waves": 3,
+        "dps": 51.472471190782564
+      },
+      {
+        "outcome": "defeat",
+        "waves": 3,
+        "dps": 51.472471190782564
+      },
+      {
+        "outcome": "defeat",
+        "waves": 3,
+        "dps": 51.472471190782564
+      },
+      {
+        "outcome": "defeat",
+        "waves": 3,
+        "dps": 51.472471190782564
+      }
+    ],
+    "sample_notes": [
+      "1 zombies reached home"
+    ],
+    "difficulty": "normal",
+    "triage": {
+      "win_rate": 0.0,
+      "survival_rate": 0.833,
+      "pressure_per_wave": 6.0,
+      "passes_win_rate": false,
+      "passes_survival": true
+    }
+  },
+  "Domain Anchor: Limitless (Blue) (v1)": {
+    "win_rate": 0.0,
+    "visits": 35,
+    "top_placement": [
+      0,
+      3
+    ],
+    "avg_dps": 56.6,
+    "avg_max_pressure": 6.0,
+    "avg_survival_rate": 0.833,
+    "detailed_outcomes": [
+      {
+        "outcome": "defeat",
+        "waves": 3,
+        "dps": 56.619718309860815
+      },
+      {
+        "outcome": "defeat",
+        "waves": 3,
+        "dps": 56.619718309860815
+      },
+      {
+        "outcome": "defeat",
+        "waves": 3,
+        "dps": 56.619718309860815
+      },
+      {
+        "outcome": "defeat",
+        "waves": 3,
+        "dps": 56.619718309860815
+      },
+      {
+        "outcome": "defeat",
+        "waves": 3,
+        "dps": 56.619718309860815
+      }
+    ],
+    "sample_notes": [
+      "1 zombies reached home"
+    ],
+    "difficulty": "normal",
+    "triage": {
+      "win_rate": 0.0,
+      "survival_rate": 0.833,
+      "pressure_per_wave": 6.0,
+      "passes_win_rate": false,
+      "passes_survival": true
+    }
+  },
+  "Domain Anchor: Limitless (Blue) (v2)": {
+    "win_rate": 0.0,
+    "visits": 35,
+    "top_placement": [
+      0,
+      3
+    ],
+    "avg_dps": 45.3,
+    "avg_max_pressure": 5.0,
+    "avg_survival_rate": 0.167,
+    "detailed_outcomes": [
+      {
+        "outcome": "defeat",
+        "waves": 2,
+        "dps": 45.34759358288855
+      },
+      {
+        "outcome": "defeat",
+        "waves": 2,
+        "dps": 45.34759358288855
+      },
+      {
+        "outcome": "defeat",
+        "waves": 2,
+        "dps": 45.34759358288855
+      },
+      {
+        "outcome": "defeat",
+        "waves": 2,
+        "dps": 45.34759358288855
+      },
+      {
+        "outcome": "defeat",
+        "waves": 2,
+        "dps": 45.34759358288855
+      }
+    ],
+    "sample_notes": [
+      "5 zombies reached home"
+    ],
+    "difficulty": "normal",
+    "triage": {
+      "win_rate": 0.0,
+      "survival_rate": 0.167,
+      "pressure_per_wave": 5.0,
+      "passes_win_rate": false,
+      "passes_survival": false
+    }
+  }
+}

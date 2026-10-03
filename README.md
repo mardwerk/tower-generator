@@ -36,6 +36,8 @@ docs/research-categories.yaml Profile-agnostic classification definitions
 
 The [research workflow](docs/RESEARCH.md) explains collection, offline reuse, explicit refresh, editing and manual review.
 The [Wiki format](docs/wiki-format.md) documents the human-readable files and citations.
+The [initial Tower Generator skill](.agents/skills/tower-generator/SKILL.md) supports cited, reviewable designs within the current authoring limits.
+[Focused research](docs/research/README.md) preserves the separate research state and describes later SkillOpt evaluation.
 Name-only research uses the configured OpenRouter model and web search. Suggested classifications use the broad local categories; specific [Jev benchmarking](https://github.com/mardwerk/tower-generator/issues/105) remains later work.
 
 The Python CLI owns persistence and validation and can run without Node or the website:
