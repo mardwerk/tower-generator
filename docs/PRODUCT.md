@@ -1,6 +1,6 @@
 # Tower Generator product rules
 
-This document owns the API and storage rules Kyle selected on 2026-10-03 through [#106](https://github.com/mardwerk/tower-generator/issues/106).
+This document owns the API and storage rules Kyle selected through [#106](https://github.com/mardwerk/tower-generator/issues/106).
 The [realignment record](REALIGNMENT.md) contains reset history and the recovery evaluation.
 
 ## Established direction
@@ -67,6 +67,7 @@ A saved match returns the existing key and revision so the client can read the s
 Discovery must not silently become paid research on an existing character.
 The [explicit namesake discovery policy](#requested-ambiguity-handling) also permits deliberate discovery alongside saved matches.
 
+For a new entry without a scope hint, follow the [initial canon-scope rule](RESEARCH.md#durable-research-rules).
 Kyle selected keeping the saved canon scope for research on an existing character in #118.
 Use the entry's saved scope; an omitted or matching scope hint is allowed.
 Refuse a conflicting scope hint before provider work and leave saved content unchanged.
@@ -259,6 +260,7 @@ Review a fresh character, confirmed alias, ambiguous identity, failed source and
 Specify inputs, outcomes, progress, saved files and budget behavior together for each case.
 Add concurrent same-character requests, independent characters, missing and stale save, review and research revisions, external edits and interruption during commit.
 Test omitted, matching and conflicting saved-scope hints, malformed Host authorities, IPv6, hostname access, script/native callers and SSE reconnects.
+Include separate cases for an unclear continuity and a source from another medium with facts inside and outside the selected scope.
 These cases must not imply support for unselected API access.
 Review disconnect and restart behavior separately; successful saved Wiki content must not depend on a browser remaining connected.
 
@@ -269,6 +271,6 @@ The following choices remain open; earlier proposals and merged proposal text do
 | --- | --- |
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | Revision coverage, review invalidation and complete save/review schemas. |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Entry format, offline validation, review staleness, historical retention and single-writer enforcement. |
-| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation response and terminal handling, ambiguity configuration validation, identity matching and key format, discovery scope, scope-hint representation and matching, and SSE framing and observer limits. |
+| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Queue and history configuration validation, scheduling and refusal responses, cancellation response and terminal handling, ambiguity configuration validation, identity matching and key format, scope clarification lifecycle, scope-hint representation and matching, and SSE framing and observer limits. |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Exact Host authorities, address families and numeric-port behavior. |
 | [#106](https://github.com/mardwerk/tower-generator/issues/106) | Routes, strict request decoding, operation records, provider/model selection, budgets, provider deadlines, extraction dependencies, packaging and implementation verification. |

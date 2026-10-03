@@ -9,6 +9,11 @@ Resolve the canonical character name and series without requiring a series input
 Reuse a confirmed identity despite aliases or older folder spellings, but never merge identities on name similarity alone.
 Keep the canon boundary, evidence limits and uncertainty explicit.
 
+Kyle selected one clearly identified continuity per new entry without a scope hint in [#118](https://github.com/mardwerk/tower-generator/issues/118) on 2026-10-04.
+Use sources from other media only for facts demonstrably within that continuity.
+Exclude facts from adaptations or alternate continuities when those facts fall outside the selected scope.
+If discovery cannot establish one clear boundary, return scope choices before that candidate's full research.
+
 Research in English independently of Profiles and game mechanics.
 Retain reusable abilities, traits, equipment, named techniques, conditions, limitations and uncertainty with cited passages.
 Attribute each ability to its stated actor and keep equipment, period, version and activation conditions attached to the claim.
