@@ -55,7 +55,17 @@ Name queries check saved names and confirmed aliases locally and return an exist
 Every [successful research publication](PRODUCT.md#selected-research-publication-revisions) advances the character revision, including a run with no new findings.
 The entry records research provenance and known usage while preserving applicable human reviews.
 An unpublished failure can leave the prior revision valid, so this does not guarantee that resubmission avoids another paid call.
-The [product policy](PRODUCT.md#selected-research-preconditions) retains retry handling and complete request schemas as separate specification work.
+The [product policy](PRODUCT.md#selected-research-preconditions) retains provider-call retries and complete request schemas as separate specification work.
+
+## Selected manual recovery
+
+Accepted research returns a server-generated operation ID, with read-only status/SSE access and a simple bounded recent-operation list.
+Clients may reconnect reads but must not automatically resubmit research after an uncertain response or failure.
+A person inspects the available outcome and deliberately chooses any new attempt, which may spend another budget.
+An unavailable operation does not prove that research never ran.
+
+Caller retry IDs are deferred until a named client needs automatic submission replay.
+The [recovery policy](PRODUCT.md#selected-operation-visibility-and-manual-recovery) leaves exact retention limits and provider-call retries as separate choices.
 
 ## Historical implementation and independent evidence
 

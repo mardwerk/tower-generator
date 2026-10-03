@@ -56,14 +56,15 @@ The backend owns provider access, validation and file commits, using one Wiki lo
 | Operation | Input | Outcome |
 | --- | --- | --- |
 | Lookup and read | Query or saved character key | Saved identity, evidence, review state and revision without research |
-| Research | Character query for discovery, or saved character key and JSON `expectedRevision`; scope and budget inputs need review | Saved evidence and change summary, existing identity to read, or an explicit clarification, busy or failure outcome |
+| Research | Character query for discovery, or saved character key and JSON `expectedRevision`; scope and budget inputs need review | Accepted operation ID followed by its outcome, existing identity to read, or an explicit refusal |
+| Read operations | Server-generated operation ID for one record, or a request for the bounded recent list | Read-only progress and outcome inspection without starting research |
 | Save edit | Saved character key, edited content and JSON `expectedRevision` | Validated update or refusal without overwriting saved work |
 | Record review | Saved character key, JSON `expectedRevision` and explicit target | Human decision tied to that content; findings and classifications remain distinct |
 | Read configuration | Selected safe settings | Effective configuration and categories without secret values |
 | Generate, later | Character revision and selected Profile | Tower content and provenance under a future generation contract |
 
 Keep progress separate from the final outcome.
-Queue limits and refusal responses, cancellation, duplicate-request handling, clarification continuation, retries and operation retention need review.
+Queue limits and refusal responses, cancellation, unknown-identity coordination, clarification continuation, provider-call retries and numerical operation-retention limits need review.
 Report known consumed usage even when identity discovery ends in ambiguity or a busy outcome.
 
 ## Selected save and review policy
@@ -94,7 +95,7 @@ A saved match returns the existing key and revision so the client can read the s
 Discovery must not silently become paid research on an existing character.
 This supersedes the earlier proposal that existing-character research simply starts from the current server revision.
 
-Admission-time reservation is selected below; retry handling remains a separate choice.
+Admission-time reservation and manual submission recovery are selected below; provider-call retries remain a separate choice.
 Scope hints on saved characters, complete schemas and strict request decoding still need specification.
 This decision does not establish request deduplication or guarantee that retrying a failed or interrupted operation avoids another paid call.
 
@@ -110,7 +111,7 @@ If both are full, refuse without provider work or a character reservation.
 Coordinate revision checks, capacity checks and reservation so a refused request leaves no reservation or occupied queue slot.
 
 This prevents API edits from invalidating accepted queued research, at the cost of blocking edits during the wait.
-Exact queue limits, busy and full-queue responses, unknown-identity coordination, cancellation and retry handling remain specification work.
+Exact queue limits, busy and full-queue responses, unknown-identity coordination, cancellation and provider-call retries remain specification work.
 
 ## Selected research publication revisions
 
@@ -121,7 +122,23 @@ A new research request using the prior revision is then refused as stale before 
 
 Failure or interruption before entry replacement can leave the old revision valid, so revision checks alone do not prevent another paid attempt.
 After replacement, follow the [selected Wiki publication failure rules](#selected-wiki-publication), including reporting the visible new revision when durability is unconfirmed.
-Retry handling remains a separate decision; this publication rule does not select caller request IDs, automatic retries or historical entry retention.
+The manual recovery policy below governs new submissions; provider-call retries and historical entry retention remain separate choices.
+
+## Selected operation visibility and manual recovery
+
+Kyle selected manual recovery initially in [#118](https://github.com/mardwerk/tower-generator/issues/118) after the [Astra xhigh review](https://github.com/mardwerk/tower-generator/issues/118#issuecomment-5972581956).
+Accepted research returns a server-generated operation ID.
+Expose read-only operation status and SSE access, plus a simple bounded recent-operation list from the same in-process records.
+Operation reads report the outcome, known usage and any published character revision needed for inspection.
+
+Clients may reconnect SSE and repeat status reads, but must not automatically resubmit research after an uncertain response or failure.
+A person inspects the available outcome and deliberately chooses any new research attempt, which passes normal admission checks and may spend another budget.
+An unavailable record or absence from the recent list does not prove that research never ran.
+Lost admission responses, record expiry and server restart can leave the outcome uncertain; the list supports inspection without guaranteeing exact recovery.
+
+Defer caller retry IDs until a named client needs automatic submission replay.
+Exact operation and SSE retention limits, record layouts and provider-call retry behavior remain separate specification work.
+Unknown-identity coordination remains independent of this recovery choice.
 
 ## Coordination and remaining storage choices
 

@@ -58,8 +58,11 @@ While reserved, another research, save or review is refused until the operation 
 Full execution and queue capacity causes refusal without provider work or a character reservation.
 Kyle selected [a new revision for every successful research publication](PRODUCT.md#selected-research-publication-revisions), including runs with no new findings.
 The entry records research provenance and known usage while preserving applicable human reviews.
-An unpublished failure can leave the old revision valid, so retry handling remains separate.
-Retry handling, unknown-identity coordination and numerical queue limits remain owner choices.
+An unpublished failure can leave the old revision valid, so revision checks alone do not prevent another paid attempt.
+Kyle selected [manual recovery initially](PRODUCT.md#selected-operation-visibility-and-manual-recovery), with server-generated operation IDs, read-only status/SSE and a simple bounded recent-operation list.
+Clients may reconnect reads but must not automatically resubmit research after an uncertain response; a person deliberately chooses any new paid attempt.
+Caller retry IDs are deferred until a named client needs automatic submission replay.
+Exact retention limits, provider-call retries, unknown-identity coordination and numerical queue limits remain owner choices.
 Kyle accepted [loopback-only API access](PRODUCT.md#selected-local-api-access) in #119, with a configurable numeric port, Host validation and browser-origin protection.
 Writes require JSON, GET and SSE are read-only, and a local website uses a same-origin proxy.
 Non-loopback binding and direct cross-origin access are deferred until a named client needs them, followed by authentication and trusted-origin review.
@@ -71,5 +74,5 @@ Exact Host authorities, address-family behavior and implementation verification 
 | [#115](https://github.com/mardwerk/tower-generator/issues/115) | Save and review policy selected; complete schemas and implementation verification pending |
 | [#116](https://github.com/mardwerk/tower-generator/issues/116) | Markdown authority, direct-edit boundary and publication selected; format and verification pending |
 | [#117](https://github.com/mardwerk/tower-generator/issues/117) | Completed by retirement and documentation repair |
-| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Research preconditions, admission reservation and publication revisions selected; retries and full specification pending |
+| [#118](https://github.com/mardwerk/tower-generator/issues/118) | Research preconditions, admission, publication revisions and manual recovery selected; remaining research contract and verification pending |
 | [#119](https://github.com/mardwerk/tower-generator/issues/119) | Loopback-only access selected; exact Host/address behavior and implementation verification pending |
