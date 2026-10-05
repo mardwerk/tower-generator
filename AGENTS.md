@@ -1,7 +1,7 @@
 # Agent instructions
 
 Read [README.md](README.md) before changing this repository.
-Mardwerk agents with private Planning access must also read its [AGENTS.md](https://github.com/mardwerk/planning/blob/main/AGENTS.md) and master [CONTEXT.md](https://github.com/mardwerk/planning/blob/main/CONTEXT.md).
+Mardwerk agents with private Planning access must also read its [AGENTS.md](https://github.com/mardwerk/planning/blob/main/AGENTS.md) and master [GLOSSARY.md](https://github.com/mardwerk/planning/blob/main/GLOSSARY.md).
 Public contributors do not need Planning access.
 
 When managing issues, labels or milestones, read [local topic definitions](docs/ISSUE_LABELS.md).
