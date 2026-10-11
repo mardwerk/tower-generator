@@ -4,9 +4,9 @@
 
 Kyle selected SkillOpt with his review for the initial Agent Skill on 2026-10-11 under the [product delivery order](../PRODUCT.md#established-direction).
 The [Tower design skill](../../.agents/skills/tower-generator/SKILL.md) is the existing seed.
-Its supported requests, quality criteria, evaluation contract and review process remain to be defined through `grill-with-docs`.
+Its detailed request contract, quality criteria, evaluator and adoption evidence remain under review through `grill-with-docs`.
 Evaluate the selected character-folder output and any supported question sessions, rather than imposing the later generator's export contract.
-The evaluation design below remains a proposal; selecting SkillOpt does not select its fixtures, scoring, models or spending limits.
+Comparisons before rubric development are selected; the proposed evaluation details do not select fixtures, scoring, models or spending limits.
 Skill optimization is separate from the later API backend and does not select its architecture.
 There is no installed adapter, scored Tower Generator benchmark or optimization run from this transfer.
 
@@ -29,12 +29,12 @@ Repeated optimization uses the selection set, so it is not an untouched final te
 
 | Task family | Required behavior |
 | --- | --- |
-| Supported beam evidence and unsupported teleportation | Preserve the beam and identify the teleportation gap without inventing mechanics. |
-| Ability names without operational evidence | Explain the evidence gap without inventing attacks. |
+| Supported beam evidence and unsupported teleportation | Preserve the supported beam and identify the teleportation gap without presenting invented behavior as canon. |
+| Ability names without operational evidence | Explain the evidence gap and distinguish any proposed gameplay behavior from character facts. |
 | Sources describing several characters | Attribute capabilities to the correct actor. |
 | Equipment or story-period limitations | Preserve those conditions in the design. |
 | Requested export without an implemented contract | Produce supported design work and identify the exact interface gap. |
-| Historical Usopp crosspath case | Use a frozen historical fixture and state its authoring limits. |
+| Character-defining behavior conflicts with target-game patterns | Explain the adaptation and ask when the user's intent is unclear. |
 
 These families describe potential fixtures, not benchmark results.
 Review expected outcomes and use different examples in each split.
@@ -43,18 +43,24 @@ Separate provider failures from design errors.
 Use deterministic checks only where an implemented contract supports them, and an explicit human rubric for fidelity and design quality.
 A validator score does not establish those judgments.
 
-## Proposed first quality comparison
+<a id="proposed-first-quality-comparison"></a>
 
+## Selected quality direction
+
+Kyle selected comparisons first, followed by a rubric, on 2026-10-11.
+The following pilot details are proposals to refine through those comparisons.
 Compare the existing and a revised skill on the same tasks, hiding their version names during Kyle's review.
 Record concrete errors separately from his preference and its reasons.
-Possible criteria include character recognizability, useful gameplay decisions, clear explanations and adaptation to the request.
+For known characters, assess Kyle's selected goals of canon fidelity and closeness to the requested game's patterns and mechanics separately.
+Concrete assessment examples remain to be derived from comparisons; for original ideas, there is no external character canon to score.
+Other possible criteria include useful gameplay decisions, clear explanations and adaptation to the request.
 Assess image quality separately so a stronger illustration does not conceal a weaker design.
 Derive short assessment examples from these comparisons before selecting a scoring rubric.
 
 Keep some different characters and request types unseen until a skill version is proposed for adoption.
 Compare any automated evaluator with Kyle's judgments before relying on its scores for optimization.
 Text and image assessments do not establish gameplay balance or enjoyment; those require implementation and playtesting.
-This comparison method and its criteria remain proposals, without a selected task count, scoring scale or paid run.
+Concrete pilot design, criteria, tasks, scoring scale, evaluator and paid runs remain open.
 
 ## Integration still needed
 
@@ -64,7 +70,7 @@ Product requests do not automatically load a repository skill.
 
 The [installation guide](https://github.com/microsoft/SkillOpt/blob/fa4ca184573e42ec11472959dd57422381418096/docs/guide/installation.md) describes upstream setup.
 The [first experiment guide](https://github.com/microsoft/SkillOpt/blob/fa4ca184573e42ec11472959dd57422381418096/docs/guide/first-experiment.md) describes retained configuration, versions, trajectories and candidate skills.
-Any pilot belongs in a separate SkillOpt checkout with reviewed fixtures and fixed model settings.
+Any SkillOpt optimization pilot belongs in a separate SkillOpt checkout with reviewed fixtures and fixed model settings.
 No runnable Tower Generator training command is specified here.
 
 Review a candidate against the final test set and product contract before adoption.

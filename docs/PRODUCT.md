@@ -7,7 +7,8 @@ The [realignment record](REALIGNMENT.md) contains reset history and the recovery
 
 Kyle selected two delivery modes on 2026-10-11: a pure Agent Skill first and a proper generator later.
 The initial skill aims for versatile, generalizable design quality, with SkillOpt optimization and Kyle's review.
-Define its supported requests, evidence use, output expectations and quality criteria through `grill-with-docs` before changing the skill or running optimization.
+Complete the initial skill contract through `grill-with-docs` before preparing a new skill version.
+Use the selected comparisons to derive concrete quality criteria before running SkillOpt optimization.
 The [SkillOpt plan](research/SKILLOPT.md) owns optimization details and their selection status.
 
 The selected Go research and Wiki contracts below remain the later generator plan, rather than prerequisites for delivering the initial skill.
@@ -21,9 +22,22 @@ Add behavior or dependencies for a defined workflow.
 ## Selected Agent Skill scope
 
 Kyle selected a complete Agent Skill alternative without requiring the generator's settings or restrictions.
-The skill can include question sessions.
-Its completed character output is a directory containing an image and a Markdown file.
-Image purpose, document content, conversation defaults, required host capabilities and quality criteria remain to be defined.
+Begin each request with a short question session, expand it when needed, then draft and ask targeted follow-up questions.
+A brief request such as "Usopp, One Piece, as a BTD6 Tower" is enough to establish the starting task; the agent researches the character and applies relevant design patterns.
+Support known characters and original ideas described by the user.
+For known characters, optimize both closeness to canon and closeness to the requested game's patterns and mechanics.
+Ask about the user's intention when the desired adaptation cannot be determined clearly; do not impose a global priority between these goals.
+
+Deliver a character directory with a main Markdown file describing the finished Tower design.
+For known characters, include an original reference image when available and add a Tower concept image when the host supports native image generation.
+For original ideas, use a supplied visual reference when present; otherwise one generated Tower concept image can serve as the visual reference.
+If a needed reference cannot be obtained and suitable image generation is unavailable, still deliver the design with an explicit image gap and a source link when available.
+Never present generated artwork as an original source reference.
+Use actual host capabilities rather than assuming that a model name supplies image-generation tools.
+Research, sources and concise design rationales can use a separate document when needed.
+Include meaningful gameplay values when appropriate to the requested game and design, using game references to inform them.
+New costs, damage, ranges or cooldowns are design proposals; their balance still needs implementation and playtesting.
+Concrete quality criteria and the implementation of the skill and its optimization workflow remain to be defined.
 These selections do not establish a machine export schema, a supported game integration or a new Profile.
 
 ## Research and evidence rules
