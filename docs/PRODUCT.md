@@ -1,14 +1,19 @@
 # Tower Generator product rules
 
-This document owns the API and storage rules Kyle selected through [#106](https://github.com/mardwerk/tower-generator/issues/106).
+This document owns the selected delivery order and the later API and storage rules reviewed through [#106](https://github.com/mardwerk/tower-generator/issues/106).
 The [realignment record](REALIGNMENT.md) contains reset history and the recovery evaluation.
 
 ## Established direction
 
-Tower Generator owns reusable character research, its portable local Wiki and later Tower design for a selected Profile.
-Complete the Go research and Wiki workflow first; Tower design follows later.
+Kyle selected two delivery modes on 2026-10-11: a pure Agent Skill first and a proper generator later.
+The initial skill aims for versatile, generalizable design quality, with SkillOpt optimization and Kyle's review.
+Define its supported requests, evidence use, output expectations and quality criteria through `grill-with-docs` before changing the skill or running optimization.
+The [SkillOpt plan](research/SKILLOPT.md) owns optimization details and their selection status.
 
-One backend owns research, Wiki lookup and saving through the same API.
+The selected Go research and Wiki contracts below remain the later generator plan, rather than prerequisites for delivering the initial skill.
+The relationship between the skill and generator remains to be defined.
+
+For the later generator, one backend owns research, Wiki lookup and saving through the same API.
 Websites, scripts and possibly Towerright later are clients; requests need no browser session.
 Add behavior or dependencies for a defined workflow.
 
@@ -315,7 +320,8 @@ Include findings with strong evidence and uncertain classifications, low-confide
 These cases must not imply support for unselected API access.
 Review disconnect and restart behavior separately; successful saved Wiki content must not depend on a browser remaining connected.
 
-Product implementation waits for complete workflow acceptance through [#106](https://github.com/mardwerk/tower-generator/issues/106).
+Go backend implementation waits for complete workflow acceptance through [#106](https://github.com/mardwerk/tower-generator/issues/106).
+The initial Agent Skill follows the [selected delivery order](#established-direction); this backend review does not specify its output or evaluation contract.
 The following choices remain open; earlier proposals and merged proposal text do not select them.
 
 | Review | Remaining choices |

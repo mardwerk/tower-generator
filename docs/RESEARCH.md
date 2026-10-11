@@ -53,4 +53,4 @@ The [latest prototype research guide](https://github.com/mardwerk/tower-generato
 Those commands are retired and are not setup instructions for this checkout.
 The [prototype implementation](https://github.com/mardwerk/tower-generator/tree/ea114b2139abf46318a59f632a58fc035f64a5a7/src) remains available as evidence for the new specification.
 
-[Independent research](research/README.md) preserves source material and the later [SkillOpt evaluation proposal](research/SKILLOPT.md).
+[Independent research](research/README.md) preserves source material and the [SkillOpt optimization plan](research/SKILLOPT.md).

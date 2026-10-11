@@ -1,13 +1,20 @@
-# SkillOpt evaluation proposal
+<a id="skillopt-evaluation-proposal"></a>
 
-Improve the [Tower design skill](../../.agents/skills/tower-generator/SKILL.md) only when observed failures justify a change.
-This proposal is independent of the API-only backend and does not select its workflow architecture.
+# SkillOpt optimization plan
+
+Kyle selected SkillOpt with his review for the initial Agent Skill on 2026-10-11 under the [product delivery order](../PRODUCT.md#established-direction).
+The [Tower design skill](../../.agents/skills/tower-generator/SKILL.md) is the existing seed.
+Its supported requests, quality criteria, evaluation contract and review process remain to be defined through `grill-with-docs`.
+The evaluation design below remains a proposal; selecting SkillOpt does not select its fixtures, scoring, models or spending limits.
+Skill optimization is separate from the later API backend and does not select its architecture.
 There is no installed adapter, scored Tower Generator benchmark or optimization run from this transfer.
 
 The upstream review used [microsoft/SkillOpt commit fa4ca184573e42ec11472959dd57422381418096](https://github.com/microsoft/SkillOpt/tree/fa4ca184573e42ec11472959dd57422381418096), dated 2026-09-30.
 The observations describe that revision, including changes after release v0.2.0.
 
-## Evaluation approach
+<a id="evaluation-approach"></a>
+
+## Proposed evaluation approach
 
 SkillOpt changes Markdown instructions rather than model weights.
 A target model performs scored tasks; an optimizer proposes bounded edits from their trajectories.

@@ -2,7 +2,7 @@
 
 Use this archive to answer a concrete character-research or Tower-design question.
 Follow the [research rules](../RESEARCH.md) and the [Tower design skill](../../.agents/skills/tower-generator/SKILL.md) for those workflows.
-The [SkillOpt proposal](SKILLOPT.md) describes later measured improvement.
+The [SkillOpt plan](SKILLOPT.md) records the selected optimization direction and the remaining evaluation proposal.
 
 Kyle selected this focused transfer on 2026-10-03 in [#108](https://github.com/mardwerk/tower-generator/issues/108).
 The [product rules](../PRODUCT.md) own current behavior; the [realignment record](../REALIGNMENT.md) preserves reset history.
