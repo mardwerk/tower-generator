@@ -3,6 +3,7 @@
 # SkillOpt optimization plan
 
 Kyle selected SkillOpt with his review for the initial Agent Skill on 2026-10-11 under the [product delivery order](../PRODUCT.md#established-direction).
+Optimization follows the directly authored Manga Mayhem gameplay example; it is not a prerequisite for that game work.
 The [Tower design skill](../../.agents/skills/tower-generator/SKILL.md) is the existing seed.
 Its detailed request contract, quality criteria, evaluator and adoption evidence remain under review through `grill-with-docs`.
 Evaluate the selected character-folder output and any supported question sessions, rather than imposing the later generator's export contract.

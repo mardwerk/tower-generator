@@ -3,14 +3,17 @@
 [td-profile](https://github.com/mardwerk/td-profile) owns the generic Profile Validator, reusable schemas and copyable Profile Template.
 [btd6-atlas](https://github.com/KyleDerZweite/btd6-atlas) owns BTD6 captures, source cleanup and its BTD6 Profile.
 Tower Generator owns its product rules and any future generation integration.
+[Manga Mayhem](https://github.com/mardwerk/manga-mayhem/issues/92) owns its game Profile, Tower files, gameplay and acceptance decisions.
 
 A Profile is a directory selected by its local path.
 Keep its dependencies inside that directory and its governed Tower records separate.
 Follow the [research boundary](RESEARCH.md#storage-and-update-boundaries) when reusing character evidence.
 A new Tower Generator Profile is deferred until generation work resumes.
+The [selected authoring editor](PRODUCT.md#selected-authoring-editor-boundary) lives here and uses the external MangaMayhem Profile and game-data.
+Its development follows the game-owned playable example and data contract under the [delivery order](PRODUCT.md#established-direction).
 
 The [realignment record](REALIGNMENT.md) documents retirement of the Default Profile/Usopp experiment and its setup.
-There is no current validator installation or authoring command in this checkout.
+There is no current validator installation, editor or authoring command in this checkout.
 Do not treat its removed schemas, CLI or setup workflow as the future backend contract.
 Propose generic checker or reusable schema changes upstream in td-profile; game-specific rules belong to the owning Profile.
 Follow the [review instructions](../AGENTS.md) for Kyle's review of future generation mappings and product rules.

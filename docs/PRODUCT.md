@@ -5,7 +5,13 @@ The [realignment record](REALIGNMENT.md) contains reset history and the recovery
 
 ## Established direction
 
-Kyle selected two delivery modes on 2026-10-11: a pure Agent Skill first and a proper generator later.
+Kyle selected a directly authored Manga Mayhem gameplay example before new authoring tools on 2026-10-11.
+After the ongoing [Map + Camera Test](https://github.com/mardwerk/manga-mayhem/issues/83), the [small gameplay test](https://github.com/mardwerk/manga-mayhem/issues/100) is the selected next game outcome.
+Manga Mayhem owns its concrete gameplay contract, implementation and acceptance; the selected order does not accept a Candidate specification.
+Use the playable example to establish the game-owned Profile contract and then the authoring editor.
+The editor, SkillOpt and generator are not prerequisites for that example.
+
+The standalone Agent Skill and proper generator remain separate design modes, with the skill developed before the proper generator when tool development resumes.
 The initial skill aims for versatile, generalizable design quality, with SkillOpt optimization and Kyle's review.
 Complete the initial skill contract through `grill-with-docs` before preparing a new skill version.
 Use the selected comparisons to derive concrete quality criteria before running SkillOpt optimization.
@@ -14,6 +20,7 @@ The [SkillOpt plan](research/SKILLOPT.md) owns optimization details and their se
 The selected Go research and Wiki contracts below remain the later generator plan, rather than prerequisites for delivering the initial skill.
 The skill is a complete alternative to the generator, not a prerequisite stage for using it.
 The detailed responsibilities of both modes remain under design.
+The authoring editor has its own [selected boundary](#selected-authoring-editor-boundary).
 
 For the later generator, one backend owns research, Wiki lookup and saving through the same API.
 Websites, scripts and possibly Towerright later are clients; requests need no browser session.
@@ -39,6 +46,22 @@ Include meaningful gameplay values when appropriate to the requested game and de
 New costs, damage, ranges or cooldowns are design proposals; their balance still needs implementation and playtesting.
 Concrete quality criteria and the implementation of the skill and its optimization workflow remain to be defined.
 These selections do not establish a machine export schema, a supported game integration or a new Profile.
+
+## Selected authoring editor boundary
+
+Kyle selected a small authoring WebUI in Tower Generator on 2026-10-11, initially tailored to Manga Mayhem.
+The editor uses an explicitly selected external MangaMayhem Profile and its Tower files.
+Manga Mayhem owns its Profile, game rules, Tower data and gameplay acceptance; [td-profile owns the generic checking implementation](PROFILE.md).
+Develop this editor after the playable game example and reviewed game-owned data contract.
+
+The selected game-data direction uses complete authored records for each Upgrade State as authoritative content.
+Show the Upgrade States together through their saved Upgrade connections and compare the complete stored records.
+Differences are a view of the data; they do not define inheritance or automatically change another Upgrade State.
+The first editing workflow opens an Upgrade State, edits its complete data and explicitly saves only that Upgrade State.
+
+The concrete data fields, save contract and implementation remain to be specified against the game-owned Profile.
+This boundary does not establish an implemented editor, a universal Profile editor or support for unimplemented game mechanics.
+The standalone skill remains usable without this editor or a running backend.
 
 ## Research and evidence rules
 

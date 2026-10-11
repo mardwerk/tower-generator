@@ -1,6 +1,7 @@
 # Tower Generator
 
-Tower Generator develops an Agent Skill first and a generator later under the [selected delivery order](docs/PRODUCT.md#established-direction).
+Tower Generator's [selected delivery order](docs/PRODUCT.md#established-direction) puts a directly authored Manga Mayhem gameplay example before new authoring tools.
+The standalone Agent Skill, authoring editor and later generator retain their separate responsibilities.
 There is no runnable product backend in this reset.
 
 Each document owns a separate subject.
