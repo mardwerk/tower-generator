@@ -11,11 +11,20 @@ Define its supported requests, evidence use, output expectations and quality cri
 The [SkillOpt plan](research/SKILLOPT.md) owns optimization details and their selection status.
 
 The selected Go research and Wiki contracts below remain the later generator plan, rather than prerequisites for delivering the initial skill.
-The relationship between the skill and generator remains to be defined.
+The skill is a complete alternative to the generator, not a prerequisite stage for using it.
+The detailed responsibilities of both modes remain under design.
 
 For the later generator, one backend owns research, Wiki lookup and saving through the same API.
 Websites, scripts and possibly Towerright later are clients; requests need no browser session.
 Add behavior or dependencies for a defined workflow.
+
+## Selected Agent Skill scope
+
+Kyle selected a complete Agent Skill alternative without requiring the generator's settings or restrictions.
+The skill can include question sessions.
+Its completed character output is a directory containing an image and a Markdown file.
+Image purpose, document content, conversation defaults, required host capabilities and quality criteria remain to be defined.
+These selections do not establish a machine export schema, a supported game integration or a new Profile.
 
 ## Research and evidence rules
 

@@ -5,6 +5,7 @@
 Kyle selected SkillOpt with his review for the initial Agent Skill on 2026-10-11 under the [product delivery order](../PRODUCT.md#established-direction).
 The [Tower design skill](../../.agents/skills/tower-generator/SKILL.md) is the existing seed.
 Its supported requests, quality criteria, evaluation contract and review process remain to be defined through `grill-with-docs`.
+Evaluate the selected character-folder output and any supported question sessions, rather than imposing the later generator's export contract.
 The evaluation design below remains a proposal; selecting SkillOpt does not select its fixtures, scoring, models or spending limits.
 Skill optimization is separate from the later API backend and does not select its architecture.
 There is no installed adapter, scored Tower Generator benchmark or optimization run from this transfer.
@@ -18,10 +19,11 @@ The observations describe that revision, including changes after release v0.2.0.
 
 SkillOpt changes Markdown instructions rather than model weights.
 A target model performs scored tasks; an optimizer proposes bounded edits from their trajectories.
-Its default selection gate retains a candidate when its selection score improves.
+Its default selection gate retains a candidate when its selection score improves; that gate does not replace Kyle's review for adopting a skill version.
 It still needs tasks, a runner and an evaluator; an explicit initial skill is easier to review.
 
-Use frozen evidence and Profile inputs, with network research disabled, to make failures reproducible.
+For repeatable design checks, use frozen evidence and any supplied game constraints, with network research disabled.
+These checks cover design from supplied material; separate research and conversation cases are needed to assess the complete skill.
 Keep development, selection and final test examples separate.
 Repeated optimization uses the selection set, so it is not an untouched final test.
 
@@ -40,6 +42,19 @@ Record fabricated claims, wrong actors, lost conditions, false refusals and stru
 Separate provider failures from design errors.
 Use deterministic checks only where an implemented contract supports them, and an explicit human rubric for fidelity and design quality.
 A validator score does not establish those judgments.
+
+## Proposed first quality comparison
+
+Compare the existing and a revised skill on the same tasks, hiding their version names during Kyle's review.
+Record concrete errors separately from his preference and its reasons.
+Possible criteria include character recognizability, useful gameplay decisions, clear explanations and adaptation to the request.
+Assess image quality separately so a stronger illustration does not conceal a weaker design.
+Derive short assessment examples from these comparisons before selecting a scoring rubric.
+
+Keep some different characters and request types unseen until a skill version is proposed for adoption.
+Compare any automated evaluator with Kyle's judgments before relying on its scores for optimization.
+Text and image assessments do not establish gameplay balance or enjoyment; those require implementation and playtesting.
+This comparison method and its criteria remain proposals, without a selected task count, scoring scale or paid run.
 
 ## Integration still needed
 

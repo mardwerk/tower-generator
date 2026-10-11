@@ -26,3 +26,23 @@ Wrap prose so each physical line contains at most two sentences.
 Put explanatory text between a heading and any subheading.
 Before committing, run `git diff --check` and check changed links.
 Run checks appropriate to executable changes; document what each check establishes.
+
+## Agent skills
+
+Use this repository's configuration when an engineering skill requests tracker, triage or domain conventions.
+Repository rules take precedence over upstream skill defaults.
+
+### Issue tracker
+
+Track product work in GitHub Issues for mardwerk/tower-generator.
+Read [tracker conventions](docs/agents/issue-tracker.md) before publishing or updating tracked work.
+
+### Triage labels
+
+Use the existing label lifecycle and [triage compatibility rules](docs/agents/triage-labels.md).
+Read these rules before translating an upstream triage role into labels or issue state.
+
+### Domain docs
+
+Use one product context and the existing document owners.
+Read [domain conventions](docs/agents/domain.md) before domain exploration or recording terminology and decisions.
