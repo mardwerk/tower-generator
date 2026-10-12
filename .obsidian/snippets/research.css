@@ -1,0 +1,72 @@
+/* @settings
+name: Research reading layout
+id: research-reading-layout
+settings:
+  - id: research-line-width
+    title: Reading width
+    type: variable-number-slider
+    default: 850
+    min: 600
+    max: 1100
+    step: 25
+    format: px
+  - id: research-accent
+    title: Paper heading accent
+    type: variable-color
+    format: hex
+    default: '#91baff'
+*/
+
+/* Shared reading styles work without Style Settings. */
+body {
+  --file-line-width: var(--research-line-width, 850px);
+}
+
+.markdown-rendered h1 {
+  letter-spacing: -0.025em;
+  margin-bottom: 0.8em;
+}
+
+.markdown-rendered h2 {
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: 0.35em;
+  margin-top: 2.2em;
+}
+
+.markdown-rendered h3 {
+  border-left: 3px solid var(--research-accent, var(--interactive-accent));
+  padding-left: 0.65em;
+  margin-top: 1.8em;
+}
+
+.markdown-rendered h3 + p {
+  margin-top: -0.35em;
+}
+
+.markdown-rendered h3 + p > strong:only-child {
+  color: var(--text-normal);
+  font-size: 1.08em;
+}
+
+.markdown-rendered h3 + p + p {
+  color: var(--text-muted);
+  font-size: 0.92em;
+}
+
+.markdown-rendered table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.markdown-rendered th {
+  background: var(--background-secondary);
+}
+
+.markdown-rendered tr:nth-child(even) td {
+  background: var(--background-secondary-alt, var(--background-secondary));
+}
+
+.markdown-rendered .callout[data-callout="note"] {
+  --callout-color: 95, 150, 210;
+}
