@@ -1,0 +1,5 @@
+interface:
+  display_name: "Character tower-defense design"
+  short_description: "Design character units and preserve their mechanics across upgrades."
+policy:
+  allow_implicit_invocation: true

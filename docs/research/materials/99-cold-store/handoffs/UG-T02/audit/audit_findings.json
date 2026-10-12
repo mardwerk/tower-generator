@@ -1,0 +1,49 @@
+{
+  "original_json_sha256": "bd0af24ee9ebe12235345d06aec4d1e3a4e88de84aa53432fe288751d54e4946",
+  "python_version": "3.13.5 (main, Jul 15 2026, 20:25:40) [GCC 14.2.0]",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "new_audit_not_historical_run": true,
+  "original_json_and_readme_match_uploaded_copies": true,
+  "rerun_summary": {
+    "artifact": "generalized_wizard.unit.json",
+    "sha256": "bd0af24ee9ebe12235345d06aec4d1e3a4e88de84aa53432fe288751d54e4946",
+    "scope": "Document shape, references, upgrade prerequisites, legal tier triples, static component-plan composition, price arithmetic, and a proposed single-owner Paragon purchase gate.",
+    "structural_checks_passed": true,
+    "check_count": 136,
+    "json_schema_check": "passed_document_shape_only",
+    "ordinary_builds_resolved": 64,
+    "valid_purchase_interleavings_checked": 424,
+    "minimum_reference_paragon_total_cash": 886625,
+    "unbound_groups_in_fixture": 48,
+    "executable_handoff_ready": false,
+    "consumer_execution": "not_evaluated",
+    "balance": "not_evaluated",
+    "acceptance": "not_requested",
+    "not_checked": [
+      "Correctness of BTD6 source data against an installed version",
+      "Numeric combat resolution and modifier propagation",
+      "Live purchase-history cooldown and resource state",
+      "Combat, collision, targeting or animation behavior",
+      "Actual Paragon degree calculation",
+      "Gameplay balance and character fidelity"
+    ],
+    "reproduction": "python check_reference.py"
+  },
+  "report_matches_saved_report_byte_for_byte": true,
+  "builds_match_saved_builds_byte_for_byte": true,
+  "observation_purchase_order": "resolve sorts nodes by tier/path before composing. Its equality test is for canonical static resolution, not sequential purchase execution.",
+  "new_negative_probe": {
+    "input_build": [
+      2,
+      0,
+      0
+    ],
+    "input_order": [
+      "A2",
+      "A1"
+    ],
+    "outcome": "accepted by resolve despite reversed prerequisite order",
+    "scope": "resolve checks membership/uniqueness but does not validate sequential prerequisites. purchase_interleavings itself generates only valid orders."
+  },
+  "new_binding_probe": "Document-shape schema accepts all groups marked bound with null values. The schema is not a typed binding validator, as its comment states."
+}

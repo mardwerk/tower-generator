@@ -1,0 +1,2066 @@
+{
+  "thread_id": "UG-T04",
+  "prepared_date": "2026-09-24",
+  "scope": "Internal consolidation; source inspection is not experiment reproduction.",
+  "source_count": 105,
+  "sources": [
+    {
+      "id": "UG-T04-S01",
+      "title": "Research sources for unit generation and game design",
+      "authors": "Author not identified in the supplied file",
+      "publication": "Internal curated research catalogue; file says research checked September 22, 2026",
+      "identifier": "Uploaded GAME-DESIGN-RESEARCH.md",
+      "urls": [],
+      "origin": "User-supplied attachment; all 38 numbered entries and both additional-reference tables reviewed.",
+      "bibliographic_verification": "Verified as the supplied document, not as independent verification of its bibliography.",
+      "content_inspected": "Full supplied file.",
+      "relevance": "Contains representation, search, evaluation, taste, maps and engine-research precedents. R1 to R38 map to S101 to S138; additional references map to S139 to S148.",
+      "limitations": "The document explicitly disclaims systematic-review status, reproduction and implementation commitment. Its historical 'Inspected' labels belong to its author.",
+      "artifacts": "SHA-256: 8b1611fa74f65009d3c71644220f74880a46d95457302888ce3bd02e4e7c27cc",
+      "original": null,
+      "linked_records": "UG-T04-E04, UG-T04-E11, UG-T04-E12, UG-T04-E19",
+      "type": "Supplied research catalogue"
+    },
+    {
+      "id": "UG-T04-S02",
+      "title": "Unit Generator context",
+      "authors": "Author not identified in the supplied file",
+      "publication": "Internal contributor contract; no version/date supplied",
+      "identifier": "Uploaded CONTEXT.md",
+      "urls": [],
+      "origin": "User-supplied attachment; Shared terms, Unit terms, Generation and evaluation terms, and closing implementation caveat.",
+      "bibliographic_verification": "Verified as the supplied document; underlying repositories not verified.",
+      "content_inspected": "Full supplied file.",
+      "relevance": "Defines Unit, Mechanic, Interpretation, Game Definition, Profile, Review and Validation. Separates the Engine from the combat runtime.",
+      "limitations": "Responsibility statements are historical document content, not a demonstrated implementation or fresh owner approval. Private Foundation guidance was not available.",
+      "artifacts": "SHA-256: fee3f4ebbcaf0f7c44013db8102ca98510676e8723a399e95ee323f7a946ee50",
+      "original": null,
+      "linked_records": "UG-T04-E11, UG-T04-E19, UG-T04-Q03, UG-T04-Q09",
+      "type": "Supplied contributor/context document"
+    },
+    {
+      "id": "UG-T04-S03",
+      "title": "caveman SKILL.md",
+      "authors": "Repository account JuliusBrussee; individual authorship not independently established",
+      "publication": "Mutable repository guidance, not research",
+      "identifier": "main branch; no commit pinned",
+      "urls": [
+        "https://raw.githubusercontent.com/JuliusBrussee/caveman/refs/heads/main/skills/caveman/SKILL.md"
+      ],
+      "origin": "Initial user request appended \"LITE\".",
+      "bibliographic_verification": "Repository file retrieved; no historical commit verified.",
+      "content_inspected": "Full current text.",
+      "relevance": "Communication-style reference only.",
+      "limitations": "Not an accepted Unit-Generator architecture, model skill, product requirement or evidence of design quality.",
+      "artifacts": "No code or dependency adopted.",
+      "original": null,
+      "linked_records": "UG-T04-E05; UG-T04-E15",
+      "type": "Repository guidance file, stylistic instruction"
+    },
+    {
+      "id": "UG-T04-S04",
+      "title": "Laya model card and checkpoint",
+      "authors": "Convai Innovations / convaiinnovations",
+      "publication": "Mutable model card and vendor-reported benchmarks; not an independently reproduced paper",
+      "identifier": "convaiinnovations/laya; checkpoint revision not pinned",
+      "urls": [
+        "https://huggingface.co/convaiinnovations/laya",
+        "https://huggingface.co/convaiinnovations/laya/raw/main/README.md"
+      ],
+      "origin": "Initial user model example; first assistant answer, 'Where Laya fits'.",
+      "bibliographic_verification": "Official model-card identity verified.",
+      "content_inspected": "Architecture, checkpoint table, typed-decisions benchmark and Honest Limits sections.",
+      "relevance": "The card describes a 421M encoder-plus-head root model, a 512-token question budget and scoring of supplied options. Reports 0.362 root accuracy, 0.461 majority baseline and 0.766 specialized-checkpoint accuracy on typed-decisions.",
+      "limitations": "Vendor-reported task-specific results, not TD design or taste results. Different checkpoints must not be conflated; calibration and serving claims were not reproduced.",
+      "artifacts": "Associated repository https://github.com/NandhaKishorM/laya and benchmark/training notebook links are listed by the card. None executed or license-audited.",
+      "original": null,
+      "linked_records": "UG-T04-E13, UG-T04-D07",
+      "type": "Model card, weights reference and vendor benchmark"
+    },
+    {
+      "id": "UG-T04-S05",
+      "title": "From LLM-Driven Trading Card Generation to Procedural Relatedness: A Pokémon Case Study",
+      "authors": "Johannes Pfau; Panagiotis Vrettis",
+      "publication": "2026 preprint; submitted April 30, 2026",
+      "identifier": "arXiv:2604.27972v1",
+      "urls": [
+        "https://arxiv.org/abs/2604.27972",
+        "https://arxiv.org/html/2604.27972v1"
+      ],
+      "origin": "First assistant answer, missing-paper entry A.",
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Relevant system and study sections.",
+      "relevance": "Description-conditioned card generation and perceived representativeness. Reports Qwen3-14B, retrieval over 993 cards and a study with 49 participants producing 196 cards.",
+      "limitations": "Natural-language effects in structured output do not establish executable rules, balance or transfer to anime TD progression.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E05, UG-T04-E15",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S06",
+      "title": "Open Role-Playing with Delta-Engines",
+      "authors": "Hongqiu Wu; Zekai Xu; Tianyang Xu; Shize Wei; Yan Wang; Jiale Hong; Weiqi Wu; Hai Zhao",
+      "publication": "2024 preprint; inspected revision v5 dated March 7, 2025",
+      "identifier": "arXiv:2408.05842v5",
+      "urls": [
+        "https://arxiv.org/abs/2408.05842",
+        "https://arxiv.org/html/2408.05842v5"
+      ],
+      "origin": "First assistant answer, missing-paper entry B.",
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Relevant methods and Section 6.1, including HTML Table 1; PDF retrieval failed.",
+      "relevance": "Description-to-character-code adaptation with retrieval and LoRA-trained CodeGemma-7B. Co-designed training set has 175 roles and 502 examples.",
+      "limitations": "Code accuracy is GPT-4 judged only on executable outputs. Engine patching and battle execution are not taste or balance validation under a fixed TD Definition.",
+      "artifacts": "CodeGemma model is named in the paper. Neither training nor engine was run here.",
+      "original": null,
+      "linked_records": "UG-T04-E06, UG-T04-D07, UG-T04-D08",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S07",
+      "title": "Game-O-Matic: Generating Videogames that Represent Ideas",
+      "authors": "Mike Treanor; Bryan Blackford; Michael Mateas; Ian Bogost",
+      "publication": "2012, Third Workshop on Procedural Content Generation in Games; published workshop paper",
+      "identifier": "DOI:10.1145/2538528.2538537",
+      "urls": [
+        "https://mtreanor.com/publications/Game-O-Matic-PCG2012.pdf",
+        "https://dl.acm.org/doi/abs/10.1145/2538528.2538537"
+      ],
+      "origin": "First assistant answer, entry C; earlier visible DOI/PDF tool request resolves to this same work.",
+      "bibliographic_verification": "Title/authors verified in author PDF; publisher search record corroborates year and DOI. Publisher article fetch failed.",
+      "content_inspected": "Relevant representation and assembly sections; PDF first page visually checked.",
+      "relevance": "Concept graphs map relationships to human-authored gameplay patterns. Relevant to an explicit Interpretation rather than a bag of named powers.",
+      "limitations": "It does not establish learned character fidelity or that players identify the intended meaning reliably.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E05, UG-T04-D04",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S08",
+      "title": "Chaos Cards: Creating Novel Digital Card Games through Grammatical Content Generation and Meta-Based Card Evaluation",
+      "authors": "Tiannan Chen; Stephen J. Guy",
+      "publication": "AIIDE 2020, published conference paper",
+      "identifier": "AAAI OJS record 7430",
+      "urls": [
+        "https://cdn.aaai.org/ojs/7430/7430-52-10748-1-2-20200923.pdf"
+      ],
+      "origin": "First assistant answer, entry D.",
+      "bibliographic_verification": "Title/authors/venue/year verified in primary proceedings PDF.",
+      "content_inspected": "Relevant abstract and generation/evaluation description; first page visually checked.",
+      "relevance": "Grammar-generated executable effects and a separate neural strength predictor illustrate different roles for generation and evaluation.",
+      "limitations": "A strength predictor is not a character-adaptation generator or a human-taste model. No Unit-Generator reuse was tested.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E05, UG-T04-D08",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S09",
+      "title": "Latent Predictor Networks for Code Generation",
+      "authors": "Wang Ling; Phil Blunsom; Edward Grefenstette; Karl Moritz Hermann; Tomáš Kočiský; Fumin Wang; Andrew Senior",
+      "publication": "ACL 2016, long papers, pages 599 to 609",
+      "identifier": "DOI:10.18653/v1/P16-1057; arXiv:1603.06744",
+      "urls": [
+        "https://aclanthology.org/P16-1057/",
+        "https://arxiv.org/html/1603.06744"
+      ],
+      "origin": "First assistant answer, entry E; original visible research calls.",
+      "bibliographic_verification": "Verified against ACL Anthology.",
+      "content_inspected": "Publisher abstract and metadata in this handover; previous assistant reported fuller reading.",
+      "relevance": "Maps natural-language card descriptions plus structured attributes to implementation code.",
+      "limitations": "The input already specifies mechanics. It does not decide which mechanics should represent an unrelated fictional character.",
+      "artifacts": "Magic/Hearthstone code datasets are associated with the task; exact data snapshot, rights and reuse not inspected.",
+      "original": null,
+      "linked_records": "UG-T04-E05, UG-T04-D08",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S10",
+      "title": "Mystical Tutor: A Magic: The Gathering Design Assistant via Denoising Sequence-to-Sequence Learning",
+      "authors": "Adam Summerville; Michael Mateas",
+      "publication": "AIIDE 12(1), pages 86 to 92, 2016; published",
+      "identifier": "DOI:10.1609/aiide.v12i1.12851",
+      "urls": [
+        "https://ojs.aaai.org/index.php/AIIDE/article/view/12851"
+      ],
+      "origin": "First assistant answer, entry F.",
+      "bibliographic_verification": "Verified against publisher record.",
+      "content_inspected": "Abstract only.",
+      "relevance": "Denoising sequence-to-sequence completion of partially specified cards; relevant to preserving fixed designer choices.",
+      "limitations": "Earlier and current extraction do not establish a full-paper review. No evidence here about source-grounded TD taste.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E05, UG-T04-D04",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S11",
+      "title": "PICARD: Parsing Incrementally for Constrained Auto-Regressive Decoding from Language Models",
+      "authors": "Torsten Scholak; Nathan Schucher; Dzmitry Bahdanau",
+      "publication": "EMNLP 2021, pages 9895 to 9901; published",
+      "identifier": "DOI:10.18653/v1/2021.emnlp-main.779",
+      "urls": [
+        "https://aclanthology.org/2021.emnlp-main.779/"
+      ],
+      "origin": "First assistant answer, constrained structure.",
+      "bibliographic_verification": "Verified against ACL Anthology.",
+      "content_inspected": "Abstract and bibliographic record.",
+      "relevance": "Incremental parsing rejects inadmissible continuations in text-to-SQL generation.",
+      "limitations": "Grammar admissibility is not game semantics, preference or runtime correctness.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D08, UG-T04-E11",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S12",
+      "title": "XGrammar-2: Dynamic and Efficient Structured Generation Engine for Agentic LLMs",
+      "authors": "Linzhang Li; Yixin Dong; Guanjie Wang; Ziyi Xu; Alexander Jiang; Tianqi Chen",
+      "publication": "2026 preprint; other publication status not established here",
+      "identifier": "arXiv:2601.04426v1",
+      "urls": [
+        "https://arxiv.org/abs/2601.04426",
+        "https://arxiv.org/html/2601.04426v1"
+      ],
+      "origin": "First assistant answer and original visible research call.",
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Relevant introduction and structured-generation scope.",
+      "relevance": "Reference for dynamic structured-output constraints.",
+      "limitations": "Not a game-rule validator or a demonstrated source of good design decisions.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D08",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S13",
+      "title": "Qwen3-14B model card and checkpoint",
+      "authors": "Qwen team",
+      "publication": "Official model artifact; mutable card",
+      "identifier": "Qwen/Qwen3-14B",
+      "urls": [
+        "https://huggingface.co/Qwen/Qwen3-14B"
+      ],
+      "origin": "First assistant answer, proposed reference-model comparison.",
+      "bibliographic_verification": "Official card/checkpoint identity verified.",
+      "content_inspected": "Model description and usage metadata.",
+      "relevance": "Suggested pretrained generator candidate, not a chosen backend.",
+      "limitations": "No TD generation, serving cost, hardware fit or preference performance was tested. A model-card license tag does not establish overall reuse compatibility.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D07, UG-T04-Q05",
+      "type": "Model card and checkpoint"
+    },
+    {
+      "id": "UG-T04-S14",
+      "title": "Qwen3-8B model card and checkpoint",
+      "authors": "Qwen team",
+      "publication": "Official model artifact; mutable card",
+      "identifier": "Qwen/Qwen3-8B",
+      "urls": [
+        "https://huggingface.co/Qwen/Qwen3-8B"
+      ],
+      "origin": "First assistant answer, proposed reference-model comparison.",
+      "bibliographic_verification": "Official card/checkpoint identity verified.",
+      "content_inspected": "Model description and usage metadata.",
+      "relevance": "Suggested pretrained generator candidate, not a chosen backend.",
+      "limitations": "No TD generation, serving cost, hardware fit or preference performance was tested. A model-card license tag does not establish overall reuse compatibility.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D07, UG-T04-Q05",
+      "type": "Model card and checkpoint"
+    },
+    {
+      "id": "UG-T04-S15",
+      "title": "LoRA: Low-Rank Adaptation of Large Language Models",
+      "authors": "Edward J. Hu; Yelong Shen; Phillip Wallis; Zeyuan Allen-Zhu; Yuanzhi Li; Shean Wang; Lu Wang; Weizhu Chen",
+      "publication": "2021 preprint; ICLR 2022 publication identified in the inspected Delta-Engines reference list",
+      "identifier": "arXiv:2106.09685v2; OpenReview:nZeVKeeFYf9",
+      "urls": [
+        "https://arxiv.org/abs/2106.09685",
+        "https://openreview.net/forum?id=nZeVKeeFYf9"
+      ],
+      "origin": "First assistant answer, proposed SFT method.",
+      "bibliographic_verification": "arXiv bibliography verified; ICLR record corroborated by a primary-paper reference, not freshly opened.",
+      "content_inspected": "Abstract; citation context in Delta-Engines.",
+      "relevance": "Parameter-efficient adaptation of pretrained models.",
+      "limitations": "A training method does not provide the target taste dataset or establish sufficient sample size.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D07, UG-T04-E14",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S16",
+      "title": "QLoRA: Efficient Finetuning of Quantized LLMs",
+      "authors": "Tim Dettmers; Artidoro Pagnoni; Ari Holtzman; Luke Zettlemoyer",
+      "publication": "2023 preprint inspected; NeurIPS 2023 attribution not independently rechecked in publisher proceedings",
+      "identifier": "arXiv:2305.14314v1",
+      "urls": [
+        "https://arxiv.org/abs/2305.14314"
+      ],
+      "origin": "First assistant answer, lower-memory adapter training.",
+      "bibliographic_verification": "arXiv record verified.",
+      "content_inspected": "Abstract only.",
+      "relevance": "Training adapters through a frozen quantized model can reduce training memory.",
+      "limitations": "Published benchmark results are not hardware estimates or taste results for Unit-Generator.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D07, UG-T04-E14",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S17",
+      "title": "SFT Trainer documentation",
+      "authors": "Hugging Face TRL maintainers",
+      "publication": "Live technical documentation; no package version pinned",
+      "identifier": "TRL SFTTrainer",
+      "urls": [
+        "https://huggingface.co/docs/trl/sft_trainer"
+      ],
+      "origin": "First assistant answer, implementation lead for supervised fine-tuning.",
+      "bibliographic_verification": "Official documentation verified.",
+      "content_inspected": "Relevant SFT and adapter-configuration guidance.",
+      "relevance": "Possible implementation route using TRL and PEFT.",
+      "limitations": "Neither a dependency decision nor a run. API compatibility and exact version remain unspecified.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D07",
+      "type": "Technical documentation"
+    },
+    {
+      "id": "UG-T04-S18",
+      "title": "Direct Preference Optimization: Your Language Model is Secretly a Reward Model",
+      "authors": "Rafael Rafailov; Archit Sharma; Eric Mitchell; Stefano Ermon; Christopher D. Manning; Chelsea Finn",
+      "publication": "2023 preprint v2 inspected; NeurIPS 2023 attribution from the conversation retained, proceedings not independently rechecked",
+      "identifier": "arXiv:2305.18290v2",
+      "urls": [
+        "https://arxiv.org/abs/2305.18290",
+        "https://arxiv.org/html/2305.18290v2"
+      ],
+      "origin": "Both assistant answers, later preference-training option.",
+      "bibliographic_verification": "arXiv bibliography verified.",
+      "content_inspected": "Relevant objective and preference-data formulation.",
+      "relevance": "Learns from preferred/rejected outputs for the same input without a separate online RL loop. Does not require Elo scores.",
+      "limitations": "No TD training or taste generalization demonstrated. Common-request supervision and preference assumptions matter; see new S302.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D07, UG-T04-E07, UG-T04-Q10",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S19",
+      "title": "Distilling System 2 into System 1",
+      "authors": "Ping Yu; Jing Xu; Jason Weston; Ilia Kulikov",
+      "publication": "2024 preprint; final venue not established in this extraction",
+      "identifier": "arXiv:2407.06023",
+      "urls": [
+        "https://arxiv.org/abs/2407.06023",
+        "https://arxiv.org/html/2407.06023"
+      ],
+      "origin": "First assistant answer, fast specialist through distillation.",
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Relevant method and limitations.",
+      "relevance": "Train on filtered results of more expensive inference as a later efficiency route.",
+      "limitations": "Task-dependent evidence, not a guarantee that a small model will reproduce a TD design process.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D07",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S20",
+      "title": "LILO: Learning Interpretable Libraries by Compressing and Documenting Code",
+      "authors": "Gabriel Grand; Lionel Wong; Maddy Bowers; Theo X. Olausson; Muxin Liu; Joshua B. Tenenbaum; Jacob Andreas",
+      "publication": "2023 preprint record inspected; final venue not established here",
+      "identifier": "arXiv:2310.19791",
+      "urls": [
+        "https://arxiv.org/abs/2310.19791"
+      ],
+      "origin": "First assistant answer, longer-term reusable mechanic abstractions.",
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Abstract and metadata.",
+      "relevance": "A lead for finding reusable program abstractions.",
+      "limitations": "No automatic permission to add runtime operators; not needed for the proposed v1.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-Q14",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S21",
+      "title": "Circular 14: Copyright in Derivative Works and Compilations",
+      "authors": "U.S. Copyright Office",
+      "publication": "Government guidance, displayed edition 14.0720; not research",
+      "identifier": "Circular 14",
+      "urls": [
+        "https://www.copyright.gov/circs/circ14.pdf"
+      ],
+      "origin": "First assistant answer, separate rights review.",
+      "bibliographic_verification": "Official document verified.",
+      "content_inspected": "Relevant first two pages; first page visually checked.",
+      "relevance": "Historical reminder that generation does not supply a rights clearance.",
+      "limitations": "U.S.-specific and not an assessment of this project's rights. The circular itself says registration policies/practices were superseded by the Compendium. No license choice follows.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-Q13",
+      "type": "Official copyright guidance"
+    },
+    {
+      "id": "UG-T04-S22",
+      "title": "Experience-Driven Procedural Content Generation (Extended Abstract)",
+      "authors": "Georgios N. Yannakakis; Julian Togelius",
+      "publication": "ACII 2015 invited paper, pages 519 to 525; published",
+      "identifier": "DOI:10.1109/ACII.2015.7344619",
+      "urls": [
+        "https://yannakakis.net/wp-content/uploads/2015/11/PID3821875.pdf",
+        "https://ieeexplore.ieee.org/document/7344619/"
+      ],
+      "origin": "Second assistant answer, experience-driven PCG framing.",
+      "bibliographic_verification": "Author PDF title/authors and IEEE proceedings metadata verified.",
+      "content_inspected": "Relevant player-modeling text; first page visually checked.",
+      "relevance": "Frames content generation around a stated player or experience, including preference learning.",
+      "limitations": "Distinct from the 2011 article at S139. Neither is a universal taste metric or a test of this TD task.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E07, UG-T04-Q01",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S23",
+      "title": "Fine-Grained Human Feedback Gives Better Rewards for Language Model Training",
+      "authors": "Zeqiu Wu; Yushi Hu; Weijia Shi; Nouha Dziri; Alane Suhr; Prithviraj Ammanabrolu; Noah A. Smith; Mari Ostendorf; Hannaneh Hajishirzi",
+      "publication": "NeurIPS 2023, published; arXiv version inspected",
+      "identifier": "arXiv:2306.01693",
+      "urls": [
+        "https://arxiv.org/abs/2306.01693",
+        "https://arxiv.org/html/2306.01693"
+      ],
+      "origin": "Second assistant answer, feedback reasons and aspect-level judgments.",
+      "bibliographic_verification": "arXiv verified; proceedings record identified.",
+      "content_inspected": "Relevant feedback representation and method sections.",
+      "relevance": "Local/category feedback can supply information absent from one whole-output preference.",
+      "limitations": "Language-task evidence, not a validated TD rubric; granular labels do not by themselves remove presentation bias.",
+      "artifacts": "Associated code https://github.com/allenai/FineGrainedRLHF identified, not executed.",
+      "original": null,
+      "linked_records": "UG-T04-D05, UG-T04-E07",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S24",
+      "title": "Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference",
+      "authors": "Wei-Lin Chiang; Lianmin Zheng; Ying Sheng; Anastasios N. Angelopoulos; Tianle Li; Dacheng Li; Banghua Zhu; Hao Zhang; Michael I. Jordan; Joseph E. Gonzalez; Ion Stoica",
+      "publication": "2024 arXiv record inspected; final venue not independently established here",
+      "identifier": "arXiv:2403.04132v1",
+      "urls": [
+        "https://arxiv.org/abs/2403.04132",
+        "https://arxiv.org/html/2403.04132v1"
+      ],
+      "origin": "Second assistant answer, pairwise ranking and uncertainty.",
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Sections 3 to 5 and relevant ranking discussion.",
+      "relevance": "Anonymous comparisons, Bradley-Terry estimation and uncertainty support the proposed review/ranking distinction.",
+      "limitations": "An estimated candidate/model ranking is not a model of unseen unit content. Its inference assumptions and comparison population must be stated.",
+      "artifacts": "Platform described in paper; no platform code, data or statistical implementation imported.",
+      "original": null,
+      "linked_records": "UG-T04-D05, UG-T04-D06, UG-T04-E08",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S25",
+      "title": "Elo Uncovered: Robustness and Best Practices in Language Model Evaluation",
+      "authors": "Meriem Boubdir; Edward Kim; Beyza Ermis; Sara Hooker; Marzieh Fadaee",
+      "publication": "GEM 2023 workshop, pages 339 to 352; later NeurIPS 2024 record also surfaced, not treated as the same inspected version",
+      "identifier": "arXiv:2311.17295v1; ACL:2023.gem-1.28",
+      "urls": [
+        "https://arxiv.org/html/2311.17295v1",
+        "https://aclanthology.org/2023.gem-1.28/"
+      ],
+      "origin": "Second assistant answer, alternative to relying on sequential Elo.",
+      "bibliographic_verification": "arXiv metadata and ACL proceedings record verified.",
+      "content_inspected": "Relevant ordering, hyperparameter and comparison experiments in v1.",
+      "relevance": "Documents ranking sensitivity to comparison order and hyperparameters.",
+      "limitations": "Does not establish that a particular Bradley-Terry implementation is best for this group or that ranking differences equal design-quality differences.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D06, UG-T04-E08",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S26",
+      "title": "SynthesizeMe! Inducing Persona-Guided Prompts for Personalized Reward Models in LLMs",
+      "authors": "Michael J. Ryan; Omar Shaikh; Aditri Bhagirath; Daniel Frees; William Held; Diyi Yang",
+      "publication": "ACL 2025, pages 8045 to 8078; published",
+      "identifier": "DOI:10.18653/v1/2025.acl-long.397",
+      "urls": [
+        "https://aclanthology.org/2025.acl-long.397/",
+        "https://aclanthology.org/2025.acl-long.397.pdf"
+      ],
+      "origin": "Second assistant answer, preference history and examples before weight training.",
+      "bibliographic_verification": "Verified against ACL Anthology.",
+      "content_inspected": "Relevant methods, Sections 3.1 and 3.2; corresponding PDF page visually checked.",
+      "relevance": "Personalized prompt/example conditioning for predicting preferences, relevant to editable design-guidance experiments.",
+      "limitations": "Chatbot preferences are not TD design preferences. Broad demographic/persona inference was not required by the thread's proposed use.",
+      "artifacts": "PersonalRewardBench is associated with the work; dataset files and reuse terms not inspected.",
+      "original": null,
+      "linked_records": "UG-T04-D07, UG-T04-E09",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S27",
+      "title": "Comparison-based Active Preference Learning for Multi-dimensional Personalization",
+      "authors": "Minhyeon Oh; Seungjoon Lee; Jungseul Ok",
+      "publication": "ACL 2025, pages 33145 to 33166; published",
+      "identifier": "DOI:10.18653/v1/2025.acl-long.1590",
+      "urls": [
+        "https://aclanthology.org/2025.acl-long.1590/",
+        "https://aclanthology.org/2025.acl-long.1590.pdf"
+      ],
+      "origin": "Second assistant answer, AMPLe and informative comparisons.",
+      "bibliographic_verification": "Verified against ACL Anthology.",
+      "content_inspected": "Sections 3.1 and 3.2; corresponding PDF page visually checked.",
+      "relevance": "Active comparisons can estimate priorities over a provided multidimensional reward representation.",
+      "limitations": "The method assumes supplied attributes and a preference model. It does not discover the correct unit-design dimensions or remove the need for representative reviewers.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E09, UG-T04-Q06",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S28",
+      "title": "Scaling Laws for Reward Model Overoptimization",
+      "authors": "Leo Gao; John Schulman; Jacob Hilton",
+      "publication": "2022 preprint record inspected; final publication venue not independently rechecked here",
+      "identifier": "arXiv:2210.10760",
+      "urls": [
+        "https://arxiv.org/abs/2210.10760",
+        "https://arxiv.org/html/2210.10760"
+      ],
+      "origin": "Second assistant answer, learned-score exploitation.",
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Relevant experimental setup and findings.",
+      "relevance": "Shows proxy-reward overoptimization under RL and best-of-N selection in a synthetic gold-reward setup.",
+      "limitations": "Not a measurement of this project's risk or real player enjoyment.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E10, UG-T04-Q10",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S29",
+      "title": "Qwen3.5-9B model card and checkpoint",
+      "authors": "Qwen team",
+      "publication": "Official model artifact; mutable",
+      "identifier": "Qwen/Qwen3.5-9B",
+      "urls": [
+        "https://huggingface.co/Qwen/Qwen3.5-9B"
+      ],
+      "origin": "Visible original research tool calls; not selected in the final model recommendation.",
+      "bibliographic_verification": "Official card identity verified.",
+      "content_inspected": "Metadata/model description only.",
+      "relevance": "Alternative model considered during research.",
+      "limitations": "No adoption, training or task-specific comparison established.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D07",
+      "type": "Model card and checkpoint"
+    },
+    {
+      "id": "UG-T04-S30",
+      "title": "XGrammar: Flexible and Efficient Structured Generation Engine for Large Language Models",
+      "authors": "Yixin Dong; Charlie F. Ruan; Yaxing Cai; Ruihang Lai; Ziyi Xu; Yilong Zhao; Tianqi Chen",
+      "publication": "2024 preprint record; later venue not rechecked",
+      "identifier": "arXiv:2411.15100",
+      "urls": [
+        "https://arxiv.org/abs/2411.15100"
+      ],
+      "origin": "Visible original structured-generation search; distinguish from XGrammar-2 at S12.",
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Abstract only.",
+      "relevance": "Structured-generation implementation lead.",
+      "limitations": "No guarantee of semantics, source fidelity or taste.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D08",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S31",
+      "title": "Consistent Game Content Creation via Function Calling for Large Language Models",
+      "authors": "Roberto Gallotta; Antonios Liapis; Georgios Yannakakis",
+      "publication": "2024 paper; venue not independently resolved in this handover",
+      "identifier": "Author-hosted PDF",
+      "urls": [
+        "https://antoniosliapis.com/papers/consistent_game_content_creation_via_function_calling_for_large_language_models.pdf"
+      ],
+      "origin": "Visible original research tool requests; supporting first assistant discussion of typed calls.",
+      "bibliographic_verification": "Title/authors/year verified in primary PDF; venue unverified.",
+      "content_inspected": "Abstract and relevant scope; first page visually checked.",
+      "relevance": "LLMaker uses function calls for consistency in dungeon-crawler content authoring.",
+      "limitations": "Not a learned TD taste system. A tool-call interface does not establish good adaptation.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D08",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S32",
+      "title": "Type-Constrained Code Generation with Language Models",
+      "authors": "Niels Mündler; Jingxuan He; Hao Wang; Koushik Sen; Dawn Song; Martin Vechev",
+      "publication": "2025 preprint version inspected; later venue not checked",
+      "identifier": "arXiv:2504.09246v1",
+      "urls": [
+        "https://arxiv.org/abs/2504.09246v1"
+      ],
+      "origin": "Visible original research tool calls.",
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Abstract and metadata.",
+      "relevance": "Lead on constraints beyond syntax during code generation.",
+      "limitations": "No Unit-Generator type system, implementation or taste evidence follows.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D08",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S33",
+      "title": "System One",
+      "authors": "TypeSafe AI",
+      "publication": "Vendor technical documentation; mutable",
+      "identifier": "TypeSafe AI concepts/system-one",
+      "urls": [
+        "https://docs.typesafe.ai/concepts/system-one"
+      ],
+      "origin": "Visible original research tool request in response to the user's System One interest.",
+      "bibliographic_verification": "Official documentation identity verified.",
+      "content_inspected": "Relevant product description.",
+      "relevance": "Describes bounded decision outputs as distinct from generative text.",
+      "limitations": "Vendor terminology and claims, not an independently verified model class suitable for this task.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D07",
+      "type": "Vendor technical documentation"
+    },
+    {
+      "id": "UG-T04-S34",
+      "title": "Introducing System One Models & Jev",
+      "authors": "TypeSafe AI",
+      "publication": "Vendor announcement; mutable",
+      "identifier": "TypeSafe AI blog",
+      "urls": [
+        "https://typesafe.ai/blog/introducing-system-one-models-and-jev"
+      ],
+      "origin": "Visible original research tool request.",
+      "bibliographic_verification": "Official page identity verified.",
+      "content_inspected": "Relevant product description.",
+      "relevance": "Commercial decision-model reference.",
+      "limitations": "Not an adopted dependency; no private API accessed, benchmark reproduced or model comparison established.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D07",
+      "type": "Vendor announcement"
+    },
+    {
+      "id": "UG-T04-S35",
+      "title": "RPGAgent: Driving Coherent Story-to-Play [incomplete wording retained]",
+      "authors": "Unresolved",
+      "publication": "Possible CHI 2026 reference; publication status unverified",
+      "identifier": "Candidate DOI:10.1145/3772318.3790326; title/DOI match unverified",
+      "urls": [
+        "https://dl.acm.org/doi/full/10.1145/3772318.3790326",
+        "https://programs.sigchi.org/chi/2026/program/content/222237"
+      ],
+      "origin": "Visible original search wording and URL requests; original results are redacted.",
+      "bibliographic_verification": "Unverified. DOI fetch failed; program URL returned only an application shell.",
+      "content_inspected": "Not inspected.",
+      "relevance": "Potential story-to-play authoring lead.",
+      "limitations": "No findings should be attributed to this unresolved record.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E05; UG-T04-E15",
+      "type": "Incomplete research lead"
+    },
+    {
+      "id": "UG-T04-S36",
+      "title": "Neural Networks Models for Analyzing Magic: the Gathering Cards",
+      "authors": "Felipe Zilio; Marcelo Prates; Luis Lamb",
+      "publication": "ICONIP 2018 accepted-paper status on arXiv",
+      "identifier": "arXiv:1810.03744v1",
+      "urls": [
+        "https://arxiv.org/abs/1810.03744",
+        "https://ar5iv.labs.arxiv.org/html/1810.03744"
+      ],
+      "origin": "Visible original ar5iv request, recovered by identifier.",
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Abstract only.",
+      "relevance": "Card text/image classification and text-generation matching lead.",
+      "limitations": "Not source-grounded TD adaptation or human preference learning.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E05; UG-T04-E15",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S37",
+      "title": "Procedural Content Generation via Machine Learning (PCGML)",
+      "authors": "Adam Summerville; Sam Snodgrass; Matthew Guzdial; Christoffer Holmgård; Amy K. Hoover; Aaron Isaksen; Andy Nealen; Julian Togelius",
+      "publication": "2017 preprint, v3 May 7, 2018; IEEE Transactions on Games 10(3), 257 to 270, 2018 identified in the author-hosted PCG-QD bibliography",
+      "identifier": "arXiv:1702.00539v3",
+      "urls": [
+        "https://arxiv.org/abs/1702.00539v3"
+      ],
+      "origin": "Visible original research tool request.",
+      "bibliographic_verification": "arXiv verified; journal details corroborated in primary-paper references rather than publisher page.",
+      "content_inspected": "Abstract only.",
+      "relevance": "Background taxonomy for learning generation, repair and critique from content.",
+      "limitations": "A survey, not a demonstrated complete system for this project.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E05; UG-T04-E15",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S38",
+      "title": "UrzaGPT: LoRA-Tuned Large Language Models for Card Selection in Collectible Card Games",
+      "authors": "Timo Bertram",
+      "publication": "2025 preprint",
+      "identifier": "arXiv:2508.08382v1",
+      "urls": [
+        "https://arxiv.org/abs/2508.08382v1"
+      ],
+      "origin": "Visible original research tool request.",
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Abstract only.",
+      "relevance": "Domain-adapted drafting/selection, relevant to separating choosing from generating.",
+      "limitations": "Selecting existing cards is not inventing character-based units.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D07",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S39",
+      "title": "Distilling Step-by-Step! Outperforming Larger Language Models with Less Training Data and Smaller Model Sizes",
+      "authors": "Cheng-Yu Hsieh; Chun-Liang Li; Chih-Kuan Yeh; Hootan Nakhost; Yasuhisa Fujii; Alexander Ratner; Ranjay Krishna; Chen-Yu Lee; Tomas Pfister",
+      "publication": "2023 preprint record; final venue not independently checked",
+      "identifier": "arXiv:2305.02301v2",
+      "urls": [
+        "https://arxiv.org/abs/2305.02301"
+      ],
+      "origin": "Visible original research tool request; distinct from S19.",
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Abstract only.",
+      "relevance": "Distillation using additional rationale supervision.",
+      "limitations": "NLP task evidence, not a demonstrated TD training approach.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-D07",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S40",
+      "title": "Progression Balancing [incomplete search lead]",
+      "authors": "Pfau (2025), as written in original search",
+      "publication": "Unresolved",
+      "identifier": "No confirmed identifier",
+      "urls": [],
+      "origin": "Visible original queries included \"Progression Balancing\" and \"Baldur\".",
+      "bibliographic_verification": "Unverified.",
+      "content_inspected": "Not inspected.",
+      "relevance": "Potential game-progression/balance lead.",
+      "limitations": "Cannot attach findings, a complete title or a DOI confidently.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E05; UG-T04-E15",
+      "type": "Incomplete research lead"
+    },
+    {
+      "id": "UG-T04-S41",
+      "title": "1001 Nights [incomplete search lead]",
+      "authors": "Unresolved",
+      "publication": "Unresolved",
+      "identifier": "No confirmed identifier",
+      "urls": [],
+      "origin": "Visible original query combined \"1001 Nights\" and \"game mechanics\".",
+      "bibliographic_verification": "Unverified.",
+      "content_inspected": "Not inspected.",
+      "relevance": "Potential story/mechanics reference.",
+      "limitations": "Search wording alone does not establish which publication was intended.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E05; UG-T04-E15",
+      "type": "Incomplete research lead"
+    },
+    {
+      "id": "UG-T04-S42",
+      "title": "Author publication pages used to recover research references",
+      "authors": "Eric Butler; Mike Treanor",
+      "publication": "Author bibliographies; mutable",
+      "identifier": "Author sites",
+      "urls": [
+        "https://www.ericbutler.net/publications",
+        "https://mtreanor.com"
+      ],
+      "origin": "Visible original research calls; Butler bibliography re-opened to resolve S144.",
+      "bibliographic_verification": "Butler bibliography verified; Treanor paper at S07 inspected instead of rechecking the whole homepage.",
+      "content_inspected": "Relevant bibliographic entries only.",
+      "relevance": "Recovery route for Program Synthesis and Game-O-Matic.",
+      "limitations": "A bibliography is not a full-paper review.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-S07, UG-T04-S144",
+      "type": "Author bibliographies"
+    },
+    {
+      "id": "UG-T04-S43",
+      "title": "Damage optimization in video games [incomplete search lead]",
+      "authors": "Unresolved",
+      "publication": "Unresolved",
+      "identifier": "No confirmed identifier",
+      "urls": [],
+      "origin": "Visible original research query.",
+      "bibliographic_verification": "Unverified.",
+      "content_inspected": "Not inspected.",
+      "relevance": "Possible numerical-balancing reference.",
+      "limitations": "Not merged with S40 without evidence of identity.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E05; UG-T04-E15",
+      "type": "Incomplete research lead"
+    },
+    {
+      "id": "UG-T04-S139",
+      "title": "Experience-Driven Procedural Content Generation",
+      "authors": "Georgios N. Yannakakis; Julian Togelius",
+      "publication": "IEEE Transactions on Affective Computing 2(3), 2011, as recorded in the supplied catalogue.",
+      "identifier": "DOI:10.1109/T-AFFC.2011.6",
+      "urls": [
+        "https://doi.org/10.1109/T-AFFC.2011.6"
+      ],
+      "origin": "GAME-DESIGN-RESEARCH.md, Additional references and access gaps.",
+      "bibliographic_verification": "Unverified independently in this handover; DOI retrieval failed.",
+      "content_inspected": "Not inspected in this handover. Attachment also recorded an access gap.",
+      "relevance": "Experience-based generation and preference modeling; related to UG-T04-E07.",
+      "limitations": "Do not merge this 2011 article with the separately cited 2015 extended abstract, UG-T04-S22.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E12; UG-T04-Q12",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S140",
+      "title": "Generative AI enhances individual creativity but reduces the collective diversity of novel content",
+      "authors": "Anil R. Doshi; Oliver P. Hauser",
+      "publication": "Science Advances 10(28), 2024, as recorded in the supplied catalogue.",
+      "identifier": "DOI:10.1126/sciadv.adn5290",
+      "urls": [
+        "https://doi.org/10.1126/sciadv.adn5290"
+      ],
+      "origin": "GAME-DESIGN-RESEARCH.md, Additional references and access gaps.",
+      "bibliographic_verification": "Unverified independently in this handover; DOI retrieval failed.",
+      "content_inspected": "Not inspected; inherited publisher access gap.",
+      "relevance": "Lead for loss of diversity across generated candidates.",
+      "limitations": "The supplied summary concerns short fiction, not mechanically distinct TD units.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E12; UG-T04-Q12",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S141",
+      "title": "Large language models are homogeneously creative",
+      "authors": "Emily Wenger; Yoed N. Kenett",
+      "publication": "PNAS Nexus 5(3), 2026, as recorded in the supplied catalogue.",
+      "identifier": "DOI:10.1093/pnasnexus/pgag042",
+      "urls": [
+        "https://doi.org/10.1093/pnasnexus/pgag042"
+      ],
+      "origin": "GAME-DESIGN-RESEARCH.md, Additional references and access gaps.",
+      "bibliographic_verification": "Unverified independently in this handover; DOI retrieval failed.",
+      "content_inspected": "Not inspected; inherited publisher access gap.",
+      "relevance": "Lead for cross-model similarity and candidate diversity.",
+      "limitations": "No transfer to this project's character adaptations established.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E12; UG-T04-Q12",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S142",
+      "title": "Superhuman artificial intelligence can improve human decision-making by increasing novelty",
+      "authors": "Minkyu Shin; Jin Kim; Bas van Opheusden; Thomas L. Griffiths",
+      "publication": "PNAS 120(12), 2023, as recorded in the supplied catalogue.",
+      "identifier": "DOI:10.1073/pnas.2214840120",
+      "urls": [
+        "https://doi.org/10.1073/pnas.2214840120"
+      ],
+      "origin": "GAME-DESIGN-RESEARCH.md, Additional references and access gaps.",
+      "bibliographic_verification": "Unverified independently in this handover; DOI retrieval failed.",
+      "content_inspected": "Not inspected; inherited publisher access gap.",
+      "relevance": "Background lead on human decision changes following AI play.",
+      "limitations": "Not direct evidence of inventing new rules or character-based units.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E12; UG-T04-Q12",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S143",
+      "title": "Creativity and artificial intelligence",
+      "authors": "Margaret A. Boden",
+      "publication": "Artificial Intelligence 103(1 to 2), 1998, as recorded in the supplied catalogue.",
+      "identifier": "DOI:10.1016/S0004-3702(98)00055-1",
+      "urls": [
+        "https://doi.org/10.1016/S0004-3702(98)00055-1"
+      ],
+      "origin": "GAME-DESIGN-RESEARCH.md, Additional references and access gaps.",
+      "bibliographic_verification": "Unverified independently in this handover; DOI retrieval failed.",
+      "content_inspected": "Not inspected; inherited publisher access gap.",
+      "relevance": "Conceptual distinctions between combining, exploring and transforming ideas.",
+      "limitations": "Conceptual reference, not empirical validation of LLM design quality.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E12; UG-T04-Q12",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S144",
+      "title": "Program Synthesis as a Generative Method",
+      "authors": "Eric Butler; Kristin Siu; Alexander Zook",
+      "publication": "Foundations of Digital Games, 2017.",
+      "identifier": "DOI:10.1145/3102071.3102076",
+      "urls": [
+        "https://www.ericbutler.net/publications",
+        "https://dl.acm.org/doi/10.1145/3102071.3102076"
+      ],
+      "origin": "GAME-DESIGN-RESEARCH.md, citation trail from R1; also visible earlier research search.",
+      "bibliographic_verification": "Title/authors/year verified in author bibliography; DOI corroborated by publisher search record.",
+      "content_inspected": "Metadata only.",
+      "relevance": "Lead for generating behavior rather than numerical configurations.",
+      "limitations": "Full method not inspected. DOI 10.1145/2538528.2538537 belongs to Game-O-Matic, not this paper.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E12; UG-T04-Q12",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S145",
+      "title": "Talakat: Bullet Hell Generation through Constrained Map-Elites",
+      "authors": "Ahmed Khalifa; Scott Lee; Andy Nealen; Julian Togelius",
+      "publication": "GECCO, 2018.",
+      "identifier": "arXiv:1806.04718v1; DOI:10.1145/3205455.3205470",
+      "urls": [
+        "https://arxiv.org/abs/1806.04718v1",
+        "https://doi.org/10.1145/3205455.3205470"
+      ],
+      "origin": "GAME-DESIGN-RESEARCH.md, citation lead from R4.",
+      "bibliographic_verification": "arXiv title/authors/year verified; publisher search corroborates DOI.",
+      "content_inspected": "Abstract only.",
+      "relevance": "Constrained diversity of combat patterns.",
+      "limitations": "Does not establish character adaptation, player taste or a need for MAP-Elites in v1.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E12; UG-T04-Q12",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S146",
+      "title": "Mapping Hearthstone Deck Spaces through MAP-Elites with Sliding Boundaries",
+      "authors": "Matthew C. Fontaine; Scott Lee; L. B. Soros; Fernando De Mesentier Silva; Julian Togelius; Amy K. Hoover",
+      "publication": "GECCO, 2019; acceptance noted in arXiv record.",
+      "identifier": "arXiv:1904.10656v1",
+      "urls": [
+        "https://arxiv.org/abs/1904.10656v1"
+      ],
+      "origin": "GAME-DESIGN-RESEARCH.md, citation lead from R4.",
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Abstract only.",
+      "relevance": "Interacting content collections and selection of diversity descriptors.",
+      "limitations": "Original attachment says 'Michael C. Fontaine' and 'with MAP-Elites'. The primary record gives Matthew and 'through'. This correction is not a new source.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E12; UG-T04-Q12",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S147",
+      "title": "Multiobjective Exploration of the StarCraft Map Space",
+      "authors": "Julian Togelius; Mike Preuss; Nicola Beume; Simon Wessing; Johan Hagelback; Georgios N. Yannakakis",
+      "publication": "IEEE Conference on Computational Intelligence and Games, 2010, pages 265 to 272.",
+      "identifier": "DOI:10.1109/ITW.2010.5593346",
+      "urls": [
+        "https://doi.org/10.1109/ITW.2010.5593346",
+        "https://pure.itu.dk/en/publications/multiobjective-exploration-of-the-starcraft-map-space",
+        "https://www.wi.uni-muenster.de/research/publications/87283"
+      ],
+      "origin": "GAME-DESIGN-RESEARCH.md, citation lead from R1.",
+      "bibliographic_verification": "Institutional metadata corroborates title, authors, year and identifier.",
+      "content_inspected": "Metadata only; attempted author PDF retrieval failed.",
+      "relevance": "Lead on conflicting map objectives.",
+      "limitations": "Map design is outside the immediate taste-focused unit prototype.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E12; UG-T04-Q12",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S148",
+      "title": "Mixed-Initiative Co-Creativity",
+      "authors": "Georgios N. Yannakakis; Antonios Liapis; Constantine Alexopoulos",
+      "publication": "Foundations of Digital Games, 2014, pages 1 to 8.",
+      "identifier": "University of Malta repository handle:123456789/29459",
+      "urls": [
+        "https://www.um.edu.mt/library/oar/handle/123456789/29459",
+        "http://www.fdg2014.org/papers/fdg2014_paper_37.pdf"
+      ],
+      "origin": "GAME-DESIGN-RESEARCH.md, citation lead from R3.",
+      "bibliographic_verification": "Verified against institutional record.",
+      "content_inspected": "Institutional abstract and metadata; original PDF not retrieved.",
+      "relevance": "Designer control, alternative suggestions and revision dialogue.",
+      "limitations": "Framework relevance does not establish this proposed interface or a measured benefit for Unit-Generator.",
+      "artifacts": "No associated artifact was inspected or executed.",
+      "original": null,
+      "linked_records": "UG-T04-E12; UG-T04-Q12",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S201",
+      "title": "Unit Generator product requirements",
+      "authors": "Project material; authorship not established.",
+      "publication": "Internal reference or source gap; no publication record.",
+      "identifier": "unit-generator/docs/PRODUCT.md; also linked as docs/PRODUCT.md",
+      "urls": [],
+      "origin": "S01 Project fit and S02 final scope note",
+      "bibliographic_verification": "Unverified beyond its mention in the supplied material.",
+      "content_inspected": "Not inspected.",
+      "relevance": "Product requirements and implemented scope referenced but not provided.",
+      "limitations": "No unavailable content inferred. Product requirements and implemented scope referenced but not provided.",
+      "artifacts": "unit-generator/docs/PRODUCT.md; also linked as docs/PRODUCT.md",
+      "original": null,
+      "linked_records": "UG-T04-E19; UG-T04-Q08; UG-T04-Q09",
+      "type": "Unavailable project document/repository or source gap"
+    },
+    {
+      "id": "UG-T04-S202",
+      "title": "Towerright context",
+      "authors": "Project material; authorship not established.",
+      "publication": "Internal reference or source gap; no publication record.",
+      "identifier": "towerright/CONTEXT.md",
+      "urls": [],
+      "origin": "S01 Project fit and reading order",
+      "bibliographic_verification": "Unverified beyond its mention in the supplied material.",
+      "content_inspected": "Not inspected.",
+      "relevance": "Platform responsibility source referenced but not provided.",
+      "limitations": "No unavailable content inferred. Platform responsibility source referenced but not provided.",
+      "artifacts": "towerright/CONTEXT.md",
+      "original": null,
+      "linked_records": "UG-T04-E19; UG-T04-Q08; UG-T04-Q09",
+      "type": "Unavailable project document/repository or source gap"
+    },
+    {
+      "id": "UG-T04-S203",
+      "title": "Archived September 21 generator survey",
+      "authors": "Project material; authorship not established.",
+      "publication": "Internal reference or source gap; no publication record.",
+      "identifier": "unit-generator/research/archive/GENERATOR-SURVEY-2026-09-21.md",
+      "urls": [],
+      "origin": "S01 Project fit and reading order",
+      "bibliographic_verification": "Unverified beyond its mention in the supplied material.",
+      "content_inspected": "Not inspected.",
+      "relevance": "Older card/monster examples and repository/license observations cannot be reconstructed from the archive reference.",
+      "limitations": "No unavailable content inferred. Older card/monster examples and repository/license observations cannot be reconstructed from the archive reference.",
+      "artifacts": "unit-generator/research/archive/GENERATOR-SURVEY-2026-09-21.md",
+      "original": null,
+      "linked_records": "UG-T04-E19; UG-T04-Q08; UG-T04-Q09",
+      "type": "Unavailable project document/repository or source gap"
+    },
+    {
+      "id": "UG-T04-S204",
+      "title": "Generator references",
+      "authors": "Project material; authorship not established.",
+      "publication": "Internal reference or source gap; no publication record.",
+      "identifier": "GENERATOR-REFERENCES.md; fragment #framework-and-character-sources",
+      "urls": [],
+      "origin": "S01 Project fit and final paragraph",
+      "bibliographic_verification": "Unverified beyond its mention in the supplied material.",
+      "content_inspected": "Not inspected.",
+      "relevance": "Technical, framework and character-source index not provided.",
+      "limitations": "No unavailable content inferred. Technical, framework and character-source index not provided.",
+      "artifacts": "GENERATOR-REFERENCES.md; fragment #framework-and-character-sources",
+      "original": null,
+      "linked_records": "UG-T04-E19; UG-T04-Q08; UG-T04-Q09",
+      "type": "Unavailable project document/repository or source gap"
+    },
+    {
+      "id": "UG-T04-S205",
+      "title": "Unit Generator framework sources",
+      "authors": "Project material; authorship not established.",
+      "publication": "Internal reference or source gap; no publication record.",
+      "identifier": "unit-generator/research/FRAMEWORK-SOURCES.md",
+      "urls": [],
+      "origin": "S01 final paragraph",
+      "bibliographic_verification": "Unverified beyond its mention in the supplied material.",
+      "content_inspected": "Not inspected.",
+      "relevance": "Repository-local application and limitation notes not provided.",
+      "limitations": "No unavailable content inferred. Repository-local application and limitation notes not provided.",
+      "artifacts": "unit-generator/research/FRAMEWORK-SOURCES.md",
+      "original": null,
+      "linked_records": "UG-T04-E19; UG-T04-Q08; UG-T04-Q09",
+      "type": "Unavailable project document/repository or source gap"
+    },
+    {
+      "id": "UG-T04-S206",
+      "title": "API compatibility documentation",
+      "authors": "Project material; authorship not established.",
+      "publication": "Internal reference or source gap; no publication record.",
+      "identifier": "docs/API.md",
+      "urls": [],
+      "origin": "S02 final implemented-scope note",
+      "bibliographic_verification": "Unverified beyond its mention in the supplied material.",
+      "content_inspected": "Not inspected.",
+      "relevance": "Compatibility details not provided.",
+      "limitations": "No unavailable content inferred. Compatibility details not provided.",
+      "artifacts": "docs/API.md",
+      "original": null,
+      "linked_records": "UG-T04-E19; UG-T04-Q08; UG-T04-Q09",
+      "type": "Unavailable project document/repository or source gap"
+    },
+    {
+      "id": "UG-T04-S207",
+      "title": "Foundation",
+      "authors": "Project material; authorship not established.",
+      "publication": "Internal reference or source gap; no publication record.",
+      "identifier": "No path supplied",
+      "urls": [],
+      "origin": "S02 opening paragraph",
+      "bibliographic_verification": "Unverified beyond its mention in the supplied material.",
+      "content_inspected": "Not inspected.",
+      "relevance": "Explicitly private internal guidance. Neither accessed nor needed for public contributors according to S02.",
+      "limitations": "No unavailable content inferred. Explicitly private internal guidance. Neither accessed nor needed for public contributors according to S02.",
+      "artifacts": "No path supplied",
+      "original": null,
+      "linked_records": "UG-T04-E19; UG-T04-Q08; UG-T04-Q09",
+      "type": "Unavailable project document/repository or source gap"
+    },
+    {
+      "id": "UG-T04-S208",
+      "title": "src/core and experimental RulePack implementation",
+      "authors": "Project material; authorship not established.",
+      "publication": "Internal reference or source gap; no publication record.",
+      "identifier": "src/core; experimental RulePack API",
+      "urls": [],
+      "origin": "S02 final implemented-scope note",
+      "bibliographic_verification": "Unverified beyond its mention in the supplied material.",
+      "content_inspected": "Not inspected.",
+      "relevance": "Bounded numerical implementation and layout-descriptor status reported in S02, not independently inspected code.",
+      "limitations": "No unavailable content inferred. Bounded numerical implementation and layout-descriptor status reported in S02, not independently inspected code.",
+      "artifacts": "src/core; experimental RulePack API",
+      "original": null,
+      "linked_records": "UG-T04-E19; UG-T04-Q08; UG-T04-Q09",
+      "type": "Unavailable project document/repository or source gap"
+    },
+    {
+      "id": "UG-T04-S209",
+      "title": "Mardwerk Map Generator repository",
+      "authors": "Project material; authorship not established.",
+      "publication": "Internal reference or source gap; no publication record.",
+      "identifier": "https://github.com/mardwerk/map-generator",
+      "urls": [
+        "https://github.com/mardwerk/map-generator"
+      ],
+      "origin": "S02 Related repositories",
+      "bibliographic_verification": "Unverified beyond its mention in the supplied material.",
+      "content_inspected": "Not inspected.",
+      "relevance": "Referenced repository only. No private/project code retrieved or required here.",
+      "limitations": "No unavailable content inferred. Referenced repository only. No private/project code retrieved or required here.",
+      "artifacts": "https://github.com/mardwerk/map-generator",
+      "original": null,
+      "linked_records": "UG-T04-E19; UG-T04-Q08; UG-T04-Q09",
+      "type": "Unavailable project document/repository or source gap"
+    },
+    {
+      "id": "UG-T04-S210",
+      "title": "Mardwerk organization metadata repository",
+      "authors": "Project material; authorship not established.",
+      "publication": "Internal reference or source gap; no publication record.",
+      "identifier": "https://github.com/mardwerk/.github",
+      "urls": [
+        "https://github.com/mardwerk/.github"
+      ],
+      "origin": "S02 Related repositories",
+      "bibliographic_verification": "Unverified beyond its mention in the supplied material.",
+      "content_inspected": "Not inspected.",
+      "relevance": "Referenced repository only. No code, license or organization configuration inspected.",
+      "limitations": "No unavailable content inferred. Referenced repository only. No code, license or organization configuration inspected.",
+      "artifacts": "https://github.com/mardwerk/.github",
+      "original": null,
+      "linked_records": "UG-T04-E19; UG-T04-Q08; UG-T04-Q09",
+      "type": "Unavailable project document/repository or source gap"
+    },
+    {
+      "id": "UG-T04-S211",
+      "title": "Character wiki/source packet for the Luffy example",
+      "authors": "Project material; authorship not established.",
+      "publication": "Internal reference or source gap; no publication record.",
+      "identifier": "No URL, revision or source text supplied",
+      "urls": [],
+      "origin": "User's initial wiki-input request and later Luffy example",
+      "bibliographic_verification": "Unverified beyond its mention in the supplied material.",
+      "content_inspected": "Not inspected.",
+      "relevance": "An intended input/source gap, not a located wiki or verified canon source.",
+      "limitations": "No unavailable content inferred. An intended input/source gap, not a located wiki or verified canon source.",
+      "artifacts": "No URL, revision or source text supplied",
+      "original": null,
+      "linked_records": "UG-T04-Q04",
+      "type": "Unavailable project document/repository or source gap"
+    },
+    {
+      "id": "UG-T04-S301",
+      "title": "Human Feedback is not Gold Standard",
+      "authors": "Tom Hosking; Phil Blunsom; Max Bartolo",
+      "publication": "ICLR, 2024, published conference paper.",
+      "identifier": "arXiv:2309.16349v2; OpenReview:7W3GLNImfS",
+      "urls": [
+        "https://arxiv.org/html/2309.16349v2",
+        "https://openreview.net/forum?id=7W3GLNImfS",
+        "https://github.com/cohere-ai/human-feedback-paper"
+      ],
+      "origin": "Newly found, not part of the original conversation.",
+      "bibliographic_verification": "Verified against arXiv, conference record and PDF conference heading.",
+      "content_inspected": "Relevant Sections 2 to 4; a corresponding PDF results page visually checked.",
+      "relevance": "Shows that human feedback can underweight correctness-related defects and respond to presentation. Supports separating stated preference from factual/mechanical checks.",
+      "limitations": "Not TD research. This does not invalidate subjective taste or establish that the same biases occurred here.",
+      "artifacts": "Associated code/data repository identified, not executed or license-audited.",
+      "original": null,
+      "linked_records": "UG-T04-E16; UG-T04-Q06; UG-T04-Q12",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S302",
+      "title": "COMAL: A Convergent Meta-Algorithm for Aligning LLMs with General Preferences",
+      "authors": "Yixin Liu; Argyris Oikonomou; Weiqiang Zheng; Yang Cai; Arman Cohan",
+      "publication": "2024 preprint; v2 dated October 13, 2025. Final venue not independently established.",
+      "identifier": "arXiv:2410.23223v2",
+      "urls": [
+        "https://arxiv.org/abs/2410.23223v2",
+        "https://arxiv.org/html/2410.23223v2"
+      ],
+      "origin": "Newly found, not part of the original conversation.",
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Relevant introduction, preference formulation and discussion of Bradley-Terry assumptions; proofs not audited.",
+      "relevance": "Challenges assuming that all preferences can be faithfully represented by a single scalar reward. Distinct reviewers or contexts can produce non-transitive aggregate preferences.",
+      "limitations": "No preference cycles measured in Unit-Generator. Does not require adopting COMAL or game-theoretic training for v1. Chatbot Arena itself discusses nonparametric and misspecified-model inference.",
+      "artifacts": "No code or trained artifact executed.",
+      "original": null,
+      "linked_records": "UG-T04-E17; UG-T04-D06; UG-T04-Q06",
+      "type": "Research paper"
+    },
+    {
+      "id": "UG-T04-S303",
+      "title": "Learning the Designer's Preferences to Drive Evolution",
+      "authors": "Alberto Alvarez; Jose Font",
+      "publication": "EvoApplications, 2020.",
+      "identifier": "arXiv:2003.03268v1; DOI:10.1007/978-3-030-43722-0_28",
+      "urls": [
+        "https://arxiv.org/html/2003.03268v1",
+        "https://doi.org/10.1007/978-3-030-43722-0_28"
+      ],
+      "origin": "Newly found, not part of the original conversation.",
+      "bibliographic_verification": "Title/authors/year verified against arXiv; publication identifier corroborated by publisher metadata.",
+      "content_inspected": "Relevant Sections 3 to 5.",
+      "relevance": "A mixed-initiative dungeon editor learns designer preferences to guide evolutionary suggestions. It reports limitations from noisy/sparse feedback and less preference-model use than expected.",
+      "limitations": "Study involved 15 game-design students, not TD character reviewers. Labels were derived from suggestion selections and nearby alternatives rather than the proposed explicit pairwise unit judgments. No guaranteed sample sufficiency follows.",
+      "artifacts": "Evolutionary Dungeon Designer is the studied system; no implementation run here.",
+      "original": null,
+      "linked_records": "UG-T04-E18; UG-T04-D07; UG-T04-Q10",
+      "type": "Research paper"
+    }
+  ],
+  "attachment_r_sources": [
+    {
+      "id": "UG-T04-S101",
+      "rid": "R1",
+      "heading": "Generating RTS units",
+      "title": "Generating Real-Time Strategy Game Units Using Search-Based Procedural Content Generation and Monte Carlo Tree Search.",
+      "original_bibliographic_paragraph": "Kynan Sorochan and Matthew Guzdial. **Generating Real-Time Strategy Game Units Using Search-Based Procedural Content Generation and Monte Carlo Tree Search.** Experimental AI in Games Workshop, 2022. [arXiv:2212.03387v1](https://arxiv.org/html/2212.03387v1). Inspected: Search Space, Evaluator, Search Method, generated units, evaluation and references.",
+      "urls": [
+        "https://arxiv.org/html/2212.03387v1",
+        "https://arxiv.org/abs/2212.03387v1"
+      ],
+      "bibliographic_verification": "Verified for arXiv title/authors/identifier; workshop metadata retained from the supplied record.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: Search Space, Evaluator, Search Method, generated units, evaluation and references.",
+      "relevance": "Explicit triggers/effects and tests of new-unit contribution.",
+      "limitations": "Predefined search vocabulary, one-map/evaluator limitations; no character-to-mechanics learning.",
+      "reported_observations": [
+        "The system adds a fourth military unit to microRTS. It searches numerical attributes and a human-authored vocabulary of four causes and four effects. Causes include taking damage and dealing damage; effects include resource return, additional attacks, healing and attack-speed changes. Greedy search changes attributes or cause/effect choices. Each candidate evaluation uses 20 games: ten with asymmetric access to the new unit and ten with access for both sides. Later evaluation compares agents with different search budgets. Ten generated units are presented.",
+        "Limits: this is invention within a supplied vocabulary. Its utility measure includes unit lifetime, which may undervalue disposable or burst units. Symmetric win rates cannot by themselves rule out a mandatory purchase or a collapsed strategy space. Those are our criticisms of transferring the evaluator, not additional results reported by the authors. Tower defense also lacks the same adversarial purchase structure. Incoming damage, death and movement must not be imported into a Definition that does not support them.",
+        "Additional limitation from the expanded reading: the evaluation uses one map, and the strongest agent often underuses the new units. Its preference for the original roster can confound unit usefulness with evaluator competence. The search budgets are not validated human skill models; generated names and shared visuals are not evidence of visual-content generation."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S102",
+      "rid": "R2",
+      "heading": "Evolutionary Game Design",
+      "title": "Evolutionary Game Design.",
+      "original_bibliographic_paragraph": "Cameron Browne and Frédéric Maire. **Evolutionary Game Design.** IEEE Transactions on Computational Intelligence and AI in Games 2(1), pages 1 to 16, 2010. [Author PDF](https://cambolbro.com/cv/publications/ciaig-browne-maire-19.pdf). Inspected: quality measurements, human comparisons, Experiment III and conclusions. The filename is not the publication year.",
+      "urls": [
+        "https://cambolbro.com/cv/publications/ciaig-browne-maire-19.pdf"
+      ],
+      "bibliographic_verification": "Title/authors verified in author PDF; final year/volume/pages retained from the attachment.",
+      "content_inspected": "Abstract and opening text only.",
+      "inherited_access": "Inspected: quality measurements, human comparisons, Experiment III and conclusions. The filename is not the publication year.",
+      "relevance": "Paired human preferences and simulation-derived quality in formal games.",
+      "limitations": "Preference prediction is game-family and sample dependent; no universal taste or historical-originality certificate.",
+      "reported_observations": [
+        "Ludi evolves formal game rules and uses self-play features to estimate human preferences. The paper reports 1,389 evolved games, 19 deemed viable, and 127 paired comparisons of those viable games from 27 participants in the follow-up study. Yavalath and Ndengrod were commercially published. Ndengrod independently rediscovered Irensei on a different grid; the authors describe Yavalath's four-in-a-row win combined with an earlier three-in-a-row loss as an unpublished rule combination.",
+        "Limits: preference prediction is specific to the sample and game family. Generating a viable game, predicting a preference and proving historical originality are different achievements. Its learned coefficients are not tower defense quality weights. Do not treat 19 viable games as 19 independently established historical inventions."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S103",
+      "rid": "R3",
+      "heading": "GAVEL",
+      "title": "GAVEL: Generating Games Via Evolution and Language Models.",
+      "original_bibliographic_paragraph": "Graham Todd, Alexander G. Padula, Matthew Stephenson, Éric Piette, Dennis J. N. J. Soemers and Julian Togelius. **GAVEL: Generating Games Via Evolution and Language Models.** NeurIPS 2024. [arXiv:2407.09388v2](https://arxiv.org/html/2407.09388v2). Inspected: representation, mutation, evaluation, experiments, results, limitations and references. [Code link](https://github.com/gdrtodd/gavel), not executed in this investigation.",
+      "urls": [
+        "https://arxiv.org/html/2407.09388v2",
+        "https://github.com/gdrtodd/gavel",
+        "https://arxiv.org/abs/2407.09388v2"
+      ],
+      "bibliographic_verification": "Verified for arXiv record; supplied NeurIPS attribution retained.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: representation, mutation, evaluation, experiments, results, limitations and references. [Code link](https://github.com/gdrtodd/gavel), not executed in this investigation.",
+      "relevance": "Executable rule mutation, staged evaluation and retention of alternatives.",
+      "limitations": "Board-game metrics, expensive search, unused components and inconclusive novelty-cell improvement do not establish TD taste.",
+      "reported_observations": [
+        "GAVEL combines a code language model, Ludii game descriptions and quality-diversity search. It mutates portions of executable rules and evaluates candidates through staged checks and simulated games. Evaluation includes balance, decisiveness, completion, agency, board coverage and a strategic-depth proxy. It retains high-fitness representatives in a concept-based archive.",
+        "The paper reports significant improvements over its baselines in QD score and archive coverage, but improvements in novel occupied cells were not statistically significant over three runs. Preliminary expert playtesting found promising examples, including Yavalath-derived line conditions combined with Go-style enclosure capture. Each search run took roughly 48 hours using an RTX8000 GPU and parallel evaluation on 16 CPU cores with 128 GB memory. This is not evidence of interactive latency.",
+        "A particularly relevant failure is unused components: adding dice to equipment need not make dice affect gameplay. Our equivalent could be an upgrade with no reachable trigger or an attack-origin feature that never changes delivery. Static checks can detect some unreachable or redundant definitions; actual use requires runtime evidence. The authors also note that temporarily unused components can be useful intermediate search states. Keep such drafts out of accepted output without erasing their research value."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S104",
+      "rid": "R4",
+      "heading": "Quality diversity for PCG",
+      "title": "Procedural Content Generation through Quality Diversity.",
+      "original_bibliographic_paragraph": "Daniele Gravina, Ahmed Khalifa, Antonios Liapis, Julian Togelius and Georgios N. Yannakakis. **Procedural Content Generation through Quality Diversity.** IEEE Conference on Games, 2019. [arXiv:1907.04053](https://arxiv.org/abs/1907.04053), [HTML](https://arxiv.org/html/1907.04053), [DOI:10.1109/CIG.2019.8848053](https://doi.org/10.1109/CIG.2019.8848053). Inspected: framework, surveyed applications, challenges and references.",
+      "urls": [
+        "https://arxiv.org/abs/1907.04053",
+        "https://arxiv.org/html/1907.04053",
+        "https://doi.org/10.1109/CIG.2019.8848053"
+      ],
+      "bibliographic_verification": "Verified against arXiv, including CoG 2019 record.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: framework, surveyed applications, challenges and references.",
+      "relevance": "Retain diverse useful designs instead of one scalar winner.",
+      "limitations": "Descriptor coverage is not proved strategic diversity; this is a survey.",
+      "reported_observations": [
+        "This survey explains searching for a collection of varied, good artifacts rather than one global winner. It distinguishes quality criteria, diversity descriptions and feasibility constraints, and discusses levels, decks, agents and other content. It is a framework and survey, not a direct experiment in generating our units.",
+        "Map Generator could similarly preserve maps with different placement tradeoffs, obstruction patterns and opportunities for specialized units, while separately checking legal routes and placement. Eventually evaluate unit and map combinations: a mechanic may matter only on particular terrain."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S105",
+      "rid": "R5",
+      "heading": "MAP-Elites",
+      "title": "Illuminating search spaces by mapping elites.",
+      "original_bibliographic_paragraph": "Jean-Baptiste Mouret and Jeff Clune. **Illuminating search spaces by mapping elites.** 2015 preprint. [arXiv:1504.04909v1](https://arxiv.org/abs/1504.04909v1). Inspected: algorithm, experimental domains, limitations and references via arXiv HTML. The HTML contains an inconsistent generated date; use the arXiv version record for the 2015 date.",
+      "urls": [
+        "https://arxiv.org/abs/1504.04909v1"
+      ],
+      "bibliographic_verification": "Verified against arXiv v1.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: algorithm, experimental domains, limitations and references via arXiv HTML. The HTML contains an inconsistent generated date; use the arXiv version record for the 2015 date.",
+      "relevance": "An archive can preserve alternatives.",
+      "limitations": "Robotics/search evidence, not TD preference; a grid algorithm is not required just to save candidates.",
+      "reported_observations": [
+        "MAP-Elites partitions a user-selected feature space and retains a high-performing candidate for each region. Its experiments concern neural networks and robots, not games. The paper explicitly presents itself as preliminary work.",
+        "Limits: archive coverage means coverage of the chosen descriptors. It does not establish strategic diversity or historical novelty. A category populated by several different descriptions may still contain the same behavior. A single quality score within each category also remains a design choice."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S106",
+      "rid": "R6",
+      "heading": "Novelty search",
+      "title": "Abandoning Objectives: Evolution through the Search for Novelty Alone.",
+      "original_bibliographic_paragraph": "Joel Lehman and Kenneth O. Stanley. **Abandoning Objectives: Evolution through the Search for Novelty Alone.** Evolutionary Computation 19(2), pages 189 to 223, 2011. [Primary-text PDF](https://www.cs.swarthmore.edu/~meeden/DevelopmentalRobotics/lehman_ecj11.pdf). Inspected: motivation, behavioral novelty, experimental tasks and discussion. Found in both R4 and R5.",
+      "urls": [
+        "https://www.cs.swarthmore.edu/~meeden/DevelopmentalRobotics/lehman_ecj11.pdf"
+      ],
+      "bibliographic_verification": "Title/authors verified in primary PDF; publication details retained from attachment.",
+      "content_inspected": "Abstract and opening text only.",
+      "inherited_access": "Inspected: motivation, behavioral novelty, experimental tasks and discussion. Found in both R4 and R5.",
+      "relevance": "Avoid prematurely removing unusual behavior solely for one objective.",
+      "limitations": "Behavioral novelty alone does not establish usefulness, fidelity or suitability.",
+      "reported_observations": [
+        "Novelty search rewards behavioral difference rather than progress toward a fixed objective. The experiments show benefits in deceptive maze-navigation and biped-walking tasks. The lesson is that some objectives can guide search toward dead ends, not that objectives are always harmful.",
+        "Limits: novelty is neither usefulness nor fit. Our output still needs supported mechanics and project constraints. This paper is a reason to inspect the effects of our ranking criteria, not a reason to remove quality checks."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S107",
+      "rid": "R7",
+      "heading": "Simulation-based strategy analysis",
+      "title": "Monte-Carlo Tree Search for Simulation-based Strategy Analysis.",
+      "original_bibliographic_paragraph": "Alexander Zook, Brent Harrison and Mark O. Riedl. **Monte-Carlo Tree Search for Simulation-based Strategy Analysis.** The paper identifies FDG 2015 as its conference; the arXiv deposit is 2019. [arXiv:1908.01423v1](https://arxiv.org/html/1908.01423v1). Inspected: methodology, skill-based metrics, case studies, limitations and references. R1 cites the deposit year.",
+      "urls": [
+        "https://arxiv.org/html/1908.01423v1",
+        "https://arxiv.org/abs/1908.01423v1"
+      ],
+      "bibliographic_verification": "Verified against arXiv; original publication year and deposit year kept separate.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: methodology, skill-based metrics, case studies, limitations and references. R1 cites the deposit year.",
+      "relevance": "Analyze traces and choices, not only outcomes.",
+      "limitations": "Search budget is not a validated human skill model.",
+      "reported_observations": [
+        "The authors use MCTS agents with varying computational resources to generate play traces in Scrabble and Cardonomicon. They distinguish summary statistics, individual actions, action chains and action spaces. This provides a more informative analysis than one final win-rate number.",
+        "Limits: more search is an approximation of skill, not a validated model of every human skill level. A bot can miss a mechanic's value or exploit a rule in ways players would not. Simulation diagnoses behavior under a policy; it does not establish enjoyment."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S108",
+      "rid": "R8",
+      "heading": "Restricted-play evaluation",
+      "title": "Evaluating Competitive Game Balance with Restricted Play.",
+      "original_bibliographic_paragraph": "Alexander Jaffe, Alex Miller, Erik Andersen, Yun-En Liu, Anna Karlin and Zoran Popović. **Evaluating Competitive Game Balance with Restricted Play.** AIIDE 2012. [Author-hosted PDF](https://homes.cs.washington.edu/~zoran/jaffe2012ecg.pdf). Inspected: framework, example application and conclusions. Reached through R1 → R7 → R8.",
+      "urls": [
+        "https://homes.cs.washington.edu/~zoran/jaffe2012ecg.pdf"
+      ],
+      "bibliographic_verification": "Title/authors verified in author PDF; venue retained from attachment.",
+      "content_inspected": "Abstract and opening framework text.",
+      "inherited_access": "Inspected: framework, example application and conclusions. Reached through R1 → R7 → R8.",
+      "relevance": "Compare access to a mechanic and rule removal under controlled conditions.",
+      "limitations": "Weak agents, scenario choice and policy adaptation can confound usefulness.",
+      "reported_observations": [
+        "The framework turns balance questions into comparisons between standard agents and agents with carefully restricted options. Its application to an educational card game demonstrates a way to investigate the value of game elements through controlled restrictions.",
+        "Distinguish two experiments. Restricting an agent's choices asks whether access to an option matters. Removing a mechanic from the rules asks how that mechanic changes the game. Both can be useful, but they need not produce the same answer. Allow policies to adapt to each condition; otherwise a policy trained for the original rules can make the alternative look artificially weak.",
+        "Limits: no observed difference can mean irrelevance, weak agents, unsuitable scenarios or insufficient trials. A large difference can indicate excessive power rather than good design. Pair outcome measurements with changed decisions and retained weaknesses."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S109",
+      "rid": "R9",
+      "heading": "Conceptual expansion",
+      "title": "Automated Game Design via Conceptual Expansion.",
+      "original_bibliographic_paragraph": "Matthew Guzdial and Mark Riedl. **Automated Game Design via Conceptual Expansion.** AIIDE 2018, 14(1), pages 31 to 37. [arXiv:1809.02232v1](https://arxiv.org/html/1809.02232v1). Inspected: representation, expansion, evaluation, discussion and references. Reached through R1.",
+      "urls": [
+        "https://arxiv.org/html/1809.02232v1",
+        "https://arxiv.org/abs/1809.02232v1"
+      ],
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: representation, expansion, evaluation, discussion and references. Reached through R1.",
+      "relevance": "Make changed mechanical relationships explicit when adapting sources.",
+      "limitations": "Reconstruction and learned approximation are not evidence of unrestricted invention or canon fidelity.",
+      "reported_observations": [
+        "The system learns approximate game representations and recombines them through conceptual expansion. Evaluation uses Super Mario Bros., Kirby's Adventure and Mega Man, attempting to reconstruct a held-out existing game using knowledge from others and a partially specified target. This is evidence about recombining learned structure, not a demonstration of unrestricted original game invention.",
+        "Limits: learned approximations can omit mechanics. The paper does not establish source fidelity, appropriate numerical balance or player preference for character adaptations. Its reconstruction evaluation is particularly important when citing it as evidence for originality."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S110",
+      "rid": "R10",
+      "heading": "Constrained novelty search",
+      "title": "Constrained Novelty Search: A Study on Game Content Generation.",
+      "original_bibliographic_paragraph": "Antonios Liapis, Georgios N. Yannakakis and Julian Togelius. **Constrained Novelty Search: A Study on Game Content Generation.** Evolutionary Computation 23(1), pages 101 to 129, 2015. [Author PDF](https://antoniosliapis.com/papers/constrained_novelty_search.pdf), [DOI:10.1162/EVCO_a_00123](https://doi.org/10.1162/EVCO_a_00123). Inspected: two-population approach, game-content application and reported qualifications. Found through R4; bibliographic metadata also checked through Crossref.",
+      "urls": [
+        "https://antoniosliapis.com/papers/constrained_novelty_search.pdf",
+        "https://doi.org/10.1162/EVCO_a_00123"
+      ],
+      "bibliographic_verification": "Title/authors verified in author PDF; publication DOI/details retained from attachment.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: two-population approach, game-content application and reported qualifications. Found through R4; bibliographic metadata also checked through Crossref.",
+      "relevance": "Keep unsupported but useful proposals separate from valid candidates.",
+      "limitations": "The project's proposal organization is an adaptation, not an implemented dual-population algorithm.",
+      "reported_observations": [
+        "The approach maintains feasible and infeasible populations, with selection suited to each. Experiments investigate generation of diverse playable levels. Performance depends on the search space and operators; the paper does not claim a universally best configuration.",
+        "Limits: our draft/proposal distinction is an organizational adaptation, not an implementation of the paper's algorithm. We should not add dual evolutionary populations merely to store unfinished drafts."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S111",
+      "rid": "R11",
+      "heading": "Sentient Sketchbook",
+      "title": "Sentient Sketchbook: Computer-Aided Game Level Authoring.",
+      "original_bibliographic_paragraph": "Antonios Liapis, Georgios N. Yannakakis and Julian Togelius. **Sentient Sketchbook: Computer-Aided Game Level Authoring.** Foundations of Digital Games, 2013, pages 213 to 220. [Author PDF](https://antoniosliapis.com/papers/sentient_sketchbook.pdf). Inspected: tool interaction, checks, alternatives and small-scale designer study. Found through R4.",
+      "urls": [
+        "https://antoniosliapis.com/papers/sentient_sketchbook.pdf"
+      ],
+      "bibliographic_verification": "Title/authors verified in author PDF; proceedings details retained from attachment.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: tool interaction, checks, alternatives and small-scale designer study. Found through R4.",
+      "relevance": "Preserve designer intent and inspect changes between revisions.",
+      "limitations": "Small map-specific study; valid alternatives can still ignore intent.",
+      "reported_observations": [
+        "The tool supports coarse map sketches, automatic playability checks, gameplay-property displays and generated alternatives. Its user study reports both useful suggestions and concerns about how suggestions relate to designer intent.",
+        "Limits: the study is small and map-specific. Suggestion quality cannot be inferred from validity alone. A system that supplies legal alternatives but repeatedly ignores confirmed intent remains a poor design partner."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S112",
+      "rid": "R12",
+      "heading": "Human game invention",
+      "title": "Generation and Evaluation in the Human Invention Process through the Lens of Game Design.",
+      "original_bibliographic_paragraph": "Katherine M. Collins et al. **Generation and Evaluation in the Human Invention Process through the Lens of Game Design.** CogSci 2025. [arXiv:2508.10914v1](https://arxiv.org/html/2508.10914v1). Inspected: dataset, proposal/evaluation model, results, limitations and references.",
+      "urls": [
+        "https://arxiv.org/html/2508.10914v1",
+        "https://arxiv.org/abs/2508.10914v1"
+      ],
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: dataset, proposal/evaluation model, results, limitations and references.",
+      "relevance": "Distinguish proposal plausibility from simulated consequences.",
+      "limitations": "Cognitive modeling and formalizable subsets, not a general model of AI design taste.",
+      "reported_observations": [
+        "The paper describes a dataset of 484 human-created games. A model combining proposal likelihood with simulation-derived evaluation better explains observed inventions than proposal likelihood alone. The analysis is restricted by which games can be formalized and simulated; 484 should not be treated as the number of games included in every computation.",
+        "Limits: this is preliminary cognitive modeling, with access to submitted games rather than the full set of ideas people considered and rejected. It neither proves that humans literally execute the model nor demonstrates expert AI design taste. Translation into a formal language introduces another source of error."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S113",
+      "rid": "R13",
+      "heading": "Reasoning about unfamiliar games",
+      "title": "People use fast, goal-directed simulation to reason about novel games.",
+      "original_bibliographic_paragraph": "Cedegao E. Zhang, Katherine M. Collins, Lionel Wong, Adrian Weller and Joshua B. Tenenbaum. **People use fast, goal-directed simulation to reason about novel games.** CogSci 2024. [arXiv:2407.14095v1](https://arxiv.org/html/2407.14095v1). Inspected: model, human judgment task and discussion. Found through R12.",
+      "urls": [
+        "https://arxiv.org/html/2407.14095v1",
+        "https://arxiv.org/abs/2407.14095v1"
+      ],
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: model, human judgment task and discussion. Found through R12.",
+      "relevance": "Separate novice comprehension from expert strategic evaluation.",
+      "limitations": "Simple turn-based game judgments may not transfer to real-time TD.",
+      "reported_observations": [
+        "The study models people's judgments about unfamiliar connect-n games using resource-limited, goal-directed simulations with little lookahead. It concerns judging likely fairness and fun before extensive play or mastery.",
+        "Limits: simple board-game judgments are not evidence that short simulations can predict the appeal of complex real-time tower defense. The transfer requires validation with our players and content."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S114",
+      "rid": "R14",
+      "heading": "FunSearch",
+      "title": "Mathematical discoveries from program search with large language models.",
+      "original_bibliographic_paragraph": "Bernardino Romera-Paredes et al. **Mathematical discoveries from program search with large language models.** Nature 625, pages 468 to 475, 2024; published online in December 2023. [DOI:10.1038/s41586-023-06924-6](https://www.nature.com/articles/s41586-023-06924-6). Inspected: primary article's method and reported applications. [Code link](https://github.com/google-deepmind/funsearch), not executed here.",
+      "urls": [
+        "https://www.nature.com/articles/s41586-023-06924-6",
+        "https://github.com/google-deepmind/funsearch"
+      ],
+      "bibliographic_verification": "Verified against publisher article.",
+      "content_inspected": "Relevant abstract/method overview.",
+      "inherited_access": "Inspected: primary article's method and reported applications. [Code link](https://github.com/google-deepmind/funsearch), not executed here.",
+      "relevance": "Independent execution/evaluation rather than self-certifying generated explanations.",
+      "limitations": "Mathematical/algorithmic objectives are easier to verify than enjoyment or fidelity.",
+      "reported_observations": [
+        "FunSearch combines LLM program proposals, evolutionary search and external evaluation. It reports new cap-set constructions and online bin-packing heuristics that improve on widely used baselines. The evaluator is central to the achievement.",
+        "Limits: mathematical validity and algorithmic performance are more directly evaluable than fun or character fidelity. External code checks only establish the properties they actually test. FunSearch is not evidence that an LLM reviewer can replace playtesting."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S115",
+      "rid": "R15",
+      "heading": "Ludax",
+      "title": "Ludax: A GPU-Accelerated Description Language for Board Games.",
+      "original_bibliographic_paragraph": "Graham Todd et al. **Ludax: A GPU-Accelerated Description Language for Board Games.** [arXiv:2506.22609](https://arxiv.org/abs/2506.22609), first submitted in 2025; [v2 inspected](https://arxiv.org/html/2506.22609v2), March 25, 2026. Inspected: representation, compilation, supported game class and references. R12 cites the earlier 2025 version; this record deliberately distinguishes it from the newer text inspected.",
+      "urls": [
+        "https://arxiv.org/abs/2506.22609",
+        "https://arxiv.org/html/2506.22609v2",
+        "https://arxiv.org/abs/2506.22609v2"
+      ],
+      "bibliographic_verification": "Verified against arXiv v2, with a title correction recorded below.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: representation, compilation, supported game class and references. R12 cites the earlier 2025 version; this record deliberately distinguishes it from the newer text inspected.",
+      "relevance": "Defined operators give a specification executable meaning.",
+      "limitations": "Turn-based board-game DSL, not an existing real-time TD Consumer.",
+      "reported_observations": [
+        "Ludax compiles formal board-game descriptions into JAX environments for accelerated simulation. The inspected version supports two-player, perfect-information, turn-based board games built from placing, moving and capturing pieces.",
+        "Limits: this is not a ready-made real-time tower defense runtime. Its performance claims should not be transferred to our event model, maps or agents. Consider runtime semantics before acceleration or a new language dependency."
+      ],
+      "correction": "Original title says \"Description Language\"; checked arXiv v2 says \"Ludax: A GPU-Accelerated Domain Specific Language for Board Games\". Version is March 25, 2026. Do not silently substitute the newer version for the one used by earlier citations."
+    },
+    {
+      "id": "UG-T04-S116",
+      "rid": "R16",
+      "heading": "LLM idea generation and self-evaluation",
+      "title": "Can LLMs Generate Novel Research Ideas? A Large-Scale Human Study with 100+ NLP Researchers.",
+      "original_bibliographic_paragraph": "Chenglei Si, Diyi Yang and Tatsunori Hashimoto. **Can LLMs Generate Novel Research Ideas? A Large-Scale Human Study with 100+ NLP Researchers.** ICLR 2025; preprint 2024. [arXiv:2409.04109](https://arxiv.org/abs/2409.04109), [v1 inspected](https://arxiv.org/html/2409.04109v1). Inspected: study description and discussion of novelty, diversity and self-evaluation. The inspected evidence is the preprint, not an audit of changes in the final proceedings version.",
+      "urls": [
+        "https://arxiv.org/abs/2409.04109",
+        "https://arxiv.org/html/2409.04109v1"
+      ],
+      "bibliographic_verification": "Verified against arXiv; the attachment's inspected v1 is distinct from later versions.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: study description and discussion of novelty, diversity and self-evaluation. The inspected evidence is the preprint, not an audit of changes in the final proceedings version.",
+      "relevance": "Blind review and independent checks of idea quality.",
+      "limitations": "Research proposals, not completed games; diversity/self-evaluation limits remain.",
+      "reported_observations": [
+        "AI proposals received higher novelty ratings in the experiment, while the paper also identifies limitations in self-evaluation and idea diversity. The evaluated objects were research proposals, not completed projects."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S117",
+      "rid": "R17",
+      "heading": "Mortar: mechanics evaluated inside games",
+      "title": "Mortar: Evolving Mechanics for Automatic Game Design.",
+      "original_bibliographic_paragraph": "Muhammad U. Nasir, Yuchen Li, Steven James and Julian Togelius. **Mortar: Evolving Mechanics for Automatic Game Design.** GECCO 2026. [Primary PDF](https://www.raillab.org/publication/nasir-2026-mortar/nasir-2026-mortar.pdf), [DOI:10.1145/3795095.3805100](https://doi.org/10.1145/3795095.3805100). Inspected: method, mechanic contribution measure, human comparisons and related work.",
+      "urls": [
+        "https://www.raillab.org/publication/nasir-2026-mortar/nasir-2026-mortar.pdf",
+        "https://doi.org/10.1145/3795095.3805100"
+      ],
+      "bibliographic_verification": "Title/authors verified in primary author-hosted PDF; publication details retained from attachment.",
+      "content_inspected": "Abstract and relevant description only; historical study counts not independently reproduced.",
+      "inherited_access": "Inspected: method, mechanic contribution measure, human comparisons and related work.",
+      "relevance": "Measure mechanics in combinations and test preference separately.",
+      "limitations": "Small study includes disagreement between skill-order proxy and human preference.",
+      "reported_observations": [
+        "Mortar combines LLM code evolution with a quality-diversity archive. It assembles games from mechanics and evaluates whether agents follow an expected skill ordering, using Kendall's tau. Its Constrained Importance Through Search measure attributes contribution within the searched combinations. It is inspired by Shapley values but is not an exhaustive evaluation of every mechanic subset.",
+        "Fourteen participants compared six games in three pairs. The aggregate human preference score and automated skill-order score agreed in direction for two pairs and disagreed for the third. Generated examples include summoning, multi-unit control and magnetic interactions. These are small games; the results do not establish that agent skill ordering predicts human preference reliably."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S118",
+      "rid": "R18",
+      "heading": "Mechanic Miner",
+      "title": "Mechanic Miner: Reflection-Driven Game Mechanic Discovery and Level Design.",
+      "original_bibliographic_paragraph": "Michael Cook, Simon Colton, Azalea Raad and Jeremy Gow. **Mechanic Miner: Reflection-Driven Game Mechanic Discovery and Level Design.** EvoApplications 2013. [Author PDF](https://www.possibilityspace.org/papers/evo13.pdf), [DOI:10.1007/978-3-642-37192-9_29](https://doi.org/10.1007/978-3-642-37192-9_29). Inspected: representation, search, generated mechanics and pilot study. Promoted from the original R9 citation lead.",
+      "urls": [
+        "https://www.possibilityspace.org/papers/evo13.pdf",
+        "https://doi.org/10.1007/978-3-642-37192-9_29"
+      ],
+      "bibliographic_verification": "Title/authors verified in author PDF; publication details retained from attachment.",
+      "content_inspected": "Abstract and opening description only.",
+      "inherited_access": "Inspected: representation, search, generated mechanics and pilot study. Promoted from the original R9 citation lead.",
+      "relevance": "Provide scenarios showing what a new mechanic enables.",
+      "limitations": "Solver utility does not ensure player comprehension; participant-count inconsistency retained.",
+      "reported_observations": [
+        "The system inspects program fields and evolves simple two-state mechanics through operations on those fields. It also generates levels suited to the resulting mechanic. Examples include gravity inversion, bouncing and coordinate-based teleportation. The pilot study reports difficulty understanding and enjoying the teleportation mechanic despite its computational usefulness. The text gives inconsistent participant counts between the study introduction and the teleportation result, so no precise sample claim is used here."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S119",
+      "rid": "R19",
+      "heading": "Mechanic Maker 2.0",
+      "title": "Mechanic Maker 2.0: Reinforcement Learning for Evaluating Generated Rules.",
+      "original_bibliographic_paragraph": "Johor Jara Gonzalez, Seth Cooper and Matthew Guzdial. **Mechanic Maker 2.0: Reinforcement Learning for Evaluating Generated Rules.** AIIDE 19(1), pages 266 to 275, 2023. [arXiv:2309.09476v3](https://arxiv.org/html/2309.09476v3), [DOI:10.1609/aiide.v19i1.27522](https://doi.org/10.1609/aiide.v19i1.27522). Inspected: environment recreation, evaluator comparison and limitations.",
+      "urls": [
+        "https://arxiv.org/html/2309.09476v3",
+        "https://doi.org/10.1609/aiide.v19i1.27522",
+        "https://arxiv.org/abs/2309.09476v3"
+      ],
+      "bibliographic_verification": "Verified against arXiv v3.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: environment recreation, evaluator comparison and limitations.",
+      "relevance": "Evaluator choice changes discovered mechanics; learning ability and final performance differ.",
+      "limitations": "RL fitness exploitation and slower evaluation; no human usability validation.",
+      "reported_observations": [
+        "The authors recreate the Mechanic Miner environment in Unity and compare reinforcement-learning evaluation with A*. The evaluators lead to different generated rules. RL can discover unconventional solutions but is slower and can exploit the fitness function. The paper's suggestion of greater human usability is not established by a human-subject study."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S120",
+      "rid": "R20",
+      "heading": "Pixie",
+      "title": "Pixie: Code-Level Mechanic Generation for Game Designers.",
+      "original_bibliographic_paragraph": "Michael Cook. **Pixie: Code-Level Mechanic Generation for Game Designers.** AIIDE 21(1), pages 206 to 215, 2025. [Publisher PDF](https://ojs.aaai.org/index.php/AIIDE/article/download/36824/38962), [DOI:10.1609/aiide.v21i1.36824](https://doi.org/10.1609/aiide.v21i1.36824). Access gap: the publisher download failed and an attempted author copy was unavailable. Mortar's related-work discussion independently confirms Pixie as code-level mechanic evolution using a genetic-programming approach.",
+      "urls": [
+        "https://ojs.aaai.org/index.php/AIIDE/article/download/36824/38962",
+        "https://doi.org/10.1609/aiide.v21i1.36824",
+        "https://ojs.aaai.org/index.php/AIIDE/article/view/36824"
+      ],
+      "bibliographic_verification": "Publisher bibliographic record verified; original full-text access gap remains.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Access gap: the publisher download failed and an attempted author copy was unavailable. Mortar's related-work discussion independently confirms Pixie as code-level mechanic evolution using a genetic-programming approach.",
+      "relevance": "Potential explicit code-level mechanic interface.",
+      "limitations": "Annotated-Unity and engineering claims remain unverified without full text.",
+      "reported_observations": [
+        "The supplied review describes generation inside annotated Unity projects, with exposed fields, insertion points, test objectives and compile/run feedback. It describes a non-LLM system and warns that generated snippets can bypass engineering conventions such as object pooling. These implementation details remain supplied-source claims until the primary text is retrieved."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S121",
+      "rid": "R21",
+      "heading": "Formal mechanic generation",
+      "title": "Automatic Game Design via Mechanic Generation.",
+      "original_bibliographic_paragraph": "Alexander Zook and Mark O. Riedl. **Automatic Game Design via Mechanic Generation.** AAAI 2014. [arXiv:1908.01420v1](https://arxiv.org/html/1908.01420v1), [DOI:10.1609/aaai.v28i1.8788](https://doi.org/10.1609/aaai.v28i1.8788). Inspected: representation, constraint-based generation, planning and demonstration domains. The arXiv deposit is 2019; the paper is from 2014. Promoted from the original R3/R7 citation lead.",
+      "urls": [
+        "https://arxiv.org/html/1908.01420v1",
+        "https://doi.org/10.1609/aaai.v28i1.8788",
+        "https://arxiv.org/abs/1908.01420v1"
+      ],
+      "bibliographic_verification": "Verified against arXiv; 2014 publication and 2019 deposit remain distinct.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: representation, constraint-based generation, planning and demonstration domains. The arXiv deposit is 2019; the paper is from 2014. Promoted from the original R3/R7 citation lead.",
+      "relevance": "Constraint-based actions and reachability for formal mechanic checks.",
+      "limitations": "Encoded reachability does not establish fun or strategic depth.",
+      "reported_observations": [
+        "A constraint solver generates mechanics expressed through planning-related actions. A planner checks playability requirements. Examples include role-playing, platforming and a combined setting. The work distinguishes constraints on what a mechanic is from constraints on what play it permits."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S122",
+      "rid": "R22",
+      "heading": "TowerMind",
+      "title": "TowerMind: A Tower Defence Game Learning Environment and Benchmark for LLM as Agents.",
+      "original_bibliographic_paragraph": "Dawei Wang et al. **TowerMind: A Tower Defence Game Learning Environment and Benchmark for LLM as Agents.** AAAI 2026. [arXiv:2601.05899v1](https://arxiv.org/html/2601.05899v1), [DOI:10.1609/aaai.v40i31.39818](https://doi.org/10.1609/aaai.v40i31.39818). Inspected: environment, observation formats, evaluation scope and reported agent failures. [Code](https://github.com/tb6147877/TowerMind), not executed.",
+      "urls": [
+        "https://arxiv.org/html/2601.05899v1",
+        "https://doi.org/10.1609/aaai.v40i31.39818",
+        "https://github.com/tb6147877/TowerMind",
+        "https://arxiv.org/abs/2601.05899v1"
+      ],
+      "bibliographic_verification": "Verified against arXiv v1; later versions exist but were not substituted.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: environment, observation formats, evaluation scope and reported agent failures. [Code](https://github.com/tb6147877/TowerMind), not executed.",
+      "relevance": "Possible TD action/observation interface reference.",
+      "limitations": "Agent benchmark, not a unit generator; compatibility untested.",
+      "reported_observations": [
+        "TowerMind supplies configurable tower defense environments with visual, textual and structured observations. Five benchmark levels compare LLMs, reinforcement-learning agents and human experts. Reported problems include hallucinations, inadequate plan validation and inefficient actions. It is a testing environment, not a generator of novel game rules."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S123",
+      "rid": "R23",
+      "heading": "Tower defense level generation",
+      "title": "Automatic generation of tower defense levels using PCG.",
+      "original_bibliographic_paragraph": "Simon Liu et al. **Automatic generation of tower defense levels using PCG.** FDG 2019. [DOI:10.1145/3337722.3337723](https://doi.org/10.1145/3337722.3337723), [supplied manuscript entry](https://www.researchgate.net/publication/335590750_Automatic_generation_of_tower_defense_levels_using_PCG). Access gap: ResearchGate returned HTTP 403; the primary text was not independently inspected.",
+      "urls": [
+        "https://doi.org/10.1145/3337722.3337723",
+        "https://www.researchgate.net/publication/335590750_Automatic_generation_of_tower_defense_levels_using_PCG"
+      ],
+      "bibliographic_verification": "Unverified independently; DOI retrieval failed. Supplied record retained.",
+      "content_inspected": "Not inspected.",
+      "inherited_access": "Access gap: ResearchGate returned HTTP 403; the primary text was not independently inspected.",
+      "relevance": "Joint maps/placement/waves as a future evaluation context.",
+      "limitations": "Supplied flat Monte Carlo and implementation claims remain unverified.",
+      "reported_observations": [
+        "The supplied review describes a Kingdom Rush: Frontiers-style simulator that generates roads, tower positions and monster sequences, then evaluates assembled levels with flat Monte Carlo search. The distinction from tree-based MCTS is retained as an attributed claim requiring primary-text confirmation."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S124",
+      "rid": "R24",
+      "heading": "Save the Sheep",
+      "title": "Procedural Content Generation of Custom Tower Defense Game Using Genetic Algorithms.",
+      "original_bibliographic_paragraph": "Vid Kraner, Iztok Fister Jr. and Lucija Brezočnik. **Procedural Content Generation of Custom Tower Defense Game Using Genetic Algorithms.** NT 2021, Lecture Notes in Networks and Systems 233. [DOI:10.1007/978-3-030-75275-0_54](https://doi.org/10.1007/978-3-030-75275-0_54), [supplied manuscript entry](https://www.researchgate.net/publication/351488584_Procedural_Content_Generation_of_Custom_Tower_Defense_Game_Using_Genetic_Algorithms). Access gap: ResearchGate returned HTTP 403.",
+      "urls": [
+        "https://doi.org/10.1007/978-3-030-75275-0_54",
+        "https://www.researchgate.net/publication/351488584_Procedural_Content_Generation_of_Custom_Tower_Defense_Game_Using_Genetic_Algorithms"
+      ],
+      "bibliographic_verification": "Unverified independently; DOI retrieval failed. Supplied record retained.",
+      "content_inspected": "Not inspected.",
+      "inherited_access": "Access gap: ResearchGate returned HTTP 403.",
+      "relevance": "Separate generated arrangements from human-authored premise/assets.",
+      "limitations": "Full text unavailable; 3D game implementation does not mean autonomous design.",
+      "reported_observations": [
+        "The supplied review describes a Unity game with a human-designed premise of helping sheep reach a barn, genetic generation of maps, placements and waves, and human-created Blender assets. Those implementation details were not independently rechecked."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S125",
+      "rid": "R25",
+      "heading": "Early tower defense research",
+      "title": "Computational Intelligence and Tower Defence Games.",
+      "original_bibliographic_paragraph": "Phillipa Avery, Julian Togelius, Elvis Alistar and Robert Pieter van Leeuwen. **Computational Intelligence and Tower Defence Games.** IEEE Congress on Evolutionary Computation, 2011. [DOI:10.1109/CEC.2011.5949738](https://doi.org/10.1109/CEC.2011.5949738), [supplied manuscript entry](https://www.researchgate.net/publication/224246975_Computational_Intelligence_and_Tower_Defence_Games). Access gap: ResearchGate returned HTTP 403.",
+      "urls": [
+        "https://doi.org/10.1109/CEC.2011.5949738",
+        "https://www.researchgate.net/publication/224246975_Computational_Intelligence_and_Tower_Defence_Games"
+      ],
+      "bibliographic_verification": "Unverified independently; DOI retrieval failed. Supplied record retained.",
+      "content_inspected": "Not inspected.",
+      "inherited_access": "Access gap: ResearchGate returned HTTP 403.",
+      "relevance": "Separate TD generation components and experience responsibilities.",
+      "limitations": "Access gap; no downstream implementation reuse established.",
+      "reported_observations": [
+        "The supplied review identifies this as a component taxonomy and experience-driven generation foundation. Retain it as a backward-reference target for R23 and R24. Its potential use is separating maps, waves, defensive structures and player experience into explicit evaluation responsibilities. No implementation reuse by later systems was verified here."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S126",
+      "rid": "R26",
+      "heading": "Multiobjective RTS maps",
+      "title": "Controllable procedural map generation via multiobjective evolution.",
+      "original_bibliographic_paragraph": "Julian Togelius et al. **Controllable procedural map generation via multiobjective evolution.** Genetic Programming and Evolvable Machines 14, pages 245 to 277, 2013. [Publisher article and DOI](https://link.springer.com/article/10.1007/s10710-012-9174-5). Abstract and reference list inspected; the full article requires access.",
+      "urls": [
+        "https://link.springer.com/article/10.1007/s10710-012-9174-5"
+      ],
+      "bibliographic_verification": "Verified against publisher metadata.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Abstract and reference list inspected; the full article requires access.",
+      "relevance": "Retain conflicting map objectives.",
+      "limitations": "Visual map assessment is not competitive or TD gameplay evidence.",
+      "reported_observations": [
+        "The abstract describes heightmap-based generic strategy maps and StarCraft maps, heuristic gameplay objectives, and experiments with conflicting objectives. Skilled StarCraft players visually evaluated selected maps. That supports perceived properties, not extensive competitive playtesting."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S127",
+      "rid": "R27",
+      "heading": "Controllable 3D level generators",
+      "title": "Learning Controllable 3D Level Generators.",
+      "original_bibliographic_paragraph": "Zehua Jiang, Sam Earle, Michael Cerny Green and Julian Togelius. **Learning Controllable 3D Level Generators.** FDG 2022. [arXiv:2206.13623v3](https://arxiv.org/html/2206.13623v3), [DOI:10.1145/3555858.3563273](https://doi.org/10.1145/3555858.3563273). Inspected: PCGRL formulation, 3D movement requirements and control experiments.",
+      "urls": [
+        "https://arxiv.org/html/2206.13623v3",
+        "https://doi.org/10.1145/3555858.3563273",
+        "https://arxiv.org/abs/2206.13623v3"
+      ],
+      "bibliographic_verification": "Verified against arXiv v3.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: PCGRL formulation, 3D movement requirements and control experiments.",
+      "relevance": "Check geometry under actual movement rules.",
+      "limitations": "Minecraft-style controllable maps are not production TD terrain or unit generation.",
+      "reported_observations": [
+        "The generator learns level-editing policies rewarded by computable requirements in Minecraft-style environments. Movement constraints include gravity and jumping. Humans still define the representation, constraints and reward measures. The demonstrations are simplified environments, not production RTS terrain."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S128",
+      "rid": "R28",
+      "heading": "Scaling PCGRL",
+      "title": "Scaling, Control and Generalization in Reinforcement Learning Level Generators.",
+      "original_bibliographic_paragraph": "Sam Earle, Zehua Jiang and Julian Togelius. **Scaling, Control and Generalization in Reinforcement Learning Level Generators.** 2024. [arXiv:2408.12525v1](https://arxiv.org/html/2408.12525v1). Inspected: method, scaling and generalization scope. The supplied list calls this “PCGRL+”; the citation here uses the manuscript title.",
+      "urls": [
+        "https://arxiv.org/html/2408.12525v1",
+        "https://arxiv.org/abs/2408.12525v1"
+      ],
+      "bibliographic_verification": "Verified against arXiv v1, with a title discrepancy recorded below.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: method, scaling and generalization scope. The supplied list calls this “PCGRL+”; the citation here uses the manuscript title.",
+      "relevance": "Control, fixed constraints and out-of-distribution size tests.",
+      "limitations": "Speed or generalization does not show quality of chosen objectives; RL is not required for v1.",
+      "reported_observations": [
+        "The work implements PCGRL environments in JAX, studies longer training, varies map sizes, and introduces frozen tiles to support control. It tests generation on larger, out-of-distribution maps. Faster training and generalization are distinct questions from whether the chosen quality metrics produce worthwhile gameplay."
+      ],
+      "correction": "Original entry omits \"PCGRL+\" and calls the remainder the manuscript title. The checked arXiv v1 title is \"PCGRL+: Scaling, Control and Generalization in Reinforcement Learning Level Generators\"."
+    },
+    {
+      "id": "UG-T04-S129",
+      "rid": "R29",
+      "heading": "Database-driven 3D levels",
+      "title": "A Database-Driven Framework for 3D Level Generation with LLMs.",
+      "original_bibliographic_paragraph": "Kaijie Xu and Clark Verbrugge. **A Database-Driven Framework for 3D Level Generation with LLMs.** AIIDE 21(1), pages 367 to 376, 2025. [arXiv:2508.18533v1](https://arxiv.org/html/2508.18533v1), [DOI:10.1609/aiide.v21i1.36840](https://doi.org/10.1609/aiide.v21i1.36840). Inspected: assembly pipeline, repair and limitations.",
+      "urls": [
+        "https://arxiv.org/html/2508.18533v1",
+        "https://doi.org/10.1609/aiide.v21i1.36840",
+        "https://arxiv.org/abs/2508.18533v1"
+      ],
+      "bibliographic_verification": "Verified against arXiv v1.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: assembly pipeline, repair and limitations.",
+      "relevance": "Logical progression before scene realization, then revalidation after repair.",
+      "limitations": "Some unplayable outputs, substantial curation and no human-player study in the supplied account.",
+      "reported_observations": [
+        "LLMs help prepare reusable room, facility and mechanic databases. Subsequent stages assemble multi-floor structures, optimize placement, integrate progression and repair navigation. The authors acknowledge substantial prompt engineering, possible manual curation, some unplayable outputs and no human-player evaluation. Key-and-lock progression is a simplified prototype."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S130",
+      "rid": "R30",
+      "heading": "Infinigen",
+      "title": "Infinite Photorealistic Worlds using Procedural Generation.",
+      "original_bibliographic_paragraph": "Alexander Raistrick et al. **Infinite Photorealistic Worlds using Procedural Generation.** CVPR 2023. [arXiv:2306.09310](https://arxiv.org/abs/2306.09310). Primary HTML inspected for system purpose and generation scope.",
+      "urls": [
+        "https://arxiv.org/abs/2306.09310"
+      ],
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Primary HTML inspected for system purpose and generation scope.",
+      "relevance": "Environmental asset/scene realization.",
+      "limitations": "Photorealism does not establish routes, tactical utility or TD balance.",
+      "reported_observations": [
+        "Infinigen procedurally generates natural scenes, geometry and materials, principally for synthetic visual data. It is relevant to environmental realization and visual variation. It does not establish buildable regions, route balance or useful tactical terrain."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S131",
+      "rid": "R31",
+      "heading": "Holodeck",
+      "title": "Holodeck: Language Guided Generation of 3D Embodied AI Environments.",
+      "original_bibliographic_paragraph": "Yue Yang et al. **Holodeck: Language Guided Generation of 3D Embodied AI Environments.** CVPR 2024. [arXiv:2312.09067](https://arxiv.org/abs/2312.09067). Primary HTML inspected for planning, retrieval, spatial constraints and evaluation scope.",
+      "urls": [
+        "https://arxiv.org/abs/2312.09067"
+      ],
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Primary HTML inspected for planning, retrieval, spatial constraints and evaluation scope.",
+      "relevance": "Spatial constraints when assembling retrieved assets.",
+      "limitations": "Embodied environments, not validated tactical maps.",
+      "reported_observations": [
+        "Holodeck combines language-guided scene planning, retrieved assets and spatial-relation constraints. It evaluates scene preferences and applications to embodied-agent navigation. Those evaluations concern environment generation, not tactical map design."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S132",
+      "rid": "R32",
+      "heading": "Galactic Arms Race",
+      "title": "Automatic Content Generation in the Galactic Arms Race Video Game.",
+      "original_bibliographic_paragraph": "Erin J. Hastings, Ratan K. Guha and Kenneth O. Stanley. **Automatic Content Generation in the Galactic Arms Race Video Game.** IEEE Transactions on Computational Intelligence and AI in Games 1(4), pages 245 to 263, 2009. [DOI:10.1109/TCIAIG.2009.2038365](https://doi.org/10.1109/TCIAIG.2009.2038365), [supplied manuscript entry](https://www.researchgate.net/publication/224089471_Automatic_Content_Generation_in_the_Galactic_Arms_Race_Video_Game). Access gap: ResearchGate returned HTTP 403.",
+      "urls": [
+        "https://doi.org/10.1109/TCIAIG.2009.2038365",
+        "https://www.researchgate.net/publication/224089471_Automatic_Content_Generation_in_the_Galactic_Arms_Race_Video_Game"
+      ],
+      "bibliographic_verification": "Unverified independently; DOI retrieval failed. Supplied record retained.",
+      "content_inspected": "Not inspected.",
+      "inherited_access": "Access gap: ResearchGate returned HTTP 403.",
+      "relevance": "Player usage as one possible feedback source.",
+      "limitations": "Usage may reflect power or access rather than preference; deployment counts unverified here.",
+      "reported_observations": [
+        "The supplied review reports evolved particle-system weapons in an online game, guided by weapon use, with more than 1,000 registered players. These deployment and sample claims remain unverified here."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S133",
+      "rid": "R33",
+      "heading": "OMNI-EPIC",
+      "title": "OMNI-EPIC: Open-endedness via Models of human Notions of Interestingness with Environments Programmed in Code.",
+      "original_bibliographic_paragraph": "Maxence Faldor, Jenny Zhang, Antoine Cully and Jeff Clune. **OMNI-EPIC: Open-endedness via Models of human Notions of Interestingness with Environments Programmed in Code.** ICLR 2025. [arXiv:2405.15568v3](https://arxiv.org/html/2405.15568v3). Inspected: archive, task/environment generation, interestingness filtering and evaluation modes.",
+      "urls": [
+        "https://arxiv.org/html/2405.15568v3",
+        "https://arxiv.org/abs/2405.15568v3"
+      ],
+      "bibliographic_verification": "Verified against arXiv v3.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: archive, task/environment generation, interestingness filtering and evaluation modes.",
+      "relevance": "Retain success/failure histories for proposal generation.",
+      "limitations": "The supplied long 200-iteration run did not train agents; interestingness is model judged.",
+      "reported_observations": [
+        "The system generates environment code and rewards, uses an archive of successful and failed tasks, and proposes further tasks suited to learning progress. Demonstrations use PyBullet. A foundation model judges interestingness relative to prior tasks.",
+        "An important qualification: the long run with 200 iterations does not train RL agents and assumes generated executable tasks can be completed. Separate shorter runs include actual learning. Do not describe all long-run tasks as empirically learned. The goal is open-ended learning environments, not demonstrated human enjoyment."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S134",
+      "rid": "R34",
+      "heading": "DreamGarden",
+      "title": "DreamGarden: A Designer Assistant for Growing Games from a Single Prompt.",
+      "original_bibliographic_paragraph": "Sam Earle, Samyak Parajuli and Andrzej Banburski-Fahey. **DreamGarden: A Designer Assistant for Growing Games from a Single Prompt.** CHI 2025. [arXiv:2410.01791v2](https://arxiv.org/html/2410.01791v2), [DOI:10.1145/3706598.3714233](https://doi.org/10.1145/3706598.3714233). Inspected: hierarchical planning, Unreal implementation modules and usability study.",
+      "urls": [
+        "https://arxiv.org/html/2410.01791v2",
+        "https://doi.org/10.1145/3706598.3714233",
+        "https://arxiv.org/abs/2410.01791v2"
+      ],
+      "bibliographic_verification": "Verified against arXiv v2.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: hierarchical planning, Unreal implementation modules and usability study.",
+      "relevance": "Editable plans and targeted repair preserving designer choices.",
+      "limitations": "Ten-person interaction study, not evidence of complete strategically good games.",
+      "reported_observations": [
+        "DreamGarden creates an editable plan and delegates implementation to modules for code and assets, using compilation and visual feedback. Users can redirect, edit and prune the plan. Its ten-participant study concerns interaction with the assistant; it does not demonstrate complete novel games with established strategic quality. Slow generation and complex requests remain difficulties."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S135",
+      "rid": "R35",
+      "heading": "AutoUE",
+      "title": "AutoUE: Automated Generation of 3D Games in Unreal Engine via Multi-Agent Systems.",
+      "original_bibliographic_paragraph": "Lei Yin et al. **AutoUE: Automated Generation of 3D Games in Unreal Engine via Multi-Agent Systems.** 2026 preprint. [arXiv:2603.07106v1](https://arxiv.org/html/2603.07106v1). Inspected: engine workflow, documentation retrieval, runtime tests and benchmark. [Code](https://github.com/Pluto156/AutoUE), not executed.",
+      "urls": [
+        "https://arxiv.org/html/2603.07106v1",
+        "https://github.com/Pluto156/AutoUE",
+        "https://arxiv.org/abs/2603.07106v1"
+      ],
+      "bibliographic_verification": "Verified against arXiv v1.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: engine workflow, documentation retrieval, runtime tests and benchmark. [Code](https://github.com/Pluto156/AutoUE), not executed.",
+      "relevance": "Engine documentation and actual runtime state changes for implementation.",
+      "limitations": "Multi-agent game prototyping/PlayGen-20, not validated original TD design or player taste.",
+      "reported_observations": [
+        "AutoUE coordinates asset retrieval, scene construction and gameplay code, grounding tool operations in retrieved Unreal documentation. Its PlayGen-20 benchmark contains twenty tasks with different scene and interaction complexity. Evaluation includes generated runtime test commands and substantial model-based assessment."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S136",
+      "rid": "R36",
+      "heading": "Genie",
+      "title": "Genie: Generative Interactive Environments.",
+      "original_bibliographic_paragraph": "Jake Bruce et al. **Genie: Generative Interactive Environments.** ICML 2024. [arXiv:2402.15391](https://arxiv.org/abs/2402.15391). Primary HTML inspected for model and output representation.",
+      "urls": [
+        "https://arxiv.org/abs/2402.15391"
+      ],
+      "bibliographic_verification": "Verified against arXiv.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Primary HTML inspected for model and output representation.",
+      "relevance": "Interactive visual exploration as a separate research path.",
+      "limitations": "A learned interactive world is not an explicit editable rules/runtime implementation.",
+      "reported_observations": [
+        "Genie learns action-controllable interactive environments from video, using a learned latent action representation. It produces an interactive world model rather than conventional editable engine code and an explicit mechanics specification."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S137",
+      "rid": "R37",
+      "heading": "Player tactics in a commercial TD game",
+      "title": "Emergence of player tactics by expert-guided machine learning: an industry tower defence case study.",
+      "original_bibliographic_paragraph": "Stuart Anderson and Ruth Falconer. **Emergence of player tactics by expert-guided machine learning: an industry tower defence case study.** Entertainment Computing 54, article 100963, 2025. [Institutional record](https://rke.abertay.ac.uk/en/publications/emergence-of-player-tactics-by-expert-guided-machine-learning-an-/), [DOI:10.1016/j.entcom.2025.100963](https://doi.org/10.1016/j.entcom.2025.100963). Institutional abstract and metadata inspected; the linked full-text download returned HTTP 403.",
+      "urls": [
+        "https://rke.abertay.ac.uk/en/publications/emergence-of-player-tactics-by-expert-guided-machine-learning-an-/",
+        "https://doi.org/10.1016/j.entcom.2025.100963"
+      ],
+      "bibliographic_verification": "Verified against the institutional record.",
+      "content_inspected": "Abstract only; full-text access gap retained.",
+      "inherited_access": "Institutional abstract and metadata inspected; the linked full-text download returned HTTP 403.",
+      "relevance": "Contextual player action sequences rather than pick rates alone.",
+      "limitations": "Behavior analysis, not generation; only abstract independently inspected.",
+      "reported_observations": [
+        "The abstract describes expert-guided individual sequence mining to identify tactics from network messages in a commercial mobile TD game. This is analysis of actual behavior, not content generation. Detailed validity and generalization claims require the full text."
+      ],
+      "correction": ""
+    },
+    {
+      "id": "UG-T04-S138",
+      "rid": "R38",
+      "heading": "GameASG-Bench",
+      "title": "GameASG-Bench: Benchmarking Autonomous Software Generation for Game Development.",
+      "original_bibliographic_paragraph": "Xiuhui Zhang et al. **GameASG-Bench: Benchmarking Autonomous Software Generation for Game Development.** Preprint, September 18, 2026. [arXiv:2609.21293v1](https://arxiv.org/html/2609.21293v1). Inspected: evaluation contract, task suite and aggregate results.",
+      "urls": [
+        "https://arxiv.org/html/2609.21293v1",
+        "https://arxiv.org/abs/2609.21293v1"
+      ],
+      "bibliographic_verification": "Verified against arXiv v1; supplied September 2026 preprint remains unreproduced.",
+      "content_inspected": "Abstract only.",
+      "inherited_access": "Inspected: evaluation contract, task suite and aggregate results.",
+      "relevance": "Separate individual-check pass rate from complete-task success.",
+      "limitations": "Software compliance benchmark, not novelty, balance or human preference.",
+      "reported_observations": [
+        "The benchmark declares interfaces for legal scenarios, player actions, snapshots, rejection behavior and invariants before generation. Forty-seven browser-game tasks combine static checks with browser-executed behavioral checks. Across tested stacks, the best mean runtime-check pass rate is 93.2%, while the best strict task success is 55.3%, or 26 of 47 tasks. These maxima are different measures and need not belong to the same stack."
+      ],
+      "correction": ""
+    }
+  ]
+}
