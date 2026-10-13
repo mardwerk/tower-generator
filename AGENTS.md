@@ -1,11 +1,8 @@
 # Agent instructions
 
-Read [README.md](README.md) before changing this repository.
-Mardwerk agents with private Planning access must also read its [AGENTS.md](https://github.com/mardwerk/planning/blob/main/AGENTS.md) and master [GLOSSARY.md](https://github.com/mardwerk/planning/blob/main/GLOSSARY.md).
-Public contributors do not need Planning access.
+Read [README.md](README.md) and [RULES.md](RULES.md) before changing this repository.
 
 When managing issues, labels or milestones, read [local topic definitions](docs/ISSUE_LABELS.md).
-Agents with Planning access must also read its [issue labels standard](https://github.com/mardwerk/planning/blob/main/10_docs/ISSUE_LABELS.md), using the local checkout when available.
 Derive work state from explicit, recorded owner decisions.
 Relabelling alone does not select work or accept a specification.
 
@@ -29,20 +26,14 @@ Run checks appropriate to executable changes; document what each check establish
 
 ## Agent skills
 
-Use this repository's configuration when an engineering skill requests tracker, triage or domain conventions.
-Repository rules take precedence over upstream skill defaults.
-
 ### Issue tracker
 
-Track product work in GitHub Issues for mardwerk/tower-generator.
-Read [tracker conventions](docs/agents/issue-tracker.md) before publishing or updating tracked work.
+Track work in this repository's GitHub Issues. Before tracker operations, read [tracker conventions](docs/agents/issue-tracker.md).
 
 ### Triage labels
 
-Use the existing label lifecycle and [triage compatibility rules](docs/agents/triage-labels.md).
-Read these rules before translating an upstream triage role into labels or issue state.
+Keep the existing labels. Before triage, read [role mappings](docs/agents/triage-labels.md).
 
 ### Domain docs
 
-Use one product context and the existing document owners.
-Read [domain conventions](docs/agents/domain.md) before domain exploration or recording terminology and decisions.
+Use the local glossary and `docs/adr/` for one context. Before domain exploration or terminology changes, read [domain conventions](docs/agents/domain.md) and [repository rules](RULES.md).

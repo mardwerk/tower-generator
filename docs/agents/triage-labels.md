@@ -1,24 +1,17 @@
-# Triage compatibility
+# Triage roles
 
-The repository's [label rules](../ISSUE_LABELS.md) govern work state and closure.
-Upstream triage roles describe questions or readiness; they do not replace this lifecycle.
-Apply these compatibility rules instead of upstream's exactly-one-category and exactly-one-triage-state defaults.
+Use the existing repository labels. Skill roles do not introduce another lifecycle. Readiness, work selection and contract acceptance are separate decisions.
 
-| Upstream role | Repository handling |
+| Skill role | Repository treatment |
 | --- | --- |
-| needs-triage | Use `status:triage` for unresolved scope, ownership or scheduling without recorded selection. |
-| needs-info | Record the missing information and who can supply it in the issue; preserve its recorded work state. |
-| ready-for-agent | Record the accepted outcome, reviewed design contract, prerequisites and verification evidence; preserve its recorded work state. |
-| ready-for-human | Record the action that requires a person and the reason; preserve its recorded work state. Use `review:decision` only for an actual pending owner decision. |
-| wontfix | Distinguish completed work, duplication, invalid reports and explicit rejection. Apply native closure and the applicable existing closure rules. Retain deferred or excluded proposals when the owner selected that state. |
+| `needs-triage` | Use `status:triage` for unresolved scope or ownership without recorded selection. |
+| `needs-info` | Record the missing information and who must supply it; preserve the work state. |
+| `ready-for-agent` | Record the accepted outcome, settled responsibilities, interfaces, dependency directions, prerequisites and acceptance evidence. Preserve the work state. |
+| `ready-for-human` | Record the required human action and why it needs a person; preserve the work state. |
+| `wontfix` | Distinguish explicit rejection, duplication and invalid reports. Preserve retained deferred or excluded proposals; close only when the recorded disposition warrants it. |
 
-Discover triage work through `status:triage` and relevant existing issues, then read their bodies and comments for missing information and readiness.
-Absence of upstream role labels does not make an issue untriaged; preserve owner-selected states.
+Use `type:bug` and `type:feature` for bug and enhancement categories. Use existing `review:decision` only for a named pending owner decision. Keep `status:out-of-scope` proposals open when the owner retains them.
 
-Keep rejection and exclusion evidence in the owning issue and established documents instead of creating an `.out-of-scope/` decision store.
-Keep `status:out-of-scope` proposals open unless an explicit owner decision changes their disposition.
+Do not create the upstream default role labels or infer `status:active` from readiness. Read [issue-tracker.md](issue-tracker.md) before listing work and [RULES.md](../../RULES.md) before changing terminology. Preserve the invoked triage skill's AI attribution requirement.
 
-Use `type:bug`, `type:feature`, `type:documentation` or `type:maintenance` when appropriate; type is optional.
-Do not introduce upstream default labels or map implementation readiness to `status:active`.
-Only a recorded owner decision selects, defers, pauses or rejects work.
-Readiness requires the current accepted design contract; an active issue can still await a decision or prerequisite.
+Before assigning or migrating labels, read [local label rules](../ISSUE_LABELS.md).
