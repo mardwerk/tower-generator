@@ -8,3 +8,10 @@ These source records contain research, design guidance and proposals. Their reco
 - [Reusable character research](30_projects/reusable-unit-research/README.md)
 - [Character design guidance](40_skills/character-tower-defense-design/SKILL.md)
 - [Source dossiers](99-cold-store/handoffs/)
+
+## Local source collections
+
+- [Generator research: product scoping](10_docs/product-scoping-notes.md)
+- [Generator research: framework and design references](20_knowledge/framework-and-design-references.md)
+- [Generator research: source review findings](20_knowledge/source-review-findings.md)
+- [Generator research: game design research 2026 09 22](99-cold-store/game-design-research-2026-09-22.md)

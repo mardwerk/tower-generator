@@ -4,7 +4,7 @@ Use this archive to answer a concrete character-research or Tower-design questio
 Follow the [research rules](../RESEARCH.md) and the [Tower design skill](../../.agents/skills/tower-generator/SKILL.md) for those workflows.
 The [SkillOpt plan](SKILLOPT.md) records the selected optimization direction and the remaining evaluation proposal.
 
-Kyle selected this focused transfer on 2026-10-03 in [#108](https://github.com/mardwerk/tower-generator/issues/108).
+Kyle selected this focused transfer on 2026-10-03 in [#108](https://github.com/mardwerk/towerwerk/issues/108).
 The [product rules](../PRODUCT.md) own current behavior; the [realignment record](../REALIGNMENT.md) preserves reset history.
 
 ## Retained research
@@ -33,3 +33,5 @@ The retired Gojo simulation did not establish canon fidelity, Plants vs. Zombies
 Knowledge graphs, constraint solvers, evolutionary search, MCTS and human-study machinery remain source proposals.
 Add one only when a current requirement and observed failure justify it.
 Record accepted product guidance in the product documents rather than treating a source proposal as a decision.
+
+- [Local research source collections](materials/README.md)
